@@ -2,29 +2,39 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
-// In-memory access token storage for maximum security
+// ---------------------------------------------------------------------------
+// In-memory access token — never stored in localStorage or sessionStorage
+// to protect against XSS attacks.
+// ---------------------------------------------------------------------------
 let inMemoryAccessToken = null;
 
+/** Store a new access token in memory */
 export const setAccessToken = (token) => {
   inMemoryAccessToken = token;
 };
 
+/** Read the current in-memory access token */
 export const getAccessToken = () => inMemoryAccessToken;
 
+/** Remove the in-memory access token */
 export const clearAccessToken = () => {
   inMemoryAccessToken = null;
 };
 
-// Create Axios Instance
+// ---------------------------------------------------------------------------
+// Axios instance — withCredentials sends the HttpOnly refresh cookie on every
+// request so the /auth/refresh endpoint can silently rotate tokens.
+// ---------------------------------------------------------------------------
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // Send and receive HttpOnly cookies
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Refresh token queue state
+// ---------------------------------------------------------------------------
+// Token-refresh queue — prevents multiple concurrent refresh calls when
+// several 401s arrive simultaneously.
+// ---------------------------------------------------------------------------
 let isRefreshing = false;
 let refreshSubscribers = [];
 
@@ -33,17 +43,24 @@ const subscribeTokenRefresh = (callback) => {
 };
 
 const onRefreshed = (token) => {
-  refreshSubscribers.forEach((callback) => callback(token));
+  refreshSubscribers.forEach((cb) => cb(token));
   refreshSubscribers = [];
 };
 
-// Global logout handler callback (set by AuthContext)
+// ---------------------------------------------------------------------------
+// Global auth-failure callback — set by AuthContext so it can clear state
+// when an unrecoverable 401 occurs (e.g. refresh token has expired).
+// ---------------------------------------------------------------------------
 let onAuthFailureCallback = null;
+
+/** Register a callback to be invoked when authentication fails unrecoverably. */
 export const setAuthFailureHandler = (callback) => {
   onAuthFailureCallback = callback;
 };
 
-// Request Interceptor: Attach Access Token
+// ---------------------------------------------------------------------------
+// Request interceptor — attaches the Bearer token to every outgoing request.
+// ---------------------------------------------------------------------------
 api.interceptors.request.use(
   (config) => {
     const token = getAccessToken();
@@ -55,24 +72,34 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Silent Token Refresh & Retry Queue
+// ---------------------------------------------------------------------------
+// Response interceptor — transparently refreshes access tokens on 401 and
+// retries the original request. Auth endpoints are excluded to avoid loops.
+// ---------------------------------------------------------------------------
+const AUTH_ENDPOINTS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/verify-email',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+];
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const isAuthEndpoint = AUTH_ENDPOINTS.some((ep) =>
+      originalRequest.url?.includes(ep)
+    );
 
-    // Do not attempt refresh on auth endpoints like login or register
-    const isAuthEndpoint =
-      originalRequest.url?.includes('/auth/login') ||
-      originalRequest.url?.includes('/auth/register') ||
-      originalRequest.url?.includes('/auth/refresh') ||
-      originalRequest.url?.includes('/auth/verify-email') ||
-      originalRequest.url?.includes('/auth/forgot-password') ||
-      originalRequest.url?.includes('/auth/reset-password');
-
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
+      // Queue subsequent 401s while a refresh is already in-flight
       if (isRefreshing) {
-        // Queue the request until the active refresh finishes
         return new Promise((resolve, reject) => {
           subscribeTokenRefresh((newToken) => {
             if (newToken) {
@@ -89,27 +116,20 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Attempt silent refresh using HttpOnly cookie
         const { data } = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
-
-        const newAccessToken = data.data.accessToken;
-        setAccessToken(newAccessToken);
-        onRefreshed(newAccessToken);
-
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        const newToken = data.data.accessToken;
+        setAccessToken(newToken);
+        onRefreshed(newToken);
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         clearAccessToken();
         onRefreshed(null);
-
-        if (onAuthFailureCallback) {
-          onAuthFailureCallback();
-        }
-
+        if (onAuthFailureCallback) onAuthFailureCallback();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
