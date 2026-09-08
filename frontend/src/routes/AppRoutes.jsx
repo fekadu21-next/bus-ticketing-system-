@@ -1,22 +1,26 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from './ProtectedRoute.jsx';
-import RoleRoute from './RoleRoute.jsx';
-import { useAuth } from '../context/AuthContext.jsx';
+import ProtectedRoute from '@/routes/ProtectedRoute';
+import RoleRoute from '@/routes/RoleRoute';
+import PermissionRoute from '@/routes/PermissionRoute';
+import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/constants/roles';
+import { PERMISSIONS } from '@/constants/permissions';
 
-// Pages
-import LoginPage from '../features/auth/pages/LoginPage.jsx';
-import RegisterPage from '../features/auth/pages/RegisterPage.jsx';
-import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage.jsx';
-import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage.jsx';
-import VerifyEmailPage from '../features/auth/pages/VerifyEmailPage.jsx';
-import ResendVerificationPage from '../features/auth/pages/ResendVerificationPage.jsx';
-import ProfilePage from '../features/auth/pages/ProfilePage.jsx';
-import ChangePasswordPage from '../features/auth/pages/ChangePasswordPage.jsx';
-import DashboardPage from '../features/auth/pages/DashboardPage.jsx';
-import AdminPage from '../features/auth/pages/AdminPage.jsx';
-import OperationsPage from '../features/auth/pages/OperationsPage.jsx';
-import VerifyTicketPage from '../features/auth/pages/VerifyTicketPage.jsx';
+// Auth Pages
+import LoginPage from '@/features/auth/pages/LoginPage';
+import RegisterPage from '@/features/auth/pages/RegisterPage';
+import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
+import VerifyEmailPage from '@/features/auth/pages/VerifyEmailPage';
+import ResendVerificationPage from '@/features/auth/pages/ResendVerificationPage';
+import ProfilePage from '@/features/auth/pages/ProfilePage';
+import ChangePasswordPage from '@/features/auth/pages/ChangePasswordPage';
+import DashboardPage from '@/features/auth/pages/DashboardPage';
+import AdminPage from '@/features/auth/pages/AdminPage';
+import OperationsPage from '@/features/auth/pages/OperationsPage';
+import VerifyTicketPage from '@/features/auth/pages/VerifyTicketPage';
+import NotFoundPage from '@/features/auth/pages/NotFoundPage';
 
 export const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
@@ -32,7 +36,7 @@ export const AppRoutes = () => {
       {/* Public Auth Routes */}
       <Route
         path="/login"
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+        element={isAuthenticated ? <Navigate to="/profile?welcome=true" replace /> : <LoginPage />}
       />
       <Route
         path="/register"
@@ -43,7 +47,7 @@ export const AppRoutes = () => {
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/resend-verification" element={<ResendVerificationPage />} />
 
-      {/* Protected Routes (Authenticated) */}
+      {/* Protected Routes (Any Authenticated User) */}
       <Route
         path="/dashboard"
         element={
@@ -73,7 +77,7 @@ export const AppRoutes = () => {
       <Route
         path="/admin"
         element={
-          <RoleRoute allowedRoles={['PLATFORM_ADMIN']}>
+          <RoleRoute allowedRoles={[ROLES.PLATFORM_ADMIN]}>
             <AdminPage />
           </RoleRoute>
         }
@@ -81,7 +85,7 @@ export const AppRoutes = () => {
       <Route
         path="/operations"
         element={
-          <RoleRoute allowedRoles={['OPERATIONAL_MANAGER', 'PLATFORM_ADMIN']}>
+          <RoleRoute allowedRoles={[ROLES.OPERATIONAL_MANAGER, ROLES.PLATFORM_ADMIN]}>
             <OperationsPage />
           </RoleRoute>
         }
@@ -89,23 +93,24 @@ export const AppRoutes = () => {
       <Route
         path="/verify-ticket"
         element={
-          <RoleRoute allowedRoles={['TICKET_VERIFIER', 'PLATFORM_ADMIN']}>
+          <RoleRoute allowedRoles={[ROLES.TICKET_VERIFIER, ROLES.PLATFORM_ADMIN]}>
             <VerifyTicketPage />
           </RoleRoute>
         }
       />
 
-      {/* Fallback 404 */}
+      {/* Permission-Protected Route Demonstration */}
       <Route
-        path="*"
+        path="/audit"
         element={
-          <div className="main-content" style={{ textAlign: 'center', padding: '60px 0' }}>
-            <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>404</h1>
-            <p style={{ color: '#64748b', marginBottom: '20px' }}>Page not found</p>
-            <Navigate to="/" replace />
-          </div>
+          <PermissionRoute permission={PERMISSIONS.VIEW_AUDIT_LOGS}>
+            <AdminPage />
+          </PermissionRoute>
         }
       />
+
+      {/* 404 Catch-All */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 };
