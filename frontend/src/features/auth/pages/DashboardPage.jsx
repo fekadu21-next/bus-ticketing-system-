@@ -1,6 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext.jsx';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/constants/roles';
+import { PERMISSIONS } from '@/constants/permissions';
+import RoleGate from '@/components/ui/RoleGate';
+import PermissionGate from '@/components/ui/PermissionGate';
 import {
   Bus,
   Search,
@@ -10,168 +15,164 @@ import {
   ShieldCheck,
   CheckCircle,
   Users,
-  Settings,
+  KeyRound,
+  User,
 } from 'lucide-react';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
-  const isPassenger = user?.roles?.includes('PASSENGER');
-  const isManager = user?.roles?.includes('OPERATIONAL_MANAGER');
-  const isVerifier = user?.roles?.includes('TICKET_VERIFIER');
-  const isAdmin = user?.roles?.includes('PLATFORM_ADMIN');
+  const primaryOrg = user?.organizationContext?.[0];
 
   return (
     <div className="main-content">
+      {/* Welcome Header */}
       <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '6px' }}>
-          Welcome, {user?.firstName} {user?.lastName}!
+        <h1 style={{ fontSize: '1.9rem', fontWeight: 800, marginBottom: '6px' }}>
+          {t('dashboard.title', { name: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User' })}
         </h1>
-        <p style={{ color: '#64748b' }}>
-          Long-distance intercity bus ticketing and operational management
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
+          {t('dashboard.subtitle')}
         </p>
       </div>
 
       {/* Organization Context Banner for Managers & Verifiers */}
-      {user?.organizationContext && user.organizationContext.length > 0 && (
-        <div
-          style={{
-            backgroundColor: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            borderRadius: '8px',
-            padding: '16px 20px',
-            marginBottom: '28px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}
-        >
+      {primaryOrg && (
+        <div className="org-banner">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Building2 size={24} color="#2563eb" />
+            <Building2 size={24} color="var(--color-primary)" />
             <div>
-              <p style={{ fontWeight: 700, color: '#1e40af' }}>
-                Operational Scope: {user.organizationContext[0].organizationName || 'Assigned Organization'}
+              <p style={{ fontWeight: 700, color: 'var(--color-text)' }}>
+                {t('dashboard.orgContext')}: {primaryOrg.organizationName || 'Assigned Organization'}
               </p>
-              <p style={{ fontSize: '0.85rem', color: '#3b82f6' }}>
-                Authorized Role: {user.organizationContext[0].role}
+              <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
+                {t('dashboard.authorizedRole')}: {primaryOrg.role}
               </p>
             </div>
           </div>
-          <span className="badge badge-manager">Active Organization Context</span>
+          <span className="badge badge-manager">{t('dashboard.activeOrg')}</span>
         </div>
       )}
 
-      {/* Role-Specific Panels */}
+      {/* Role-Specific Panels Grid */}
       <div className="dashboard-grid">
-        {/* Passenger View */}
-        {isPassenger && (
-          <>
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Search size={18} color="#2563eb" /> Search Intercity Trips
-                </h2>
-              </div>
-              <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
-                Find scheduled routes across major cities with real-time seat availability.
-              </p>
-              <button className="btn btn-primary btn-block">Find Scheduled Buses</button>
-            </div>
-
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Ticket size={18} color="#2563eb" /> My Bookings & Passes
-                </h2>
-              </div>
-              <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
-                View your confirmed tickets, digital boarding passes, and booking history.
-              </p>
-              <button className="btn btn-secondary btn-block">View My Tickets</button>
-            </div>
-          </>
-        )}
-
-        {/* Operational Manager View */}
-        {isManager && (
-          <>
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Bus size={18} color="#2563eb" /> Bus Fleet Management
-                </h2>
-              </div>
-              <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
-                Manage bus inventory, seat configurations, and maintenance statuses for your company.
-              </p>
-              <Link to="/operations" className="btn btn-primary btn-block">
-                Open Fleet Portal
-              </Link>
-            </div>
-
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Calendar size={18} color="#2563eb" /> Trip Scheduling & Pricing
-                </h2>
-              </div>
-              <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
-                Publish new long-distance departures, assign drivers, and manage ticket tariffs.
-              </p>
-              <button className="btn btn-secondary btn-block">Manage Departures</button>
-            </div>
-          </>
-        )}
-
-        {/* Ticket Verifier View */}
-        {isVerifier && (
+        {/* Passenger Panels */}
+        <RoleGate roles={[ROLES.PASSENGER]}>
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle size={18} color="#16a34a" /> Boarding Pass Verification
+              <h2 className="card-title">
+                <Search size={18} color="var(--color-primary)" />
+                {t('dashboard.passenger.searchTitle')}
               </h2>
             </div>
-            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
-              Scan QR boarding passes or enter ticket reference codes at boarding gates.
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+              {t('dashboard.passenger.searchDesc')}
             </p>
-            <Link to="/verify-ticket" className="btn btn-primary btn-block">
-              Launch Ticket Scanner
+            <button className="btn btn-primary btn-block">
+              {t('dashboard.passenger.searchBtn')}
+            </button>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">
+                <Ticket size={18} color="var(--color-primary)" />
+                {t('dashboard.passenger.bookingsTitle')}
+              </h2>
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+              {t('dashboard.passenger.bookingsDesc')}
+            </p>
+            <button className="btn btn-secondary btn-block">
+              {t('dashboard.passenger.bookingsBtn')}
+            </button>
+          </div>
+        </RoleGate>
+
+        {/* Operational Manager Panels */}
+        <RoleGate roles={[ROLES.OPERATIONAL_MANAGER]}>
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">
+                <Bus size={18} color="var(--color-primary)" />
+                {t('dashboard.manager.fleetTitle')}
+              </h2>
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+              {t('dashboard.manager.fleetDesc')}
+            </p>
+            <Link to="/operations" className="btn btn-primary btn-block">
+              {t('dashboard.manager.fleetBtn')}
             </Link>
           </div>
-        )}
 
-        {/* Platform Admin View */}
-        {isAdmin && (
-          <>
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ShieldCheck size={18} color="#dc2626" /> Platform Governance
-                </h2>
-              </div>
-              <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
-                System-wide administrative controls, role assignment, and organization oversight.
-              </p>
-              <Link to="/admin" className="btn btn-primary btn-block">
-                Platform Admin Portal
-              </Link>
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">
+                <Calendar size={18} color="var(--color-primary)" />
+                {t('dashboard.manager.scheduleTitle')}
+              </h2>
             </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+              {t('dashboard.manager.scheduleDesc')}
+            </p>
+            <button className="btn btn-secondary btn-block">
+              {t('dashboard.manager.scheduleBtn')}
+            </button>
+          </div>
+        </RoleGate>
 
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Users size={18} color="#dc2626" /> Security & Audit Logs
-                </h2>
-              </div>
-              <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
-                Review real-time authentication events, login failures, lockouts, and token reuse.
-              </p>
-              <button className="btn btn-secondary btn-block">Inspect Audit Trails</button>
+        {/* Ticket Verifier Panel */}
+        <RoleGate roles={[ROLES.TICKET_VERIFIER]}>
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">
+                <CheckCircle size={18} color="var(--color-success)" />
+                {t('dashboard.verifier.title')}
+              </h2>
             </div>
-          </>
-        )}
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+              {t('dashboard.verifier.desc')}
+            </p>
+            <Link to="/verify-ticket" className="btn btn-primary btn-block">
+              {t('dashboard.verifier.btn')}
+            </Link>
+          </div>
+        </RoleGate>
+
+        {/* Platform Admin Panels */}
+        <RoleGate roles={[ROLES.PLATFORM_ADMIN]}>
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">
+                <ShieldCheck size={18} color="var(--color-danger)" />
+                {t('dashboard.admin.govTitle')}
+              </h2>
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+              {t('dashboard.admin.govDesc')}
+            </p>
+            <Link to="/admin" className="btn btn-primary btn-block">
+              {t('dashboard.admin.govBtn')}
+            </Link>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">
+                <Users size={18} color="var(--color-danger)" />
+                {t('dashboard.admin.auditTitle')}
+              </h2>
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+              {t('dashboard.admin.auditDesc')}
+            </p>
+            <button className="btn btn-secondary btn-block">
+              {t('dashboard.admin.auditBtn')}
+            </button>
+          </div>
+        </RoleGate>
       </div>
     </div>
   );
