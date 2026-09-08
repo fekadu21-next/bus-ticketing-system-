@@ -1,108 +1,86 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { verifyEmailApi } from '../auth.api.js';
+import { useTranslation } from 'react-i18next';
+import { verifyEmailApi } from '@/features/auth/auth.api';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 
-export const VerifyEmailPage = () => {
+const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const token = searchParams.get('token') || '';
 
-  const [status, setStatus] = useState('verifying'); // verifying, success, error
+  const [status, setStatus] = useState('verifying'); // verifying | success | error
   const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setMessage('Verification token is missing from the URL.');
+      setMessage(t('auth.verifyEmail.missingToken'));
       return;
     }
 
-    const performVerification = async () => {
+    const verify = async () => {
       try {
         const response = await verifyEmailApi({ token });
         setStatus('success');
-        setMessage(response.message || 'Email verified successfully!');
+        setMessage(response.message || t('auth.verifyEmail.successTitle'));
       } catch (err) {
         setStatus('error');
-        setMessage(
-          err.response?.data?.message ||
-            err.message ||
-            'Verification failed. The link may have expired or already been used.'
-        );
+        setMessage(err.response?.data?.message || err.message || t('auth.errors.verifyFailed'));
       }
     };
 
-    performVerification();
-  }, [token]);
+    verify();
+  }, [token, t]);
 
   return (
     <div className="auth-wrapper">
       <div className="auth-card" style={{ textAlign: 'center' }}>
         <div className="auth-header">
-          <h1>Email Verification</h1>
+          <h1>{t('auth.verifyEmail.title')}</h1>
         </div>
 
         {status === 'verifying' && (
           <div style={{ padding: '32px 0' }}>
-            <div className="spinner" style={{ margin: '0 auto 16px' }}></div>
-            <p style={{ color: '#64748b' }}>Verifying your email address, please wait...</p>
+            <LoadingSpinner label={t('auth.verifyEmail.verifying')} />
           </div>
         )}
 
         {status === 'success' && (
-          <div style={{ padding: '16px 0' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                backgroundColor: '#ecfdf5',
-                color: '#10b981',
-                marginBottom: '16px',
-              }}
-            >
+          <div style={{ padding: '12px 0' }}>
+            <div className="icon-circle icon-circle-success" style={{ margin: '0 auto 16px' }}>
               <CheckCircle2 size={36} />
             </div>
-            <h3 style={{ color: '#065f46', marginBottom: '8px' }}>Verified!</h3>
-            <p style={{ color: '#475569', fontSize: '0.95rem', marginBottom: '24px' }}>
+            <h3 style={{ fontWeight: 800, color: 'var(--color-success)', marginBottom: 8 }}>
+              {t('auth.verifyEmail.successTitle')}
+            </h3>
+            <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
               {message}
             </p>
             <Link to="/login" className="btn btn-primary btn-block">
-              Continue to Login <ArrowRight size={16} />
+              {t('auth.verifyEmail.continueToLogin')} <ArrowRight size={15} />
             </Link>
           </div>
         )}
 
         {status === 'error' && (
-          <div style={{ padding: '16px 0' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                backgroundColor: '#fef2f2',
-                color: '#ef4444',
-                marginBottom: '16px',
-              }}
-            >
+          <div style={{ padding: '12px 0' }}>
+            <div className="icon-circle icon-circle-danger" style={{ margin: '0 auto 16px' }}>
               <AlertCircle size={36} />
             </div>
-            <h3 style={{ color: '#991b1b', marginBottom: '8px' }}>Verification Unsuccessful</h3>
-            <p style={{ color: '#475569', fontSize: '0.95rem', marginBottom: '24px' }}>
+            <h3 style={{ fontWeight: 800, color: 'var(--color-danger)', marginBottom: 8 }}>
+              {t('auth.verifyEmail.errorTitle')}
+            </h3>
+            <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
               {message}
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Link to="/resend-verification" className="btn btn-primary btn-block">
-                Request New Verification Link
+                {t('auth.verifyEmail.requestNewLink')}
               </Link>
               <Link to="/login" className="btn btn-secondary btn-block">
-                Back to Sign In
+                {t('auth.verifyEmail.backToLogin')}
               </Link>
             </div>
           </div>
