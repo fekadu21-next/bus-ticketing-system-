@@ -1,0 +1,226 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "back": "Back",
+    "next": "Next",
+    "error": "Error",
+    "success": "Success",
+    "or": "or",
+    "required": "Required"
+  },
+  "nav": {
+    "brand": "Intercity Bus Lines",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "operations": "Operations",
+    "verifyPass": "Verify Pass",
+    "profile": "Profile",
+    "signIn": "Sign In",
+    "createAccount": "Create Account",
+    "logout": "Logout",
+    "switchLang": "አማርኛ"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your bus ticketing account",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "name@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
+      "submitBtn": "Sign In",
+      "submitting": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register here"
+    },
+    "register": {
+      "title": "Create an Account",
+      "subtitle": "Register as a passenger to book intercity trips",
+      "firstNameLabel": "First Name",
+      "firstNamePlaceholder": "Abebe",
+      "lastNameLabel": "Last Name",
+      "lastNamePlaceholder": "Kebede",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "abebe@example.com",
+      "phoneLabel": "Phone Number",
+      "phonePlaceholder": "+251 911 234567",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Min 8 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Repeat password",
+      "submitBtn": "Register Account",
+      "submitting": "Creating account...",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in here",
+      "successTitle": "Registration Successful",
+      "successText": "Account created! Check your email for a verification link.",
+      "proceedBtn": "Proceed to Sign In",
+      "strengthWeak": "Weak",
+      "strengthFair": "Fair",
+      "strengthGood": "Good",
+      "strengthStrong": "Strong"
+    },
+    "logout": {
+      "loggingOut": "Signing out..."
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "subtitle": "We'll send you instructions to reset your password",
+      "emailLabel": "Account Email Address",
+      "emailPlaceholder": "name@example.com",
+      "submitBtn": "Send Reset Link",
+      "submitting": "Sending Link...",
+      "sentTitle": "Check Your Inbox",
+      "sentText": "If an account is associated with {{email}}, you will receive a password reset link shortly.",
+      "backToLogin": "Back to Sign In"
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "subtitle": "Create a secure new password for your account",
+      "newPasswordLabel": "New Password",
+      "confirmPasswordLabel": "Confirm New Password",
+      "submitBtn": "Reset Password",
+      "submitting": "Updating password...",
+      "successTitle": "Password Updated",
+      "signInNow": "Sign In Now",
+      "missingToken": "Reset token is missing from the link.",
+      "invalidLink": "Invalid or missing reset token. Please request a new password reset link."
+    },
+    "verifyEmail": {
+      "title": "Email Verification",
+      "verifying": "Verifying your email address, please wait...",
+      "successTitle": "Verified!",
+      "errorTitle": "Verification Unsuccessful",
+      "continueToLogin": "Continue to Login",
+      "requestNewLink": "Request New Verification Link",
+      "backToLogin": "Back to Sign In",
+      "missingToken": "Verification token is missing from the URL."
+    },
+    "resendVerification": {
+      "title": "Resend Verification",
+      "subtitle": "Enter your email to receive a new activation link",
+      "emailLabel": "Account Email",
+      "emailPlaceholder": "name@example.com",
+      "submitBtn": "Resend Verification Email",
+      "submitting": "Sending Link...",
+      "sentTitle": "Link Dispatched",
+      "sentText": "If an unverified account exists for {{email}}, a new verification link has been sent.",
+      "backToLogin": "Back to Sign In"
+    },
+    "changePassword": {
+      "title": "Change Password",
+      "subtitle": "Update your password to keep your account secure",
+      "currentPasswordLabel": "Current Password",
+      "newPasswordLabel": "New Password",
+      "confirmPasswordLabel": "Confirm New Password",
+      "submitBtn": "Update Password",
+      "submitting": "Updating...",
+      "backToProfile": "Back to Profile",
+      "successMsg": "Your password has been changed successfully."
+    },
+    "errors": {
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 8 characters long",
+      "loginFailed": "Failed to login",
+      "registerFailed": "Registration failed",
+      "changeFailed": "Failed to change password",
+      "resetFailed": "Failed to reset password. The link may have expired.",
+      "verifyFailed": "Verification failed. The link may have expired or already been used."
+    }
+  },
+  "dashboard": {
+    "title": "Welcome, {{name}}!",
+    "subtitle": "Long-distance intercity bus ticketing and operational management",
+    "orgContext": "Operational Scope",
+    "activeOrg": "Active Organization Context",
+    "authorizedRole": "Authorized Role",
+    "passenger": {
+      "searchTitle": "Search Intercity Trips",
+      "searchDesc": "Find scheduled routes across major cities with real-time seat availability.",
+      "searchBtn": "Find Scheduled Buses",
+      "bookingsTitle": "My Bookings & Passes",
+      "bookingsDesc": "View your confirmed tickets, digital boarding passes, and booking history.",
+      "bookingsBtn": "View My Tickets"
+    },
+    "manager": {
+      "fleetTitle": "Bus Fleet Management",
+      "fleetDesc": "Manage bus inventory, seat configurations, and maintenance statuses.",
+      "fleetBtn": "Open Fleet Portal",
+      "scheduleTitle": "Trip Scheduling & Pricing",
+      "scheduleDesc": "Publish new long-distance departures, assign drivers, and manage ticket tariffs.",
+      "scheduleBtn": "Manage Departures"
+    },
+    "verifier": {
+      "title": "Boarding Pass Verification",
+      "desc": "Scan QR boarding passes or enter ticket reference codes at boarding gates.",
+      "btn": "Launch Ticket Scanner"
+    },
+    "admin": {
+      "govTitle": "Platform Governance",
+      "govDesc": "System-wide administrative controls, role assignment, and organization oversight.",
+      "govBtn": "Platform Admin Portal",
+      "auditTitle": "Security & Audit Logs",
+      "auditDesc": "Review real-time authentication events, login failures, lockouts, and token reuse.",
+      "auditBtn": "Inspect Audit Trails"
+    }
+  },
+  "profile": {
+    "title": "User Profile",
+    "subtitle": "Manage your account settings and credentials",
+    "welcomeTitle": "Welcome to Your Account!",
+    "welcomeSubtitle": "Your profile is ready. Here's a summary of your access.",
+    "changePasswordBtn": "Change Password",
+    "signOutBtn": "Sign Out",
+    "personalInfo": "Personal Information",
+    "fullName": "Full Name",
+    "emailAddress": "Email Address",
+    "phoneNumber": "Phone Number",
+    "notProvided": "Not provided",
+    "activeAccount": "Active Account",
+    "suspended": "Suspended",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "rolesAccess": "Roles & System Access",
+    "assignedRoles": "Assigned Roles",
+    "orgContext": "Operational Organization Context",
+    "orgId": "Org ID",
+    "activePermissions": "Active Permissions"
+  },
+  "admin": {
+    "title": "Platform Admin Portal",
+    "subtitle": "Global governance, user role assignments, and transportation organization oversight",
+    "roleBadge": "Platform Administrator",
+    "orgsTitle": "Bus Companies & Associations",
+    "orgsDesc": "Approve and manage private bus companies and transport associations.",
+    "usersTitle": "User & Role Management",
+    "usersDesc": "Control role assignments and associate them with operational organizations.",
+    "systemRoles": "System Roles",
+    "auditTitle": "Security & Audit Trails",
+    "auditDesc": "Audit records for login attempts, rate limits, lockouts, and token reuse.",
+    "auditBtn": "View Security Log Stream"
+  },
+  "operations": {
+    "title": "Operations Portal",
+    "roleBadge": "Operational Management",
+    "subtitle": "Scoped operational controls: Fleet management, trip scheduling, and passenger bookings",
+    "scopeNote": "Security Boundary Enforced by Backend",
+    "scopeDesc": "All API requests are automatically scoped to Organization ID: {{orgId}}.",
+    "fleetTitle": "Company Bus Fleet",
+    "fleetDesc": "Buses assigned to your operational division.",
+    "addBusBtn": "Add New Bus",
+    "scheduleTitle": "Intercity Schedules",
+    "scheduleDesc": "Daily scheduled departures, stops, and pricing tariffs.",
+    "scheduleTripBtn": "Schedule Trip"
+  },
+  "notFound": {
+    "title": "404",
+    "subtitle": "Page not found",
+    "backBtn": "Go to Dashboard"
+  },
+  "loadingSession": "Loading session...",
+  "checkingPermissions": "Checking permissions..."
+}

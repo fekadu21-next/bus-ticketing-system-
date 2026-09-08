@@ -1,0 +1,226 @@
+{
+  "common": {
+    "loading": "በመጫን ላይ...",
+    "submit": "አስገባ",
+    "cancel": "ሰርዝ",
+    "save": "አስቀምጥ",
+    "back": "ተመለስ",
+    "next": "ቀጣይ",
+    "error": "ስህተት",
+    "success": "ተሳካ",
+    "or": "ወይም",
+    "required": "ግዴታ"
+  },
+  "nav": {
+    "brand": "የቅርብ ርቀት አውቶቡስ",
+    "dashboard": "ዳሽቦርድ",
+    "admin": "አስተዳደር",
+    "operations": "ኦፕሬሽንስ",
+    "verifyPass": "ቲኬት አረጋጋጭ",
+    "profile": "መገለጫ",
+    "signIn": "ግባ",
+    "createAccount": "መለያ ፍጠር",
+    "logout": "ውጣ",
+    "switchLang": "English"
+  },
+  "auth": {
+    "login": {
+      "title": "እንኳን ደህና መጡ",
+      "subtitle": "ወደ አውቶቡስ ቲኬት መለያዎ ይግቡ",
+      "emailLabel": "የኢሜይል አድራሻ",
+      "emailPlaceholder": "ስም@ምሳሌ.com",
+      "passwordLabel": "የይለፍ ቃል",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "የይለፍ ቃልዎን ረሱ?",
+      "submitBtn": "ግባ",
+      "submitting": "በመግባት ላይ...",
+      "noAccount": "መለያ የለዎትም?",
+      "registerLink": "ይመዝገቡ"
+    },
+    "register": {
+      "title": "መለያ ፍጠር",
+      "subtitle": "ቲኬት ለመያዝ እንደ ተሳፋሪ ይመዝገቡ",
+      "firstNameLabel": "ስም",
+      "firstNamePlaceholder": "አበበ",
+      "lastNameLabel": "የአባት ስም",
+      "lastNamePlaceholder": "ከበደ",
+      "emailLabel": "የኢሜይል አድራሻ",
+      "emailPlaceholder": "abebe@ምሳሌ.com",
+      "phoneLabel": "ስልክ ቁጥር",
+      "phonePlaceholder": "+251 911 234567",
+      "passwordLabel": "የይለፍ ቃል",
+      "passwordPlaceholder": "ቢያንስ 8 ቁምፊዎች",
+      "confirmPasswordLabel": "የይለፍ ቃል ያረጋግጡ",
+      "confirmPasswordPlaceholder": "የይለፍ ቃሉን ይደግሙ",
+      "submitBtn": "ተመዝገብ",
+      "submitting": "መለያ በመፍጠር ላይ...",
+      "hasAccount": "ቀድሞ መለያ አለዎት?",
+      "loginLink": "እዚህ ይግቡ",
+      "successTitle": "ምዝገባ ተሳካ",
+      "successText": "መለያ ተፈጠረ! ለማረጋጊያ ኢሜሎ ይፈትሹ።",
+      "proceedBtn": "ወደ ግቢ ቀጥሉ",
+      "strengthWeak": "ደካማ",
+      "strengthFair": "መካከለኛ",
+      "strengthGood": "ጥሩ",
+      "strengthStrong": "ጠንካራ"
+    },
+    "logout": {
+      "loggingOut": "በመውጣት ላይ..."
+    },
+    "forgotPassword": {
+      "title": "የይለፍ ቃል ረሱ",
+      "subtitle": "ለማስጠኛ ኢሜሎ ይልካሎ",
+      "emailLabel": "የኢሜይል አድራሻ",
+      "emailPlaceholder": "ስም@ምሳሌ.com",
+      "submitBtn": "የማስጠኛ ኢሜይል ላክ",
+      "submitting": "በመላክ ላይ...",
+      "sentTitle": "ኢሜሎዎን ይፈትሹ",
+      "sentText": "{{email}} ጋር የተያያዘ መለያ ካለ, ማስጠኛ ኢሜሎ ይደርሶታል።",
+      "backToLogin": "ወደ ግቢ ተመለስ"
+    },
+    "resetPassword": {
+      "title": "የይለፍ ቃል ይቀይሩ",
+      "subtitle": "ለመለያዎ ደህንነቱ የተጠበቀ የይለፍ ቃል ይፍጠሩ",
+      "newPasswordLabel": "አዲስ የይለፍ ቃል",
+      "confirmPasswordLabel": "አዲስ የይለፍ ቃል ያረጋግጡ",
+      "submitBtn": "የይለፍ ቃል ቀይር",
+      "submitting": "በማዘመን ላይ...",
+      "successTitle": "የይለፍ ቃሉ ተቀይሯል",
+      "signInNow": "አሁን ይግቡ",
+      "missingToken": "የማስጠኛ ኮድ ከሊንኩ ጠፍቷል።",
+      "invalidLink": "ልክ ያልሆነ ወይም የጠፋ ኮድ። አዲስ ማስጠኛ ኢሜይል ይጠይቁ።"
+    },
+    "verifyEmail": {
+      "title": "የኢሜይል ማረጋገጫ",
+      "verifying": "ኢሜሎዎን በማረጋገጥ ላይ፣ እባክዎ ይጠብቁ...",
+      "successTitle": "ተረጋግጧል!",
+      "errorTitle": "ማረጋገጫ አልተሳካም",
+      "continueToLogin": "ወደ ግቢ ቀጥሉ",
+      "requestNewLink": "አዲስ ማረጋጊያ ኢሜይል ጠይቅ",
+      "backToLogin": "ወደ ግቢ ተመለስ",
+      "missingToken": "ማረጋጊያ ኮዱ ከሊንኩ ጠፍቷል።"
+    },
+    "resendVerification": {
+      "title": "ማረጋጊያ ኢሜይል ድጋሚ ላክ",
+      "subtitle": "አዲስ ማረጋጊያ ኢሜይል ለመቀበል ኢሜሎዎን ያስገቡ",
+      "emailLabel": "የኢሜይል አድራሻ",
+      "emailPlaceholder": "ስም@ምሳሌ.com",
+      "submitBtn": "ማረጋጊያ ኢሜይል ላክ",
+      "submitting": "በመላክ ላይ...",
+      "sentTitle": "ኢሜይሉ ተላከ",
+      "sentText": "{{email}} ጋር ያልተረጋገጠ መለያ ካለ፣ አዲስ ኢሜይል ይደርሶታል።",
+      "backToLogin": "ወደ ግቢ ተመለስ"
+    },
+    "changePassword": {
+      "title": "የይለፍ ቃል ቀይር",
+      "subtitle": "መለያዎን ደህንነቱ ለመጠበቅ የይለፍ ቃልዎን ያዘምኑ",
+      "currentPasswordLabel": "አሁን ያለው የይለፍ ቃል",
+      "newPasswordLabel": "አዲስ የይለፍ ቃል",
+      "confirmPasswordLabel": "አዲስ የይለፍ ቃል ያረጋግጡ",
+      "submitBtn": "የይለፍ ቃል አዘምን",
+      "submitting": "በማዘመን ላይ...",
+      "backToProfile": "ወደ መገለጫ ተመለስ",
+      "successMsg": "የይለፍ ቃልዎ በተሳካ ሁኔታ ተቀይሯል።"
+    },
+    "errors": {
+      "passwordMismatch": "የይለፍ ቃሎቹ አይዛመዱም",
+      "passwordTooShort": "የይለፍ ቃሉ ቢያንስ 8 ቁምፊዎች ሊኖሩት ይገባል",
+      "loginFailed": "መግባት አልተሳካም",
+      "registerFailed": "ምዝገባ አልተሳካም",
+      "changeFailed": "የይለፍ ቃሉን መቀየር አልተሳካም",
+      "resetFailed": "የይለፍ ቃሉን ማስጠኛ አልተሳካም። ሊንኩ ጊዜው ሊያልፍ ይችላል።",
+      "verifyFailed": "ማረጋጋጥ አልተሳካም። ሊንኩ ጊዜው አልፏል ወይም አስቀድሞ ጥቅም ላይ ውሏል።"
+    }
+  },
+  "dashboard": {
+    "title": "እንኳን ደህና መጡ፣ {{name}}!",
+    "subtitle": "የሩቅ ርቀት የቅርብ ርቀት አውቶቡስ ቲኬት እና ኦፕሬሽናል አስተዳደር",
+    "orgContext": "የሥራ ወሰን",
+    "activeOrg": "ንቁ ድርጅት አውድ",
+    "authorizedRole": "ፍቃድ ያለው ሚና",
+    "passenger": {
+      "searchTitle": "የቅርብ ርቀት ጉዞዎችን ፈልጉ",
+      "searchDesc": "በቅጽበት ቦታ መረጃ ጋር ዋና ከተሞችን ጉዞዎች ያግኙ።",
+      "searchBtn": "ሌሎቹ አውቶቡሶች ፈልጉ",
+      "bookingsTitle": "ቦታ ምዝገባዎቼ እና ትኬቶቼ",
+      "bookingsDesc": "የተረጋገጡ ቲኬቶቹን፣ ዲጂታል ቦርዲንግ ፓሶቹን ይፈትሹ።",
+      "bookingsBtn": "ቲኬቶቼን ይፈትሹ"
+    },
+    "manager": {
+      "fleetTitle": "የአውቶቡስ መኪና አስተዳደር",
+      "fleetDesc": "የአውቶቡሶቹን ቁጥር፣ ወንበር ውቅር እና ጥገና ሁኔታ ያቀናብሩ።",
+      "fleetBtn": "ወደ Fleet ፖርታሉ ይሂዱ",
+      "scheduleTitle": "ጉዞ መርሃ ግብር እና ዋጋ",
+      "scheduleDesc": "አዲስ ጉዞዎች ያሳትሙ፣ ሾፌሮቹን ይምደቡ፣ ታሪፎቹን ያቀናብሩ።",
+      "scheduleBtn": "ጉዞዎችን ያቀናብሩ"
+    },
+    "verifier": {
+      "title": "የቦርዲንግ ፓስ ማረጋጋጫ",
+      "desc": "QR ቦርዲንግ ፓሶቹን ይቃኙ ወይም ቲኬት ማጣቀሻ ኮዶቹን ያስገቡ።",
+      "btn": "ቲኬት ስካነርን ያስጀምሩ"
+    },
+    "admin": {
+      "govTitle": "የፕላትፎርም አስተዳደር",
+      "govDesc": "ሥርዓት-ሰፊ አስተዳደራዊ ቁጥጥሮች፣ ሚና ምደባ እና ድርጅት ቁጥጥር።",
+      "govBtn": "ወደ አስተዳደር ፖርታሉ ይሂዱ",
+      "auditTitle": "ደህንነት እና ኦዲት ምዝግቦች",
+      "auditDesc": "የማረጋጋጫ ክስተቶቹን፣ ያልተሳኩ ሙከራዎቹን ፣ ቶኬን አጠቃቀሞቹን ይፈትሹ።",
+      "auditBtn": "ኦዲት ምዝግቦቹን ይፈትሹ"
+    }
+  },
+  "profile": {
+    "title": "የተጠቃሚ መገለጫ",
+    "subtitle": "የመለያ ቅንብሮቹን እና ምስክርነቶቹን ያቀናብሩ",
+    "welcomeTitle": "ወደ መለያዎ እንኳን ደህና መጡ!",
+    "welcomeSubtitle": "መገለጫዎ ዝግጁ ነው። ያለዎ ፍቃዶቹ ማጠቃለያ ይህ ነው።",
+    "changePasswordBtn": "የይለፍ ቃል ቀይር",
+    "signOutBtn": "ውጣ",
+    "personalInfo": "የግል መረጃ",
+    "fullName": "ሙሉ ስም",
+    "emailAddress": "የኢሜይል አድራሻ",
+    "phoneNumber": "ስልክ ቁጥር",
+    "notProvided": "አልተሰጠም",
+    "activeAccount": "ንቁ መለያ",
+    "suspended": "ታግዷል",
+    "verified": "ተረጋጋጧል",
+    "unverified": "አልተረጋገጠም",
+    "rolesAccess": "ሚናዎች እና ስርዓት ፍቃዶች",
+    "assignedRoles": "የተሰጡ ሚናዎች",
+    "orgContext": "የሥራ ድርጅት አውድ",
+    "orgId": "ድርጅት መለያ",
+    "activePermissions": "ንቁ ፍቃዶች"
+  },
+  "admin": {
+    "title": "የፕላትፎርም አስተዳደር ፖርታል",
+    "subtitle": "ዓለም አቀፍ አስተዳደር፣ የተጠቃሚ ሚና ምደባ እና ድርጅት ቁጥጥር",
+    "roleBadge": "የፕላትፎርም አስተዳዳሪ",
+    "orgsTitle": "የአውቶቡስ ኩባንያዎች እና ማህበሮች",
+    "orgsDesc": "የግል አውቶቡስ ኩባንያዎቹን እና የትራንስፖርት ማህበሮቹን ያፅድቁ።",
+    "usersTitle": "ተጠቃሚ እና ሚና አስተዳደር",
+    "usersDesc": "ሚና ምደባዎቹን ያቀናብሩ እና ከሥራ ድርጅቶቹ ጋር ያዛምዱ።",
+    "systemRoles": "የስርዓት ሚናዎች",
+    "auditTitle": "ደህንነት እና ኦዲት ምዝግቦች",
+    "auditDesc": "ለግባ ሙከራዎቹ፣ ፍጥነት ገደቦቹ፣ ብሎኮቹ እና ቶኬን አጠቃቀሞቹ ኦዲት ምዝግቦቹ።",
+    "auditBtn": "የደህንነት ምዝግቦቹን ይፈትሹ"
+  },
+  "operations": {
+    "title": "ኦፕሬሽን ፖርታል",
+    "roleBadge": "ኦፕሬሽናል አስተዳደር",
+    "subtitle": "ወሰን ያለው ቁጥጥር፦ የ Fleet አስተዳደር፣ ጉዞ መርሃ ግብር እና ቦታ ምዝገባ",
+    "scopeNote": "ከኋላ ክፍሉ የተፈፀመ የደህንነት ወሰን",
+    "scopeDesc": "ሁሉም የ API ጥያቄዎች ለድርጅት ID {{orgId}} ወሰን ተደርጓቸዋል።",
+    "fleetTitle": "የኩባንያ አውቶቡሶች",
+    "fleetDesc": "ለሥራ ክፍልዎ የተሰጡ አውቶቡሶቹ።",
+    "addBusBtn": "አዲስ አውቶቡስ ጨምር",
+    "scheduleTitle": "የቅርብ ርቀት መርሃ ግብሮች",
+    "scheduleDesc": "ዕለታዊ የተቀጠሩ ጉዞዎቹ፣ ማቆሚያዎቹ እና ዋጋ ታሪፎቹ።",
+    "scheduleTripBtn": "ጉዞ ያቅዱ"
+  },
+  "notFound": {
+    "title": "404",
+    "subtitle": "ገጹ አልተገኘም",
+    "backBtn": "ወደ ዳሽቦርድ ሂድ"
+  },
+  "loadingSession": "ሴሽን በመጫን ላይ...",
+  "checkingPermissions": "ፍቃዶቹ በመፈተሽ ላይ..."
+}
