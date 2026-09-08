@@ -4,10 +4,10 @@ import {
   registerApi,
   logoutApi,
   refreshApi,
-  getMeApi,
   changePasswordApi,
-} from '../features/auth/auth.api.js';
-import { setAccessToken, clearAccessToken, setAuthFailureHandler } from '../services/api.js';
+} from '@/features/auth/auth.api';
+import { setAccessToken, clearAccessToken, setAuthFailureHandler } from '@/services/api';
+import { ROLES } from '@/constants/roles';
 
 const AuthContext = createContext(null);
 
@@ -17,30 +17,35 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Updates access token in both React state and Axios memory
+  // ---------------------------------------------------------------------------
+  // Internal helpers
+  // ---------------------------------------------------------------------------
+
+  /** Sync token to both React state and the Axios in-memory store */
   const updateAccessToken = useCallback((token) => {
     setAccessToken(token);
     setTokenState(token);
   }, []);
 
-  // Clears user and auth state
+  /** Wipe all auth state on logout or expired session */
   const resetAuthState = useCallback(() => {
     clearAccessToken();
     setTokenState(null);
     setUser(null);
   }, []);
 
-  // Initializes session: attempts silent refresh via HttpOnly cookie
+  // ---------------------------------------------------------------------------
+  // Session initialization — silently tries to refresh on every app load
+  // ---------------------------------------------------------------------------
   const checkAuth = useCallback(async () => {
     setIsLoading(true);
     try {
-      const refreshResult = await refreshApi();
-      if (refreshResult.success && refreshResult.data?.accessToken) {
-        updateAccessToken(refreshResult.data.accessToken);
-        setUser(refreshResult.data.user);
+      const result = await refreshApi();
+      if (result.success && result.data?.accessToken) {
+        updateAccessToken(result.data.accessToken);
+        setUser(result.data.user);
       }
     } catch {
-      // User is simply not logged in yet
       resetAuthState();
     } finally {
       setIsLoading(false);
@@ -48,15 +53,15 @@ export const AuthProvider = ({ children }) => {
   }, [updateAccessToken, resetAuthState]);
 
   useEffect(() => {
-    // Configure global 401 failure handler for Axios interceptor
-    setAuthFailureHandler(() => {
-      resetAuthState();
-    });
-
+    // Wire the global Axios 401 handler to our logout function
+    setAuthFailureHandler(resetAuthState);
     checkAuth();
   }, [checkAuth, resetAuthState]);
 
-  // Login action
+  // ---------------------------------------------------------------------------
+  // Public actions
+  // ---------------------------------------------------------------------------
+
   const login = async (email, password) => {
     setError(null);
     try {
@@ -74,7 +79,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register action
   const register = async (userData) => {
     setError(null);
     try {
@@ -88,25 +92,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout action
   const logout = async () => {
     try {
       await logoutApi();
     } catch {
-      // Ignore network errors during logout
+      // Ignore network errors during logout — always clear local state
     } finally {
       resetAuthState();
     }
   };
 
-  // Change password action
   const changePassword = async ({ currentPassword, newPassword, confirmPassword }) => {
     try {
-      const response = await changePasswordApi({
-        currentPassword,
-        newPassword,
-        confirmPassword,
-      });
+      const response = await changePasswordApi({ currentPassword, newPassword, confirmPassword });
       if (response.success && response.data?.accessToken) {
         updateAccessToken(response.data.accessToken);
       }
@@ -117,35 +115,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Authorization helper methods
+  /** Clear any stored auth error */
+  const clearError = () => setError(null);
+
+  // ---------------------------------------------------------------------------
+  // Authorization helpers
+  // ---------------------------------------------------------------------------
+
   const hasRole = (role) => {
-    if (!user || !user.roles) return false;
-    if (user.roles.includes('PLATFORM_ADMIN')) return true;
+    if (!user?.roles) return false;
+    if (user.roles.includes(ROLES.PLATFORM_ADMIN)) return true;
     return user.roles.includes(role);
   };
 
   const hasPermission = (permission) => {
-    if (!user || !user.permissions) return false;
-    if (user.roles?.includes('PLATFORM_ADMIN')) return true;
+    if (!user?.permissions) return false;
+    if (user.roles?.includes(ROLES.PLATFORM_ADMIN)) return true;
     return user.permissions.includes(permission);
   };
 
-  const isPlatformAdmin = () => hasRole('PLATFORM_ADMIN');
-  const isOperationalManager = () => user?.roles?.includes('OPERATIONAL_MANAGER') || false;
-  const isTicketVerifier = () => user?.roles?.includes('TICKET_VERIFIER') || false;
-  const isPassenger = () => user?.roles?.includes('PASSENGER') || false;
+  const isPlatformAdmin = () => user?.roles?.includes(ROLES.PLATFORM_ADMIN) || false;
+  const isOperationalManager = () => user?.roles?.includes(ROLES.OPERATIONAL_MANAGER) || false;
+  const isTicketVerifier = () => user?.roles?.includes(ROLES.TICKET_VERIFIER) || false;
+  const isPassenger = () => user?.roles?.includes(ROLES.PASSENGER) || false;
 
+  // ---------------------------------------------------------------------------
+  // Context value
+  // ---------------------------------------------------------------------------
   const value = {
     user,
     accessToken,
     isAuthenticated: Boolean(user && accessToken),
     isLoading,
     error,
+    // Actions
     login,
     register,
     logout,
     checkAuth,
     changePassword,
+    clearError,
+    // Authorization helpers
     hasRole,
     hasPermission,
     isPlatformAdmin,
