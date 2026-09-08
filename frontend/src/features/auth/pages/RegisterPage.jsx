@@ -1,10 +1,40 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext.jsx';
-import { AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/context/AuthContext';
+import Alert from '@/components/ui/Alert';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import { Bus, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
 
-export const RegisterPage = () => {
+/** Returns a strength score 0–4 and a label key */
+const getPasswordStrength = (password) => {
+  if (!password) return { score: 0, labelKey: '' };
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  const labels = ['', 'strengthWeak', 'strengthFair', 'strengthGood', 'strengthStrong'];
+  return { score, labelKey: labels[score] };
+};
+
+const STRENGTH_COLORS = {
+  1: 'active-weak',
+  2: 'active-fair',
+  3: 'active-good',
+  4: 'active-strong',
+};
+
+const STRENGTH_TEXT_COLORS = {
+  1: '#ef4444',
+  2: '#f97316',
+  3: '#eab308',
+  4: '#22c55e',
+};
+
+const RegisterPage = () => {
   const { register } = useAuth();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -15,16 +45,18 @@ export const RegisterPage = () => {
     confirmPassword: '',
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorDetails, setErrorDetails] = useState([]);
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { score, labelKey } = getPasswordStrength(formData.password);
+
   const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    if (errorMessage) setErrorMessage('');
   };
 
   const handleSubmit = async (e) => {
@@ -33,12 +65,11 @@ export const RegisterPage = () => {
     setErrorDetails([]);
 
     if (formData.password !== formData.confirmPassword) {
-      setErrorMessage('Passwords do not match');
+      setErrorMessage(t('auth.errors.passwordMismatch'));
       return;
     }
-
     if (formData.password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters long');
+      setErrorMessage(t('auth.errors.passwordTooShort'));
       return;
     }
 
@@ -47,209 +78,145 @@ export const RegisterPage = () => {
     setIsSubmitting(false);
 
     if (result.success) {
-      setSuccessMessage(
-        result.message ||
-          'Account created successfully! We sent a verification link to your email address.'
-      );
+      setSuccessMessage(result.message || t('auth.register.successText'));
     } else {
       setErrorMessage(result.error);
-      if (result.errors) {
-        setErrorDetails(result.errors);
-      }
+      if (result.errors) setErrorDetails(result.errors);
     }
   };
 
-  return (
-    <div className="auth-wrapper">
-      <div className="auth-card" style={{ maxWidth: '540px' }}>
-        <div className="auth-header">
-          <h1>Create an Account</h1>
-          <p>Register as a passenger to book intercity trips</p>
-        </div>
-
-        {successMessage ? (
-          <div style={{ textAlign: 'center', padding: '16px 0' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                backgroundColor: '#ecfdf5',
-                color: '#10b981',
-                marginBottom: '16px',
-              }}
-            >
+  if (successMessage) {
+    return (
+      <div className="auth-wrapper">
+        <div className="auth-card" style={{ textAlign: 'center' }}>
+          <div className="auth-lang-row">
+            <LanguageSwitcher variant="compact" />
+          </div>
+          <div style={{ padding: '8px 0' }}>
+            <div className="icon-circle icon-circle-success" style={{ margin: '0 auto 16px' }}>
               <CheckCircle2 size={36} />
             </div>
-            <h3 style={{ color: '#065f46', marginBottom: '8px' }}>Registration Successful</h3>
-            <p style={{ color: '#475569', fontSize: '0.95rem', marginBottom: '24px' }}>
+            <h2 style={{ fontWeight: 800, marginBottom: 8 }}>{t('auth.register.successTitle')}</h2>
+            <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
               {successMessage}
             </p>
             <Link to="/login" className="btn btn-primary btn-block">
-              Proceed to Sign In
+              {t('auth.register.proceedBtn')} <ArrowRight size={15} />
             </Link>
           </div>
-        ) : (
-          <>
-            {errorMessage && (
-              <div className="alert alert-danger" role="alert">
-                <AlertCircle size={18} style={{ flexShrink: 0 }} />
-                <div>
-                  <div>{errorMessage}</div>
-                  {errorDetails.length > 0 && (
-                    <ul style={{ marginTop: '6px', paddingLeft: '18px', fontSize: '0.85rem' }}>
-                      {errorDetails.map((err, i) => (
-                        <li key={i}>{err}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="auth-wrapper">
+      <div className="auth-card" style={{ maxWidth: 520 }}>
+        <div className="auth-lang-row">
+          <LanguageSwitcher variant="compact" />
+        </div>
+
+        <div className="auth-header">
+          <div className="auth-logo">
+            <Bus size={26} color="var(--color-primary)" />
+          </div>
+          <h1>{t('auth.register.title')}</h1>
+          <p>{t('auth.register.subtitle')}</p>
+        </div>
+
+        {errorMessage && (
+          <Alert variant="danger">
+            <div>{errorMessage}</div>
+            {errorDetails.length > 0 && (
+              <ul style={{ marginTop: 6, paddingLeft: 18, fontSize: '0.82rem' }}>
+                {errorDetails.map((err, i) => <li key={i}>{err}</li>)}
+              </ul>
             )}
-
-            <form onSubmit={handleSubmit}>
-              <div className="form-grid-2">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="firstName">
-                    First Name *
-                  </label>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    className="form-input"
-                    placeholder="Abebe"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="lastName">
-                    Last Name *
-                  </label>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    required
-                    className="form-input"
-                    placeholder="Kebede"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="email">
-                  Email Address *
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="form-input"
-                  placeholder="abebe@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                  autoComplete="email"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="phone">
-                  Phone Number
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  className="form-input"
-                  placeholder="+251 911 234567"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className="form-grid-2">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="password">
-                    Password *
-                  </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    className="form-input"
-                    placeholder="Min 8 characters"
-                    value={formData.password}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                    autoComplete="new-password"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="confirmPassword">
-                    Confirm Password *
-                  </label>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    required
-                    className="form-input"
-                    placeholder="Repeat password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                    autoComplete="new-password"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary btn-block"
-                disabled={isSubmitting}
-                style={{ marginTop: '8px' }}
-              >
-                {isSubmitting ? (
-                  <span>Creating account...</span>
-                ) : (
-                  <>
-                    <span>Register Account</span> <ArrowRight size={18} />
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div
-              style={{
-                textAlign: 'center',
-                marginTop: '24px',
-                fontSize: '0.9rem',
-                color: '#64748b',
-              }}
-            >
-              Already have an account?{' '}
-              <Link to="/login" style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>
-                Sign in here
-              </Link>
-            </div>
-          </>
+          </Alert>
         )}
+
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-grid-2">
+            <div className="form-group">
+              <label className="form-label" htmlFor="firstName">{t('auth.register.firstNameLabel')} *</label>
+              <input id="firstName" name="firstName" type="text" required className="form-input"
+                placeholder={t('auth.register.firstNamePlaceholder')} value={formData.firstName}
+                onChange={handleChange} disabled={isSubmitting} />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="lastName">{t('auth.register.lastNameLabel')} *</label>
+              <input id="lastName" name="lastName" type="text" required className="form-input"
+                placeholder={t('auth.register.lastNamePlaceholder')} value={formData.lastName}
+                onChange={handleChange} disabled={isSubmitting} />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="email">{t('auth.register.emailLabel')} *</label>
+            <input id="email" name="email" type="email" required className="form-input"
+              placeholder={t('auth.register.emailPlaceholder')} value={formData.email}
+              onChange={handleChange} disabled={isSubmitting} autoComplete="email" />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="phone">{t('auth.register.phoneLabel')}</label>
+            <input id="phone" name="phone" type="tel" className="form-input"
+              placeholder={t('auth.register.phonePlaceholder')} value={formData.phone}
+              onChange={handleChange} disabled={isSubmitting} />
+          </div>
+
+          <div className="form-grid-2">
+            <div className="form-group">
+              <label className="form-label" htmlFor="password">{t('auth.register.passwordLabel')} *</label>
+              <div className="input-wrapper">
+                <input id="password" name="password" type={showPassword ? 'text' : 'password'} required
+                  className="form-input with-icon-right" placeholder={t('auth.register.passwordPlaceholder')}
+                  value={formData.password} onChange={handleChange} disabled={isSubmitting}
+                  autoComplete="new-password" />
+                <button type="button" className="input-icon-right" onClick={() => setShowPassword(v => !v)} tabIndex={-1}>
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {formData.password && (
+                <div className="password-strength">
+                  <div className="strength-bars">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className={`strength-bar ${score >= i ? STRENGTH_COLORS[score] : ''}`} />
+                    ))}
+                  </div>
+                  <span className="strength-label" style={{ color: STRENGTH_TEXT_COLORS[score] }}>
+                    {labelKey ? t(`auth.register.${labelKey}`) : ''}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="confirmPassword">{t('auth.register.confirmPasswordLabel')} *</label>
+              <div className="input-wrapper">
+                <input id="confirmPassword" name="confirmPassword" type={showConfirm ? 'text' : 'password'} required
+                  className="form-input with-icon-right" placeholder={t('auth.register.confirmPasswordPlaceholder')}
+                  value={formData.confirmPassword} onChange={handleChange} disabled={isSubmitting}
+                  autoComplete="new-password" />
+                <button type="button" className="input-icon-right" onClick={() => setShowConfirm(v => !v)} tabIndex={-1}>
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting} style={{ marginTop: 6 }}>
+            {isSubmitting
+              ? <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />{t('auth.register.submitting')}</>
+              : <>{t('auth.register.submitBtn')} <ArrowRight size={15} /></>
+            }
+          </button>
+        </form>
+
+        <div className="auth-footer-link">
+          {t('auth.register.hasAccount')}{' '}
+          <Link to="/login">{t('auth.register.loginLink')}</Link>
+        </div>
       </div>
     </div>
   );

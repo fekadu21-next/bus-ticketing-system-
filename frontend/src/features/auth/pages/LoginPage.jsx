@@ -1,37 +1,35 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext.jsx';
-import { AlertCircle, Lock, Mail, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/context/AuthContext';
+import Alert from '@/components/ui/Alert';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import { Bus, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
-export const LoginPage = () => {
+const LoginPage = () => {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const from = location.state?.from?.pathname || '/dashboard';
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    if (errorMessage) setErrorMessage('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
     setIsSubmitting(true);
-
     const result = await login(formData.email, formData.password);
     setIsSubmitting(false);
-
     if (result.success) {
       navigate(from, { replace: true });
     } else {
@@ -42,86 +40,94 @@ export const LoginPage = () => {
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-        <div className="auth-header">
-          <h1>Welcome Back</h1>
-          <p>Sign in to your bus ticketing account</p>
+        {/* Language switcher */}
+        <div className="auth-lang-row">
+          <LanguageSwitcher variant="compact" />
         </div>
 
-        {errorMessage && (
-          <div className="alert alert-danger" role="alert">
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
-            <span>{errorMessage}</span>
+        {/* Logo + Header */}
+        <div className="auth-header">
+          <div className="auth-logo">
+            <Bus size={26} color="var(--color-primary)" />
           </div>
-        )}
+          <h1>{t('auth.login.title')}</h1>
+          <p>{t('auth.login.subtitle')}</p>
+        </div>
 
-        <form onSubmit={handleSubmit}>
+        {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+
+        <form onSubmit={handleSubmit} noValidate>
+          {/* Email */}
           <div className="form-group">
             <label className="form-label" htmlFor="email">
-              Email Address
+              {t('auth.login.emailLabel')}
             </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="form-input"
-                placeholder="name@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={isSubmitting}
-                autoComplete="email"
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <label className="form-label" htmlFor="password" style={{ marginBottom: 0 }}>
-                Password
-              </label>
-              <Link
-                to="/forgot-password"
-                style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none' }}
-              >
-                Forgot password?
-              </Link>
-            </div>
             <input
-              id="password"
-              name="password"
-              type="password"
+              id="email"
+              name="email"
+              type="email"
               required
               className="form-input"
-              placeholder="••••••••"
-              value={formData.password}
+              placeholder={t('auth.login.emailPlaceholder')}
+              value={formData.email}
               onChange={handleChange}
               disabled={isSubmitting}
-              autoComplete="current-password"
+              autoComplete="email"
             />
+          </div>
+
+          {/* Password */}
+          <div className="form-group">
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <label className="form-label" htmlFor="password" style={{ marginBottom: 0 }}>
+                {t('auth.login.passwordLabel')}
+              </label>
+              <Link to="/forgot-password" className="text-link" style={{ fontSize: '0.82rem' }}>
+                {t('auth.login.forgotPassword')}
+              </Link>
+            </div>
+            <div className="input-wrapper">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                className="form-input with-icon-right"
+                placeholder={t('auth.login.passwordPlaceholder')}
+                value={formData.password}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="input-icon-right"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             className="btn btn-primary btn-block"
             disabled={isSubmitting}
-            style={{ marginTop: '10px' }}
+            style={{ marginTop: 6 }}
           >
             {isSubmitting ? (
-              <span>Signing in...</span>
+              <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />{t('auth.login.submitting')}</>
             ) : (
-              <>
-                <span>Sign In</span> <ArrowRight size={18} />
-              </>
+              <>{t('auth.login.submitBtn')} <ArrowRight size={16} /></>
             )}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.9rem', color: '#64748b' }}>
-          Don't have an account?{' '}
-          <Link to="/register" style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>
-            Register here
-          </Link>
+        <div className="auth-footer-link">
+          {t('auth.login.noAccount')}{' '}
+          <Link to="/register">{t('auth.login.registerLink')}</Link>
         </div>
       </div>
     </div>
