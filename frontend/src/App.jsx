@@ -1,8 +1,9 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext.jsx';
-import Navbar from './components/Navbar.jsx';
-import AppRoutes from './routes/AppRoutes.jsx';
+import { AuthProvider } from '@/context/AuthContext';
+import Navbar from '@/components/Navbar';
+import AppRoutes from '@/routes/AppRoutes';
+import '@/i18n';
 import './index.css';
 
 function App() {
