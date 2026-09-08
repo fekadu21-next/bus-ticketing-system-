@@ -6,12 +6,19 @@ import { ROLES } from '@/constants/roles';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 /**
- * Protects routes that require specific roles.
- * Platform admins always pass through regardless of allowedRoles.
+ * Protects routes that require a specific permission.
+ * Platform admins always pass through.
+ * Unauthenticated users are redirected to /login.
+ * Authenticated users without the permission are redirected to /dashboard.
  *
- * @param {{ allowedRoles: string[], children: React.ReactNode }} props
+ * @param {{ permission: string, children: React.ReactNode }} props
+ *
+ * @example
+ * <PermissionRoute permission={PERMISSIONS.VIEW_AUDIT_LOGS}>
+ *   <AuditPage />
+ * </PermissionRoute>
  */
-const RoleRoute = ({ allowedRoles = [], children }) => {
+const PermissionRoute = ({ permission, children }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { t } = useTranslation();
 
@@ -24,13 +31,13 @@ const RoleRoute = ({ allowedRoles = [], children }) => {
   }
 
   const isAdmin = user?.roles?.includes(ROLES.PLATFORM_ADMIN);
-  const hasRole = allowedRoles.some((role) => user?.roles?.includes(role));
+  const hasPerm = user?.permissions?.includes(permission);
 
-  if (!isAdmin && !hasRole) {
+  if (!isAdmin && !hasPerm) {
     return <Navigate to="/dashboard" replace />;
   }
 
   return children;
 };
 
-export default RoleRoute;
+export default PermissionRoute;
