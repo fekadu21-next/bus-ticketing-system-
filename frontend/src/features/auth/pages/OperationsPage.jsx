@@ -1,66 +1,69 @@
 import React from 'react';
-import { useAuth } from '../../../context/AuthContext.jsx';
-import { Building2, Bus, Calendar, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import useOrgContext from '@/hooks/useOrgContext';
+import { Building2, Bus, Calendar } from 'lucide-react';
 
 export const OperationsPage = () => {
-  const { user } = useAuth();
-  const org = user?.organizationContext?.[0];
+  const { org, orgId, orgName } = useOrgContext();
+  const { t } = useTranslation();
 
   return (
     <div className="main-content">
       <div style={{ marginBottom: '24px' }}>
         <span className="badge badge-manager" style={{ marginBottom: '8px' }}>
-          Operational Management
+          {t('operations.roleBadge')}
         </span>
-        <h1 style={{ fontSize: '2rem', marginBottom: '4px' }}>
-          {org ? `${org.organizationName} Operations` : 'Operations Portal'}
+        <h1 style={{ fontSize: '1.9rem', fontWeight: 800, marginBottom: '4px' }}>
+          {orgName ? `${orgName} ${t('operations.title')}` : t('operations.title')}
         </h1>
-        <p style={{ color: '#64748b' }}>
-          Scoped operational controls: Fleet management, trip scheduling, and passenger bookings
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
+          {t('operations.subtitle')}
         </p>
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#eff6ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          padding: '16px',
-          marginBottom: '24px',
-        }}
-      >
-        <p style={{ fontWeight: 600, color: '#1e40af' }}>
-          Security Boundary Enforced by Backend:
-        </p>
-        <p style={{ color: '#2563eb', fontSize: '0.9rem', marginTop: '4px' }}>
-          All API requests sent from this portal are automatically scoped to Organization ID:{' '}
-          <code>{org?.organizationId || 'System Wide'}</code>. Data from other companies or associations cannot be accessed.
-        </p>
+      <div className="org-banner">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <Building2 size={24} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+          <div>
+            <p style={{ fontWeight: 700, color: 'var(--color-text)' }}>
+              {t('operations.scopeNote')}:
+            </p>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem', marginTop: '3px' }}>
+              {t('operations.scopeDesc', { orgId: orgId || 'System Wide' })}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="dashboard-grid">
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Bus size={20} color="#2563eb" /> Company Bus Fleet
+            <h2 className="card-title">
+              <Bus size={20} color="var(--color-primary)" />
+              {t('operations.fleetTitle')}
             </h2>
           </div>
-          <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
-            Buses assigned to your operational division.
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+            {t('operations.fleetDesc')}
           </p>
-          <button className="btn btn-primary btn-block">Add New Bus</button>
+          <button className="btn btn-primary btn-block">
+            {t('operations.addBusBtn')}
+          </button>
         </div>
 
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Calendar size={20} color="#2563eb" /> Intercity Schedules
+            <h2 className="card-title">
+              <Calendar size={20} color="var(--color-primary)" />
+              {t('operations.scheduleTitle')}
             </h2>
           </div>
-          <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
-            Daily scheduled departures, stops, and pricing tariffs.
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+            {t('operations.scheduleDesc')}
           </p>
-          <button className="btn btn-secondary btn-block">Schedule Trip</button>
+          <button className="btn btn-secondary btn-block">
+            {t('operations.scheduleTripBtn')}
+          </button>
         </div>
       </div>
     </div>
