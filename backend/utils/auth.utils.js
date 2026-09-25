@@ -1,4 +1,4 @@
-import env from '../../Config/env.js';
+import env from '../Config/env.js';
 
 export const REFRESH_COOKIE_NAME = 'refreshToken';
 

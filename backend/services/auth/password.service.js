@@ -1,10 +1,10 @@
-import authRepository from '../auth.repository.js';
-import { hashPassword, comparePassword } from '../../../utils/password.js';
-import { generateAccessToken } from '../../../utils/jwt.js';
-import { generateSecureToken, hashToken } from '../../../utils/crypto.js';
-import { sendPasswordResetEmail } from '../../../utils/email.js';
-import { logAuditEvent, AuditAction } from '../../../utils/auditLogger.js';
-import ApiError from '../../../utils/apiError.js';
+import authRepository from '../../repository/auth.repository.js';
+import { hashPassword, comparePassword } from '../../utils/password.js';
+import { generateAccessToken } from '../../utils/jwt.js';
+import { generateSecureToken, hashToken } from '../../utils/crypto.js';
+import { sendPasswordResetEmail } from '../../utils/email.js';
+import { logAuditEvent, AuditAction } from '../../utils/auditLogger.js';
+import ApiError from '../../utils/apiError.js';
 
 export class PasswordService {
   /**

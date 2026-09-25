@@ -1,5 +1,5 @@
 import { verifyAccessToken } from '../utils/jwt.js';
-import authRepository from '../modules/auth/auth.repository.js';
+import authRepository from '../repository/auth.repository.js';
 import ApiError from '../utils/apiError.js';
 
 /**

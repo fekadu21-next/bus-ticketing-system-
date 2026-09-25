@@ -1,9 +1,9 @@
-import authRepository from '../auth.repository.js';
-import { hashPassword } from '../../../utils/password.js';
-import { generateSecureToken, hashToken } from '../../../utils/crypto.js';
-import { sendVerificationEmail } from '../../../utils/email.js';
-import { logAuditEvent, AuditAction } from '../../../utils/auditLogger.js';
-import ApiError from '../../../utils/apiError.js';
+import authRepository from '../../repository/auth.repository.js';
+import { hashPassword } from '../../utils/password.js';
+import { generateSecureToken, hashToken } from '../../utils/crypto.js';
+import { sendVerificationEmail } from '../../utils/email.js';
+import { logAuditEvent, AuditAction } from '../../utils/auditLogger.js';
+import ApiError from '../../utils/apiError.js';
 import { formatSafeUser } from './utils/formatSafeUser.js';
 
 import { sessionService } from './session.service.js';

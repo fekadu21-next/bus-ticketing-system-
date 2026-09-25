@@ -1,4 +1,4 @@
-import prisma from '../../Config/db.js';
+import prisma from '../Config/db.js';
 
 export class AuthRepository {
   /**

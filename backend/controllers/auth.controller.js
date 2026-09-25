@@ -1,10 +1,10 @@
-import authService from './services/auth.service.js';
-import asyncHandler from '../../utils/asyncHandler.js';
+import authService from '../services/auth/auth.service.js';
+import asyncHandler from '../utils/asyncHandler.js';
 import {
   setRefreshTokenCookie,
   clearRefreshTokenCookie,
   getRefreshTokenFromRequest,
-} from './auth.utils.js';
+} from '../utils/auth.utils.js';
 
 class AuthController {
   register = asyncHandler(async (req, res) => {

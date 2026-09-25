@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import authController from './auth.controller.js';
-import validate from '../../middleware/validate.middleware.js';
-import authenticate from '../../middleware/authenticate.middleware.js';
-import { authLimiter, resendLimiter } from '../../middleware/rateLimit.middleware.js';
+import authController from '../controllers/auth.controller.js';
+import validate from '../middleware/validate.middleware.js';
+import authenticate from '../middleware/authenticate.middleware.js';
+import { authLimiter, resendLimiter } from '../middleware/rateLimit.middleware.js';
 import {
   registerSchema,
   loginSchema,
@@ -12,7 +12,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   changePasswordSchema,
-} from './auth.validation.js';
+} from '../validation/auth.validation.js';
 
 const router = Router();
 
