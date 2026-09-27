@@ -66,12 +66,19 @@ export class BusRepository {
   }
 
   async update(busId, organizationId, updateData) {
+    const data = { ...updateData, updated_at: new Date() };
+    if (data.plateNumber !== undefined) {
+      data.plate_number = data.plateNumber;
+      delete data.plateNumber;
+    }
+    if (data.isActive !== undefined) {
+      data.is_active = data.isActive;
+      delete data.isActive;
+    }
+
     return prisma.buses.update({
       where: { id: busId, organization_id: organizationId },
-      data: {
-        ...updateData,
-        updated_at: new Date(),
-      },
+      data,
     });
   }
 

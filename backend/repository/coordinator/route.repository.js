@@ -68,12 +68,23 @@ export class RouteRepository {
   }
 
   async update(routeId, organizationId, updateData) {
+    const data = { ...updateData, updated_at: new Date() };
+    if (data.distanceKm !== undefined) {
+      data.distance_km = data.distanceKm;
+      delete data.distanceKm;
+    }
+    if (data.estimatedDurationHours !== undefined) {
+      data.estimated_duration_hours = data.estimatedDurationHours;
+      delete data.estimatedDurationHours;
+    }
+    if (data.isActive !== undefined) {
+      data.is_active = data.isActive;
+      delete data.isActive;
+    }
+
     return prisma.routes.update({
       where: { id: routeId, organization_id: organizationId },
-      data: {
-        ...updateData,
-        updated_at: new Date(),
-      },
+      data,
     });
   }
 
