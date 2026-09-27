@@ -30,6 +30,10 @@ const PERMISSION_DEFINITIONS = [
   { name: PERMISSIONS.CANCEL_TICKET, description: 'Cancel personal booking' },
   { name: PERMISSIONS.VIEW_TICKETS, description: 'View personal tickets and QR passes' },
   { name: PERMISSIONS.VERIFY_TICKET, description: 'Scan and validate boarding tickets' },
+  { name: PERMISSIONS.MANAGE_ROUTES, description: 'Create, update, and manage bus routes' },
+  { name: PERMISSIONS.VIEW_ROUTES, description: 'View organization and public routes' },
+  { name: PERMISSIONS.VIEW_PAYMENTS, description: 'View transaction logs and payment records' },
+  { name: PERMISSIONS.VIEW_REPORTS, description: 'View organization operational analytics and reports' },
 ];
 
 export async function seedDatabase() {
