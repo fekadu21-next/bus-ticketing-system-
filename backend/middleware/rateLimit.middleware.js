@@ -1,8 +1,10 @@
 import rateLimit from 'express-rate-limit';
 
+const isDevOrTest = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
+
 export const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // 200 requests per window
+  max: isDevOrTest ? 10000 : 200, // 200 requests per window in production
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -13,7 +15,7 @@ export const globalLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // 15 attempts per 15 minutes
+  max: isDevOrTest ? 10000 : 15, // 15 attempts per 15 minutes in production
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -24,7 +26,7 @@ export const authLimiter = rateLimit({
 
 export const resendLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per 15 minutes
+  max: isDevOrTest ? 10000 : 5, // 5 requests per 15 minutes in production
   standardHeaders: true,
   legacyHeaders: false,
   message: {

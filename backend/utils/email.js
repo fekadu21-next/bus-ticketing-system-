@@ -22,14 +22,16 @@ function getTransporter() {
 
 export async function sendVerificationEmail(email, firstName, token) {
   const verificationUrl = `${env.clientUrl}/verify-email?token=${token}`;
+  
+  // 🔑 LOG THIS SO YOU CAN COPY THE TOKEN FOR POSTMAN TESTING
   console.log(`\n📧 [EMAIL DISPATCH] Verification link for ${email} (${firstName}):`);
   console.log(`🔗 ${verificationUrl}\n`);
 
   const mailClient = getTransporter();
   if (mailClient) {
     try {
-      await mailClient.sendMail({
-        from: `Bus Ticketing Platform <${env.email.from}>`,
+      const info = await mailClient.sendMail({
+        from: `Bus Ticketing Platform <${env.email.user}>`,
         to: email,
         subject: 'Verify your email address',
         html: `
@@ -40,12 +42,18 @@ export async function sendVerificationEmail(email, firstName, token) {
             <p style="margin: 24px 0;">
               <a href="${verificationUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Verify Email</a>
             </p>
-            <p style="color: #64748b; font-size: 14px;">This link will expire in 24 hours. If you did not create an account, please ignore this email.</p>
+            <p style="color: #64748b; font-size: 14px;">This link will expire in 24 hours.</p>
           </div>
         `,
       });
+
+      console.log('-------------------------------------------------');
+      console.log(`📧 [ETHEREAL] Fake email caught for ${email}`);
+      console.log(`🔗 Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+      console.log('-------------------------------------------------\n');
+
     } catch (err) {
-      console.warn('⚠️ SMTP send error (logged link to console):', err.message);
+      console.error('⚠️ Ethereal SMTP send error:', err.message);
     }
   }
 }
@@ -59,7 +67,7 @@ export async function sendPasswordResetEmail(email, firstName, token) {
   if (mailClient) {
     try {
       await mailClient.sendMail({
-        from: `Bus Ticketing Platform <${env.email.from}>`,
+        from: `Bus Ticketing Platform <${env.email.user}>`,
         to: email,
         subject: 'Reset your password',
         html: `
@@ -75,7 +83,7 @@ export async function sendPasswordResetEmail(email, firstName, token) {
         `,
       });
     } catch (err) {
-      console.warn('⚠️ SMTP send error (logged link to console):', err.message);
+      console.warn('⚠️ SMTP send error:', err.message);
     }
   }
 }

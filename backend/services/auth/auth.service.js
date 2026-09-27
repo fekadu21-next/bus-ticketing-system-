@@ -5,6 +5,7 @@ import { sendVerificationEmail } from '../../utils/email.js';
 import { logAuditEvent, AuditAction } from '../../utils/auditLogger.js';
 import ApiError from '../../utils/apiError.js';
 import { formatSafeUser } from './utils/formatSafeUser.js';
+import { ROLES } from '../../constants/index.js';
 
 import { sessionService } from './session.service.js';
 import { emailVerificationService } from './email-verification.service.js';
@@ -69,7 +70,7 @@ export class AuthService {
       email: user.email,
       emailVerified: user.email_verified,
       isActive: user.is_active,
-      roles: ['PASSENGER'],
+      roles: [ROLES.PASSENGER],
     };
   }
 

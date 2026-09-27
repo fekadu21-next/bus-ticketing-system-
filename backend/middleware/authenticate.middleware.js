@@ -29,7 +29,7 @@ export const authenticate = async (req, res, next) => {
     }
 
     const userRoles = user.user_roles || [];
-    const roles = userRoles.map((ur) => ur.roles?.name).filter(Boolean);
+    const roles = [...new Set(userRoles.map((ur) => ur.roles?.name).filter(Boolean))];
 
     if (roles.length === 0) {
       throw new ApiError(403, 'User holds no active roles in the system');

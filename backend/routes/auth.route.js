@@ -20,7 +20,7 @@ const router = Router();
 router.post('/register', authLimiter, validate(registerSchema), authController.register);
 router.post('/login', authLimiter, validate(loginSchema), authController.login);
 router.post('/refresh', validate(refreshTokenSchema), authController.refresh);
-router.post('/logout', authController.logout);
+router.post('/logout', authenticate, authController.logout);
 
 // Email Verification
 router.post('/verify-email', validate(verifyEmailSchema), authController.verifyEmail);

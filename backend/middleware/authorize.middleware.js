@@ -1,12 +1,18 @@
 import ApiError from '../utils/apiError.js';
+import { ROLES } from '../constants/index.js';
 
+/**
+ * Authorize based on global roles.
+ * ADMIN has platform-wide superuser access across all endpoints.
+ * @param  {...string} allowedRoles
+ */
 export const authorizeRole = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
       return next(new ApiError(401, 'User context missing. Call authenticate first.'));
     }
 
-    const isAdmin = req.user.roles.includes('PLATFORM_ADMIN');
+    const isAdmin = req.user.roles.includes(ROLES.ADMIN);
     if (isAdmin) {
       return next();
     }
@@ -20,14 +26,18 @@ export const authorizeRole = (...allowedRoles) => {
   };
 };
 
-
+/**
+ * Authorize based on permissions.
+ * ADMIN has platform-wide superuser access.
+ * @param  {...string} requiredPermissions
+ */
 export const authorizePermission = (...requiredPermissions) => {
   return (req, res, next) => {
     if (!req.user) {
       return next(new ApiError(401, 'User context missing. Call authenticate first.'));
     }
 
-    const isAdmin = req.user.roles.includes('PLATFORM_ADMIN');
+    const isAdmin = req.user.roles.includes(ROLES.ADMIN);
     if (isAdmin) {
       return next();
     }

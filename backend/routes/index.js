@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import authRoutes from './auth.route.js';
+import userRoutes from './user.route.js';
+import rbacRoutes from './rbac.route.js';
+import organizationRoutes from './organization.route.js';
 import authenticate from '../middleware/authenticate.middleware.js';
 import { authorizeRole, authorizePermission } from '../middleware/authorize.middleware.js';
-import authorizeOrganization from '../middleware/organization.middleware.js';
+import { ROLES, PERMISSIONS } from '../constants/index.js';
 
 const router = Router();
 
@@ -15,14 +18,15 @@ router.get('/health', (req, res) => {
   });
 });
 
+// Admin verification test routes
 router.get(
   '/admin/test',
   authenticate,
-  authorizeRole('PLATFORM_ADMIN'),
+  authorizeRole(ROLES.ADMIN),
   (req, res) => {
     res.status(200).json({
       success: true,
-      message: 'PLATFORM_ADMIN access granted',
+      message: 'ADMIN access granted',
       user: req.user,
     });
   }
@@ -31,7 +35,7 @@ router.get(
 router.get(
   '/admin/users-test',
   authenticate,
-  authorizePermission('MANAGE_USERS'),
+  authorizePermission(PERMISSIONS.MANAGE_USERS),
   (req, res) => {
     res.status(200).json({
       success: true,
@@ -40,7 +44,11 @@ router.get(
     });
   }
 );
-// Auth Routes
+
+// Route Modules
 router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/rbac', rbacRoutes);
+router.use('/organizations', organizationRoutes);
 
 export default router;

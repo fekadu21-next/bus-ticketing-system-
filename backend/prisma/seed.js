@@ -1,54 +1,44 @@
-import { PrismaClient } from '@prisma/client';
+import prisma, { connectDB, disconnectDB } from '../Config/db.js';
 import bcrypt from 'bcryptjs';
+import { ROLES, PERMISSIONS, ROLE_PERMISSIONS_MAPPING } from '../constants/index.js';
 
-const prisma = new PrismaClient();
-
-const ROLES = [
-  { name: 'PLATFORM_ADMIN', description: 'Platform Administrator with system-wide access' },
-  { name: 'OPERATIONAL_MANAGER', description: 'Manager for bus company or transport association operations' },
-  { name: 'PASSENGER', description: 'Public passenger who books and manages tickets' },
-  { name: 'TICKET_VERIFIER', description: 'Station or boarding officer who verifies passenger tickets' },
+const ROLE_DEFINITIONS = [
+  { name: ROLES.ADMIN, description: 'Platform Administrator with complete system-wide access' },
+  { name: ROLES.BOOKING_COORDINATOR, description: 'Manager for organization bus schedules, trips, fleet, and bookings' },
+  { name: ROLES.PASSENGER, description: 'Public passenger who searches trips, books, and manages tickets' },
+  { name: ROLES.TICKET_VERIFIER, description: 'Station or boarding officer who verifies passenger tickets for an organization' },
 ];
 
-const PERMISSIONS = [
-  { name: 'MANAGE_USERS', description: 'Create, update, and deactivate users' },
-  { name: 'MANAGE_ORGANIZATIONS', description: 'Register, edit, and approve bus organizations' },
-  { name: 'VIEW_AUDIT_LOGS', description: 'Access security and system audit logs' },
-  { name: 'CREATE_TRIP', description: 'Schedule and publish bus trips' },
-  { name: 'UPDATE_TRIP', description: 'Modify trip schedules, pricing, and bus assignments' },
-  { name: 'DELETE_TRIP', description: 'Cancel scheduled trips' },
-  { name: 'VIEW_TRIPS', description: 'Browse and search available trips' },
-  { name: 'MANAGE_BUS', description: 'Add, update, and manage bus fleet' },
-  { name: 'VIEW_BOOKINGS', description: 'View passenger bookings and passenger manifests' },
-  { name: 'MANAGE_BOOKINGS', description: 'Modify booking states and refund requests' },
-  { name: 'BOOK_TICKET', description: 'Book seats on scheduled bus trips' },
-  { name: 'CANCEL_TICKET', description: 'Cancel personal booking' },
-  { name: 'VIEW_TICKETS', description: 'View personal tickets and QR passes' },
-  { name: 'VERIFY_TICKET', description: 'Scan and validate boarding tickets' },
+const PERMISSION_DEFINITIONS = [
+  { name: PERMISSIONS.MANAGE_USERS, description: 'Create, update, and deactivate users' },
+  { name: PERMISSIONS.VIEW_USERS, description: 'View user profiles and list users' },
+  { name: PERMISSIONS.MANAGE_ORGANIZATIONS, description: 'Register, edit, and approve bus organizations' },
+  { name: PERMISSIONS.VIEW_ORGANIZATIONS, description: 'View organization details' },
+  { name: PERMISSIONS.MANAGE_ROLES, description: 'Assign and revoke user roles' },
+  { name: PERMISSIONS.VIEW_ROLES, description: 'View roles and their assigned permissions' },
+  { name: PERMISSIONS.VIEW_PERMISSIONS, description: 'View system permissions list' },
+  { name: PERMISSIONS.VIEW_AUDIT_LOGS, description: 'Access security and system audit logs' },
+  { name: PERMISSIONS.CREATE_TRIP, description: 'Schedule and publish bus trips' },
+  { name: PERMISSIONS.UPDATE_TRIP, description: 'Modify trip schedules, pricing, and bus assignments' },
+  { name: PERMISSIONS.DELETE_TRIP, description: 'Cancel scheduled trips' },
+  { name: PERMISSIONS.VIEW_TRIPS, description: 'Browse and search available trips' },
+  { name: PERMISSIONS.MANAGE_BUS, description: 'Add, update, and manage bus fleet' },
+  { name: PERMISSIONS.VIEW_BUSES, description: 'View buses and vehicle details' },
+  { name: PERMISSIONS.VIEW_BOOKINGS, description: 'View passenger bookings and passenger manifests' },
+  { name: PERMISSIONS.MANAGE_BOOKINGS, description: 'Modify booking states and refund requests' },
+  { name: PERMISSIONS.BOOK_TICKET, description: 'Book seats on scheduled bus trips' },
+  { name: PERMISSIONS.CANCEL_TICKET, description: 'Cancel personal booking' },
+  { name: PERMISSIONS.VIEW_TICKETS, description: 'View personal tickets and QR passes' },
+  { name: PERMISSIONS.VERIFY_TICKET, description: 'Scan and validate boarding tickets' },
 ];
-
-const ROLE_PERMISSIONS_MAP = {
-  PLATFORM_ADMIN: PERMISSIONS.map((p) => p.name),
-  OPERATIONAL_MANAGER: [
-    'CREATE_TRIP',
-    'UPDATE_TRIP',
-    'DELETE_TRIP',
-    'VIEW_TRIPS',
-    'MANAGE_BUS',
-    'VIEW_BOOKINGS',
-    'MANAGE_BOOKINGS',
-    'VERIFY_TICKET',
-  ],
-  TICKET_VERIFIER: ['VERIFY_TICKET', 'VIEW_TRIPS', 'VIEW_BOOKINGS'],
-  PASSENGER: ['VIEW_TRIPS', 'BOOK_TICKET', 'CANCEL_TICKET', 'VIEW_TICKETS'],
-};
 
 export async function seedDatabase() {
+  await connectDB();
   console.log('🌱 Starting database seed...');
 
   // 1. Seed Roles
   const roleMap = new Map();
-  for (const roleData of ROLES) {
+  for (const roleData of ROLE_DEFINITIONS) {
     const role = await prisma.roles.upsert({
       where: { name: roleData.name },
       update: { description: roleData.description },
@@ -56,50 +46,79 @@ export async function seedDatabase() {
     });
     roleMap.set(role.name, role.id);
   }
-  console.log('✅ Roles seeded successfully');
+  console.log('✅ Roles seeded successfully:', Array.from(roleMap.keys()));
 
-  // 2. Seed Permissions
-  const permissionMap = new Map();
-  for (const permData of PERMISSIONS) {
-    const perm = await prisma.permissions.upsert({
-      where: { name: permData.name },
-      update: { description: permData.description },
-      create: permData,
-    });
-    permissionMap.set(perm.name, perm.id);
+  // 2. Migrate any legacy roles (PLATFORM_ADMIN -> ADMIN, OPERATIONAL_MANAGER -> BOOKING_COORDINATOR)
+  const legacyAdminRole = await prisma.roles.findUnique({ where: { name: 'PLATFORM_ADMIN' } });
+  if (legacyAdminRole) {
+    const newAdminId = roleMap.get(ROLES.ADMIN);
+    const legacyUserRoles = await prisma.user_roles.findMany({ where: { role_id: legacyAdminRole.id } });
+    for (const ur of legacyUserRoles) {
+      await prisma.user_roles.delete({ where: { id: ur.id } });
+      await prisma.user_roles.create({
+        data: {
+          user_id: ur.user_id,
+          role_id: newAdminId,
+          organization_id: ur.organization_id,
+        },
+      });
+    }
+    await prisma.role_permissions.deleteMany({ where: { role_id: legacyAdminRole.id } });
+    await prisma.roles.delete({ where: { id: legacyAdminRole.id } });
+    console.log('🔄 Migrated legacy PLATFORM_ADMIN to ADMIN');
   }
-  console.log('✅ Permissions seeded successfully');
 
-  // 3. Seed Role-Permissions
-  for (const [roleName, permNames] of Object.entries(ROLE_PERMISSIONS_MAP)) {
+  const legacyOpManager = await prisma.roles.findUnique({ where: { name: 'OPERATIONAL_MANAGER' } });
+  if (legacyOpManager) {
+    const newCoordId = roleMap.get(ROLES.BOOKING_COORDINATOR);
+    const legacyUserRoles = await prisma.user_roles.findMany({ where: { role_id: legacyOpManager.id } });
+    for (const ur of legacyUserRoles) {
+      await prisma.user_roles.delete({ where: { id: ur.id } });
+      await prisma.user_roles.create({
+        data: {
+          user_id: ur.user_id,
+          role_id: newCoordId,
+          organization_id: ur.organization_id,
+        },
+      });
+    }
+    await prisma.role_permissions.deleteMany({ where: { role_id: legacyOpManager.id } });
+    await prisma.roles.delete({ where: { id: legacyOpManager.id } });
+    console.log('🔄 Migrated legacy OPERATIONAL_MANAGER to BOOKING_COORDINATOR');
+  }
+
+  // 3. Batch Seed Permissions
+  await prisma.permissions.createMany({
+    data: PERMISSION_DEFINITIONS,
+    skipDuplicates: true,
+  });
+  const allPermissions = await prisma.permissions.findMany();
+  const permissionMap = new Map(allPermissions.map((p) => [p.name, p.id]));
+  console.log(`✅ Permissions verified (${allPermissions.length} total)`);
+
+  // 4. Batch Seed Role-Permissions
+  const rolePermissionRecords = [];
+  for (const [roleName, permNames] of Object.entries(ROLE_PERMISSIONS_MAPPING)) {
     const roleId = roleMap.get(roleName);
     if (!roleId) continue;
 
     for (const permName of permNames) {
       const permId = permissionMap.get(permName);
       if (!permId) continue;
-
-      await prisma.role_permissions.upsert({
-        where: {
-          role_id_permission_id: {
-            role_id: roleId,
-            permission_id: permId,
-          },
-        },
-        update: {},
-        create: {
-          role_id: roleId,
-          permission_id: permId,
-        },
-      });
+      rolePermissionRecords.push({ role_id: roleId, permission_id: permId });
     }
   }
-  console.log('✅ Role-Permissions relationships mapped');
 
-  // 4. Seed Seed Organizations
-  const selamBus = await prisma.organizations.upsert({
+  await prisma.role_permissions.createMany({
+    data: rolePermissionRecords,
+    skipDuplicates: true,
+  });
+  console.log(`✅ Role-Permissions mapped (${rolePermissionRecords.length} relations)`);
+
+  // 5. Seed Organizations
+  await prisma.organizations.upsert({
     where: { id: '00000000-0000-0000-0000-000000000001' },
-    update: {},
+    update: { is_active: true },
     create: {
       id: '00000000-0000-0000-0000-000000000001',
       name: 'Selam Bus Line',
@@ -108,9 +127,9 @@ export async function seedDatabase() {
     },
   });
 
-  const skyBus = await prisma.organizations.upsert({
+  await prisma.organizations.upsert({
     where: { id: '00000000-0000-0000-0000-000000000002' },
-    update: {},
+    update: { is_active: true },
     create: {
       id: '00000000-0000-0000-0000-000000000002',
       name: 'Sky Bus Transport System',
@@ -118,9 +137,9 @@ export async function seedDatabase() {
       is_active: true,
     },
   });
-  console.log('✅ Initial organizations seeded');
+  console.log('✅ Organizations verified and seeded');
 
-  // 5. Seed Initial Admin Account
+  // 6. Seed Initial Admin Account
   const adminEmail = 'admin@busticket.com';
   const adminPasswordHash = await bcrypt.hash('Admin@123456', 12);
   const adminUser = await prisma.users.upsert({
@@ -138,24 +157,26 @@ export async function seedDatabase() {
     },
   });
 
-  const adminRoleId = roleMap.get('PLATFORM_ADMIN');
+  const adminRoleId = roleMap.get(ROLES.ADMIN);
   if (adminRoleId) {
-    await prisma.user_roles.upsert({
+    const existingUserRole = await prisma.user_roles.findFirst({
       where: {
-        user_id_role_id: {
-          user_id: adminUser.id,
-          role_id: adminRoleId,
-        },
-      },
-      update: {},
-      create: {
         user_id: adminUser.id,
         role_id: adminRoleId,
-        organization_id: null,
       },
     });
+
+    if (!existingUserRole) {
+      await prisma.user_roles.create({
+        data: {
+          user_id: adminUser.id,
+          role_id: adminRoleId,
+          organization_id: null,
+        },
+      });
+    }
   }
-  console.log('✅ Default Platform Admin seeded:', adminEmail);
+  console.log('✅ Default Platform Admin configured with ADMIN role:', adminEmail);
 
   console.log('🎉 Seeding complete.');
 }
@@ -167,6 +188,6 @@ if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
       process.exit(1);
     })
     .finally(async () => {
-      await prisma.$disconnect();
+      await disconnectDB();
     });
 }

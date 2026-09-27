@@ -1,4 +1,5 @@
 import prisma from '../Config/db.js';
+import { ROLES } from '../constants/index.js';
 
 export class AuthRepository {
   /**
@@ -57,42 +58,35 @@ export class AuthRepository {
    * Creates a public passenger user with the PASSENGER role
    */
   async createPassengerUser({ firstName, lastName, email, phone, passwordHash }) {
-    return prisma.$transaction(async (tx) => {
-      // Find or create the default PASSENGER role
-      let passengerRole = await tx.roles.findUnique({
-        where: { name: 'PASSENGER' },
-      });
+    let passengerRole = await prisma.roles.findUnique({
+      where: { name: ROLES.PASSENGER },
+    });
 
-      if (!passengerRole) {
-        passengerRole = await tx.roles.create({
-          data: {
-            name: 'PASSENGER',
-            description: 'Public passenger who books and manages tickets',
+    if (!passengerRole) {
+      passengerRole = await prisma.roles.create({
+        data: {
+          name: ROLES.PASSENGER,
+          description: 'Public passenger who books and manages tickets',
+        },
+      });
+    }
+
+    return prisma.users.create({
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        email: email.toLowerCase(),
+        phone: phone || null,
+        password_hash: passwordHash,
+        is_active: true,
+        email_verified: false,
+        user_roles: {
+          create: {
+            role_id: passengerRole.id,
+            organization_id: null,
           },
-        });
-      }
-
-      const user = await tx.users.create({
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          email: email.toLowerCase(),
-          phone: phone || null,
-          password_hash: passwordHash,
-          is_active: true,
-          email_verified: false,
         },
-      });
-
-      await tx.user_roles.create({
-        data: {
-          user_id: user.id,
-          role_id: passengerRole.id,
-          organization_id: null,
-        },
-      });
-
-      return user;
+      },
     });
   }
 

@@ -3,7 +3,7 @@
  */
 export const formatSafeUser = (user) => {
   const userRoles = user.user_roles || [];
-  const roles = userRoles.map((ur) => ur.roles?.name).filter(Boolean);
+  const roles = [...new Set(userRoles.map((ur) => ur.roles?.name).filter(Boolean))];
   const permissions = [
     ...new Set(
       userRoles.flatMap((ur) =>
@@ -15,6 +15,7 @@ export const formatSafeUser = (user) => {
   const organizationContext = userRoles
     .filter((ur) => ur.organizations)
     .map((ur) => ({
+      userRoleId: ur.id,
       role: ur.roles?.name,
       organizationId: ur.organization_id,
       organizationName: ur.organizations?.name,
@@ -35,3 +36,5 @@ export const formatSafeUser = (user) => {
     organizationContext: organizationContext.length > 0 ? organizationContext : null,
   };
 };
+
+export default formatSafeUser;
