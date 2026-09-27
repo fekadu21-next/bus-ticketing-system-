@@ -1,11 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@/routes/ProtectedRoute';
-import RoleRoute from '@/routes/RoleRoute';
-import PermissionRoute from '@/routes/PermissionRoute';
 import { useAuth } from '@/context/AuthContext';
-import { ROLES } from '@/constants/roles';
-import { PERMISSIONS } from '@/constants/permissions';
 
 // Public Pages
 import HomePage from '@/pages/HomePage';
@@ -24,28 +20,7 @@ import ResendVerificationPage from '@/features/auth/pages/ResendVerificationPage
 import ProfilePage from '@/features/auth/pages/ProfilePage';
 import ChangePasswordPage from '@/features/auth/pages/ChangePasswordPage';
 import NotFoundPage from '@/features/auth/pages/NotFoundPage';
-
-// Role Dashboards
-import AdminDashboard from '@/pages/dashboards/AdminDashboard';
-import CoordinatorDashboard from '@/pages/dashboards/CoordinatorDashboard';
-import VerifierDashboard from '@/pages/dashboards/VerifierDashboard';
-import PassengerDashboard from '@/pages/dashboards/PassengerDashboard';
-
-/** Smart dashboard switcher for authenticated users arriving at /dashboard */
-const DashboardDispatcher = () => {
-  const { user } = useAuth();
-
-  if (user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes('PLATFORM_ADMIN')) {
-    return <AdminDashboard />;
-  }
-  if (user?.roles?.includes(ROLES.BOOKING_COORDINATOR) || user?.roles?.includes('OPERATIONAL_MANAGER')) {
-    return <CoordinatorDashboard />;
-  }
-  if (user?.roles?.includes(ROLES.TICKET_VERIFIER)) {
-    return <VerifierDashboard />;
-  }
-  return <PassengerDashboard />;
-};
+import DashboardPage from '@/features/auth/pages/DashboardPage';
 
 export const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
@@ -79,7 +54,7 @@ export const AppRoutes = () => {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardDispatcher />
+            <DashboardPage />
           </ProtectedRoute>
         }
       />
@@ -100,47 +75,13 @@ export const AppRoutes = () => {
         }
       />
 
-      {/* Role-Specific Direct Routes */}
-      <Route
-        path="/admin"
-        element={
-          <RoleRoute allowedRoles={[ROLES.ADMIN, 'PLATFORM_ADMIN']}>
-            <AdminDashboard />
-          </RoleRoute>
-        }
-      />
-      <Route
-        path="/coordinator"
-        element={
-          <RoleRoute allowedRoles={[ROLES.BOOKING_COORDINATOR, 'OPERATIONAL_MANAGER', ROLES.ADMIN]}>
-            <CoordinatorDashboard />
-          </RoleRoute>
-        }
-      />
-      <Route
-        path="/operations"
-        element={<Navigate to="/coordinator" replace />}
-      />
-      <Route
-        path="/verifier"
-        element={
-          <RoleRoute allowedRoles={[ROLES.TICKET_VERIFIER, ROLES.ADMIN]}>
-            <VerifierDashboard />
-          </RoleRoute>
-        }
-      />
-      <Route
-        path="/verify-ticket"
-        element={<Navigate to="/verifier" replace />}
-      />
-      <Route
-        path="/passenger"
-        element={
-          <RoleRoute allowedRoles={[ROLES.PASSENGER, ROLES.ADMIN]}>
-            <PassengerDashboard />
-          </RoleRoute>
-        }
-      />
+      {/* Clean redirects for legacy role routes to dashboard entry point */}
+      <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/coordinator" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/operations" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/verifier" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/verify-ticket" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/passenger" element={<Navigate to="/dashboard" replace />} />
 
       {/* 404 Catch-All */}
       <Route path="*" element={<NotFoundPage />} />

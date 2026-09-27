@@ -51,7 +51,7 @@ export const Navbar = () => {
   const handleLogout = async () => {
     await logout();
     setMobileMenuOpen(false);
-    navigate('/login');
+    navigate('/');
   };
 
   const isActive = (path) => location.pathname === path;

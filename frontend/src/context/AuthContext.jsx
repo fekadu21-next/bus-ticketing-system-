@@ -31,15 +31,10 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
-  /** Helper to get role-appropriate dashboard route */
-  const getDashboardPath = useCallback((currentUser = user) => {
-    if (!currentUser?.roles) return '/dashboard';
-    if (currentUser.roles.includes(ROLES.ADMIN)) return '/admin';
-    if (currentUser.roles.includes(ROLES.BOOKING_COORDINATOR)) return '/coordinator';
-    if (currentUser.roles.includes(ROLES.TICKET_VERIFIER)) return '/verifier';
-    if (currentUser.roles.includes(ROLES.PASSENGER)) return '/passenger';
+  /** Helper to get dashboard route */
+  const getDashboardPath = useCallback(() => {
     return '/dashboard';
-  }, [user]);
+  }, []);
 
   /** Helper to attach locally cached avatar if available */
   const attachCachedAvatar = (userData) => {
@@ -110,7 +105,7 @@ export const AuthProvider = ({ children }) => {
         updateAccessToken(response.data.accessToken);
         const userWithAvatar = attachCachedAvatar(response.data.user);
         setUser(userWithAvatar);
-        return { success: true, user: userWithAvatar, redirectPath: getDashboardPath(userWithAvatar) };
+        return { success: true, user: userWithAvatar, redirectPath: '/dashboard' };
       }
       throw new Error(response.message || 'Login failed');
     } catch (err) {
@@ -124,7 +119,18 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await registerApi(userData);
-      return { success: true, message: response.message, data: response.data };
+      let userWithAvatar = null;
+      if (response.success && response.data?.accessToken) {
+        updateAccessToken(response.data.accessToken);
+        userWithAvatar = attachCachedAvatar(response.data.user);
+        setUser(userWithAvatar);
+      }
+      return {
+        success: true,
+        message: response.message,
+        data: response.data,
+        user: userWithAvatar || response.data?.user,
+      };
     } catch (err) {
       const message = err.response?.data?.message || err.message || 'Registration failed';
       const errors = err.response?.data?.errors || [];
@@ -139,6 +145,13 @@ export const AuthProvider = ({ children }) => {
     } catch {
       // Ignore network errors on logout — always clear local state
     } finally {
+      if (user?.id) {
+        try {
+          localStorage.removeItem(`user_avatar_${user.id}`);
+        } catch {
+          // ignore
+        }
+      }
       resetAuthState();
     }
   };

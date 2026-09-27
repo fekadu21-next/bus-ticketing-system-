@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import Alert from '@/components/ui/Alert';
@@ -33,7 +33,8 @@ const STRENGTH_TEXT_COLORS = {
 };
 
 const RegisterPage = () => {
-  const { register } = useAuth();
+  const { register, login } = useAuth();
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
@@ -83,11 +84,28 @@ const RegisterPage = () => {
       password: formData.password,
       confirmPassword: formData.confirmPassword,
     });
-    setIsSubmitting(false);
 
     if (result.success) {
-      setSuccessMessage(result.message || t('auth.register.successText', 'Account created! Check your email for a verification link.'));
+      // If session/token was already established by register
+      if (result.data?.accessToken) {
+        setIsSubmitting(false);
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
+      // Immediately establish session via login without redirecting to /login
+      const loginResult = await login(formData.email.trim(), formData.password);
+      setIsSubmitting(false);
+
+      if (loginResult.success) {
+        navigate('/dashboard', { replace: true });
+        return;
+      } else {
+        // If login failed (e.g. backend requires verified email before login)
+        setSuccessMessage(result.message || t('auth.register.successText', 'Account created! Please check your email for a verification link.'));
+      }
     } else {
+      setIsSubmitting(false);
       setErrorMessage(result.error);
       if (result.errors?.length) {
         setErrorDetails(result.errors.map((err) => err.message || err));
@@ -112,8 +130,8 @@ const RegisterPage = () => {
             <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
               {successMessage}
             </p>
-            <Link to="/login" className="btn btn-primary btn-block">
-              {t('auth.register.proceedBtn', 'Proceed to Sign In')} <ArrowRight size={15} />
+            <Link to="/resend-verification" className="btn btn-secondary btn-block">
+              {t('auth.verifyEmail.resendBtn', 'Resend Verification Email')}
             </Link>
           </div>
         </div>

@@ -94,7 +94,13 @@ export class UserService {
       throw new ApiError(404, 'User not found');
     }
 
-    const updated = await userRepository.updateUser(id, data);
+    const updatePayload = {};
+    if (data.firstName !== undefined) updatePayload.first_name = data.firstName;
+    if (data.lastName !== undefined) updatePayload.last_name = data.lastName;
+    if (data.phone !== undefined) updatePayload.phone = data.phone;
+    if (data.avatarUrl !== undefined) updatePayload.avatar_url = data.avatarUrl;
+
+    const updated = await userRepository.updateUser(id, updatePayload);
 
     await logAuditEvent({
       userId: adminUser?.id || null,
