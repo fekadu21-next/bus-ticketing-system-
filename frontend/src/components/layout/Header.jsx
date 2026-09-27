@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -6,6 +7,8 @@ import {
   Bell,
   ShieldCheck,
   Building2,
+  User,
+  KeyRound,
   LogOut,
   ChevronDown,
   Menu,
@@ -15,6 +18,7 @@ import {
 
 export const Header = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const {
     currentRole,
     setCurrentRole,
@@ -35,6 +39,17 @@ export const Header = () => {
   const pendingApprovalsCount = organizations.filter(
     (o) => o.status === "PENDING"
   ).length;
+
+  const handleLogout = async () => {
+    setShowUserMenu(false);
+    await logout();
+    navigate("/login", { replace: true });
+  };
+
+  const handleNavigate = (path) => {
+    setShowUserMenu(false);
+    navigate(path);
+  };
 
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
@@ -239,7 +254,13 @@ export const Header = () => {
                 <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>{displayName}</div>
                 <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{userEmail}</div>
               </div>
-              <button className="dropdown-btn danger-btn" onClick={logout}>
+              <button className="dropdown-btn" onClick={() => handleNavigate("/profile")}>
+                <User size={14} /> Profile & Account
+              </button>
+              <button className="dropdown-btn" onClick={() => handleNavigate("/change-password")}>
+                <KeyRound size={14} /> Change Password
+              </button>
+              <button className="dropdown-btn danger-btn" onClick={handleLogout}>
                 <LogOut size={14} /> Sign Out
               </button>
             </div>
