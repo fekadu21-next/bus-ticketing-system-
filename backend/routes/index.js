@@ -3,6 +3,7 @@ import authRoutes from './auth.route.js';
 import userRoutes from './user.route.js';
 import rbacRoutes from './rbac.route.js';
 import organizationRoutes from './organization.route.js';
+import adminRoutes from './admin/index.js';
 import authenticate from '../middleware/authenticate.middleware.js';
 import { authorizeRole, authorizePermission } from '../middleware/authorize.middleware.js';
 import { ROLES, PERMISSIONS } from '../constants/index.js';
@@ -50,5 +51,6 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/rbac', rbacRoutes);
 router.use('/organizations', organizationRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;
