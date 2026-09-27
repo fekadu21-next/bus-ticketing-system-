@@ -1,6 +1,28 @@
 import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute";
+import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
+
+// Public Pages
+import HomePage from "../pages/HomePage";
+import SearchTripsPage from "../pages/SearchTripsPage";
+import AboutPage from "../pages/AboutPage";
+import ContactPage from "../pages/ContactPage";
+import PartnerRegisterPage from "../pages/PartnerRegisterPage";
+
+// Auth Pages
+import LoginPage from "../features/auth/pages/LoginPage";
+import RegisterPage from "../features/auth/pages/RegisterPage";
+import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "../features/auth/pages/ResetPasswordPage";
+import VerifyEmailPage from "../features/auth/pages/VerifyEmailPage";
+import ResendVerificationPage from "../features/auth/pages/ResendVerificationPage";
+import ProfilePage from "../features/auth/pages/ProfilePage";
+import ChangePasswordPage from "../features/auth/pages/ChangePasswordPage";
+import NotFoundPage from "../features/auth/pages/NotFoundPage";
+import DashboardPage from "../features/auth/pages/DashboardPage";
 
 // Admin Pages
 import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage";
@@ -31,7 +53,7 @@ import { ManagerVerifiersPage } from "../pages/manager/ManagerVerifiersPage";
 import { ManagerReportsPage } from "../pages/manager/ManagerReportsPage";
 import { ManagerSettingsPage } from "../pages/manager/ManagerSettingsPage";
 
-export const AppRoutes = () => {
+export const ManagementConsole = () => {
   const { currentRole, activePage } = useApp();
 
   const renderAdminContent = () => {
@@ -104,3 +126,69 @@ export const AppRoutes = () => {
     </DashboardLayout>
   );
 };
+
+export const AppRoutes = () => {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      {/* Public Pages */}
+      <Route path="/" element={<HomePage />} />
+      <Route path="/search-trips" element={<SearchTripsPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/partner-register" element={<PartnerRegisterPage />} />
+      <Route path="/partner" element={<Navigate to="/partner-register" replace />} />
+
+      {/* Interactive Operations Console / Management Portal */}
+      <Route path="/portal/*" element={<ManagementConsole />} />
+      <Route path="/management/*" element={<ManagementConsole />} />
+      <Route path="/admin" element={<ManagementConsole />} />
+
+      {/* Public Auth Routes */}
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+      />
+      <Route
+        path="/register"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />}
+      />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/resend-verification" element={<ResendVerificationPage />} />
+
+      {/* General Authenticated Routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/change-password"
+        element={
+          <ProtectedRoute>
+            <ChangePasswordPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 404 Catch-All */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+};
+
+export default AppRoutes;

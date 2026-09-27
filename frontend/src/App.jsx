@@ -1,14 +1,31 @@
-import React from "react";
-import { AppProvider } from "./context/AppContext";
-import { AppRoutes } from "./routes/AppRoutes";
-import "./index.css";
+import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { AppProvider } from './context/AppContext';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import AppRoutes from './routes/AppRoutes';
+import './i18n';
+import './index.css';
 
 function App() {
   return (
-    <AppProvider>
-      <AppRoutes />
-    </AppProvider>
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppProvider>
+            <div className="app-container">
+              <Navbar />
+              <main className="main-content">
+                <AppRoutes />
+              </main>
+              <Footer />
+            </div>
+          </AppProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
-
 export default App;
