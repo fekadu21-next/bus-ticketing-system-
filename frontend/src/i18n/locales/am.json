@@ -344,7 +344,8 @@
       "submitBtn": "ግባ",
       "submitting": "በመግባት ላይ...",
       "noAccount": "መለያ የለዎትም?",
-      "registerLink": "ይመዝገቡ"
+      "registerLink": "ይመዝገቡ",
+      "operatorLink": "የአውቶቡስ አጓጓዥ ነዎት? ድርጅትዎን ይመዝግቡ →"
     },
     "register": {
       "title": "መለያ ፍጠር",
@@ -367,7 +368,76 @@
       "loginLink": "እዚህ ይግቡ",
       "successTitle": "ምዝገባ ተሳክቷል",
       "successText": "መለያ ተፈጠረ! ለማረጋጊያ ኢሜሎትን ይፈትሹ።",
-      "proceedBtn": "ወደ መግቢያ ይለፉ"
+      "proceedBtn": "ወደ መግቢያ ይለፉ",
+      "strengthWeak": "ደካማ",
+      "strengthFair": "መካከለኛ",
+      "strengthGood": "ጥሩ",
+      "strengthStrong": "በጣም ጠንካራ",
+      "operatorLink": "የአውቶቡስ አጓጓዥ ነዎት? ድርጅትዎን ይመዝግቡ →"
+    },
+    "forgotPassword": {
+      "title": "የይለፍ ቃል ረሱ?",
+      "subtitle": "የይለፍ ቃል መቀየሪያ ማስፈንጠሪያ ለመቀበል ኢሜይልዎን ያስገቡ",
+      "emailLabel": "የኢሜይል አድራሻ",
+      "emailPlaceholder": "ስም@ምሳሌ.com",
+      "submitBtn": "የመቀየሪያ ሊንክ ላክ",
+      "submitting": "በመላክ ላይ...",
+      "sentTitle": "የመቀየሪያ ሊንክ ተልኳል",
+      "sentText": "በ {{email}} የተመዘገበ መለያ ካለ፣ የይለፍ ቃል መቀየሪያ መመሪያ ተልኳል።",
+      "backToLogin": "ወደ መግቢያ ተመለስ"
+    },
+    "resetPassword": {
+      "title": "የይለፍ ቃልዎን ይቀይሩ",
+      "subtitle": "ለመለያዎ ጠንካራ አዲስ የይለፍ ቃል ይምረጡ",
+      "newPasswordLabel": "አዲስ የይለፍ ቃል",
+      "newPasswordPlaceholder": "ቢያንስ 8 ቁምፊዎች",
+      "confirmPasswordLabel": "የይለፍ ቃል ያረጋግጡ",
+      "confirmPasswordPlaceholder": "የይለፍ ቃሉን ይደግሙ",
+      "submitBtn": "የይለፍ ቃል ቀይር",
+      "submitting": "በማዘመን ላይ...",
+      "successTitle": "የይለፍ ቃል በተሳካ ሁኔታ ተቀይሯል",
+      "signInNow": "በአዲሱ የይለፍ ቃል ይግቡ",
+      "missingToken": "የማረጋገጫ ቶከን የለም ወይም ልክ ያልሆነ ነው። እባክዎ አዲስ ሊንክ ይጠይቁ።",
+      "invalidLink": "ልክ ያልሆነ ወይም ጊዜው ያለፈበት ሊንክ። እባክዎ አዲስ ይጠይቁ።"
+    },
+    "verifyEmail": {
+      "title": "ኢሜይልዎን ያረጋግጡ",
+      "verifying": "የኢሜይል አድራሻዎን በማረጋገጥ ላይ...",
+      "successTitle": "ኢሜይል በተሳካ ሁኔታ ተረጋግጧል",
+      "continueToLogin": "ወደ መግቢያ ይቀጥሉ",
+      "errorTitle": "ማረጋገጥ አልተሳካም",
+      "requestNewLink": "አዲስ የማረጋገጫ ሊንክ ይጠይቁ",
+      "backToLogin": "ወደ መግቢያ ተመለስ",
+      "missingToken": "የማረጋገጫ ቶከን አልተገኘም። እባክዎ ከኢሜይልዎ የተላከውን ሊንክ ይፈትሹ።"
+    },
+    "resendVerification": {
+      "title": "የማረጋገጫ ኢሜይል በድጋሚ ላክ",
+      "subtitle": "አዲስ የማረጋገጫ ሊንክ ለማግኘት የተመዘገቡበትን ኢሜይል ያስገቡ",
+      "emailLabel": "የኢሜይል አድራሻ",
+      "emailPlaceholder": "ስም@ምሳሌ.com",
+      "submitBtn": "የማረጋገጫ ሊንክ በድጋሚ ላክ",
+      "submitting": "በመላክ ላይ...",
+      "sentTitle": "የማረጋገጫ ኢሜይል ተልኳል",
+      "sentText": "ለ {{email}} የተመዘገበ መለያ ካለ የማረጋገጫ ሊንክ ተልኳል።",
+      "backToLogin": "ወደ መግቢያ ተመለስ"
+    },
+    "changePassword": {
+      "title": "የይለፍ ቃል ቀይር",
+      "subtitle": "መለያዎ ደህንነቱ የተጠበቀ እንዲሆን የይለፍ ቃልዎን ያዘምኑ",
+      "backToProfile": "ወደ መገለጫ ተመለስ",
+      "currentPasswordLabel": "የአሁኑ የይለፍ ቃል",
+      "newPasswordLabel": "አዲስ የይለፍ ቃል",
+      "confirmPasswordLabel": "አዲሱን የይለፍ ቃል ያረጋግጡ",
+      "submitBtn": "የይለፍ ቃል አዘምን",
+      "submitting": "በማዘመን ላይ...",
+      "successMsg": "የይለፍ ቃል በተሳካ ሁኔታ ተቀይሯል! ወደ መገለጫ በመመለስ ላይ..."
+    },
+    "errors": {
+      "passwordMismatch": "የይለፍ ቃሎቹ አይመሳሰሉም።",
+      "passwordTooShort": "የይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት።",
+      "resetFailed": "የይለፍ ቃል መቀየር አልተሳካም። ሊንኩ ጊዜው አልፎበት ሊሆን ይችላል።",
+      "verifyFailed": "የኢሜይል ማረጋገጫ አልተሳካም ወይም ሊንኩ ጊዜው አልፏል።",
+      "changeFailed": "የይለፍ ቃል መቀየር አልተሳካም። እባክዎ የአሁኑን የይለፍ ቃልዎን ያረጋግጡ።"
     }
   }
 }

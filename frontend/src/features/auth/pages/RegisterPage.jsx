@@ -65,23 +65,33 @@ const RegisterPage = () => {
     setErrorDetails([]);
 
     if (formData.password !== formData.confirmPassword) {
-      setErrorMessage(t('auth.errors.passwordMismatch'));
+      setErrorMessage(t('auth.errors.passwordMismatch', 'Passwords do not match.'));
       return;
     }
+
     if (formData.password.length < 8) {
-      setErrorMessage(t('auth.errors.passwordTooShort'));
+      setErrorMessage(t('auth.errors.passwordTooShort', 'Password must be at least 8 characters long.'));
       return;
     }
 
     setIsSubmitting(true);
-    const result = await register(formData);
+    const result = await register({
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim() || undefined,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    });
     setIsSubmitting(false);
 
     if (result.success) {
-      setSuccessMessage(result.message || t('auth.register.successText'));
+      setSuccessMessage(result.message || t('auth.register.successText', 'Account created! Check your email for a verification link.'));
     } else {
       setErrorMessage(result.error);
-      if (result.errors) setErrorDetails(result.errors);
+      if (result.errors?.length) {
+        setErrorDetails(result.errors.map((err) => err.message || err));
+      }
     }
   };
 
@@ -96,12 +106,14 @@ const RegisterPage = () => {
             <div className="icon-circle icon-circle-success" style={{ margin: '0 auto 16px' }}>
               <CheckCircle2 size={36} />
             </div>
-            <h2 style={{ fontWeight: 800, marginBottom: 8 }}>{t('auth.register.successTitle')}</h2>
+            <h2 style={{ fontWeight: 800, marginBottom: 8 }}>
+              {t('auth.register.successTitle', 'Registration Successful')}
+            </h2>
             <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
               {successMessage}
             </p>
             <Link to="/login" className="btn btn-primary btn-block">
-              {t('auth.register.proceedBtn')} <ArrowRight size={15} />
+              {t('auth.register.proceedBtn', 'Proceed to Sign In')} <ArrowRight size={15} />
             </Link>
           </div>
         </div>
@@ -120,8 +132,8 @@ const RegisterPage = () => {
           <div className="auth-logo">
             <Bus size={26} color="var(--color-primary)" />
           </div>
-          <h1>{t('auth.register.title')}</h1>
-          <p>{t('auth.register.subtitle')}</p>
+          <h1>{t('auth.register.title', 'Create an Account')}</h1>
+          <p>{t('auth.register.subtitle', 'Register as a passenger to book intercity trips')}</p>
         </div>
 
         {errorMessage && (
@@ -138,42 +150,92 @@ const RegisterPage = () => {
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-grid-2">
             <div className="form-group">
-              <label className="form-label" htmlFor="firstName">{t('auth.register.firstNameLabel')} *</label>
-              <input id="firstName" name="firstName" type="text" required className="form-input"
-                placeholder={t('auth.register.firstNamePlaceholder')} value={formData.firstName}
-                onChange={handleChange} disabled={isSubmitting} />
+              <label className="form-label" htmlFor="firstName">
+                {t('auth.register.firstNameLabel', 'First Name')} *
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                required
+                className="form-input"
+                placeholder={t('auth.register.firstNamePlaceholder', 'Abebe')}
+                value={formData.firstName}
+                onChange={handleChange}
+                disabled={isSubmitting}
+              />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="lastName">{t('auth.register.lastNameLabel')} *</label>
-              <input id="lastName" name="lastName" type="text" required className="form-input"
-                placeholder={t('auth.register.lastNamePlaceholder')} value={formData.lastName}
-                onChange={handleChange} disabled={isSubmitting} />
+              <label className="form-label" htmlFor="lastName">
+                {t('auth.register.lastNameLabel', 'Last Name')} *
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                className="form-input"
+                placeholder={t('auth.register.lastNamePlaceholder', 'Kebede')}
+                value={formData.lastName}
+                onChange={handleChange}
+                disabled={isSubmitting}
+              />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="email">{t('auth.register.emailLabel')} *</label>
-            <input id="email" name="email" type="email" required className="form-input"
-              placeholder={t('auth.register.emailPlaceholder')} value={formData.email}
-              onChange={handleChange} disabled={isSubmitting} autoComplete="email" />
+            <label className="form-label" htmlFor="email">
+              {t('auth.register.emailLabel', 'Email Address')} *
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              className="form-input"
+              placeholder={t('auth.register.emailPlaceholder', 'abebe@example.com')}
+              value={formData.email}
+              onChange={handleChange}
+              disabled={isSubmitting}
+              autoComplete="email"
+            />
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="phone">{t('auth.register.phoneLabel')}</label>
-            <input id="phone" name="phone" type="tel" className="form-input"
-              placeholder={t('auth.register.phonePlaceholder')} value={formData.phone}
-              onChange={handleChange} disabled={isSubmitting} />
+            <label className="form-label" htmlFor="phone">
+              {t('auth.register.phoneLabel', 'Phone Number')}
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              className="form-input"
+              placeholder={t('auth.register.phonePlaceholder', '+251 911 234567')}
+              value={formData.phone}
+              onChange={handleChange}
+              disabled={isSubmitting}
+            />
           </div>
 
           <div className="form-grid-2">
             <div className="form-group">
-              <label className="form-label" htmlFor="password">{t('auth.register.passwordLabel')} *</label>
+              <label className="form-label" htmlFor="password">
+                {t('auth.register.passwordLabel', 'Password')} *
+              </label>
               <div className="input-wrapper">
-                <input id="password" name="password" type={showPassword ? 'text' : 'password'} required
-                  className="form-input with-icon-right" placeholder={t('auth.register.passwordPlaceholder')}
-                  value={formData.password} onChange={handleChange} disabled={isSubmitting}
-                  autoComplete="new-password" />
-                <button type="button" className="input-icon-right" onClick={() => setShowPassword(v => !v)} tabIndex={-1}>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className="form-input with-icon-right"
+                  placeholder={t('auth.register.passwordPlaceholder', 'Min 8 characters')}
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  autoComplete="new-password"
+                />
+                <button type="button" className="input-icon-right" onClick={() => setShowPassword((v) => !v)} tabIndex={-1}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -185,20 +247,30 @@ const RegisterPage = () => {
                     ))}
                   </div>
                   <span className="strength-label" style={{ color: STRENGTH_TEXT_COLORS[score] }}>
-                    {labelKey ? t(`auth.register.${labelKey}`) : ''}
+                    {labelKey ? t(`auth.register.${labelKey}`, labelKey.replace('strength', '')) : ''}
                   </span>
                 </div>
               )}
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="confirmPassword">{t('auth.register.confirmPasswordLabel')} *</label>
+              <label className="form-label" htmlFor="confirmPassword">
+                {t('auth.register.confirmPasswordLabel', 'Confirm Password')} *
+              </label>
               <div className="input-wrapper">
-                <input id="confirmPassword" name="confirmPassword" type={showConfirm ? 'text' : 'password'} required
-                  className="form-input with-icon-right" placeholder={t('auth.register.confirmPasswordPlaceholder')}
-                  value={formData.confirmPassword} onChange={handleChange} disabled={isSubmitting}
-                  autoComplete="new-password" />
-                <button type="button" className="input-icon-right" onClick={() => setShowConfirm(v => !v)} tabIndex={-1}>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirm ? 'text' : 'password'}
+                  required
+                  className="form-input with-icon-right"
+                  placeholder={t('auth.register.confirmPasswordPlaceholder', 'Repeat password')}
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  autoComplete="new-password"
+                />
+                <button type="button" className="input-icon-right" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1}>
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -206,21 +278,27 @@ const RegisterPage = () => {
           </div>
 
           <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting} style={{ marginTop: 6 }}>
-            {isSubmitting
-              ? <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />{t('auth.register.submitting')}</>
-              : <>{t('auth.register.submitBtn')} <ArrowRight size={15} /></>
-            }
+            {isSubmitting ? (
+              <>
+                <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                {t('auth.register.submitting', 'Creating account...')}
+              </>
+            ) : (
+              <>
+                {t('auth.register.submitBtn', 'Register Account')} <ArrowRight size={15} />
+              </>
+            )}
           </button>
         </form>
 
         <div className="auth-footer-link">
-          {t('auth.register.hasAccount')}{' '}
-          <Link to="/login">{t('auth.register.loginLink')}</Link>
+          {t('auth.register.hasAccount', 'Already have an account?')}{' '}
+          <Link to="/login">{t('auth.register.loginLink', 'Sign in here')}</Link>
         </div>
 
         <div className="auth-operator-shortcut">
           <Link to="/partner-register" className="operator-link">
-            Are you a bus operator? Register your organization &rarr;
+            {t('auth.register.operatorLink', 'Are you a bus operator? Register your organization →')}
           </Link>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import Alert from '@/components/ui/Alert';
-import { Eye, EyeOff, ArrowLeft, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, KeyRound } from 'lucide-react';
 
 export const ChangePasswordPage = () => {
   const { changePassword } = useAuth();
@@ -38,12 +38,12 @@ export const ChangePasswordPage = () => {
     setSuccessMessage('');
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setErrorMessage(t('auth.errors.passwordMismatch'));
+      setErrorMessage(t('auth.errors.passwordMismatch', 'Passwords do not match.'));
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      setErrorMessage(t('auth.errors.passwordTooShort'));
+      setErrorMessage(t('auth.errors.passwordTooShort', 'Password must be at least 8 characters long.'));
       return;
     }
 
@@ -52,7 +52,7 @@ export const ChangePasswordPage = () => {
     setIsSubmitting(false);
 
     if (result.success) {
-      setSuccessMessage(t('auth.changePassword.successMsg'));
+      setSuccessMessage(t('auth.changePassword.successMsg', 'Password changed successfully! Redirecting to profile...'));
       setFormData({
         currentPassword: '',
         newPassword: '',
@@ -62,7 +62,7 @@ export const ChangePasswordPage = () => {
         navigate('/profile');
       }, 1500);
     } else {
-      setErrorMessage(result.error || t('auth.errors.changeFailed'));
+      setErrorMessage(result.error || t('auth.errors.changeFailed', 'Failed to change password. Please check your current password.'));
     }
   };
 
@@ -70,16 +70,16 @@ export const ChangePasswordPage = () => {
     <div className="main-content">
       <div style={{ maxWidth: '520px', margin: '0 auto' }}>
         <Link to="/profile" className="back-link">
-          <ArrowLeft size={16} /> {t('auth.changePassword.backToProfile')}
+          <ArrowLeft size={16} /> {t('auth.changePassword.backToProfile', 'Back to Profile')}
         </Link>
 
         <div style={{ marginBottom: '20px' }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <KeyRound size={24} color="var(--color-primary)" />
-            {t('auth.changePassword.title')}
+            {t('auth.changePassword.title', 'Change Password')}
           </h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-            {t('auth.changePassword.subtitle')}
+            {t('auth.changePassword.subtitle', 'Update your account password to keep your account secure')}
           </p>
         </div>
 
@@ -90,7 +90,7 @@ export const ChangePasswordPage = () => {
           <form onSubmit={handleSubmit} noValidate>
             <div className="form-group">
               <label className="form-label" htmlFor="currentPassword">
-                {t('auth.changePassword.currentPasswordLabel')}
+                {t('auth.changePassword.currentPasswordLabel', 'Current Password')}
               </label>
               <div className="input-wrapper">
                 <input
@@ -119,7 +119,7 @@ export const ChangePasswordPage = () => {
 
             <div className="form-group">
               <label className="form-label" htmlFor="newPassword">
-                {t('auth.changePassword.newPasswordLabel')}
+                {t('auth.changePassword.newPasswordLabel', 'New Password')}
               </label>
               <div className="input-wrapper">
                 <input
@@ -148,7 +148,7 @@ export const ChangePasswordPage = () => {
 
             <div className="form-group">
               <label className="form-label" htmlFor="confirmPassword">
-                {t('auth.changePassword.confirmPasswordLabel')}
+                {t('auth.changePassword.confirmPasswordLabel', 'Confirm New Password')}
               </label>
               <div className="input-wrapper">
                 <input
@@ -184,10 +184,10 @@ export const ChangePasswordPage = () => {
               {isSubmitting ? (
                 <>
                   <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                  {t('auth.changePassword.submitting')}
+                  {t('auth.changePassword.submitting', 'Updating password...')}
                 </>
               ) : (
-                t('auth.changePassword.submitBtn')
+                t('auth.changePassword.submitBtn', 'Update Password')
               )}
             </button>
           </form>

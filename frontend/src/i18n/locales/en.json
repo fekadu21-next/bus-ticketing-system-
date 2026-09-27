@@ -344,7 +344,8 @@
       "submitBtn": "Sign In",
       "submitting": "Signing in...",
       "noAccount": "Don't have an account?",
-      "registerLink": "Register here"
+      "registerLink": "Register here",
+      "operatorLink": "Are you a bus operator? Register your organization →"
     },
     "register": {
       "title": "Create an Account",
@@ -367,7 +368,76 @@
       "loginLink": "Sign in here",
       "successTitle": "Registration Successful",
       "successText": "Account created! Check your email for a verification link.",
-      "proceedBtn": "Proceed to Sign In"
+      "proceedBtn": "Proceed to Sign In",
+      "strengthWeak": "Weak",
+      "strengthFair": "Fair",
+      "strengthGood": "Good",
+      "strengthStrong": "Strong",
+      "operatorLink": "Are you a bus operator? Register your organization →"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "subtitle": "Enter your email to receive a password reset link",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "name@example.com",
+      "submitBtn": "Send Reset Link",
+      "submitting": "Sending link...",
+      "sentTitle": "Reset Link Sent",
+      "sentText": "If an account exists with {{email}}, we have sent password reset instructions.",
+      "backToLogin": "Back to Sign In"
+    },
+    "resetPassword": {
+      "title": "Reset Your Password",
+      "subtitle": "Choose a strong new password for your account",
+      "newPasswordLabel": "New Password",
+      "newPasswordPlaceholder": "Min 8 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Repeat password",
+      "submitBtn": "Reset Password",
+      "submitting": "Updating password...",
+      "successTitle": "Password Reset Successfully",
+      "signInNow": "Sign In with New Password",
+      "missingToken": "Reset token is missing or invalid. Please request a new link.",
+      "invalidLink": "Invalid or expired reset link. Please request a new one."
+    },
+    "verifyEmail": {
+      "title": "Verify Your Email",
+      "verifying": "Verifying your email address...",
+      "successTitle": "Email Verified Successfully",
+      "continueToLogin": "Continue to Sign In",
+      "errorTitle": "Verification Failed",
+      "requestNewLink": "Request a New Verification Link",
+      "backToLogin": "Back to Sign In",
+      "missingToken": "Verification token is missing. Please check the link from your email."
+    },
+    "resendVerification": {
+      "title": "Resend Verification Email",
+      "subtitle": "Enter your registered email address to get a new verification link",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "name@example.com",
+      "submitBtn": "Resend Verification Link",
+      "submitting": "Sending verification link...",
+      "sentTitle": "Verification Email Sent",
+      "sentText": "If an account exists for {{email}}, a verification link has been sent.",
+      "backToLogin": "Back to Sign In"
+    },
+    "changePassword": {
+      "title": "Change Password",
+      "subtitle": "Update your account password to keep your account secure",
+      "backToProfile": "Back to Profile",
+      "currentPasswordLabel": "Current Password",
+      "newPasswordLabel": "New Password",
+      "confirmPasswordLabel": "Confirm New Password",
+      "submitBtn": "Update Password",
+      "submitting": "Updating password...",
+      "successMsg": "Password changed successfully! Redirecting to profile..."
+    },
+    "errors": {
+      "passwordMismatch": "Passwords do not match.",
+      "passwordTooShort": "Password must be at least 8 characters long.",
+      "resetFailed": "Failed to reset password. The link may have expired.",
+      "verifyFailed": "Email verification failed or link has expired.",
+      "changeFailed": "Failed to change password. Please check your current password."
     }
   }
 }

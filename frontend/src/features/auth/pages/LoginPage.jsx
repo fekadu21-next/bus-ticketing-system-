@@ -51,8 +51,8 @@ const LoginPage = () => {
           <div className="auth-logo">
             <Bus size={28} color="var(--color-primary)" />
           </div>
-          <h1>{t('auth.login.title')}</h1>
-          <p>{t('auth.login.subtitle')}</p>
+          <h1>{t('auth.login.title', 'Welcome Back')}</h1>
+          <p>{t('auth.login.subtitle', 'Sign in to your bus ticketing account')}</p>
         </div>
 
         {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
@@ -61,7 +61,7 @@ const LoginPage = () => {
           {/* Email */}
           <div className="form-group">
             <label className="form-label" htmlFor="email">
-              {t('auth.login.emailLabel')}
+              {t('auth.login.emailLabel', 'Email Address')}
             </label>
             <input
               id="email"
@@ -69,7 +69,7 @@ const LoginPage = () => {
               type="email"
               required
               className="form-input"
-              placeholder={t('auth.login.emailPlaceholder')}
+              placeholder={t('auth.login.emailPlaceholder', 'name@example.com')}
               value={formData.email}
               onChange={handleChange}
               disabled={isSubmitting}
@@ -81,10 +81,10 @@ const LoginPage = () => {
           <div className="form-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
               <label className="form-label" htmlFor="password" style={{ marginBottom: 0 }}>
-                {t('auth.login.passwordLabel')}
+                {t('auth.login.passwordLabel', 'Password')}
               </label>
               <Link to="/forgot-password" className="text-link" style={{ fontSize: '0.82rem' }}>
-                {t('auth.login.forgotPassword')}
+                {t('auth.login.forgotPassword', 'Forgot password?')}
               </Link>
             </div>
             <div className="input-wrapper">
@@ -94,7 +94,7 @@ const LoginPage = () => {
                 type={showPassword ? 'text' : 'password'}
                 required
                 className="form-input with-icon-right"
-                placeholder={t('auth.login.passwordPlaceholder')}
+                placeholder={t('auth.login.passwordPlaceholder', '••••••••')}
                 value={formData.password}
                 onChange={handleChange}
                 disabled={isSubmitting}
@@ -121,26 +121,26 @@ const LoginPage = () => {
             {isSubmitting ? (
               <>
                 <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2, marginRight: 8 }} />
-                {t('auth.login.submitting')}
+                {t('auth.login.submitting', 'Signing in...')}
               </>
             ) : (
               <>
-                {t('auth.login.submitBtn')} <ArrowRight size={16} style={{ marginLeft: 6 }} />
+                {t('auth.login.submitBtn', 'Sign In')} <ArrowRight size={16} style={{ marginLeft: 6 }} />
               </>
             )}
           </button>
         </form>
 
         <div className="auth-footer-link">
-          {t('auth.login.noAccount')}{' '}
-          <Link to="/register">{t('auth.login.registerLink')}</Link>
+          {t('auth.login.noAccount', "Don't have an account?")}{' '}
+          <Link to="/register">{t('auth.login.registerLink', 'Register here')}</Link>
         </div>
 
         {/* Operator registration shortcut */}
         <div className="auth-operator-shortcut">
           <Link to="/partner-register" className="operator-link">
             <Building size={15} style={{ marginRight: 6 }} />
-            Are you a bus operator? Register your organization &rarr;
+            {t('auth.login.operatorLink', 'Are you a bus operator? Register your organization →')}
           </Link>
         </div>
       </div>

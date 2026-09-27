@@ -32,8 +32,8 @@ const ForgotPasswordPage = () => {
         </div>
 
         <div className="auth-header">
-          <h1>{t('auth.forgotPassword.title')}</h1>
-          <p>{t('auth.forgotPassword.subtitle')}</p>
+          <h1>{t('auth.forgotPassword.title', 'Forgot Password')}</h1>
+          <p>{t('auth.forgotPassword.subtitle', 'Enter your email to receive a password reset link')}</p>
         </div>
 
         {isSubmitted ? (
@@ -41,36 +41,49 @@ const ForgotPasswordPage = () => {
             <div className="icon-circle icon-circle-primary" style={{ margin: '0 auto 16px' }}>
               <CheckCircle2 size={36} />
             </div>
-            <h3 style={{ fontWeight: 800, marginBottom: 8 }}>{t('auth.forgotPassword.sentTitle')}</h3>
+            <h3 style={{ fontWeight: 800, marginBottom: 8 }}>
+              {t('auth.forgotPassword.sentTitle', 'Reset Link Sent')}
+            </h3>
             <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
-              {t('auth.forgotPassword.sentText', { email })}
+              {t('auth.forgotPassword.sentText', { email, defaultValue: `If an account exists with ${email}, we have sent password reset instructions.` })}
             </p>
             <Link to="/login" className="btn btn-secondary btn-block">
-              <ArrowLeft size={15} /> {t('auth.forgotPassword.backToLogin')}
+              <ArrowLeft size={15} /> {t('auth.forgotPassword.backToLogin', 'Back to Sign In')}
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate>
             <div className="form-group">
               <label className="form-label" htmlFor="email">
-                {t('auth.forgotPassword.emailLabel')}
+                {t('auth.forgotPassword.emailLabel', 'Email Address')}
               </label>
-              <input id="email" type="email" required className="form-input"
-                placeholder={t('auth.forgotPassword.emailPlaceholder')}
-                value={email} onChange={(e) => setEmail(e.target.value)}
-                disabled={isSubmitting} autoComplete="email" />
+              <input
+                id="email"
+                type="email"
+                required
+                className="form-input"
+                placeholder={t('auth.forgotPassword.emailPlaceholder', 'name@example.com')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isSubmitting}
+                autoComplete="email"
+              />
             </div>
 
             <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting} style={{ marginTop: 6 }}>
-              {isSubmitting
-                ? <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />{t('auth.forgotPassword.submitting')}</>
-                : t('auth.forgotPassword.submitBtn')
-              }
+              {isSubmitting ? (
+                <>
+                  <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                  {t('auth.forgotPassword.submitting', 'Sending link...')}
+                </>
+              ) : (
+                t('auth.forgotPassword.submitBtn', 'Send Reset Link')
+              )}
             </button>
 
             <div style={{ textAlign: 'center', marginTop: 20 }}>
               <Link to="/login" className="back-link">
-                <ArrowLeft size={15} /> {t('auth.forgotPassword.backToLogin')}
+                <ArrowLeft size={15} /> {t('auth.forgotPassword.backToLogin', 'Back to Sign In')}
               </Link>
             </div>
           </form>

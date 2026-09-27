@@ -22,16 +22,25 @@ const ResetPasswordPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
-    if (!token) { setErrorMessage(t('auth.resetPassword.missingToken')); return; }
-    if (newPassword !== confirmPassword) { setErrorMessage(t('auth.errors.passwordMismatch')); return; }
-    if (newPassword.length < 8) { setErrorMessage(t('auth.errors.passwordTooShort')); return; }
+    if (!token) {
+      setErrorMessage(t('auth.resetPassword.missingToken', 'Reset token is missing or invalid. Please request a new link.'));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMessage(t('auth.errors.passwordMismatch', 'Passwords do not match.'));
+      return;
+    }
+    if (newPassword.length < 8) {
+      setErrorMessage(t('auth.errors.passwordTooShort', 'Password must be at least 8 characters long.'));
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const response = await resetPasswordApi({ token, newPassword, confirmPassword });
-      setSuccessMessage(response.message || t('auth.resetPassword.successTitle'));
+      setSuccessMessage(response.message || t('auth.resetPassword.successTitle', 'Password Reset Successfully'));
     } catch (err) {
-      setErrorMessage(err.response?.data?.message || err.message || t('auth.errors.resetFailed'));
+      setErrorMessage(err.response?.data?.message || err.message || t('auth.errors.resetFailed', 'Failed to reset password. The link may have expired.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -45,8 +54,8 @@ const ResetPasswordPage = () => {
         </div>
 
         <div className="auth-header">
-          <h1>{t('auth.resetPassword.title')}</h1>
-          <p>{t('auth.resetPassword.subtitle')}</p>
+          <h1>{t('auth.resetPassword.title', 'Reset Your Password')}</h1>
+          <p>{t('auth.resetPassword.subtitle', 'Choose a strong new password for your account')}</p>
         </div>
 
         {successMessage ? (
@@ -55,50 +64,72 @@ const ResetPasswordPage = () => {
               <CheckCircle2 size={36} />
             </div>
             <h3 style={{ fontWeight: 800, color: 'var(--color-success)', marginBottom: 8 }}>
-              {t('auth.resetPassword.successTitle')}
+              {t('auth.resetPassword.successTitle', 'Password Reset Successfully')}
             </h3>
             <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>{successMessage}</p>
             <Link to="/login" className="btn btn-primary btn-block">
-              {t('auth.resetPassword.signInNow')} <ArrowRight size={15} />
+              {t('auth.resetPassword.signInNow', 'Sign In with New Password')} <ArrowRight size={15} />
             </Link>
           </div>
         ) : (
           <>
             {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-            {!token && <Alert variant="warning">{t('auth.resetPassword.invalidLink')}</Alert>}
+            {!token && <Alert variant="warning">{t('auth.resetPassword.invalidLink', 'Invalid or expired reset link. Please request a new one.')}</Alert>}
 
             <form onSubmit={handleSubmit} noValidate>
               <div className="form-group">
-                <label className="form-label" htmlFor="newPassword">{t('auth.resetPassword.newPasswordLabel')}</label>
+                <label className="form-label" htmlFor="newPassword">
+                  {t('auth.resetPassword.newPasswordLabel', 'New Password')}
+                </label>
                 <div className="input-wrapper">
-                  <input id="newPassword" type={showNew ? 'text' : 'password'} required
-                    className="form-input with-icon-right" placeholder="••••••••"
-                    value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                    disabled={isSubmitting || !token} autoComplete="new-password" />
-                  <button type="button" className="input-icon-right" onClick={() => setShowNew(v => !v)} tabIndex={-1}>
+                  <input
+                    id="newPassword"
+                    type={showNew ? 'text' : 'password'}
+                    required
+                    className="form-input with-icon-right"
+                    placeholder={t('auth.resetPassword.newPasswordPlaceholder', 'Min 8 characters')}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={isSubmitting || !token}
+                    autoComplete="new-password"
+                  />
+                  <button type="button" className="input-icon-right" onClick={() => setShowNew((v) => !v)} tabIndex={-1}>
                     {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="confirmPassword">{t('auth.resetPassword.confirmPasswordLabel')}</label>
+                <label className="form-label" htmlFor="confirmPassword">
+                  {t('auth.resetPassword.confirmPasswordLabel', 'Confirm Password')}
+                </label>
                 <div className="input-wrapper">
-                  <input id="confirmPassword" type={showConfirm ? 'text' : 'password'} required
-                    className="form-input with-icon-right" placeholder="••••••••"
-                    value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isSubmitting || !token} autoComplete="new-password" />
-                  <button type="button" className="input-icon-right" onClick={() => setShowConfirm(v => !v)} tabIndex={-1}>
+                  <input
+                    id="confirmPassword"
+                    type={showConfirm ? 'text' : 'password'}
+                    required
+                    className="form-input with-icon-right"
+                    placeholder={t('auth.resetPassword.confirmPasswordPlaceholder', 'Repeat password')}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isSubmitting || !token}
+                    autoComplete="new-password"
+                  />
+                  <button type="button" className="input-icon-right" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1}>
                     {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
               <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting || !token} style={{ marginTop: 6 }}>
-                {isSubmitting
-                  ? <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />{t('auth.resetPassword.submitting')}</>
-                  : t('auth.resetPassword.submitBtn')
-                }
+                {isSubmitting ? (
+                  <>
+                    <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                    {t('auth.resetPassword.submitting', 'Updating password...')}
+                  </>
+                ) : (
+                  t('auth.resetPassword.submitBtn', 'Reset Password')
+                )}
               </button>
             </form>
           </>
