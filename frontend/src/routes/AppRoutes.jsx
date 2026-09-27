@@ -54,7 +54,28 @@ import { ManagerReportsPage } from "../pages/manager/ManagerReportsPage";
 import { ManagerSettingsPage } from "../pages/manager/ManagerSettingsPage";
 
 export const ManagementConsole = () => {
-  const { currentRole, activePage } = useApp();
+  const { user } = useAuth();
+  const { currentRole, setCurrentRole, activePage } = useApp();
+
+  React.useEffect(() => {
+    if (user?.roles && Array.isArray(user.roles)) {
+      if (
+        user.roles.includes("BOOKING_COORDINATOR") ||
+        user.roles.includes("OPERATIONAL_MANAGER")
+      ) {
+        if (currentRole !== "MANAGER") {
+          setCurrentRole("MANAGER");
+        }
+      } else if (
+        user.roles.includes("ADMIN") ||
+        user.roles.includes("PLATFORM_ADMIN")
+      ) {
+        if (currentRole !== "ADMIN") {
+          setCurrentRole("ADMIN");
+        }
+      }
+    }
+  }, [user, currentRole, setCurrentRole]);
 
   const renderAdminContent = () => {
     switch (activePage) {

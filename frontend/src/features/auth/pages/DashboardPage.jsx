@@ -181,20 +181,37 @@ export const DashboardPage = () => {
                 <Info size={20} />
               </div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
-                {t('dashboard.integrationNoticeTitle', 'Dashboard Entry Point')}
+                {t('dashboard.integrationNoticeTitle', 'Operations Management Portal')}
               </h3>
             </div>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.92rem', lineHeight: 1.6, margin: 0 }}>
               {t(
                 'dashboard.integrationNoticeDesc',
-                'Welcome to your authenticated account. Role-specific operational dashboards (Platform Admin, Booking Coordinator, Ticket Verifier, and Passenger booking management) will be integrated here in the upcoming phase. All authentication, security, and profile features are fully active.'
+                'Access your role-specific dashboard, interactive sidebar controls, fleet management, trip scheduling, bookings, payments, and system settings.'
               )}
             </p>
+            <div style={{ marginTop: '16px' }}>
+              <Link
+                to="/portal"
+                className="btn btn-primary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
+              >
+                Launch Management Console <ArrowRight size={16} />
+              </Link>
+            </div>
           </div>
 
           <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-              Next step: Operational dashboards will be activated in the next development milestone.
+              Active Session Scope: {userRoles.join(', ')}
             </span>
           </div>
         </div>

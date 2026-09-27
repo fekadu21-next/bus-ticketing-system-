@@ -31,10 +31,21 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
-  /** Helper to get dashboard route */
-  const getDashboardPath = useCallback(() => {
+  /** Helper to get dashboard route based on user roles */
+  const getDashboardPath = useCallback((userData) => {
+    const targetUser = userData || user;
+    if (!targetUser) return '/portal';
+    const roles = Array.isArray(targetUser.roles) ? targetUser.roles : [];
+    if (
+      roles.includes(ROLES.ADMIN) ||
+      roles.includes('PLATFORM_ADMIN') ||
+      roles.includes(ROLES.BOOKING_COORDINATOR) ||
+      roles.includes('OPERATIONAL_MANAGER')
+    ) {
+      return '/portal';
+    }
     return '/dashboard';
-  }, []);
+  }, [user]);
 
   /** Helper to attach locally cached avatar if available */
   const attachCachedAvatar = (userData) => {
@@ -105,7 +116,8 @@ export const AuthProvider = ({ children }) => {
         updateAccessToken(response.data.accessToken);
         const userWithAvatar = attachCachedAvatar(response.data.user);
         setUser(userWithAvatar);
-        return { success: true, user: userWithAvatar, redirectPath: '/dashboard' };
+        const redirectPath = getDashboardPath(userWithAvatar);
+        return { success: true, user: userWithAvatar, redirectPath };
       }
       throw new Error(response.message || 'Login failed');
     } catch (err) {
