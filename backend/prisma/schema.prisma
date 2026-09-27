@@ -41,10 +41,14 @@ model organizations {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name       String       @db.VarChar(150)
   type       String?      @db.VarChar(50)
+  status     String       @default("PENDING") @db.VarChar(30)
   is_active  Boolean      @default(true)
   created_at DateTime     @default(now()) @db.Timestamptz(6)
   updated_at DateTime     @default(now()) @db.Timestamptz(6)
   user_roles user_roles[]
+
+  @@index([status])
+  @@index([type])
 }
 
 model user_roles {
