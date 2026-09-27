@@ -55,7 +55,14 @@ import { ManagerSettingsPage } from "../pages/manager/ManagerSettingsPage";
 
 export const ManagementConsole = () => {
   const { user } = useAuth();
-  const { currentRole, setCurrentRole, activePage } = useApp();
+  const {
+    currentRole,
+    setCurrentRole,
+    activePage,
+    selectedOrgId,
+    setSelectedOrgId,
+    organizations,
+  } = useApp();
 
   React.useEffect(() => {
     if (user?.roles && Array.isArray(user.roles)) {
@@ -66,6 +73,36 @@ export const ManagementConsole = () => {
         if (currentRole !== "MANAGER") {
           setCurrentRole("MANAGER");
         }
+
+        // Lock selectedOrgId to manager's assigned organization
+        const orgCtx = user.organizationContext?.[0] || user.organization;
+        const orgName = orgCtx?.organizationName || orgCtx?.name;
+        const orgId = orgCtx?.organizationId || user.organizationId;
+
+        let targetOrg = organizations.find(
+          (o) =>
+            o.id === orgId ||
+            (orgName && o.name.toLowerCase().includes(orgName.toLowerCase()))
+        );
+
+        if (!targetOrg && orgId) {
+          if (orgId.endsWith("0001"))
+            targetOrg = organizations.find((o) => o.id === "org-101");
+          else if (orgId.endsWith("0002"))
+            targetOrg = organizations.find((o) => o.id === "org-102");
+          else if (orgId.endsWith("0003"))
+            targetOrg = organizations.find((o) => o.id === "org-103");
+          else if (orgId.endsWith("0004"))
+            targetOrg = organizations.find((o) => o.id === "org-104");
+          else if (orgId.endsWith("0005"))
+            targetOrg = organizations.find((o) => o.id === "org-105");
+          else if (orgId.endsWith("0006"))
+            targetOrg = organizations.find((o) => o.id === "org-106");
+        }
+
+        if (targetOrg && selectedOrgId !== targetOrg.id) {
+          setSelectedOrgId(targetOrg.id);
+        }
       } else if (
         user.roles.includes("ADMIN") ||
         user.roles.includes("PLATFORM_ADMIN")
@@ -75,7 +112,7 @@ export const ManagementConsole = () => {
         }
       }
     }
-  }, [user, currentRole, setCurrentRole]);
+  }, [user, currentRole, setCurrentRole, selectedOrgId, setSelectedOrgId, organizations]);
 
   const renderAdminContent = () => {
     switch (activePage) {

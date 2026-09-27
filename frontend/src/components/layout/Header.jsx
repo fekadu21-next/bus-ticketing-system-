@@ -1,19 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 import {
   Search,
   Bell,
   ShieldCheck,
   Building2,
-  UserCheck,
   LogOut,
   ChevronDown,
   Menu,
   X,
+  Lock,
 } from "lucide-react";
-import { useState } from "react";
 
 export const Header = () => {
+  const { user, logout } = useAuth();
   const {
     currentRole,
     setCurrentRole,
@@ -25,7 +26,6 @@ export const Header = () => {
     activeOrg,
     isSidebarCollapsed,
     setIsSidebarCollapsed,
-    toggleSidebar,
   } = useApp();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -35,6 +35,20 @@ export const Header = () => {
   const pendingApprovalsCount = organizations.filter(
     (o) => o.status === "PENDING"
   ).length;
+
+  const displayName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    user?.name ||
+    (currentRole === "ADMIN" ? "Solomon Tekle" : "Company Manager");
+
+  const userInitials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || (currentRole === "ADMIN" ? "ST" : "CM");
+
+  const userEmail = user?.email || (currentRole === "ADMIN" ? "admin@busticket.com" : "manager@busticket.com");
 
   return (
     <header className="top-header">
@@ -49,7 +63,7 @@ export const Header = () => {
           {!isSidebarCollapsed ? <X size={20} /> : <Menu size={20} />}
         </button>
 
-        {/* Desktop toggle + search */}
+        {/* Desktop search */}
         <div className="header-search desktop-search">
           <Search className="search-icon" size={16} />
           <input
@@ -86,38 +100,63 @@ export const Header = () => {
 
       {/* Right actions */}
       <div className="header-right">
-        {/* Role Switcher – hidden on small mobile */}
-        <div className="mode-switcher header-role-switcher">
-          <button
-            className={currentRole === "ADMIN" ? "active" : ""}
-            onClick={() => setCurrentRole("ADMIN")}
-          >
-            <ShieldCheck size={14} />
-            <span className="role-label">Admin</span>
-          </button>
-          <button
-            className={currentRole === "MANAGER" ? "active" : ""}
-            onClick={() => setCurrentRole("MANAGER")}
-          >
-            <Building2 size={14} />
-            <span className="role-label">Manager</span>
-          </button>
-        </div>
+        {/* Role Switcher – only visible for Platform Admin */}
+        {user?.roles?.includes("ADMIN") && (
+          <div className="mode-switcher header-role-switcher">
+            <button
+              className={currentRole === "ADMIN" ? "active" : ""}
+              onClick={() => setCurrentRole("ADMIN")}
+            >
+              <ShieldCheck size={14} />
+              <span className="role-label">Admin</span>
+            </button>
+            <button
+              className={currentRole === "MANAGER" ? "active" : ""}
+              onClick={() => setCurrentRole("MANAGER")}
+            >
+              <Building2 size={14} />
+              <span className="role-label">Manager</span>
+            </button>
+          </div>
+        )}
 
-        {/* Org selector – only for Manager */}
-        {currentRole === "MANAGER" && (
+        {/* Organization Scope */}
+        {currentRole === "ADMIN" ? (
+          /* Platform Admin gets Organization Selector Dropdown to inspect any company */
           <div className="org-selector-wrap">
             <select
               className="org-selector-select"
               value={selectedOrgId}
               onChange={(e) => setSelectedOrgId(e.target.value)}
             >
+              <option value="ALL">All Organizations (System-wide)</option>
               {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
                   {org.name}
                 </option>
               ))}
             </select>
+          </div>
+        ) : (
+          /* Operational Manager is strictly locked to their assigned organization */
+          <div
+            className="org-locked-badge"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "5px 12px",
+              backgroundColor: "rgba(37, 99, 235, 0.08)",
+              border: "1px solid var(--color-primary-border, #bfdbfe)",
+              borderRadius: "20px",
+              fontSize: "0.82rem",
+              fontWeight: 700,
+              color: "var(--primary, #2563eb)",
+            }}
+            title="Operational scope is locked to your assigned organization"
+          >
+            <Lock size={13} />
+            <span>{activeOrg?.name || "Assigned Organization"}</span>
           </div>
         )}
 
@@ -182,15 +221,13 @@ export const Header = () => {
               setShowNotifications(false);
             }}
           >
-            <div className="avatar">
-              {currentRole === "ADMIN" ? "ST" : "DH"}
-            </div>
+            <div className="avatar">{userInitials}</div>
             <div className="user-info desktop-only">
-              <h4>{currentRole === "ADMIN" ? "Solomon Tekle" : "Dawit Haile"}</h4>
+              <h4>{displayName}</h4>
               <span>
                 {currentRole === "ADMIN"
                   ? "Platform Admin"
-                  : `${activeOrg?.name || "Selam Bus"} (Manager)`}
+                  : `${activeOrg?.name || "Company"} Manager`}
               </span>
             </div>
             <ChevronDown size={14} color="var(--text-muted)" className="desktop-only" />
@@ -199,17 +236,10 @@ export const Header = () => {
           {showUserMenu && (
             <div className="dropdown-panel user-panel">
               <div style={{ padding: "0.65rem 1rem", borderBottom: "1px solid var(--border-color)" }}>
-                <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>
-                  {currentRole === "ADMIN" ? "Solomon Tekle" : "Dawit Haile"}
-                </div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                  {currentRole === "ADMIN" ? "admin@platform.gov.et" : "ops@selambus.et"}
-                </div>
+                <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>{displayName}</div>
+                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{userEmail}</div>
               </div>
-              <button className="dropdown-btn">
-                <UserCheck size={14} /> Profile & Security
-              </button>
-              <button className="dropdown-btn danger-btn">
+              <button className="dropdown-btn danger-btn" onClick={logout}>
                 <LogOut size={14} /> Sign Out
               </button>
             </div>
@@ -219,3 +249,5 @@ export const Header = () => {
     </header>
   );
 };
+
+export default Header;

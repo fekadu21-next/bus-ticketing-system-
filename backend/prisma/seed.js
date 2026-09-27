@@ -116,28 +116,28 @@ export async function seedDatabase() {
   console.log(`✅ Role-Permissions mapped (${rolePermissionRecords.length} relations)`);
 
   // 5. Seed Organizations
-  await prisma.organizations.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000001' },
-    update: { is_active: true },
-    create: {
-      id: '00000000-0000-0000-0000-000000000001',
-      name: 'Selam Bus Line',
-      type: 'COMPANY',
-      is_active: true,
-    },
-  });
+  const ORG_LIST = [
+    { id: '00000000-0000-0000-0000-000000000001', name: 'Selam Bus Line', type: 'COMPANY' },
+    { id: '00000000-0000-0000-0000-000000000002', name: 'Abay Bus Transport Association', type: 'ASSOCIATION' },
+    { id: '00000000-0000-0000-0000-000000000003', name: 'Ethio Bus Transport Co', type: 'COMPANY' },
+    { id: '00000000-0000-0000-0000-000000000004', name: 'Rift Valley Express', type: 'COMPANY' },
+    { id: '00000000-0000-0000-0000-000000000005', name: 'Blue Nile Transport Assoc', type: 'ASSOCIATION' },
+    { id: '00000000-0000-0000-0000-000000000006', name: 'Golden Express Bus', type: 'COMPANY' },
+  ];
 
-  await prisma.organizations.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000002' },
-    update: { is_active: true },
-    create: {
-      id: '00000000-0000-0000-0000-000000000002',
-      name: 'Sky Bus Transport System',
-      type: 'COMPANY',
-      is_active: true,
-    },
-  });
-  console.log('✅ Organizations verified and seeded');
+  for (const orgData of ORG_LIST) {
+    await prisma.organizations.upsert({
+      where: { id: orgData.id },
+      update: { is_active: true, name: orgData.name, type: orgData.type },
+      create: {
+        id: orgData.id,
+        name: orgData.name,
+        type: orgData.type,
+        is_active: true,
+      },
+    });
+  }
+  console.log('✅ All 6 Organizations verified and seeded');
 
   // 6. Seed Initial Admin Account
   const adminEmail = 'admin@busticket.com';
@@ -215,7 +215,7 @@ export async function seedDatabase() {
   }
   console.log('✅ Ticket Verifier 1 configured for Selam Bus Line:', verifier1Email);
 
-  // Verifier 2: Sky Bus
+  // Verifier 2: Sky Bus / Abay Bus
   const verifier2Email = 'verifier2@busticket.com';
   const verifier2 = await prisma.users.upsert({
     where: { email: verifier2Email },
@@ -241,48 +241,121 @@ export async function seedDatabase() {
         data: {
           user_id: verifier2.id,
           role_id: verifierRoleId,
-          organization_id: '00000000-0000-0000-0000-000000000002', // Sky Bus
+          organization_id: '00000000-0000-0000-0000-000000000002', // Abay Bus
         },
       });
     }
   }
-  console.log('✅ Ticket Verifier 2 configured for Sky Bus:', verifier2Email);
+  console.log('✅ Ticket Verifier 2 configured for Abay Bus:', verifier2Email);
 
-  // 8. Seed Booking Coordinator Account
+  // 8. Seed Operational Manager Accounts for EACH Organization
   const coordinatorRoleId = roleMap.get(ROLES.BOOKING_COORDINATOR);
-  const coordinatorPasswordHash = await bcrypt.hash('Coordinator@123456', 12);
-  const coordinatorEmail = 'coordinator@busticket.com';
+  const managerPasswordHash = await bcrypt.hash('Manager@123456', 12);
+  const selampasswordHash = await bcrypt.hash('Coordinator@123456', 12);
 
-  const coordinatorUser = await prisma.users.upsert({
-    where: { email: coordinatorEmail },
-    update: { is_active: true, email_verified: true },
-    create: {
-      first_name: 'Ahmed',
-      last_name: 'Mohammed',
-      email: coordinatorEmail,
+  const COMPANY_MANAGERS = [
+    {
+      email: 'coordinator@busticket.com',
+      passwordHash: selampasswordHash,
+      firstName: 'Ahmed',
+      lastName: 'Mohammed',
       phone: '+251933550077',
-      password_hash: coordinatorPasswordHash,
-      is_active: true,
-      email_verified: true,
-      email_verified_at: new Date(),
+      orgId: '00000000-0000-0000-0000-000000000001', // Selam Bus Line
+      orgName: 'Selam Bus Line',
     },
-  });
+    {
+      email: 'selam.manager@busticket.com',
+      passwordHash: managerPasswordHash,
+      firstName: 'Dawit',
+      lastName: 'Haile',
+      phone: '+251911551223',
+      orgId: '00000000-0000-0000-0000-000000000001', // Selam Bus Line
+      orgName: 'Selam Bus Line',
+    },
+    {
+      email: 'abay.manager@busticket.com',
+      passwordHash: managerPasswordHash,
+      firstName: 'Tewodros',
+      lastName: 'Kassaye',
+      phone: '+251911662990',
+      orgId: '00000000-0000-0000-0000-000000000002', // Abay Bus Transport Association
+      orgName: 'Abay Bus Transport Association',
+    },
+    {
+      email: 'ethio.manager@busticket.com',
+      passwordHash: managerPasswordHash,
+      firstName: 'Bethlehem',
+      lastName: 'Worku',
+      phone: '+251911234567',
+      orgId: '00000000-0000-0000-0000-000000000003', // Ethio Bus Transport Co
+      orgName: 'Ethio Bus Transport Co',
+    },
+    {
+      email: 'riftvalley.manager@busticket.com',
+      passwordHash: managerPasswordHash,
+      firstName: 'Ermias',
+      lastName: 'Girma',
+      phone: '+251922111884',
+      orgId: '00000000-0000-0000-0000-000000000004', // Rift Valley Express
+      orgName: 'Rift Valley Express',
+    },
+    {
+      email: 'bluenile.manager@busticket.com',
+      passwordHash: managerPasswordHash,
+      firstName: 'Almaz',
+      lastName: 'Assefa',
+      phone: '+251958220119',
+      orgId: '00000000-0000-0000-0000-000000000005', // Blue Nile Transport Assoc
+      orgName: 'Blue Nile Transport Assoc',
+    },
+    {
+      email: 'golden.manager@busticket.com',
+      passwordHash: managerPasswordHash,
+      firstName: 'Yonas',
+      lastName: 'Kebede',
+      phone: '+251992000551',
+      orgId: '00000000-0000-0000-0000-000000000006', // Golden Express Bus
+      orgName: 'Golden Express Bus',
+    },
+  ];
 
-  if (coordinatorRoleId) {
-    const existingCoordRole = await prisma.user_roles.findFirst({
-      where: { user_id: coordinatorUser.id, role_id: coordinatorRoleId },
+  for (const mgr of COMPANY_MANAGERS) {
+    const mgrUser = await prisma.users.upsert({
+      where: { email: mgr.email },
+      update: { is_active: true, email_verified: true },
+      create: {
+        first_name: mgr.firstName,
+        last_name: mgr.lastName,
+        email: mgr.email,
+        phone: mgr.phone,
+        password_hash: mgr.passwordHash,
+        is_active: true,
+        email_verified: true,
+        email_verified_at: new Date(),
+      },
     });
-    if (!existingCoordRole) {
-      await prisma.user_roles.create({
-        data: {
-          user_id: coordinatorUser.id,
-          role_id: coordinatorRoleId,
-          organization_id: '00000000-0000-0000-0000-000000000001', // Selam Bus Line
-        },
+
+    if (coordinatorRoleId) {
+      const existingRole = await prisma.user_roles.findFirst({
+        where: { user_id: mgrUser.id, role_id: coordinatorRoleId },
       });
+      if (!existingRole) {
+        await prisma.user_roles.create({
+          data: {
+            user_id: mgrUser.id,
+            role_id: coordinatorRoleId,
+            organization_id: mgr.orgId,
+          },
+        });
+      } else if (existingRole.organization_id !== mgr.orgId) {
+        await prisma.user_roles.update({
+          where: { id: existingRole.id },
+          data: { organization_id: mgr.orgId },
+        });
+      }
     }
+    console.log(`✅ Manager configured for ${mgr.orgName}: ${mgr.email}`);
   }
-  console.log('✅ Booking Coordinator configured for Selam Bus Line:', coordinatorEmail);
 
   console.log('🎉 Seeding complete.');
 }
