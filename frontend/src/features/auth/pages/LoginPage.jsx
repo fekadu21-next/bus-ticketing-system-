@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import Alert from '@/components/ui/Alert';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
-import { Bus, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Bus, Eye, EyeOff, ArrowRight, Building } from 'lucide-react';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -17,8 +17,6 @@ const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const from = location.state?.from?.pathname || '/profile?welcome=true';
-
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     if (errorMessage) setErrorMessage('');
@@ -30,8 +28,11 @@ const LoginPage = () => {
     setIsSubmitting(true);
     const result = await login(formData.email, formData.password);
     setIsSubmitting(false);
+
     if (result.success) {
-      navigate(from, { replace: true });
+      // Direct user to requested protected page OR their specific role dashboard
+      const targetPath = location.state?.from?.pathname || result.redirectPath || '/dashboard';
+      navigate(targetPath, { replace: true });
     } else {
       setErrorMessage(result.error);
     }
@@ -48,7 +49,7 @@ const LoginPage = () => {
         {/* Logo + Header */}
         <div className="auth-header">
           <div className="auth-logo">
-            <Bus size={26} color="var(--color-primary)" />
+            <Bus size={28} color="var(--color-primary)" />
           </div>
           <h1>{t('auth.login.title')}</h1>
           <p>{t('auth.login.subtitle')}</p>
@@ -101,7 +102,7 @@ const LoginPage = () => {
               />
               <button
                 type="button"
-                className="input-icon-right"
+                className="input-icon-right btn-password-toggle"
                 onClick={() => setShowPassword((v) => !v)}
                 tabIndex={-1}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -118,9 +119,14 @@ const LoginPage = () => {
             style={{ marginTop: 6 }}
           >
             {isSubmitting ? (
-              <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />{t('auth.login.submitting')}</>
+              <>
+                <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2, marginRight: 8 }} />
+                {t('auth.login.submitting')}
+              </>
             ) : (
-              <>{t('auth.login.submitBtn')} <ArrowRight size={16} /></>
+              <>
+                {t('auth.login.submitBtn')} <ArrowRight size={16} style={{ marginLeft: 6 }} />
+              </>
             )}
           </button>
         </form>
@@ -128,6 +134,14 @@ const LoginPage = () => {
         <div className="auth-footer-link">
           {t('auth.login.noAccount')}{' '}
           <Link to="/register">{t('auth.login.registerLink')}</Link>
+        </div>
+
+        {/* Operator registration shortcut */}
+        <div className="auth-operator-shortcut">
+          <Link to="/partner-register" className="operator-link">
+            <Building size={15} style={{ marginRight: 6 }} />
+            Are you a bus operator? Register your organization &rarr;
+          </Link>
         </div>
       </div>
     </div>

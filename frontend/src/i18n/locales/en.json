@@ -9,19 +9,253 @@
     "error": "Error",
     "success": "Success",
     "or": "or",
-    "required": "Required"
+    "required": "Required",
+    "refresh": "Refresh",
+    "edit": "Edit",
+    "active": "Active",
+    "inactive": "Inactive",
+    "verified": "Verified",
+    "unverified": "Pending"
   },
   "nav": {
-    "brand": "Intercity Bus Lines",
-    "dashboard": "Dashboard",
-    "admin": "Admin",
-    "operations": "Operations",
-    "verifyPass": "Verify Pass",
-    "profile": "Profile",
-    "signIn": "Sign In",
-    "createAccount": "Create Account",
+    "brand": "BusTicket",
+    "subtitle": "Travel Together",
+    "home": "Home",
+    "searchTrips": "Search Trips",
+    "about": "About",
+    "contact": "Contact",
+    "becomePartner": "Become a Partner",
+    "partnerPopupTitle": "Become a Partner",
+    "partnerPopupDesc": "Register your bus company or transport association on our platform.",
+    "startApplication": "Start Application",
+    "signIn": "Login",
+    "createAccount": "Register",
     "logout": "Logout",
-    "switchLang": "አማርኛ"
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "switchLang": "አማርኛ",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode"
+  },
+  "home": {
+    "heroBadge": "YOUR JOURNEY, OUR PRIORITY",
+    "heroTitle1": "Book Bus Tickets",
+    "heroTitle2": "Easily & Securely",
+    "heroSubtitle": "Find the best routes, compare operators, book your seat and travel with confidence across Ethiopia.",
+    "searchForm": {
+      "from": "From",
+      "to": "To",
+      "date": "Departure Date",
+      "selectOrigin": "Select origin",
+      "selectDestination": "Select destination",
+      "searchBtn": "Search Trips"
+    },
+    "features": {
+      "safeTitle": "Safe & Reliable",
+      "safeDesc": "Trusted operators and secure payments.",
+      "liveTitle": "Real-Time Availability",
+      "liveDesc": "See live seat availability and choose your best option.",
+      "mobileTitle": "Book Anywhere",
+      "mobileDesc": "Use our website or mobile app for a seamless experience.",
+      "supportTitle": "24/7 Support",
+      "supportDesc": "We're here to help, anytime, anywhere."
+    },
+    "partnerSection": {
+      "badge": "BECOME A PARTNER",
+      "title": "Register Your Organization",
+      "desc": "Register your bus company or transport association on our platform. After your application is reviewed and approved, you can:",
+      "f1": "Manage your buses",
+      "f2": "Manage routes",
+      "f3": "Create and publish trips",
+      "f4": "Manage drivers",
+      "f5": "Manage ticket verifiers",
+      "f6": "View bookings",
+      "f7": "Monitor payments",
+      "btn": "Start Application"
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "s1Title": "Organization Information",
+      "s1Desc": "Tell us about your company or association.",
+      "s2Title": "Representative Information",
+      "s2Desc": "Add the authorized contact person.",
+      "s3Title": "Account Credentials",
+      "s3Desc": "Create your login credentials.",
+      "s4Title": "Review & Submit",
+      "s4Desc": "Check all details and submit your application."
+    },
+    "operatorBanner": {
+      "title": "Operator Registration Form",
+      "desc": "Complete the 3 simple steps below. It only takes a few minutes.",
+      "btn": "Launch Registration Form"
+    }
+  },
+  "partnerRegister": {
+    "pageTitle": "Operator Registration Form",
+    "pageSubtitle": "Complete the 3 simple steps below. It only takes a few minutes.",
+    "steps": {
+      "org": "Organization",
+      "rep": "Representative",
+      "account": "Account"
+    },
+    "step1": {
+      "counter": "Step 1 of 3",
+      "title": "Organization Information",
+      "orgName": "Organization Name",
+      "orgEmail": "Organization Email",
+      "orgType": "Organization Type",
+      "city": "City",
+      "regNumber": "Registration / License Number",
+      "address": "Office Address",
+      "phone": "Phone Number"
+    },
+    "step2": {
+      "counter": "Step 2 of 3",
+      "title": "Authorized Representative",
+      "fullName": "Full Name",
+      "position": "Position",
+      "phone": "Phone Number",
+      "email": "Email Address"
+    },
+    "step3": {
+      "counter": "Step 3 of 3",
+      "title": "Create Account",
+      "loginEmail": "Login Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "agreeTerms": "I agree to the Terms & Conditions",
+      "reviewBtn": "Review Application"
+    },
+    "step4": {
+      "counter": "Step 4 of 4",
+      "title": "Review Application",
+      "orgSection": "Organization",
+      "repSection": "Representative",
+      "accSection": "Account",
+      "editBtn": "Edit",
+      "submitBtn": "Submit Application",
+      "submitting": "Submitting Application..."
+    },
+    "success": {
+      "title": "Application Submitted Successfully!",
+      "desc": "Thank you for applying to become a partner on BusTicket. An account has been created for",
+      "nextTitle": "What happens next?",
+      "next1": "Our verification team will review your registration and license details within 24–48 hours.",
+      "next2": "Please check your email to verify your address.",
+      "next3": "Once approved, you will receive full access to manage fleet routes, buses, and ticketing.",
+      "proceedLogin": "Proceed to Login",
+      "returnHome": "Return to Home"
+    }
+  },
+  "searchPage": {
+    "title": "Available Trips & Routes",
+    "subtitle": "Compare certified operators and select your preferred schedule.",
+    "fromLabel": "From",
+    "toLabel": "To",
+    "dateLabel": "Date",
+    "showing": "Showing",
+    "availableTrips": "available trips for",
+    "direct": "Direct",
+    "seatsLeft": "seats left",
+    "selectSeats": "Select Seats"
+  },
+  "aboutPage": {
+    "badge": "ABOUT BUSTICKET",
+    "title": "Transforming Intercity Bus Travel",
+    "desc": "BusTicket is Ethiopia's digital public transport ticketing platform connecting travelers with verified bus operators for safe, reliable, and convenient cross-country journeys.",
+    "missionTitle": "Our Mission",
+    "missionDesc": "To modernize road transport ticketing through accessible technology, transparent schedules, and frictionless seat reservations for all passengers.",
+    "securityTitle": "Verified Security",
+    "securityDesc": "Every transport association and private bus operator on our platform is officially licensed and vetted by regional transport authorities.",
+    "supportTitle": "Partner Support",
+    "supportDesc": "We empower operators with digital fleet management, real-time ticket validation tools, and comprehensive passenger manifests.",
+    "ctaTitle": "Are you a registered transport provider?",
+    "ctaDesc": "Join our growing network of bus companies and associations.",
+    "ctaBtn": "Become a Partner"
+  },
+  "contactPage": {
+    "badge": "GET IN TOUCH",
+    "title": "Contact Customer Support",
+    "desc": "Have questions about tickets, schedules, or operator partnerships? We are here to help.",
+    "channelsTitle": "Support Channels",
+    "channelsDesc": "Reach out to our customer care team 24/7 or visit our station offices.",
+    "phoneTitle": "Phone Support",
+    "phoneDesc": "+251 911 234 567 / +251 115 500 000",
+    "phoneSub": "Available 24/7 for booking help",
+    "emailTitle": "Email Assistance",
+    "emailDesc": "support@busticket.et",
+    "emailSub": "Responses within 2–4 hours",
+    "hqTitle": "Headquarters",
+    "hqDesc": "Bole Medhanialem Commercial Center, 4th Floor",
+    "hqSub": "Addis Ababa, Ethiopia",
+    "formTitle": "Send Us a Message",
+    "nameLabel": "Your Name",
+    "emailLabel": "Email Address",
+    "subjectLabel": "Subject",
+    "messageLabel": "Message",
+    "sendBtn": "Send Message",
+    "successTitle": "Thank you for contacting us!",
+    "successDesc": "We have received your message and will respond shortly.",
+    "sendAnother": "Send Another Message"
+  },
+  "dashboards": {
+    "admin": {
+      "badge": "ADMINISTRATOR PORTAL",
+      "title": "Admin Control Panel",
+      "overview": "System Overview",
+      "usersTab": "Users",
+      "orgsTab": "Organizations",
+      "rolesTab": "Roles",
+      "permsTab": "Permissions",
+      "totalUsers": "Total Registered Users",
+      "partnerOrgs": "Partner Organizations",
+      "configuredRoles": "Configured RBAC Roles",
+      "backendHealth": "Backend Health Status"
+    },
+    "coordinator": {
+      "badge": "COORDINATOR PORTAL",
+      "orgInfo": "Organization Info",
+      "trips": "Trips",
+      "buses": "Buses",
+      "bookings": "Bookings",
+      "verifiers": "Ticket Verifiers",
+      "scheduleTrip": "Schedule New Trip"
+    },
+    "verifier": {
+      "badge": "TICKET VERIFIER PORTAL",
+      "title": "Station Ticket Verification",
+      "scanTitle": "Scan or Enter Ticket Code",
+      "ticketLabel": "Ticket Reference / QR Code Data",
+      "validateBtn": "Validate Ticket for Boarding",
+      "valid": "VALID TICKET",
+      "invalid": "INVALID TICKET",
+      "recentActivity": "Recent Verification Activity"
+    },
+    "passenger": {
+      "badge": "PASSENGER PORTAL",
+      "welcome": "Welcome",
+      "subtitle": "Manage your booked bus tickets, trip schedules, and account profile.",
+      "bookTrip": "Book New Trip",
+      "myBookings": "My Bookings",
+      "myTickets": "My Tickets",
+      "profile": "Passenger Profile",
+      "noBookings": "No Active Bookings",
+      "boardingPass": "ELECTRONIC BOARDING PASS"
+    }
+  },
+  "footer": {
+    "desc": "The leading bus travel platform connecting passengers with licensed bus operators. Book seats easily, travel reliably, and manage operations seamlessly.",
+    "quickLinks": "Quick Links",
+    "forOperators": "For Operators",
+    "passengerPortal": "Passenger Portal",
+    "operatorReg": "Operator Registration",
+    "partnerLogin": "Partner Portal Login",
+    "passengerLogin": "Passenger Sign In",
+    "createAccount": "Create Passenger Account",
+    "tripSchedules": "Trip Schedules",
+    "accountHelp": "Help with Account",
+    "rights": "All rights reserved.",
+    "ssl": "256-Bit SSL Encrypted"
   },
   "auth": {
     "login": {
@@ -58,169 +292,7 @@
       "loginLink": "Sign in here",
       "successTitle": "Registration Successful",
       "successText": "Account created! Check your email for a verification link.",
-      "proceedBtn": "Proceed to Sign In",
-      "strengthWeak": "Weak",
-      "strengthFair": "Fair",
-      "strengthGood": "Good",
-      "strengthStrong": "Strong"
-    },
-    "logout": {
-      "loggingOut": "Signing out..."
-    },
-    "forgotPassword": {
-      "title": "Forgot Password",
-      "subtitle": "We'll send you instructions to reset your password",
-      "emailLabel": "Account Email Address",
-      "emailPlaceholder": "name@example.com",
-      "submitBtn": "Send Reset Link",
-      "submitting": "Sending Link...",
-      "sentTitle": "Check Your Inbox",
-      "sentText": "If an account is associated with {{email}}, you will receive a password reset link shortly.",
-      "backToLogin": "Back to Sign In"
-    },
-    "resetPassword": {
-      "title": "Reset Password",
-      "subtitle": "Create a secure new password for your account",
-      "newPasswordLabel": "New Password",
-      "confirmPasswordLabel": "Confirm New Password",
-      "submitBtn": "Reset Password",
-      "submitting": "Updating password...",
-      "successTitle": "Password Updated",
-      "signInNow": "Sign In Now",
-      "missingToken": "Reset token is missing from the link.",
-      "invalidLink": "Invalid or missing reset token. Please request a new password reset link."
-    },
-    "verifyEmail": {
-      "title": "Email Verification",
-      "verifying": "Verifying your email address, please wait...",
-      "successTitle": "Verified!",
-      "errorTitle": "Verification Unsuccessful",
-      "continueToLogin": "Continue to Login",
-      "requestNewLink": "Request New Verification Link",
-      "backToLogin": "Back to Sign In",
-      "missingToken": "Verification token is missing from the URL."
-    },
-    "resendVerification": {
-      "title": "Resend Verification",
-      "subtitle": "Enter your email to receive a new activation link",
-      "emailLabel": "Account Email",
-      "emailPlaceholder": "name@example.com",
-      "submitBtn": "Resend Verification Email",
-      "submitting": "Sending Link...",
-      "sentTitle": "Link Dispatched",
-      "sentText": "If an unverified account exists for {{email}}, a new verification link has been sent.",
-      "backToLogin": "Back to Sign In"
-    },
-    "changePassword": {
-      "title": "Change Password",
-      "subtitle": "Update your password to keep your account secure",
-      "currentPasswordLabel": "Current Password",
-      "newPasswordLabel": "New Password",
-      "confirmPasswordLabel": "Confirm New Password",
-      "submitBtn": "Update Password",
-      "submitting": "Updating...",
-      "backToProfile": "Back to Profile",
-      "successMsg": "Your password has been changed successfully."
-    },
-    "errors": {
-      "passwordMismatch": "Passwords do not match",
-      "passwordTooShort": "Password must be at least 8 characters long",
-      "loginFailed": "Failed to login",
-      "registerFailed": "Registration failed",
-      "changeFailed": "Failed to change password",
-      "resetFailed": "Failed to reset password. The link may have expired.",
-      "verifyFailed": "Verification failed. The link may have expired or already been used."
+      "proceedBtn": "Proceed to Sign In"
     }
-  },
-  "dashboard": {
-    "title": "Welcome, {{name}}!",
-    "subtitle": "Long-distance intercity bus ticketing and operational management",
-    "orgContext": "Operational Scope",
-    "activeOrg": "Active Organization Context",
-    "authorizedRole": "Authorized Role",
-    "passenger": {
-      "searchTitle": "Search Intercity Trips",
-      "searchDesc": "Find scheduled routes across major cities with real-time seat availability.",
-      "searchBtn": "Find Scheduled Buses",
-      "bookingsTitle": "My Bookings & Passes",
-      "bookingsDesc": "View your confirmed tickets, digital boarding passes, and booking history.",
-      "bookingsBtn": "View My Tickets"
-    },
-    "manager": {
-      "fleetTitle": "Bus Fleet Management",
-      "fleetDesc": "Manage bus inventory, seat configurations, and maintenance statuses.",
-      "fleetBtn": "Open Fleet Portal",
-      "scheduleTitle": "Trip Scheduling & Pricing",
-      "scheduleDesc": "Publish new long-distance departures, assign drivers, and manage ticket tariffs.",
-      "scheduleBtn": "Manage Departures"
-    },
-    "verifier": {
-      "title": "Boarding Pass Verification",
-      "desc": "Scan QR boarding passes or enter ticket reference codes at boarding gates.",
-      "btn": "Launch Ticket Scanner"
-    },
-    "admin": {
-      "govTitle": "Platform Governance",
-      "govDesc": "System-wide administrative controls, role assignment, and organization oversight.",
-      "govBtn": "Platform Admin Portal",
-      "auditTitle": "Security & Audit Logs",
-      "auditDesc": "Review real-time authentication events, login failures, lockouts, and token reuse.",
-      "auditBtn": "Inspect Audit Trails"
-    }
-  },
-  "profile": {
-    "title": "User Profile",
-    "subtitle": "Manage your account settings and credentials",
-    "welcomeTitle": "Welcome to Your Account!",
-    "welcomeSubtitle": "Your profile is ready. Here's a summary of your access.",
-    "changePasswordBtn": "Change Password",
-    "signOutBtn": "Sign Out",
-    "personalInfo": "Personal Information",
-    "fullName": "Full Name",
-    "emailAddress": "Email Address",
-    "phoneNumber": "Phone Number",
-    "notProvided": "Not provided",
-    "activeAccount": "Active Account",
-    "suspended": "Suspended",
-    "verified": "Verified",
-    "unverified": "Unverified",
-    "rolesAccess": "Roles & System Access",
-    "assignedRoles": "Assigned Roles",
-    "orgContext": "Operational Organization Context",
-    "orgId": "Org ID",
-    "activePermissions": "Active Permissions"
-  },
-  "admin": {
-    "title": "Platform Admin Portal",
-    "subtitle": "Global governance, user role assignments, and transportation organization oversight",
-    "roleBadge": "Platform Administrator",
-    "orgsTitle": "Bus Companies & Associations",
-    "orgsDesc": "Approve and manage private bus companies and transport associations.",
-    "usersTitle": "User & Role Management",
-    "usersDesc": "Control role assignments and associate them with operational organizations.",
-    "systemRoles": "System Roles",
-    "auditTitle": "Security & Audit Trails",
-    "auditDesc": "Audit records for login attempts, rate limits, lockouts, and token reuse.",
-    "auditBtn": "View Security Log Stream"
-  },
-  "operations": {
-    "title": "Operations Portal",
-    "roleBadge": "Operational Management",
-    "subtitle": "Scoped operational controls: Fleet management, trip scheduling, and passenger bookings",
-    "scopeNote": "Security Boundary Enforced by Backend",
-    "scopeDesc": "All API requests are automatically scoped to Organization ID: {{orgId}}.",
-    "fleetTitle": "Company Bus Fleet",
-    "fleetDesc": "Buses assigned to your operational division.",
-    "addBusBtn": "Add New Bus",
-    "scheduleTitle": "Intercity Schedules",
-    "scheduleDesc": "Daily scheduled departures, stops, and pricing tariffs.",
-    "scheduleTripBtn": "Schedule Trip"
-  },
-  "notFound": {
-    "title": "404",
-    "subtitle": "Page not found",
-    "backBtn": "Go to Dashboard"
-  },
-  "loadingSession": "Loading session...",
-  "checkingPermissions": "Checking permissions..."
+  }
 }

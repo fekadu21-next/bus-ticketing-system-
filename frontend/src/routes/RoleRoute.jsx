@@ -7,7 +7,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 /**
  * Protects routes that require specific roles.
- * Platform admins always pass through regardless of allowedRoles.
+ * Admins always pass through regardless of allowedRoles.
  *
  * @param {{ allowedRoles: string[], children: React.ReactNode }} props
  */
@@ -16,14 +16,14 @@ const RoleRoute = ({ allowedRoles = [], children }) => {
   const { t } = useTranslation();
 
   if (isLoading) {
-    return <LoadingSpinner fullPage label={t('checkingPermissions')} />;
+    return <LoadingSpinner fullPage label={t('checkingPermissions') || 'Checking authorization...'} />;
   }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  const isAdmin = user?.roles?.includes(ROLES.PLATFORM_ADMIN);
+  const isAdmin = user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes('PLATFORM_ADMIN');
   const hasRole = allowedRoles.some((role) => user?.roles?.includes(role));
 
   if (!isAdmin && !hasRole) {

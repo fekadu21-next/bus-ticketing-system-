@@ -217,6 +217,12 @@ const RegisterPage = () => {
           {t('auth.register.hasAccount')}{' '}
           <Link to="/login">{t('auth.register.loginLink')}</Link>
         </div>
+
+        <div className="auth-operator-shortcut">
+          <Link to="/partner-register" className="operator-link">
+            Are you a bus operator? Register your organization &rarr;
+          </Link>
+        </div>
       </div>
     </div>
   );

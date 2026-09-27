@@ -5,7 +5,8 @@ import {
   logoutApi,
   refreshApi,
   changePasswordApi,
-} from '@/features/auth/auth.api';
+  getMeApi,
+} from '@/api/auth.api';
 import { setAccessToken, clearAccessToken, setAuthFailureHandler } from '@/services/api';
 import { ROLES } from '@/constants/roles';
 
@@ -16,10 +17,6 @@ export const AuthProvider = ({ children }) => {
   const [accessToken, setTokenState] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // ---------------------------------------------------------------------------
-  // Internal helpers
-  // ---------------------------------------------------------------------------
 
   /** Sync token to both React state and the Axios in-memory store */
   const updateAccessToken = useCallback((token) => {
@@ -34,16 +31,32 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
-  // ---------------------------------------------------------------------------
+  /** Helper to get role-appropriate dashboard route */
+  const getDashboardPath = useCallback((currentUser = user) => {
+    if (!currentUser?.roles) return '/dashboard';
+    if (currentUser.roles.includes(ROLES.ADMIN)) return '/admin';
+    if (currentUser.roles.includes(ROLES.BOOKING_COORDINATOR)) return '/coordinator';
+    if (currentUser.roles.includes(ROLES.TICKET_VERIFIER)) return '/verifier';
+    if (currentUser.roles.includes(ROLES.PASSENGER)) return '/passenger';
+    return '/dashboard';
+  }, [user]);
+
   // Session initialization — silently tries to refresh on every app load
-  // ---------------------------------------------------------------------------
   const checkAuth = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await refreshApi();
       if (result.success && result.data?.accessToken) {
         updateAccessToken(result.data.accessToken);
-        setUser(result.data.user);
+        if (result.data.user) {
+          setUser(result.data.user);
+        } else {
+          // Fetch full user profile if not in refresh payload
+          const meResult = await getMeApi();
+          if (meResult.success && meResult.data?.user) {
+            setUser(meResult.data.user);
+          }
+        }
       }
     } catch {
       resetAuthState();
@@ -53,15 +66,11 @@ export const AuthProvider = ({ children }) => {
   }, [updateAccessToken, resetAuthState]);
 
   useEffect(() => {
-    // Wire the global Axios 401 handler to our logout function
     setAuthFailureHandler(resetAuthState);
     checkAuth();
   }, [checkAuth, resetAuthState]);
 
-  // ---------------------------------------------------------------------------
   // Public actions
-  // ---------------------------------------------------------------------------
-
   const login = async (email, password) => {
     setError(null);
     try {
@@ -69,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       if (response.success && response.data) {
         updateAccessToken(response.data.accessToken);
         setUser(response.data.user);
-        return { success: true, user: response.data.user };
+        return { success: true, user: response.data.user, redirectPath: getDashboardPath(response.data.user) };
       }
       throw new Error(response.message || 'Login failed');
     } catch (err) {
@@ -96,7 +105,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await logoutApi();
     } catch {
-      // Ignore network errors during logout — always clear local state
+      // Ignore network errors on logout — always clear local state
     } finally {
       resetAuthState();
     }
@@ -115,33 +124,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /** Clear any stored auth error */
   const clearError = () => setError(null);
 
-  // ---------------------------------------------------------------------------
-  // Authorization helpers
-  // ---------------------------------------------------------------------------
-
+  // Role & Permission checking helpers
   const hasRole = (role) => {
     if (!user?.roles) return false;
-    if (user.roles.includes(ROLES.PLATFORM_ADMIN)) return true;
+    if (user.roles.includes(ROLES.ADMIN)) return true;
     return user.roles.includes(role);
   };
 
   const hasPermission = (permission) => {
     if (!user?.permissions) return false;
-    if (user.roles?.includes(ROLES.PLATFORM_ADMIN)) return true;
+    if (user.roles?.includes(ROLES.ADMIN)) return true;
     return user.permissions.includes(permission);
   };
 
-  const isPlatformAdmin = () => user?.roles?.includes(ROLES.PLATFORM_ADMIN) || false;
-  const isOperationalManager = () => user?.roles?.includes(ROLES.OPERATIONAL_MANAGER) || false;
+  const isAdmin = () => user?.roles?.includes(ROLES.ADMIN) || false;
+  const isBookingCoordinator = () => user?.roles?.includes(ROLES.BOOKING_COORDINATOR) || false;
   const isTicketVerifier = () => user?.roles?.includes(ROLES.TICKET_VERIFIER) || false;
   const isPassenger = () => user?.roles?.includes(ROLES.PASSENGER) || false;
 
-  // ---------------------------------------------------------------------------
-  // Context value
-  // ---------------------------------------------------------------------------
+  // Backwards-compatible aliases
+  const isPlatformAdmin = isAdmin;
+  const isOperationalManager = isBookingCoordinator;
+
   const value = {
     user,
     accessToken,
@@ -155,13 +161,16 @@ export const AuthProvider = ({ children }) => {
     checkAuth,
     changePassword,
     clearError,
+    getDashboardPath,
     // Authorization helpers
     hasRole,
     hasPermission,
-    isPlatformAdmin,
-    isOperationalManager,
+    isAdmin,
+    isBookingCoordinator,
     isTicketVerifier,
     isPassenger,
+    isPlatformAdmin,
+    isOperationalManager,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

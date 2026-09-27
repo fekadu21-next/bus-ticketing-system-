@@ -7,21 +7,255 @@
     "back": "ተመለስ",
     "next": "ቀጣይ",
     "error": "ስህተት",
-    "success": "ተሳካ",
+    "success": "ተሳክቷል",
     "or": "ወይም",
-    "required": "ግዴታ"
+    "required": "ግዴታ ነው",
+    "refresh": "አድስ",
+    "edit": "አስተካክል",
+    "active": "ንቁ",
+    "inactive": "የቦዘነ",
+    "verified": "የተረጋገጠ",
+    "unverified": "በመጠባበቅ ላይ"
   },
   "nav": {
-    "brand": "የቅርብ ርቀት አውቶቡስ",
-    "dashboard": "ዳሽቦርድ",
-    "admin": "አስተዳደር",
-    "operations": "ኦፕሬሽንስ",
-    "verifyPass": "ቲኬት አረጋጋጭ",
-    "profile": "መገለጫ",
+    "brand": "BusTicket",
+    "subtitle": "አብረን እንጓዝ",
+    "home": "ዋና ገጽ",
+    "searchTrips": "ጉዞ ፈልግ",
+    "about": "ስለ እኛ",
+    "contact": "ያግኙን",
+    "becomePartner": "አጋር ይሁኑ",
+    "partnerPopupTitle": "አጋር ይሁኑ",
+    "partnerPopupDesc": "የአውቶቡስ ድርጅትዎን ወይም የትራንስፖርት ማህበርዎን በመድረካችን ላይ ይመዝግቡ።",
+    "startApplication": "ማመልከቻ ጀምር",
     "signIn": "ግባ",
-    "createAccount": "መለያ ፍጠር",
+    "createAccount": "ተመዝገብ",
     "logout": "ውጣ",
-    "switchLang": "English"
+    "dashboard": "ዳሽቦርድ",
+    "profile": "መገለጫ",
+    "switchLang": "English",
+    "darkMode": "ጨለማ ገጽታ",
+    "lightMode": "ብሩህ ገጽታ"
+  },
+  "home": {
+    "heroBadge": "ጉዞዎ፣ ቅድሚያችን ነው",
+    "heroTitle1": "የአውቶቡስ ቲኬቶችን",
+    "heroTitle2": "በቀላሉ እና በደህንነት ይቁረጡ",
+    "heroSubtitle": "ምርጥ መንገዶችን ያግኙ፣ አጓጓዦችን ያወዳድሩ፣ መቀመጫዎን ይያዙ እና በመላው ኢትዮጵያ በልበ ሙሉነት ይጓዙ።",
+    "searchForm": {
+      "from": "መነሻ",
+      "to": "መድረሻ",
+      "date": "የመነሻ ቀን",
+      "selectOrigin": "መነሻ ከተማ ይምረጡ",
+      "selectDestination": "መድረሻ ከተማ ይምረጡ",
+      "searchBtn": "ጉዞ ፈልግ"
+    },
+    "features": {
+      "safeTitle": "አስተማማኝ እና ደህንነቱ የተጠበቀ",
+      "safeDesc": "የታመኑ አጓጓዦች እና አስተማማኝ ክፍያዎች።",
+      "liveTitle": "የቀጥታ መቀመጫ መረጃ",
+      "liveDesc": "ያሉትን ክፍት መቀመጫዎች በቀጥታ ይመልከቱ እና ይምረጡ።",
+      "mobileTitle": "በየትኛውም ቦታ ይቁረጡ",
+      "mobileDesc": "ድረ-ገፃችንን ወይም የስልክ መተግበሪያችንን በቀላሉ ይጠቀሙ።",
+      "supportTitle": "የ24/7 የደንበኞች ድጋፍ",
+      "supportDesc": "በማንኛውም ጊዜ፣ በየትኛውም ቦታ ልንረዳዎ ዝግጁ ነን።"
+    },
+    "partnerSection": {
+      "badge": "አጋር ይሁኑ",
+      "title": "ድርጅትዎን ይመዝግቡ",
+      "desc": "የአውቶቡስ ድርጅትዎን ወይም ማህበርዎን በመድረካችን ላይ ይመዝግቡ። ማመልከቻዎ ተመርምሮ ሲጸድቅ የሚከተሉትን ማድረግ ይችላሉ፦",
+      "f1": "አውቶቡሶችን ማስተዳደር",
+      "f2": "የጉዞ መስመሮችን ማስተዳደር",
+      "f3": "ጉዞዎችን መፍጠር እና ማሳተም",
+      "f4": "አሽከርካሪዎችን ማስተዳደር",
+      "f5": "ቲኬት አረጋጋጮችን ማስተዳደር",
+      "f6": "የተያዙ ቲኬቶችን መከታተል",
+      "f7": "ክፍያዎችን በቀጥታ መከታተል",
+      "btn": "ማመልከቻ ጀምር"
+    },
+    "howItWorks": {
+      "title": "እንዴት ይሰራል?",
+      "s1Title": "የድርጅት መረጃ",
+      "s1Desc": "ስለ ኩባንያዎ ወይም ማህበርዎ መረጃ ይስጡን።",
+      "s2Title": "የህጋዊ ወኪል መረጃ",
+      "s2Desc": "ስልጣን ያለውን አድራሻ እና ሰው ያስገቡ።",
+      "s3Title": "የመለያ ምስክርነቶች",
+      "s3Desc": "የመግቢያ ኢሜይል እና የይለፍ ቃል ይፍጠሩ።",
+      "s4Title": "ገምግመው ያመልክቱ",
+      "s4Desc": "ሁሉንም ዝርዝሮች ያረጋግጡና ማመልከቻዎን ይላኩ።"
+    },
+    "operatorBanner": {
+      "title": "የአጓጓዥ ምዝገባ ቅጽ",
+      "desc": "ከታች ያሉትን 3 ቀላል ደረጃዎች ያጠናቅቁ። ጥቂት ደቂቃዎችን ብቻ ይወስዳል።",
+      "btn": "የምዝገባ ቅጹን ክፈት"
+    }
+  },
+  "partnerRegister": {
+    "pageTitle": "የአጓጓዥ ምዝገባ ቅጽ",
+    "pageSubtitle": "ከታች ያሉትን 3 ቀላል ደረጃዎች ያጠናቅቁ። ጥቂት ደቂቃዎችን ብቻ ይወስዳል።",
+    "steps": {
+      "org": "ድርጅት",
+      "rep": "ህጋዊ ወኪል",
+      "account": "መለያ"
+    },
+    "step1": {
+      "counter": "ደረጃ 1 ከ 3",
+      "title": "የድርጅት መረጃ",
+      "orgName": "የድርጅት ስም",
+      "orgEmail": "የድርጅት ኢሜይል",
+      "orgType": "የድርጅት አይነት",
+      "city": "ከተማ",
+      "regNumber": "የምዝገባ / ንግድ ፈቃድ ቁጥር",
+      "address": "የቢሮ አድራሻ",
+      "phone": "ስልክ ቁጥር"
+    },
+    "step2": {
+      "counter": "ደረጃ 2 ከ 3",
+      "title": "ህጋዊ ወኪል",
+      "fullName": "ሙሉ ስም",
+      "position": "የስራ ድርሻ",
+      "phone": "ስልክ ቁጥር",
+      "email": "የኢሜይል አድራሻ"
+    },
+    "step3": {
+      "counter": "ደረጃ 3 ከ 3",
+      "title": "መለያ ይፍጠሩ",
+      "loginEmail": "የመግቢያ ኢሜይል",
+      "password": "የይለፍ ቃል",
+      "confirmPassword": "የይለፍ ቃል ያረጋግጡ",
+      "agreeTerms": "በአገልግሎት ውሎች እና ደንቦች ተስማምቻለሁ",
+      "reviewBtn": "ማመልከቻውን ይገምግሙ"
+    },
+    "step4": {
+      "counter": "ደረጃ 4 ከ 4",
+      "title": "ማመልከቻውን መገምገም",
+      "orgSection": "ድርጅት",
+      "repSection": "ህጋዊ ወኪል",
+      "accSection": "መለያ",
+      "editBtn": "አስተካክል",
+      "submitBtn": "ማመልከቻ አስገባ",
+      "submitting": "በማስገባት ላይ..."
+    },
+    "success": {
+      "title": "ማመልከቻዎ በተሳካ ሁኔታ ቀርቧል!",
+      "desc": "በBusTicket አጋር ለመሆን ስላመለከቱ እናመሰግናለን። መለያ የተፈጠረለት ኢሜይል፦",
+      "nextTitle": "ቀጥሎ ምን ይሆናል?",
+      "next1": "የማረጋገጫ ቡድናችን የፈቃድ እና የምዝገባ ዝርዝሮችዎን በ24–48 ሰዓታት ውስጥ ይመረምራል።",
+      "next2": "እባክዎን ኢሜልዎን በማረጋገጥ አድራሻዎን ያረጋግጡ።",
+      "next3": "ልክ እንደጸደቀ፣ የመስመር፣ የአውቶቡስ እና የቲኬት አስተዳደር ሙሉ ፍቃድ ያገኛሉ።",
+      "proceedLogin": "ወደ መግቢያ ይለፉ",
+      "returnHome": "ወደ ዋና ገጽ ተመለስ"
+    }
+  },
+  "searchPage": {
+    "title": "ዝግጁ የሆኑ ጉዞዎች እና መስመሮች",
+    "subtitle": "ፈቃድ ያላቸውን አጓጓዦች ያወዳድሩ እና ተመራጭ ሰዓትዎን ይምረጡ።",
+    "fromLabel": "መነሻ",
+    "toLabel": "መድረሻ",
+    "dateLabel": "ቀን",
+    "showing": "የሚታየው",
+    "availableTrips": "ዝግጁ ጉዞዎች ለ",
+    "direct": "ቀጥታ ጉዞ",
+    "seatsLeft": "የቀሩ መቀመጫዎች",
+    "selectSeats": "መቀመጫ ይምረጡ"
+  },
+  "aboutPage": {
+    "badge": "ስለ BUSTICKET",
+    "title": "የከተሞች አቋራጭ አውቶቡስ ጉዞን ማዘመን",
+    "desc": "BusTicket ተጓዦችን ከተመሰከረላቸው የአውቶቡስ ድርጅቶች ጋር በማገናኘት አስተማማኝ፣ ፈጣንና ደህንነቱ የተጠበቀ የጉዞ ትኬት መቁረጫ የዲጂታል መድረክ ነው።",
+    "missionTitle": "ተልዕኳችን",
+    "missionDesc": "በዘመናዊ ቴክኖሎጂ አማካኝነት ግልጽ የጉዞ መርሃ-ግብር እና ምቹ የመቀመጫ ቦታ ማስያዝ አገልግሎት ለሁሉም ተሳፋሪዎች ማቅረብ።",
+    "securityTitle": "የተረጋገጠ ህጋዊነት",
+    "securityDesc": "በመድረካችን ላይ የሚሳተፍ ማንኛውም አጓጓዥ ማህበር ወይም የግል ድርጅት በህጋዊ የትራንስፖርት ባለስልጣን እውቅና ያለው ነው።",
+    "supportTitle": "የአጋሮች ድጋፍ",
+    "supportDesc": "አጓጓዦችን በዲጂታል የፍሊት አስተዳደር፣ በቅጽበት ቲኬት ማረጋገጫ እና በተሳፋሪዎች ዝርዝር ቁጥጥር እናግዛለን።",
+    "ctaTitle": "የተመዘገቡ የትራንስፖርት አቅራቢ ነዎት?",
+    "ctaDesc": "እያደገ የመጣውን የአውቶቡስ ኩባንያዎች መረብ ይቀላቀሉ።",
+    "ctaBtn": "አጋር ይሁኑ"
+  },
+  "contactPage": {
+    "badge": "ያግኙን",
+    "title": "የደንበኞች አገልግሎት ድጋፍ",
+    "desc": "ስለ ቲኬት፣ መርሃ-ግብር ወይም የአጋርነት ጥያቄ ካለዎት እኛን ለማነጋገር ዝግጁ ነን።",
+    "channelsTitle": "የመገናኛ መንገዶች",
+    "channelsDesc": "የደንበኞች አገልግሎት ቡድናችንን በ24/7 ስልክ ያግኙ ወይም ቢሮአችን ይምጡ።",
+    "phoneTitle": "የስልክ ድጋፍ",
+    "phoneDesc": "+251 911 234 567 / +251 115 500 000",
+    "phoneSub": "ለቦታ ማስያዣ ድጋፍ ሁልጊዜ ዝግጁ ነው",
+    "emailTitle": "የኢሜይል ድጋፍ",
+    "emailDesc": "support@busticket.et",
+    "emailSub": "ከ2-4 ሰዓታት ውስጥ መልስ እንሰጣለን",
+    "hqTitle": "ዋና ቢሮ",
+    "hqDesc": "ቦሌ መድኃኔዓለም የንግድ ማዕከል፣ 4ኛ ፎቅ",
+    "hqSub": "አዲስ አበባ፣ ኢትዮጵያ",
+    "formTitle": "መልእክት ይላኩልን",
+    "nameLabel": "ሙሉ ስም",
+    "emailLabel": "የኢሜይል አድራሻ",
+    "subjectLabel": "ጉዳዩ",
+    "messageLabel": "መልእክት",
+    "sendBtn": "መልእክት ላክ",
+    "successTitle": "ስላነጋገሩን እናመሰግናለን!",
+    "successDesc": "መልእክትዎ ደርሶናል፤ በፍጥነት ምላሽ እንሰጣለን።",
+    "sendAnother": "ሌላ መልእክት ላክ"
+  },
+  "dashboards": {
+    "admin": {
+      "badge": "የስርዓት አስተዳዳሪ ፖርታል",
+      "title": "የአስተዳዳሪ መቆጣጠሪያ ሰሌዳ",
+      "overview": "አጠቃላይ እይታ",
+      "usersTab": "ተጠቃሚዎች",
+      "orgsTab": "ድርጅቶች",
+      "rolesTab": "ሚናዎች",
+      "permsTab": "ፈቃዶች",
+      "totalUsers": "ጠቅላላ የተመዘገቡ ተጠቃሚዎች",
+      "partnerOrgs": "አጋር ድርጅቶች",
+      "configuredRoles": "የተዘጋጁ ሚናዎች",
+      "backendHealth": "የስርዓት የስራ ሁኔታ"
+    },
+    "coordinator": {
+      "badge": "የአስተባባሪ ፖርታል",
+      "orgInfo": "የድርጅት መረጃ",
+      "trips": "ጉዞዎች",
+      "buses": "አውቶቡሶች",
+      "bookings": "የተያዙ ቲኬቶች",
+      "verifiers": "ቲኬት አረጋጋጮች",
+      "scheduleTrip": "አዲስ ጉዞ መርሐግብር"
+    },
+    "verifier": {
+      "badge": "የቲኬት አረጋጋጭ ፖርታል",
+      "title": "የማረጋገጫ ሰሌዳ",
+      "scanTitle": "የቲኬት ኮድ ያስገቡ ወይም ይቃኙ",
+      "ticketLabel": "የቲኬት መለያ / QR ኮድ ዳታ",
+      "validateBtn": "ቲኬቱን ለመሳፈር አረጋግጥ",
+      "valid": "ትክክለኛ ቲኬት",
+      "invalid": "ልክ ያልሆነ ቲኬት",
+      "recentActivity": "የቅርብ ጊዜ የማረጋገጫ እንቅስቃሴ"
+    },
+    "passenger": {
+      "badge": "የተሳፋሪ ፖርታል",
+      "welcome": "እንኳን ደህና መጡ",
+      "subtitle": "የተያዙ ትኬቶችን፣ የጉዞ መርሃ-ግብሮችን እና መለያዎን ያስተዳድሩ።",
+      "bookTrip": "አዲስ ጉዞ ይቁረጡ",
+      "myBookings": "የእኔ ጉዞዎች",
+      "myTickets": "የእኔ ቲኬቶች",
+      "profile": "የተሳፋሪ መገለጫ",
+      "noBookings": "ምንም የተያዘ ጉዞ የለም",
+      "boardingPass": "የኤሌክትሮኒክ መሳፈሪያ ሰነድ"
+    }
+  },
+  "footer": {
+    "desc": "ተሳፋሪዎችን ፈቃድ ካላቸው የአውቶቡስ አጓጓዦች ጋር የሚያገናኝ መሪ መድረክ። መቀመጫዎችን በቀላሉ ይያዙ፣ በሰላም ይጓዙ።",
+    "quickLinks": "ፈጣን ማስፈንጠሪያዎች",
+    "forOperators": "ለአጓጓዦች",
+    "passengerPortal": "የተሳፋሪዎች ፖርታል",
+    "operatorReg": "የአጓጓዥ ምዝገባ",
+    "partnerLogin": "የአጋሮች መግቢያ",
+    "passengerLogin": "የተሳፋሪዎች መግቢያ",
+    "createAccount": "የተሳፋሪ መለያ ይፍጠሩ",
+    "tripSchedules": "የጉዞ መርሃ-ግብሮች",
+    "accountHelp": "የመለያ ድጋፍ",
+    "rights": "መብቱ በህግ የተጠበቀ ነው።",
+    "ssl": "የተጠበቀ 256-Bit SSL ምስጠራ"
   },
   "auth": {
     "login": {
@@ -56,171 +290,9 @@
       "submitting": "መለያ በመፍጠር ላይ...",
       "hasAccount": "ቀድሞ መለያ አለዎት?",
       "loginLink": "እዚህ ይግቡ",
-      "successTitle": "ምዝገባ ተሳካ",
-      "successText": "መለያ ተፈጠረ! ለማረጋጊያ ኢሜሎ ይፈትሹ።",
-      "proceedBtn": "ወደ ግቢ ቀጥሉ",
-      "strengthWeak": "ደካማ",
-      "strengthFair": "መካከለኛ",
-      "strengthGood": "ጥሩ",
-      "strengthStrong": "ጠንካራ"
-    },
-    "logout": {
-      "loggingOut": "በመውጣት ላይ..."
-    },
-    "forgotPassword": {
-      "title": "የይለፍ ቃል ረሱ",
-      "subtitle": "ለማስጠኛ ኢሜሎ ይልካሎ",
-      "emailLabel": "የኢሜይል አድራሻ",
-      "emailPlaceholder": "ስም@ምሳሌ.com",
-      "submitBtn": "የማስጠኛ ኢሜይል ላክ",
-      "submitting": "በመላክ ላይ...",
-      "sentTitle": "ኢሜሎዎን ይፈትሹ",
-      "sentText": "{{email}} ጋር የተያያዘ መለያ ካለ, ማስጠኛ ኢሜሎ ይደርሶታል።",
-      "backToLogin": "ወደ ግቢ ተመለስ"
-    },
-    "resetPassword": {
-      "title": "የይለፍ ቃል ይቀይሩ",
-      "subtitle": "ለመለያዎ ደህንነቱ የተጠበቀ የይለፍ ቃል ይፍጠሩ",
-      "newPasswordLabel": "አዲስ የይለፍ ቃል",
-      "confirmPasswordLabel": "አዲስ የይለፍ ቃል ያረጋግጡ",
-      "submitBtn": "የይለፍ ቃል ቀይር",
-      "submitting": "በማዘመን ላይ...",
-      "successTitle": "የይለፍ ቃሉ ተቀይሯል",
-      "signInNow": "አሁን ይግቡ",
-      "missingToken": "የማስጠኛ ኮድ ከሊንኩ ጠፍቷል።",
-      "invalidLink": "ልክ ያልሆነ ወይም የጠፋ ኮድ። አዲስ ማስጠኛ ኢሜይል ይጠይቁ።"
-    },
-    "verifyEmail": {
-      "title": "የኢሜይል ማረጋገጫ",
-      "verifying": "ኢሜሎዎን በማረጋገጥ ላይ፣ እባክዎ ይጠብቁ...",
-      "successTitle": "ተረጋግጧል!",
-      "errorTitle": "ማረጋገጫ አልተሳካም",
-      "continueToLogin": "ወደ ግቢ ቀጥሉ",
-      "requestNewLink": "አዲስ ማረጋጊያ ኢሜይል ጠይቅ",
-      "backToLogin": "ወደ ግቢ ተመለስ",
-      "missingToken": "ማረጋጊያ ኮዱ ከሊንኩ ጠፍቷል።"
-    },
-    "resendVerification": {
-      "title": "ማረጋጊያ ኢሜይል ድጋሚ ላክ",
-      "subtitle": "አዲስ ማረጋጊያ ኢሜይል ለመቀበል ኢሜሎዎን ያስገቡ",
-      "emailLabel": "የኢሜይል አድራሻ",
-      "emailPlaceholder": "ስም@ምሳሌ.com",
-      "submitBtn": "ማረጋጊያ ኢሜይል ላክ",
-      "submitting": "በመላክ ላይ...",
-      "sentTitle": "ኢሜይሉ ተላከ",
-      "sentText": "{{email}} ጋር ያልተረጋገጠ መለያ ካለ፣ አዲስ ኢሜይል ይደርሶታል።",
-      "backToLogin": "ወደ ግቢ ተመለስ"
-    },
-    "changePassword": {
-      "title": "የይለፍ ቃል ቀይር",
-      "subtitle": "መለያዎን ደህንነቱ ለመጠበቅ የይለፍ ቃልዎን ያዘምኑ",
-      "currentPasswordLabel": "አሁን ያለው የይለፍ ቃል",
-      "newPasswordLabel": "አዲስ የይለፍ ቃል",
-      "confirmPasswordLabel": "አዲስ የይለፍ ቃል ያረጋግጡ",
-      "submitBtn": "የይለፍ ቃል አዘምን",
-      "submitting": "በማዘመን ላይ...",
-      "backToProfile": "ወደ መገለጫ ተመለስ",
-      "successMsg": "የይለፍ ቃልዎ በተሳካ ሁኔታ ተቀይሯል።"
-    },
-    "errors": {
-      "passwordMismatch": "የይለፍ ቃሎቹ አይዛመዱም",
-      "passwordTooShort": "የይለፍ ቃሉ ቢያንስ 8 ቁምፊዎች ሊኖሩት ይገባል",
-      "loginFailed": "መግባት አልተሳካም",
-      "registerFailed": "ምዝገባ አልተሳካም",
-      "changeFailed": "የይለፍ ቃሉን መቀየር አልተሳካም",
-      "resetFailed": "የይለፍ ቃሉን ማስጠኛ አልተሳካም። ሊንኩ ጊዜው ሊያልፍ ይችላል።",
-      "verifyFailed": "ማረጋጋጥ አልተሳካም። ሊንኩ ጊዜው አልፏል ወይም አስቀድሞ ጥቅም ላይ ውሏል።"
+      "successTitle": "ምዝገባ ተሳክቷል",
+      "successText": "መለያ ተፈጠረ! ለማረጋጊያ ኢሜሎትን ይፈትሹ።",
+      "proceedBtn": "ወደ መግቢያ ይለፉ"
     }
-  },
-  "dashboard": {
-    "title": "እንኳን ደህና መጡ፣ {{name}}!",
-    "subtitle": "የሩቅ ርቀት የቅርብ ርቀት አውቶቡስ ቲኬት እና ኦፕሬሽናል አስተዳደር",
-    "orgContext": "የሥራ ወሰን",
-    "activeOrg": "ንቁ ድርጅት አውድ",
-    "authorizedRole": "ፍቃድ ያለው ሚና",
-    "passenger": {
-      "searchTitle": "የቅርብ ርቀት ጉዞዎችን ፈልጉ",
-      "searchDesc": "በቅጽበት ቦታ መረጃ ጋር ዋና ከተሞችን ጉዞዎች ያግኙ።",
-      "searchBtn": "ሌሎቹ አውቶቡሶች ፈልጉ",
-      "bookingsTitle": "ቦታ ምዝገባዎቼ እና ትኬቶቼ",
-      "bookingsDesc": "የተረጋገጡ ቲኬቶቹን፣ ዲጂታል ቦርዲንግ ፓሶቹን ይፈትሹ።",
-      "bookingsBtn": "ቲኬቶቼን ይፈትሹ"
-    },
-    "manager": {
-      "fleetTitle": "የአውቶቡስ መኪና አስተዳደር",
-      "fleetDesc": "የአውቶቡሶቹን ቁጥር፣ ወንበር ውቅር እና ጥገና ሁኔታ ያቀናብሩ።",
-      "fleetBtn": "ወደ Fleet ፖርታሉ ይሂዱ",
-      "scheduleTitle": "ጉዞ መርሃ ግብር እና ዋጋ",
-      "scheduleDesc": "አዲስ ጉዞዎች ያሳትሙ፣ ሾፌሮቹን ይምደቡ፣ ታሪፎቹን ያቀናብሩ።",
-      "scheduleBtn": "ጉዞዎችን ያቀናብሩ"
-    },
-    "verifier": {
-      "title": "የቦርዲንግ ፓስ ማረጋጋጫ",
-      "desc": "QR ቦርዲንግ ፓሶቹን ይቃኙ ወይም ቲኬት ማጣቀሻ ኮዶቹን ያስገቡ።",
-      "btn": "ቲኬት ስካነርን ያስጀምሩ"
-    },
-    "admin": {
-      "govTitle": "የፕላትፎርም አስተዳደር",
-      "govDesc": "ሥርዓት-ሰፊ አስተዳደራዊ ቁጥጥሮች፣ ሚና ምደባ እና ድርጅት ቁጥጥር።",
-      "govBtn": "ወደ አስተዳደር ፖርታሉ ይሂዱ",
-      "auditTitle": "ደህንነት እና ኦዲት ምዝግቦች",
-      "auditDesc": "የማረጋጋጫ ክስተቶቹን፣ ያልተሳኩ ሙከራዎቹን ፣ ቶኬን አጠቃቀሞቹን ይፈትሹ።",
-      "auditBtn": "ኦዲት ምዝግቦቹን ይፈትሹ"
-    }
-  },
-  "profile": {
-    "title": "የተጠቃሚ መገለጫ",
-    "subtitle": "የመለያ ቅንብሮቹን እና ምስክርነቶቹን ያቀናብሩ",
-    "welcomeTitle": "ወደ መለያዎ እንኳን ደህና መጡ!",
-    "welcomeSubtitle": "መገለጫዎ ዝግጁ ነው። ያለዎ ፍቃዶቹ ማጠቃለያ ይህ ነው።",
-    "changePasswordBtn": "የይለፍ ቃል ቀይር",
-    "signOutBtn": "ውጣ",
-    "personalInfo": "የግል መረጃ",
-    "fullName": "ሙሉ ስም",
-    "emailAddress": "የኢሜይል አድራሻ",
-    "phoneNumber": "ስልክ ቁጥር",
-    "notProvided": "አልተሰጠም",
-    "activeAccount": "ንቁ መለያ",
-    "suspended": "ታግዷል",
-    "verified": "ተረጋጋጧል",
-    "unverified": "አልተረጋገጠም",
-    "rolesAccess": "ሚናዎች እና ስርዓት ፍቃዶች",
-    "assignedRoles": "የተሰጡ ሚናዎች",
-    "orgContext": "የሥራ ድርጅት አውድ",
-    "orgId": "ድርጅት መለያ",
-    "activePermissions": "ንቁ ፍቃዶች"
-  },
-  "admin": {
-    "title": "የፕላትፎርም አስተዳደር ፖርታል",
-    "subtitle": "ዓለም አቀፍ አስተዳደር፣ የተጠቃሚ ሚና ምደባ እና ድርጅት ቁጥጥር",
-    "roleBadge": "የፕላትፎርም አስተዳዳሪ",
-    "orgsTitle": "የአውቶቡስ ኩባንያዎች እና ማህበሮች",
-    "orgsDesc": "የግል አውቶቡስ ኩባንያዎቹን እና የትራንስፖርት ማህበሮቹን ያፅድቁ።",
-    "usersTitle": "ተጠቃሚ እና ሚና አስተዳደር",
-    "usersDesc": "ሚና ምደባዎቹን ያቀናብሩ እና ከሥራ ድርጅቶቹ ጋር ያዛምዱ።",
-    "systemRoles": "የስርዓት ሚናዎች",
-    "auditTitle": "ደህንነት እና ኦዲት ምዝግቦች",
-    "auditDesc": "ለግባ ሙከራዎቹ፣ ፍጥነት ገደቦቹ፣ ብሎኮቹ እና ቶኬን አጠቃቀሞቹ ኦዲት ምዝግቦቹ።",
-    "auditBtn": "የደህንነት ምዝግቦቹን ይፈትሹ"
-  },
-  "operations": {
-    "title": "ኦፕሬሽን ፖርታል",
-    "roleBadge": "ኦፕሬሽናል አስተዳደር",
-    "subtitle": "ወሰን ያለው ቁጥጥር፦ የ Fleet አስተዳደር፣ ጉዞ መርሃ ግብር እና ቦታ ምዝገባ",
-    "scopeNote": "ከኋላ ክፍሉ የተፈፀመ የደህንነት ወሰን",
-    "scopeDesc": "ሁሉም የ API ጥያቄዎች ለድርጅት ID {{orgId}} ወሰን ተደርጓቸዋል።",
-    "fleetTitle": "የኩባንያ አውቶቡሶች",
-    "fleetDesc": "ለሥራ ክፍልዎ የተሰጡ አውቶቡሶቹ።",
-    "addBusBtn": "አዲስ አውቶቡስ ጨምር",
-    "scheduleTitle": "የቅርብ ርቀት መርሃ ግብሮች",
-    "scheduleDesc": "ዕለታዊ የተቀጠሩ ጉዞዎቹ፣ ማቆሚያዎቹ እና ዋጋ ታሪፎቹ።",
-    "scheduleTripBtn": "ጉዞ ያቅዱ"
-  },
-  "notFound": {
-    "title": "404",
-    "subtitle": "ገጹ አልተገኘም",
-    "backBtn": "ወደ ዳሽቦርድ ሂድ"
-  },
-  "loadingSession": "ሴሽን በመጫን ላይ...",
-  "checkingPermissions": "ፍቃዶቹ በመፈተሽ ላይ..."
+  }
 }
