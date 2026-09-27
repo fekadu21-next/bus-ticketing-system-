@@ -161,10 +161,11 @@ export const AppRoutes = () => {
       <Route path="/partner-register" element={<PartnerRegisterPage />} />
       <Route path="/partner" element={<Navigate to="/partner-register" replace />} />
 
-      {/* Interactive Operations Console / Management Portal */}
+      {/* Interactive Operations Console & System Dashboard */}
+      <Route path="/dashboard/*" element={<ManagementConsole />} />
       <Route path="/portal/*" element={<ManagementConsole />} />
       <Route path="/management/*" element={<ManagementConsole />} />
-      <Route path="/admin" element={<ManagementConsole />} />
+      <Route path="/admin/*" element={<ManagementConsole />} />
 
       {/* Public Auth Routes */}
       <Route
@@ -180,9 +181,9 @@ export const AppRoutes = () => {
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/resend-verification" element={<ResendVerificationPage />} />
 
-      {/* General Authenticated Routes */}
+      {/* User Account Settings */}
       <Route
-        path="/dashboard"
+        path="/account-overview"
         element={
           <ProtectedRoute>
             <DashboardPage />
