@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { CheckCircle2, QrCode, Search, AlertCircle, Clock } from 'lucide-react';
-import Alert from '@/components/ui/Alert';
+import { useTranslation } from 'react-i18next';
+import { CheckCircle2, QrCode, Clock } from 'lucide-react';
 
 export const VerifierDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [ticketInput, setTicketInput] = useState('');
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -59,10 +60,10 @@ export const VerifierDashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header-strip">
         <div>
-          <span className="badge-role verifier">TICKET VERIFIER PORTAL</span>
-          <h1>Station Ticket Verification</h1>
+          <span className="badge-role verifier">{t('dashboards.verifier.badge')}</span>
+          <h1>{t('dashboards.verifier.title')}</h1>
           <p>
-            Logged in as Verifier: <strong>{user?.firstName} {user?.lastName}</strong>
+            Logged in as: <strong>{user?.firstName} {user?.lastName}</strong> ({user?.email})
           </p>
         </div>
       </div>
@@ -72,12 +73,12 @@ export const VerifierDashboard = () => {
         <div className="verifier-form-card">
           <div className="verifier-card-header">
             <QrCode size={26} color="#059669" />
-            <h3>Scan or Enter Ticket Code</h3>
+            <h3>{t('dashboards.verifier.scanTitle')}</h3>
           </div>
 
           <form onSubmit={handleVerify} className="verifier-form">
             <div className="form-group">
-              <label className="form-label">Ticket Reference / QR Code Data</label>
+              <label className="form-label">{t('dashboards.verifier.ticketLabel')}</label>
               <div className="input-wrapper">
                 <input
                   type="text"
@@ -92,7 +93,7 @@ export const VerifierDashboard = () => {
 
             <button type="submit" className="btn btn-partner btn-block btn-lg" disabled={loading}>
               <CheckCircle2 size={18} style={{ marginRight: 8 }} />
-              {loading ? 'Verifying...' : 'Validate Ticket for Boarding'}
+              {loading ? t('common.loading') : t('dashboards.verifier.validateBtn')}
             </button>
           </form>
 
@@ -100,7 +101,7 @@ export const VerifierDashboard = () => {
             <div className={`scan-result-banner ${scanResult.valid ? 'success' : 'danger'}`}>
               <CheckCircle2 size={24} color="#059669" />
               <div>
-                <h4>{scanResult.valid ? 'VALID TICKET' : 'INVALID TICKET'}</h4>
+                <h4>{scanResult.valid ? t('dashboards.verifier.valid') : t('dashboards.verifier.invalid')}</h4>
                 <p>{scanResult.message}</p>
               </div>
             </div>
@@ -112,7 +113,7 @@ export const VerifierDashboard = () => {
           <div className="table-header">
             <div className="header-with-icon">
               <Clock size={18} color="#2563eb" />
-              <h3>Recent Verification Activity</h3>
+              <h3>{t('dashboards.verifier.recentActivity')}</h3>
             </div>
           </div>
           <div className="table-responsive">

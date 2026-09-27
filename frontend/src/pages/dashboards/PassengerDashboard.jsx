@@ -153,26 +153,70 @@ export const PassengerDashboard = () => {
                 Full Profile &amp; Settings
               </Link>
             </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt="Profile"
+                  style={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid var(--color-primary-light, #93c5fd)',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-primary-light)',
+                    color: 'var(--color-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.2rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  {`${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase() || 'P'}
+                </div>
+              )}
+              <div>
+                <h4 style={{ margin: '0 0 2px 0', fontSize: '1.1rem', fontWeight: 700 }}>
+                  {[user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || user?.name || (user?.email ? user.email.split('@')[0] : 'Passenger')}
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+
             <div className="profile-details-grid">
               <div className="profile-detail-row">
-                <span className="detail-label">{t('auth.register.firstNameLabel')}:</span>
-                <span className="detail-value">{user?.firstName} {user?.lastName}</span>
+                <span className="detail-label">{t('profile.fullName', 'Full Name')}:</span>
+                <span className="detail-value" style={{ fontWeight: 600 }}>
+                  {[user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || user?.name || (user?.email ? user.email.split('@')[0] : 'User')}
+                </span>
               </div>
               <div className="profile-detail-row">
-                <span className="detail-label">{t('auth.login.emailLabel')}:</span>
+                <span className="detail-label">{t('profile.emailAddress', 'Email Address')}:</span>
                 <span className="detail-value">{user?.email}</span>
               </div>
               <div className="profile-detail-row">
-                <span className="detail-label">{t('auth.register.phoneLabel')}:</span>
-                <span className="detail-value">{user?.phone || '—'}</span>
+                <span className="detail-label">{t('profile.phoneNumber', 'Phone Number')}:</span>
+                <span className="detail-value">{user?.phone || t('profile.notProvided', '—')}</span>
               </div>
               <div className="profile-detail-row">
-                <span className="detail-label">Status:</span>
+                <span className="detail-label">{t('common.status', 'Status')}:</span>
                 <span className="detail-value">
                   {user?.emailVerified ? (
-                    <span className="status-pill verified">{t('common.verified')}</span>
+                    <span className="status-pill verified">{t('common.verified', 'Verified')}</span>
                   ) : (
-                    <span className="status-pill unverified">{t('common.unverified')}</span>
+                    <span className="status-pill unverified">{t('common.unverified', 'Unverified')}</span>
                   )}
                 </span>
               </div>

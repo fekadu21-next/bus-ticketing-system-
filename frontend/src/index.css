@@ -141,7 +141,6 @@ body {
 .nav-link:hover,
 .nav-link.active {
   color: var(--color-primary);
-  background: var(--color-primary-light);
 }
 
 .nav-user-menu {

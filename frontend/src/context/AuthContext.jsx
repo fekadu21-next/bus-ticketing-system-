@@ -41,6 +41,37 @@ export const AuthProvider = ({ children }) => {
     return '/dashboard';
   }, [user]);
 
+  /** Helper to attach locally cached avatar if available */
+  const attachCachedAvatar = (userData) => {
+    if (!userData) return null;
+    try {
+      const cached = localStorage.getItem(`user_avatar_${userData.id}`);
+      if (cached && !userData.avatarUrl) {
+        return { ...userData, avatarUrl: cached };
+      }
+    } catch {
+      // ignore
+    }
+    return userData;
+  };
+
+  /** Update profile avatar in state and persist to local storage (optional to all roles) */
+  const updateUserAvatar = useCallback((avatarUrl) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      try {
+        if (avatarUrl) {
+          localStorage.setItem(`user_avatar_${prev.id}`, avatarUrl);
+        } else {
+          localStorage.removeItem(`user_avatar_${prev.id}`);
+        }
+      } catch (e) {
+        console.warn('Could not cache avatar:', e);
+      }
+      return { ...prev, avatarUrl: avatarUrl || null };
+    });
+  }, []);
+
   // Session initialization — silently tries to refresh on every app load
   const checkAuth = useCallback(async () => {
     setIsLoading(true);
@@ -49,12 +80,12 @@ export const AuthProvider = ({ children }) => {
       if (result.success && result.data?.accessToken) {
         updateAccessToken(result.data.accessToken);
         if (result.data.user) {
-          setUser(result.data.user);
+          setUser(attachCachedAvatar(result.data.user));
         } else {
           // Fetch full user profile if not in refresh payload
           const meResult = await getMeApi();
           if (meResult.success && meResult.data?.user) {
-            setUser(meResult.data.user);
+            setUser(attachCachedAvatar(meResult.data.user));
           }
         }
       }
@@ -77,8 +108,9 @@ export const AuthProvider = ({ children }) => {
       const response = await loginApi({ email, password });
       if (response.success && response.data) {
         updateAccessToken(response.data.accessToken);
-        setUser(response.data.user);
-        return { success: true, user: response.data.user, redirectPath: getDashboardPath(response.data.user) };
+        const userWithAvatar = attachCachedAvatar(response.data.user);
+        setUser(userWithAvatar);
+        return { success: true, user: userWithAvatar, redirectPath: getDashboardPath(userWithAvatar) };
       }
       throw new Error(response.message || 'Login failed');
     } catch (err) {
@@ -162,6 +194,7 @@ export const AuthProvider = ({ children }) => {
     changePassword,
     clearError,
     getDashboardPath,
+    updateUserAvatar,
     // Authorization helpers
     hasRole,
     hasPermission,

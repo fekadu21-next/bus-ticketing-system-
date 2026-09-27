@@ -243,6 +243,81 @@
       "boardingPass": "የኤሌክትሮኒክ መሳፈሪያ ሰነድ"
     }
   },
+  "dashboard": {
+    "title": "እንኳን ደህና መጡ፣ {{name}}",
+    "subtitle": "የአውቶቡስ ትኬት ስርዓት እንቅስቃሴዎች አጠቃላይ እይታ እዚህ አለ።",
+    "orgContext": "የተመደበበት ድርጅት",
+    "authorizedRole": "የተፈቀደለት ሚና",
+    "activeOrg": "ንቁ ኦፕሬተር",
+    "passenger": {
+      "searchTitle": "ጉዞ ፈልግ እና ያዝ",
+      "searchDesc": "በኢትዮጵያ ውስጥ የአውቶቡስ መስመሮችን ይፈልጉ እና መቀመጫዎችን ወዲያውኑ ይያዙ።",
+      "searchBtn": "የአውቶቡስ ጉዞ ፈልግ",
+      "bookingsTitle": "የእኔ ጉዞዎች እና ቲኬቶች",
+      "bookingsDesc": "የተረጋገጡ ጉዞዎችዎን እና ኢ-ቲኬቶችዎን ይመልከቱ እና ያስተዳድሩ።",
+      "bookingsBtn": "የእኔን ቲኬቶች ይመልከቱ"
+    },
+    "manager": {
+      "fleetTitle": "የአውቶቡሶች እና ስራዎች አስተዳደር",
+      "fleetDesc": "አውቶቡሶችዎን፣ አሽከርካሪዎችን፣ መስመሮችን እና የጉዞ መርሃ-ግብሮችን ያስተዳድሩ።",
+      "fleetBtn": "አውቶቡሶችን አስተዳድር",
+      "reportsTitle": "የቲኬት ሽያጭ እና ገቢ",
+      "reportsDesc": "የቲኬት ሽያጮችን፣ የተሳፋሪዎች ዝርዝርን እና የገቢ ትንታኔዎችን ይከታተሉ።",
+      "reportsBtn": "ሪፖርቶችን ይመልከቱ"
+    },
+    "verifier": {
+      "scanTitle": "የቲኬት ማረጋገጫ ጣቢያ",
+      "scanDesc": "የተሳፋሪ መሳፈሪያ QR ኮዶችን እና የታተሙ ቲኬቶችን ያረጋግጡ።",
+      "scanBtn": "የቲኬት ስካነር ክፈት",
+      "historyTitle": "የማረጋገጫ ታሪክ",
+      "historyDesc": "የዛሬውን የተረጋገጡ ቲኬቶች ታሪክ ይመልከቱ።",
+      "historyBtn": "የፍተሻ ታሪክ እይ"
+    },
+    "admin": {
+      "usersTitle": "የተጠቃሚዎች እና ድርጅቶች አስተዳደር",
+      "usersDesc": "መለያዎችን ይፍጠሩ፣ ሚናዎችን ይመድቡ እና አጓጓዥ ድርጅቶችን ያስተዳድሩ።",
+      "usersBtn": "ተጠቃሚዎችን አስተዳድር",
+      "systemTitle": "የስርዓት ጤንነት እና ኦዲት ሎግ",
+      "systemDesc": "የደህንነት ኦዲት ሎጎችን፣ ንቁ ክፍለ-ጊዜዎችን እና የስርዓት መረጃዎችን ይፈትሹ።",
+      "systemBtn": "የስርዓት ጤንነት"
+    }
+  },
+  "profile": {
+    "welcomeTitle": "እንኳን ወደ መገለጫዎ በደህና መጡ",
+    "welcomeSubtitle": "የመገለጫዎን መረጃ፣ ፎቶ እና የስርዓት ፈቃዶችን እዚህ ያስተዳድሩ።",
+    "fullName": "ሙሉ ስም",
+    "emailAddress": "የኢሜይል አድራሻ",
+    "phoneNumber": "ስልክ ቁጥር",
+    "notProvided": "አልተገለጸም",
+    "verified": "የተረጋገጠ",
+    "unverified": "ያልተረጋገጠ",
+    "personalInfo": "የግል መረጃ",
+    "rolesAccess": "ሚናዎች እና የስርዓት ፈቃዶች",
+    "assignedRoles": "የተሰጡ ሚናዎች",
+    "orgContext": "የተመደበበት የትራንስፖርት ድርጅት",
+    "profile": {
+      "orgContext": "የተመደበበት የትራንስፖርት ድርጅት",
+      "fullName": "ሙሉ ስም"
+    },
+    "orgId": "የድርጅት መለያ",
+    "activePermissions": "ንቁ ፈቃዶች",
+    "activeAccount": "ንቁ መለያ",
+    "suspended": "የታገደ",
+    "changePasswordBtn": "የይለፍ ቃል ቀይር",
+    "signOutBtn": "ውጣ",
+    "photo": {
+      "title": "የመገለጫ ፎቶ",
+      "optionalBadge": "አማራጭ",
+      "uploadBtn": "ፎቶ ጫን",
+      "changeBtn": "ፎቶ ቀይር",
+      "removeBtn": "ፎቶ አስወግድ",
+      "hint": "አማራጭ፡ JPG, PNG ወይም WEBP (ቢበዛ 2 ሜባ)",
+      "successMsg": "የመገለጫ ፎቶ በተሳካ ሁኔታ ተዘምኗል!",
+      "removedMsg": "የመገለጫ ፎቶ ተሰርዟል።",
+      "errorSize": "የፎቶው መጠን ከ 2 ሜባ በታች መሆን አለበት።",
+      "errorType": "እባክዎ ትክክለኛ ምስል ፋይል (PNG, JPG, ወይም WEBP) ይምረጡ።"
+    }
+  },
   "footer": {
     "desc": "ተሳፋሪዎችን ፈቃድ ካላቸው የአውቶቡስ አጓጓዦች ጋር የሚያገናኝ መሪ መድረክ። መቀመጫዎችን በቀላሉ ይያዙ፣ በሰላም ይጓዙ።",
     "quickLinks": "ፈጣን ማስፈንጠሪያዎች",

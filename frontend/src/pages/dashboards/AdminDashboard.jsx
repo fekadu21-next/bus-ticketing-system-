@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { getUsersApi, getOrganizationsApi, getRolesApi, getPermissionsApi } from '@/api/organization.api';
 import api from '@/services/api';
 import { Users, Building2, ShieldCheck, Key, Activity, RefreshCw } from 'lucide-react';
@@ -8,6 +9,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export const AdminDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'users' | 'organizations' | 'roles' | 'permissions'
 
   const [loading, setLoading] = useState(true);
@@ -76,12 +78,12 @@ export const AdminDashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header-strip">
         <div>
-          <span className="badge-role admin">ADMINISTRATOR PORTAL</span>
-          <h1>Admin Control Panel</h1>
+          <span className="badge-role admin">{t('dashboards.admin.badge')}</span>
+          <h1>{t('dashboards.admin.title')}</h1>
           <p>Logged in as <strong>{user?.firstName} {user?.lastName}</strong> ({user?.email})</p>
         </div>
         <button onClick={loadAdminData} className="btn btn-outline btn-sm" disabled={loading}>
-          <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ marginRight: 6 }} /> Refresh
+          <RefreshCw size={14} className={loading ? 'spin' : ''} style={{ marginRight: 6 }} /> {t('common.refresh')}
         </button>
       </div>
 
@@ -93,31 +95,31 @@ export const AdminDashboard = () => {
           className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
-          <Activity size={16} /> System Overview
+          <Activity size={16} /> {t('dashboards.admin.overview')}
         </button>
         <button
           className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
-          <Users size={16} /> Users ({stats.userCount})
+          <Users size={16} /> {t('dashboards.admin.usersTab')} ({stats.userCount})
         </button>
         <button
           className={`tab-btn ${activeTab === 'organizations' ? 'active' : ''}`}
           onClick={() => setActiveTab('organizations')}
         >
-          <Building2 size={16} /> Organizations ({stats.orgCount})
+          <Building2 size={16} /> {t('dashboards.admin.orgsTab')} ({stats.orgCount})
         </button>
         <button
           className={`tab-btn ${activeTab === 'roles' ? 'active' : ''}`}
           onClick={() => setActiveTab('roles')}
         >
-          <ShieldCheck size={16} /> Roles ({stats.roleCount})
+          <ShieldCheck size={16} /> {t('dashboards.admin.rolesTab')} ({stats.roleCount})
         </button>
         <button
           className={`tab-btn ${activeTab === 'permissions' ? 'active' : ''}`}
           onClick={() => setActiveTab('permissions')}
         >
-          <Key size={16} /> Permissions ({stats.permissionCount})
+          <Key size={16} /> {t('dashboards.admin.permsTab')} ({stats.permissionCount})
         </button>
       </div>
 

@@ -243,6 +243,81 @@
       "boardingPass": "ELECTRONIC BOARDING PASS"
     }
   },
+  "dashboard": {
+    "title": "Welcome, {{name}}",
+    "subtitle": "Here is an overview of your bus ticketing system operations.",
+    "orgContext": "Assigned Organization",
+    "authorizedRole": "Authorized Role",
+    "activeOrg": "Active Operator",
+    "passenger": {
+      "searchTitle": "Search & Book Trips",
+      "searchDesc": "Find bus routes across Ethiopia and reserve seats instantly.",
+      "searchBtn": "Find Bus Trips",
+      "bookingsTitle": "My Bookings & Tickets",
+      "bookingsDesc": "View and manage your confirmed reservations and e-tickets.",
+      "bookingsBtn": "View My Tickets"
+    },
+    "manager": {
+      "fleetTitle": "Fleet & Operations",
+      "fleetDesc": "Manage your buses, drivers, routes, and departure schedules.",
+      "fleetBtn": "Manage Fleet",
+      "reportsTitle": "Bookings & Revenue",
+      "reportsDesc": "Monitor ticket sales, passenger manifests, and revenue analytics.",
+      "reportsBtn": "View Reports"
+    },
+    "verifier": {
+      "scanTitle": "Ticket Verification Station",
+      "scanDesc": "Verify passenger boarding QR codes and printed tickets.",
+      "scanBtn": "Open Ticket Scanner",
+      "historyTitle": "Validation History",
+      "historyDesc": "View the history of verified tickets for today's departures.",
+      "historyBtn": "View Scan Log"
+    },
+    "admin": {
+      "usersTitle": "User & Organization Management",
+      "usersDesc": "Provision accounts, assign RBAC permissions, and manage operators.",
+      "usersBtn": "Manage Users",
+      "systemTitle": "System Health & Audit Logs",
+      "systemDesc": "Inspect security audit logs, active sessions, and system metrics.",
+      "systemBtn": "System Health"
+    }
+  },
+  "profile": {
+    "welcomeTitle": "Welcome to Your Profile",
+    "welcomeSubtitle": "Manage your profile details, photo, and system access.",
+    "fullName": "Full Name",
+    "emailAddress": "Email Address",
+    "phoneNumber": "Phone Number",
+    "notProvided": "Not provided",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "personalInfo": "Personal Information",
+    "rolesAccess": "Roles & System Access",
+    "assignedRoles": "Assigned Roles",
+    "orgContext": "Assigned Transport Organization",
+    "profile": {
+      "orgContext": "Assigned Transport Organization",
+      "fullName": "Full Name"
+    },
+    "orgId": "Organization ID",
+    "activePermissions": "Active Permissions",
+    "activeAccount": "Active Account",
+    "suspended": "Suspended",
+    "changePasswordBtn": "Change Password",
+    "signOutBtn": "Sign Out",
+    "photo": {
+      "title": "Profile Photo",
+      "optionalBadge": "Optional",
+      "uploadBtn": "Upload Photo",
+      "changeBtn": "Change Photo",
+      "removeBtn": "Remove Photo",
+      "hint": "Optional: JPEG, PNG or WEBP (Max 2MB)",
+      "successMsg": "Profile photo updated successfully!",
+      "removedMsg": "Profile photo removed.",
+      "errorSize": "Image size must be less than 2MB.",
+      "errorType": "Please upload a valid image file (PNG, JPG, or WEBP)."
+    }
+  },
   "footer": {
     "desc": "The leading bus travel platform connecting passengers with licensed bus operators. Book seats easily, travel reliably, and manage operations seamlessly.",
     "quickLinks": "Quick Links",

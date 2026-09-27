@@ -178,6 +178,112 @@ export async function seedDatabase() {
   }
   console.log('✅ Default Platform Admin configured with ADMIN role:', adminEmail);
 
+  // 7. Seed Ticket Verifier Accounts
+  const verifierRoleId = roleMap.get(ROLES.TICKET_VERIFIER);
+  const verifierPasswordHash = await bcrypt.hash('Verifier@123456', 12);
+
+  // Verifier 1: Selam Bus Line
+  const verifier1Email = 'verifier@busticket.com';
+  const verifier1 = await prisma.users.upsert({
+    where: { email: verifier1Email },
+    update: { is_active: true, email_verified: true },
+    create: {
+      first_name: 'Dawit',
+      last_name: 'Alemayehu',
+      email: verifier1Email,
+      phone: '+251922110033',
+      password_hash: verifierPasswordHash,
+      is_active: true,
+      email_verified: true,
+      email_verified_at: new Date(),
+    },
+  });
+
+  if (verifierRoleId) {
+    const existingVerifier1Role = await prisma.user_roles.findFirst({
+      where: { user_id: verifier1.id, role_id: verifierRoleId },
+    });
+    if (!existingVerifier1Role) {
+      await prisma.user_roles.create({
+        data: {
+          user_id: verifier1.id,
+          role_id: verifierRoleId,
+          organization_id: '00000000-0000-0000-0000-000000000001', // Selam Bus Line
+        },
+      });
+    }
+  }
+  console.log('✅ Ticket Verifier 1 configured for Selam Bus Line:', verifier1Email);
+
+  // Verifier 2: Sky Bus
+  const verifier2Email = 'verifier2@busticket.com';
+  const verifier2 = await prisma.users.upsert({
+    where: { email: verifier2Email },
+    update: { is_active: true, email_verified: true },
+    create: {
+      first_name: 'Hana',
+      last_name: 'Gebre',
+      email: verifier2Email,
+      phone: '+251944882119',
+      password_hash: verifierPasswordHash,
+      is_active: true,
+      email_verified: true,
+      email_verified_at: new Date(),
+    },
+  });
+
+  if (verifierRoleId) {
+    const existingVerifier2Role = await prisma.user_roles.findFirst({
+      where: { user_id: verifier2.id, role_id: verifierRoleId },
+    });
+    if (!existingVerifier2Role) {
+      await prisma.user_roles.create({
+        data: {
+          user_id: verifier2.id,
+          role_id: verifierRoleId,
+          organization_id: '00000000-0000-0000-0000-000000000002', // Sky Bus
+        },
+      });
+    }
+  }
+  console.log('✅ Ticket Verifier 2 configured for Sky Bus:', verifier2Email);
+
+  // 8. Seed Booking Coordinator Account
+  const coordinatorRoleId = roleMap.get(ROLES.BOOKING_COORDINATOR);
+  const coordinatorPasswordHash = await bcrypt.hash('Coordinator@123456', 12);
+  const coordinatorEmail = 'coordinator@busticket.com';
+
+  const coordinatorUser = await prisma.users.upsert({
+    where: { email: coordinatorEmail },
+    update: { is_active: true, email_verified: true },
+    create: {
+      first_name: 'Ahmed',
+      last_name: 'Mohammed',
+      email: coordinatorEmail,
+      phone: '+251933550077',
+      password_hash: coordinatorPasswordHash,
+      is_active: true,
+      email_verified: true,
+      email_verified_at: new Date(),
+    },
+  });
+
+  if (coordinatorRoleId) {
+    const existingCoordRole = await prisma.user_roles.findFirst({
+      where: { user_id: coordinatorUser.id, role_id: coordinatorRoleId },
+    });
+    if (!existingCoordRole) {
+      await prisma.user_roles.create({
+        data: {
+          user_id: coordinatorUser.id,
+          role_id: coordinatorRoleId,
+          organization_id: '00000000-0000-0000-0000-000000000001', // Selam Bus Line
+        },
+      });
+    }
+  }
+  console.log('✅ Booking Coordinator configured for Selam Bus Line:', coordinatorEmail);
+
   console.log('🎉 Seeding complete.');
 }
 

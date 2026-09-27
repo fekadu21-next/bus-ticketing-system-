@@ -165,8 +165,25 @@ export const Navbar = () => {
               </Link>
 
               <Link to="/profile" className="user-profile-badge" title={t('nav.profile')}>
-                <User size={16} />
-                <span className="user-name-label">{user?.firstName || 'User'}</span>
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt="Profile"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      marginRight: 6,
+                      border: '1.5px solid #93c5fd',
+                    }}
+                  />
+                ) : (
+                  <User size={16} />
+                )}
+                <span className="user-name-label">
+                  {[user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || user?.name || (user?.email ? user.email.split('@')[0] : 'User')}
+                </span>
               </Link>
 
               <button
@@ -315,9 +332,25 @@ export const Navbar = () => {
 
           {isAuthenticated ? (
             <li className="mobile-auth-section">
-              <div className="mobile-user-info">
-                <User size={18} />
-                <span>{user?.firstName} {user?.lastName}</span>
+              <div className="mobile-user-info" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt="Profile"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '1.5px solid #93c5fd',
+                    }}
+                  />
+                ) : (
+                  <User size={20} />
+                )}
+                <span style={{ fontWeight: 600 }}>
+                  {[user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || user?.name || (user?.email ? user.email.split('@')[0] : 'User')}
+                </span>
               </div>
               <Link
                 to={getDashboardPath()}
