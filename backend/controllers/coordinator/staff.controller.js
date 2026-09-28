@@ -81,27 +81,52 @@ export class CoordinatorStaffController {
       });
     }
 
-    const defaultPasswordHash = await bcrypt.hash('Staff@123456', 10);
-
-    const user = await prisma.users.create({
-      data: {
-        first_name: splitFirst,
-        last_name: splitLast,
-        email: safeEmail,
-        phone: phone || null,
-        password_hash: defaultPasswordHash,
-        is_active: true,
-        email_verified: true,
-      },
+    // Check if user already exists
+    let user = await prisma.users.findUnique({
+      where: { email: safeEmail },
     });
 
-    await prisma.user_roles.create({
-      data: {
-        user_id: user.id,
-        role_id: targetRole.id,
-        organization_id: orgId,
-      },
-    });
+    if (user) {
+      const existingAssignment = await prisma.user_roles.findFirst({
+        where: { user_id: user.id, organization_id: orgId },
+      });
+
+      if (existingAssignment) {
+        return res.status(409).json({
+          success: false,
+          message: 'User is already assigned to this organization.',
+        });
+      }
+
+      await prisma.user_roles.create({
+        data: {
+          user_id: user.id,
+          role_id: targetRole.id,
+          organization_id: orgId,
+        },
+      });
+    } else {
+      const defaultPasswordHash = await bcrypt.hash('Staff@123456', 10);
+      user = await prisma.users.create({
+        data: {
+          first_name: splitFirst,
+          last_name: splitLast,
+          email: safeEmail,
+          phone: phone || null,
+          password_hash: defaultPasswordHash,
+          is_active: true,
+          email_verified: true,
+        },
+      });
+
+      await prisma.user_roles.create({
+        data: {
+          user_id: user.id,
+          role_id: targetRole.id,
+          organization_id: orgId,
+        },
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -109,11 +134,121 @@ export class CoordinatorStaffController {
       data: {
         staff: {
           id: user.id,
-          name: `${splitFirst} ${splitLast}`,
+          name: `${user.first_name} ${user.last_name}`.trim(),
           email: user.email,
           phone: user.phone,
           role: targetRole.name,
-          status: 'ACTIVE',
+          status: user.is_active ? 'ACTIVE' : 'INACTIVE',
+        },
+      },
+    });
+  });
+
+  /**
+   * Activate or deactivate staff member
+   */
+  toggleStaffStatus = asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+    const { staffId } = req.params;
+    const { isActive } = req.body;
+
+    const assignment = await prisma.user_roles.findFirst({
+      where: { user_id: staffId, organization_id: orgId },
+      include: { users: true, roles: true },
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Staff member not found in your organization.',
+      });
+    }
+
+    const nextActive = isActive !== undefined ? Boolean(isActive) : !assignment.users.is_active;
+
+    const updatedUser = await prisma.users.update({
+      where: { id: staffId },
+      data: { is_active: nextActive, updated_at: new Date() },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Staff member is now ${nextActive ? 'ACTIVE' : 'INACTIVE'}.`,
+      data: {
+        staff: {
+          id: updatedUser.id,
+          name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim(),
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+          role: assignment.roles.name,
+          status: updatedUser.is_active ? 'ACTIVE' : 'INACTIVE',
+        },
+      },
+    });
+  });
+
+  /**
+   * Update staff member details
+   */
+  updateStaff = asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+    const { staffId } = req.params;
+    const { name, firstName, lastName, phone, role } = req.body;
+
+    const assignment = await prisma.user_roles.findFirst({
+      where: { user_id: staffId, organization_id: orgId },
+      include: { users: true, roles: true },
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Staff member not found in your organization.',
+      });
+    }
+
+    const userData = {};
+    if (firstName) userData.first_name = firstName.trim();
+    if (lastName) userData.last_name = lastName.trim();
+    if (name && !firstName && !lastName) {
+      const parts = name.trim().split(' ');
+      userData.first_name = parts[0];
+      userData.last_name = parts.slice(1).join(' ') || 'Staff';
+    }
+    if (phone !== undefined) userData.phone = phone;
+
+    let updatedUser = assignment.users;
+    if (Object.keys(userData).length > 0) {
+      userData.updated_at = new Date();
+      updatedUser = await prisma.users.update({
+        where: { id: staffId },
+        data: userData,
+      });
+    }
+
+    let roleName = assignment.roles.name;
+    if (role && role !== assignment.roles.name) {
+      const targetRole = await prisma.roles.findFirst({ where: { name: role } });
+      if (targetRole) {
+        await prisma.user_roles.update({
+          where: { id: assignment.id },
+          data: { role_id: targetRole.id },
+        });
+        roleName = targetRole.name;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Staff member updated successfully.',
+      data: {
+        staff: {
+          id: updatedUser.id,
+          name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim(),
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+          role: roleName,
+          status: updatedUser.is_active ? 'ACTIVE' : 'INACTIVE',
         },
       },
     });

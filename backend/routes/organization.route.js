@@ -33,10 +33,10 @@ router.get(
   organizationController.getOrganizationById
 );
 
-// Update organization (Admin only)
+// Update organization (Admin or Coordinator of that org)
 router.patch(
   '/:orgId',
-  authorizeRole(ROLES.ADMIN),
+  authorizeOrgRole([ROLES.BOOKING_COORDINATOR], (req) => req.params.orgId),
   validate(updateOrganizationSchema),
   organizationController.updateOrganization
 );
@@ -63,6 +63,8 @@ router.use('/:orgId/reports', requireCoordinator, reportRoutes);
 router.use('/:orgId/coordinator', requireCoordinator, coordinatorRouter);
 router.get('/:orgId/staff', requireCoordinator, coordinatorStaffController.getStaff);
 router.post('/:orgId/staff', requireCoordinator, coordinatorStaffController.createStaff);
+router.patch('/:orgId/staff/:staffId/status', requireCoordinator, coordinatorStaffController.toggleStaffStatus);
+router.patch('/:orgId/staff/:staffId', requireCoordinator, coordinatorStaffController.updateStaff);
 
 // Verify ticket for organization (Admin, BOOKING_COORDINATOR, or TICKET_VERIFIER of that org)
 router.post(
