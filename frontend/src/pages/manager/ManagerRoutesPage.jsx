@@ -18,6 +18,7 @@ export const ManagerRoutesPage = () => {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const [originStationId, setOriginStationId] = useState(stations[0]?.id || "");
   const [destinationStationId, setDestinationStationId] = useState(stations[1]?.id || "");
@@ -35,9 +36,14 @@ export const ManagerRoutesPage = () => {
   });
 
   const handleAddRoute = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    setFormError("");
+    if (!originStationId || !destinationStationId) {
+      setFormError("Both origin and destination terminal stations are required.");
+      return;
+    }
     if (originStationId === destinationStationId) {
-      alert("Origin and Destination terminal stations must be different.");
+      setFormError("Origin and Destination terminal stations must be different.");
       return;
     }
     setIsSubmitting(true);
@@ -48,7 +54,10 @@ export const ManagerRoutesPage = () => {
         distanceKm: Number(distanceKm),
         estimatedDuration
       });
+      setFormError("");
       setShowAddModal(false);
+    } catch (err) {
+      setFormError(err.response?.data?.message || err.message || "Failed to register route.");
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +78,7 @@ export const ManagerRoutesPage = () => {
           >
             <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
           </button>
-          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+          <button className="btn btn-primary" onClick={() => { setFormError(""); setShowAddModal(true); }}>
             <Plus size={16} /> Create Reusable Route
           </button>
         </div>
@@ -110,7 +119,7 @@ export const ManagerRoutesPage = () => {
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "1rem" }}
-                onClick={() => setShowAddModal(true)}
+                onClick={() => { setFormError(""); setShowAddModal(true); }}
               >
                 <Plus size={14} /> Create First Route
               </button>
@@ -173,6 +182,23 @@ export const ManagerRoutesPage = () => {
         }
       >
         <form onSubmit={handleAddRoute} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          {formError && (
+            <div style={{
+              padding: "0.75rem 1rem",
+              backgroundColor: "rgba(239, 68, 68, 0.12)",
+              border: "1px solid rgba(239, 68, 68, 0.35)",
+              borderRadius: "0.375rem",
+              color: "#ef4444",
+              fontSize: "0.85rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem"
+            }}>
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{formError}</span>
+            </div>
+          )}
+
           <div>
             <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
               Origin Terminal Station

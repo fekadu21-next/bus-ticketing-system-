@@ -18,6 +18,7 @@ export const ManagerBusesPage = () => {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const [busNumber, setBusNumber] = useState("");
   const [plateNumber, setPlateNumber] = useState("");
@@ -36,13 +37,31 @@ export const ManagerBusesPage = () => {
   });
 
   const handleAddBus = async (e) => {
-    e.preventDefault();
-    if (!plateNumber.trim() || capacity <= 0) return;
+    if (e) e.preventDefault();
+    setFormError("");
+    const trimmedPlate = plateNumber.trim();
+    if (!trimmedPlate) {
+      setFormError("Plate number is required.");
+      return;
+    }
+    if (Number(capacity) <= 0 || isNaN(capacity)) {
+      setFormError("Please enter a valid passenger seat capacity.");
+      return;
+    }
+
+    const localDuplicate = orgBuses.find(
+      (b) => b.plateNumber && b.plateNumber.trim().toLowerCase() === trimmedPlate.toLowerCase()
+    );
+    if (localDuplicate) {
+      setFormError(`A bus with plate number '${trimmedPlate}' is already registered in your fleet.`);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await addBus({
-        busNumber: busNumber.trim() || plateNumber.trim(),
-        plateNumber: plateNumber.trim(),
+        busNumber: busNumber.trim() || trimmedPlate,
+        plateNumber: trimmedPlate,
         capacity: Number(capacity),
         model: model.trim() || "Standard Coach",
         manufactureYear,
@@ -52,7 +71,14 @@ export const ManagerBusesPage = () => {
       setPlateNumber("");
       setCapacity(45);
       setModel("");
+      setFormError("");
       setShowAddModal(false);
+    } catch (err) {
+      setFormError(
+        err.response?.data?.message ||
+        err.message ||
+        `Failed to add bus with plate '${trimmedPlate}'. A vehicle with this plate may already be registered.`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -73,7 +99,7 @@ export const ManagerBusesPage = () => {
           >
             <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
           </button>
-          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+          <button className="btn btn-primary" onClick={() => { setFormError(""); setShowAddModal(true); }}>
             <Plus size={16} /> Register New Bus
           </button>
         </div>
@@ -115,7 +141,7 @@ export const ManagerBusesPage = () => {
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "1rem" }}
-                onClick={() => setShowAddModal(true)}
+                onClick={() => { setFormError(""); setShowAddModal(true); }}
               >
                 <Plus size={14} /> Register First Bus
               </button>
@@ -193,6 +219,23 @@ export const ManagerBusesPage = () => {
         }
       >
         <form onSubmit={handleAddBus} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          {formError && (
+            <div style={{
+              padding: "0.75rem 1rem",
+              backgroundColor: "rgba(239, 68, 68, 0.12)",
+              border: "1px solid rgba(239, 68, 68, 0.35)",
+              borderRadius: "0.375rem",
+              color: "#ef4444",
+              fontSize: "0.85rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem"
+            }}>
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{formError}</span>
+            </div>
+          )}
+
           <div className="form-row">
             <div className="form-group">
               <label>Bus Number / Operational Code</label>
@@ -209,9 +252,15 @@ export const ManagerBusesPage = () => {
                 type="text"
                 placeholder="e.g. ET-3-55109"
                 value={plateNumber}
-                onChange={(e) => setPlateNumber(e.target.value)}
+                onChange={(e) => {
+                  setPlateNumber(e.target.value);
+                  if (formError) setFormError("");
+                }}
                 required
               />
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                Must be unique within your organization.
+              </span>
             </div>
           </div>
           <div className="form-row">
