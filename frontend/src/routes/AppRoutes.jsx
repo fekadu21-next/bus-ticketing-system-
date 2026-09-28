@@ -4,6 +4,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 // Public Pages
 import HomePage from "../pages/HomePage";
@@ -54,65 +55,51 @@ import { ManagerReportsPage } from "../pages/manager/ManagerReportsPage";
 import { ManagerSettingsPage } from "../pages/manager/ManagerSettingsPage";
 
 export const ManagementConsole = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const {
     currentRole,
     setCurrentRole,
     activePage,
     selectedOrgId,
     setSelectedOrgId,
-    organizations,
   } = useApp();
 
+  const userRoles = Array.isArray(user?.roles) ? user.roles : [];
+  const isAdmin = userRoles.includes("ADMIN") || userRoles.includes("PLATFORM_ADMIN");
+  const isCoordinator =
+    userRoles.includes("BOOKING_COORDINATOR") ||
+    userRoles.includes("OPERATIONAL_MANAGER");
+
   React.useEffect(() => {
-    if (user?.roles && Array.isArray(user.roles)) {
-      if (
-        user.roles.includes("BOOKING_COORDINATOR") ||
-        user.roles.includes("OPERATIONAL_MANAGER")
-      ) {
-        if (currentRole !== "MANAGER") {
-          setCurrentRole("MANAGER");
-        }
+    if (!isAuthenticated || !user) return;
 
-        // Lock selectedOrgId to manager's assigned organization
-        const orgCtx = user.organizationContext?.[0] || user.organization;
-        const orgName = orgCtx?.organizationName || orgCtx?.name;
-        const orgId = orgCtx?.organizationId || user.organizationId;
-
-        let targetOrg = organizations.find(
-          (o) =>
-            o.id === orgId ||
-            (orgName && o.name.toLowerCase().includes(orgName.toLowerCase()))
-        );
-
-        if (!targetOrg && orgId) {
-          if (orgId.endsWith("0001"))
-            targetOrg = organizations.find((o) => o.id === "org-101");
-          else if (orgId.endsWith("0002"))
-            targetOrg = organizations.find((o) => o.id === "org-102");
-          else if (orgId.endsWith("0003"))
-            targetOrg = organizations.find((o) => o.id === "org-103");
-          else if (orgId.endsWith("0004"))
-            targetOrg = organizations.find((o) => o.id === "org-104");
-          else if (orgId.endsWith("0005"))
-            targetOrg = organizations.find((o) => o.id === "org-105");
-          else if (orgId.endsWith("0006"))
-            targetOrg = organizations.find((o) => o.id === "org-106");
-        }
-
-        if (targetOrg && selectedOrgId !== targetOrg.id) {
-          setSelectedOrgId(targetOrg.id);
-        }
-      } else if (
-        user.roles.includes("ADMIN") ||
-        user.roles.includes("PLATFORM_ADMIN")
-      ) {
-        if (currentRole !== "ADMIN") {
-          setCurrentRole("ADMIN");
-        }
+    if (isAdmin) {
+      if (currentRole !== "ADMIN") {
+        setCurrentRole("ADMIN");
+      }
+    } else if (isCoordinator) {
+      if (currentRole !== "MANAGER") {
+        setCurrentRole("MANAGER");
+      }
+      const orgCtx = user.organizationContext?.[0] || user.organization;
+      const orgId = orgCtx?.organizationId || user.organizationId;
+      if (orgId && selectedOrgId !== orgId) {
+        setSelectedOrgId(orgId);
       }
     }
-  }, [user, currentRole, setCurrentRole, selectedOrgId, setSelectedOrgId, organizations]);
+  }, [user, isAuthenticated, isAdmin, isCoordinator, currentRole, setCurrentRole, selectedOrgId, setSelectedOrgId]);
+
+  if (isLoading) {
+    return <LoadingSpinner fullPage label="Authenticating session..." />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin && !isCoordinator) {
+    return <Navigate to="/account-overview" replace />;
+  }
 
   const renderAdminContent = () => {
     switch (activePage) {
@@ -180,7 +167,7 @@ export const ManagementConsole = () => {
 
   return (
     <DashboardLayout>
-      {currentRole === "ADMIN" ? renderAdminContent() : renderManagerContent()}
+      {isAdmin ? renderAdminContent() : renderManagerContent()}
     </DashboardLayout>
   );
 };
