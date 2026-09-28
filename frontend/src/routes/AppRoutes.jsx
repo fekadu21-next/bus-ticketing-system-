@@ -1,26 +1,189 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from '@/routes/ProtectedRoute';
-import { useAuth } from '@/context/AuthContext';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute";
+import { useAuth } from "../context/AuthContext";
+import { useApp } from "../context/AppContext";
+import { DashboardLayout } from "../components/layout/DashboardLayout";
 
 // Public Pages
-import HomePage from '@/pages/HomePage';
-import SearchTripsPage from '@/pages/SearchTripsPage';
-import AboutPage from '@/pages/AboutPage';
-import ContactPage from '@/pages/ContactPage';
-import PartnerRegisterPage from '@/pages/PartnerRegisterPage';
+import HomePage from "../pages/HomePage";
+import SearchTripsPage from "../pages/SearchTripsPage";
+import AboutPage from "../pages/AboutPage";
+import ContactPage from "../pages/ContactPage";
+import PartnerRegisterPage from "../pages/PartnerRegisterPage";
 
 // Auth Pages
-import LoginPage from '@/features/auth/pages/LoginPage';
-import RegisterPage from '@/features/auth/pages/RegisterPage';
-import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
-import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
-import VerifyEmailPage from '@/features/auth/pages/VerifyEmailPage';
-import ResendVerificationPage from '@/features/auth/pages/ResendVerificationPage';
-import ProfilePage from '@/features/auth/pages/ProfilePage';
-import ChangePasswordPage from '@/features/auth/pages/ChangePasswordPage';
-import NotFoundPage from '@/features/auth/pages/NotFoundPage';
-import DashboardPage from '@/features/auth/pages/DashboardPage';
+import LoginPage from "../features/auth/pages/LoginPage";
+import RegisterPage from "../features/auth/pages/RegisterPage";
+import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "../features/auth/pages/ResetPasswordPage";
+import VerifyEmailPage from "../features/auth/pages/VerifyEmailPage";
+import ResendVerificationPage from "../features/auth/pages/ResendVerificationPage";
+import ProfilePage from "../features/auth/pages/ProfilePage";
+import ChangePasswordPage from "../features/auth/pages/ChangePasswordPage";
+import NotFoundPage from "../features/auth/pages/NotFoundPage";
+import DashboardPage from "../features/auth/pages/DashboardPage";
+
+// Admin Pages
+import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage";
+import { AdminOrganizationsPage } from "../pages/admin/AdminOrganizationsPage";
+import { AdminUsersPage } from "../pages/admin/AdminUsersPage";
+import { AdminStationsPage } from "../pages/admin/AdminStationsPage";
+import { AdminBusesPage } from "../pages/admin/AdminBusesPage";
+import { AdminRoutesPage } from "../pages/admin/AdminRoutesPage";
+import { AdminTripsPage } from "../pages/admin/AdminTripsPage";
+import { AdminBookingsPage } from "../pages/admin/AdminBookingsPage";
+import { AdminPaymentsPage } from "../pages/admin/AdminPaymentsPage";
+import { AdminTicketsPage } from "../pages/admin/AdminTicketsPage";
+import { AdminReportsPage } from "../pages/admin/AdminReportsPage";
+import { AdminAuditLogsPage } from "../pages/admin/AdminAuditLogsPage";
+import { AdminSettingsPage } from "../pages/admin/AdminSettingsPage";
+
+// Manager Pages
+import { ManagerDashboardPage } from "../pages/manager/ManagerDashboardPage";
+import { ManagerOrganizationPage } from "../pages/manager/ManagerOrganizationPage";
+import { ManagerBusesPage } from "../pages/manager/ManagerBusesPage";
+import { ManagerRoutesPage } from "../pages/manager/ManagerRoutesPage";
+import { ManagerTripsPage } from "../pages/manager/ManagerTripsPage";
+import { ManagerSeatsPage } from "../pages/manager/ManagerSeatsPage";
+import { ManagerBookingsPage } from "../pages/manager/ManagerBookingsPage";
+import { ManagerPaymentsPage } from "../pages/manager/ManagerPaymentsPage";
+import { ManagerDriversPage } from "../pages/manager/ManagerDriversPage";
+import { ManagerVerifiersPage } from "../pages/manager/ManagerVerifiersPage";
+import { ManagerReportsPage } from "../pages/manager/ManagerReportsPage";
+import { ManagerSettingsPage } from "../pages/manager/ManagerSettingsPage";
+
+export const ManagementConsole = () => {
+  const { user } = useAuth();
+  const {
+    currentRole,
+    setCurrentRole,
+    activePage,
+    selectedOrgId,
+    setSelectedOrgId,
+    organizations,
+  } = useApp();
+
+  React.useEffect(() => {
+    if (user?.roles && Array.isArray(user.roles)) {
+      if (
+        user.roles.includes("BOOKING_COORDINATOR") ||
+        user.roles.includes("OPERATIONAL_MANAGER")
+      ) {
+        if (currentRole !== "MANAGER") {
+          setCurrentRole("MANAGER");
+        }
+
+        // Lock selectedOrgId to manager's assigned organization
+        const orgCtx = user.organizationContext?.[0] || user.organization;
+        const orgName = orgCtx?.organizationName || orgCtx?.name;
+        const orgId = orgCtx?.organizationId || user.organizationId;
+
+        let targetOrg = organizations.find(
+          (o) =>
+            o.id === orgId ||
+            (orgName && o.name.toLowerCase().includes(orgName.toLowerCase()))
+        );
+
+        if (!targetOrg && orgId) {
+          if (orgId.endsWith("0001"))
+            targetOrg = organizations.find((o) => o.id === "org-101");
+          else if (orgId.endsWith("0002"))
+            targetOrg = organizations.find((o) => o.id === "org-102");
+          else if (orgId.endsWith("0003"))
+            targetOrg = organizations.find((o) => o.id === "org-103");
+          else if (orgId.endsWith("0004"))
+            targetOrg = organizations.find((o) => o.id === "org-104");
+          else if (orgId.endsWith("0005"))
+            targetOrg = organizations.find((o) => o.id === "org-105");
+          else if (orgId.endsWith("0006"))
+            targetOrg = organizations.find((o) => o.id === "org-106");
+        }
+
+        if (targetOrg && selectedOrgId !== targetOrg.id) {
+          setSelectedOrgId(targetOrg.id);
+        }
+      } else if (
+        user.roles.includes("ADMIN") ||
+        user.roles.includes("PLATFORM_ADMIN")
+      ) {
+        if (currentRole !== "ADMIN") {
+          setCurrentRole("ADMIN");
+        }
+      }
+    }
+  }, [user, currentRole, setCurrentRole, selectedOrgId, setSelectedOrgId, organizations]);
+
+  const renderAdminContent = () => {
+    switch (activePage) {
+      case "dashboard":
+        return <AdminDashboardPage />;
+      case "organizations":
+        return <AdminOrganizationsPage />;
+      case "users":
+        return <AdminUsersPage />;
+      case "stations":
+        return <AdminStationsPage />;
+      case "buses":
+        return <AdminBusesPage />;
+      case "routes":
+        return <AdminRoutesPage />;
+      case "trips":
+        return <AdminTripsPage />;
+      case "bookings":
+        return <AdminBookingsPage />;
+      case "payments":
+        return <AdminPaymentsPage />;
+      case "tickets":
+        return <AdminTicketsPage />;
+      case "reports":
+        return <AdminReportsPage />;
+      case "audit":
+        return <AdminAuditLogsPage />;
+      case "settings":
+        return <AdminSettingsPage />;
+      default:
+        return <AdminDashboardPage />;
+    }
+  };
+
+  const renderManagerContent = () => {
+    switch (activePage) {
+      case "dashboard":
+        return <ManagerDashboardPage />;
+      case "organization":
+        return <ManagerOrganizationPage />;
+      case "buses":
+        return <ManagerBusesPage />;
+      case "routes":
+        return <ManagerRoutesPage />;
+      case "trips":
+        return <ManagerTripsPage />;
+      case "seats":
+        return <ManagerSeatsPage />;
+      case "bookings":
+        return <ManagerBookingsPage />;
+      case "payments":
+        return <ManagerPaymentsPage />;
+      case "drivers":
+        return <ManagerDriversPage />;
+      case "verifiers":
+        return <ManagerVerifiersPage />;
+      case "reports":
+        return <ManagerReportsPage />;
+      case "settings":
+        return <ManagerSettingsPage />;
+      default:
+        return <ManagerDashboardPage />;
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      {currentRole === "ADMIN" ? renderAdminContent() : renderManagerContent()}
+    </DashboardLayout>
+  );
+};
 
 export const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
@@ -34,6 +197,12 @@ export const AppRoutes = () => {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/partner-register" element={<PartnerRegisterPage />} />
       <Route path="/partner" element={<Navigate to="/partner-register" replace />} />
+
+      {/* Interactive Operations Console & System Dashboard */}
+      <Route path="/dashboard/*" element={<ManagementConsole />} />
+      <Route path="/portal/*" element={<ManagementConsole />} />
+      <Route path="/management/*" element={<ManagementConsole />} />
+      <Route path="/admin/*" element={<ManagementConsole />} />
 
       {/* Public Auth Routes */}
       <Route
@@ -49,9 +218,9 @@ export const AppRoutes = () => {
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/resend-verification" element={<ResendVerificationPage />} />
 
-      {/* General Authenticated Routes */}
+      {/* User Account Settings */}
       <Route
-        path="/dashboard"
+        path="/account-overview"
         element={
           <ProtectedRoute>
             <DashboardPage />
@@ -74,14 +243,6 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
-      {/* Clean redirects for legacy role routes to dashboard entry point */}
-      <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/coordinator" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/operations" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/verifier" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/verify-ticket" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/passenger" element={<Navigate to="/dashboard" replace />} />
 
       {/* 404 Catch-All */}
       <Route path="*" element={<NotFoundPage />} />
