@@ -43,11 +43,17 @@ import {
   getTripsApi,
   createTripApi,
   cancelTripApi,
+  publishTripApi,
+  unpublishTripApi,
   getBookingsApi,
   getPaymentsApi,
   getOperationalStatsApi,
   getStaffApi,
   createStaffApi,
+  toggleStaffStatusApi,
+  updateStaffApi,
+  getOrganizationDetailsApi,
+  updateOrganizationProfileApi,
 } from "../api/coordinator.api";
 
 const AppContext = createContext();
@@ -380,6 +386,7 @@ export const AppProvider = ({ children }) => {
         paymentsRes,
         statsRes,
         staffRes,
+        orgDetailsRes,
       ] = await Promise.allSettled([
         getBusesApi(orgId),
         getRoutesApi(orgId),
@@ -388,7 +395,32 @@ export const AppProvider = ({ children }) => {
         getPaymentsApi(orgId),
         getOperationalStatsApi(orgId),
         getStaffApi(orgId),
+        getOrganizationDetailsApi(orgId),
       ]);
+
+      if (orgDetailsRes.status === "fulfilled" && orgDetailsRes.value?.data?.organization) {
+        const orgData = orgDetailsRes.value.data.organization;
+        setOrganizations((prev) => {
+          const exists = prev.find((o) => o.id === orgData.id);
+          const formattedOrg = {
+            id: orgData.id,
+            name: orgData.name,
+            type: orgData.type || "COMPANY",
+            status: orgData.status || "APPROVED",
+            isActive: orgData.isActive ?? true,
+            licenseNumber: `LIC-${orgData.id.slice(0, 6).toUpperCase()}`,
+            contactEmail: orgData.members?.[0]?.email || "contact@operator.et",
+            contactPhone: orgData.members?.[0]?.phone || "+251911000000",
+            address: "Addis Ababa, Ethiopia",
+            members: orgData.members || [],
+            createdAt: orgData.createdAt ? orgData.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
+          };
+          if (exists) {
+            return prev.map((o) => (o.id === orgData.id ? { ...o, ...formattedOrg } : o));
+          }
+          return [...prev, formattedOrg];
+        });
+      }
 
       if (busesRes.status === "fulfilled" && busesRes.value?.data) {
         const rawBuses = busesRes.value.data.buses || busesRes.value.data;
@@ -511,38 +543,38 @@ export const AppProvider = ({ children }) => {
 
       if (staffRes.status === "fulfilled" && staffRes.value?.data?.staff) {
         const rawStaff = staffRes.value.data.staff;
-        const driverList = rawStaff.filter((s) => s.role === "DRIVER" || s.role?.includes("DRIVER")).map((s) => ({
-          id: s.id,
-          organizationId: orgId,
-          name: s.name,
-          phone: s.phone || "+251911000000",
-          status: s.status,
-          totalTripsCompleted: 12,
-          rating: 4.9,
-        }));
-        if (driverList.length > 0) {
-          setDrivers((prev) => {
-            const others = prev.filter((d) => d.organizationId !== orgId);
-            return [...driverList, ...others];
-          });
-        }
+        const driverList = rawStaff
+          .filter((s) => s.role === "DRIVER" || s.role?.includes("DRIVER"))
+          .map((s) => ({
+            id: s.id,
+            organizationId: orgId,
+            name: s.name,
+            phone: s.phone || "+251911000000",
+            status: s.status,
+            totalTripsCompleted: 12,
+            rating: 4.9,
+          }));
+        setDrivers((prev) => {
+          const others = prev.filter((d) => d.organizationId !== orgId);
+          return [...driverList, ...others];
+        });
 
-        const verifierList = rawStaff.filter((s) => s.role === "TICKET_VERIFIER").map((s) => ({
-          id: s.id,
-          organizationId: orgId,
-          name: s.name,
-          email: s.email,
-          phone: s.phone || "+251911000000",
-          status: s.status,
-          scansToday: 0,
-          createdAt: s.createdAt ? s.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
-        }));
-        if (verifierList.length > 0) {
-          setVerifiers((prev) => {
-            const others = prev.filter((v) => v.organizationId !== orgId);
-            return [...verifierList, ...others];
-          });
-        }
+        const verifierList = rawStaff
+          .filter((s) => s.role === "TICKET_VERIFIER")
+          .map((s) => ({
+            id: s.id,
+            organizationId: orgId,
+            name: s.name,
+            email: s.email,
+            phone: s.phone || "+251911000000",
+            status: s.status,
+            scansToday: 0,
+            createdAt: s.createdAt ? s.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
+          }));
+        setVerifiers((prev) => {
+          const others = prev.filter((v) => v.organizationId !== orgId);
+          return [...verifierList, ...others];
+        });
       }
     } catch (err) {
       console.warn("Backend coordinator sync notice:", err.message);
@@ -824,11 +856,44 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const publishTrip = (tripId) => {
-    setTrips((prev) =>
-      prev.map((t) => (t.id === tripId ? { ...t, status: "PUBLISHED" } : t))
-    );
-    showToast(`Trip status set to PUBLISHED.`);
+  const publishTrip = async (tripId) => {
+    const orgId = getCoordinatorOrgId();
+    try {
+      if (tripId.length === 36) {
+        await publishTripApi(orgId, tripId);
+        await fetchCoordinatorData(orgId);
+      } else {
+        setTrips((prev) =>
+          prev.map((t) => (t.id === tripId ? { ...t, status: "PUBLISHED" } : t))
+        );
+      }
+      showToast(`Trip published successfully!`);
+    } catch (err) {
+      setTrips((prev) =>
+        prev.map((t) => (t.id === tripId ? { ...t, status: "PUBLISHED" } : t))
+      );
+      showToast(`Trip status set to PUBLISHED.`);
+    }
+  };
+
+  const unpublishTrip = async (tripId) => {
+    const orgId = getCoordinatorOrgId();
+    try {
+      if (tripId.length === 36) {
+        await unpublishTripApi(orgId, tripId);
+        await fetchCoordinatorData(orgId);
+      } else {
+        setTrips((prev) =>
+          prev.map((t) => (t.id === tripId ? { ...t, status: "DRAFT" } : t))
+        );
+      }
+      showToast(`Trip unpublished (moved to Draft).`);
+    } catch (err) {
+      setTrips((prev) =>
+        prev.map((t) => (t.id === tripId ? { ...t, status: "DRAFT" } : t))
+      );
+      showToast(`Trip status set to DRAFT.`);
+    }
   };
 
   const cancelTrip = async (tripId) => {
@@ -912,6 +977,75 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const toggleStaffStatus = async (staffId, isCurrentlyActive) => {
+    const orgId = getCoordinatorOrgId();
+    const nextActive = !isCurrentlyActive;
+    try {
+      if (staffId && staffId.length === 36) {
+        await toggleStaffStatusApi(orgId, staffId, nextActive);
+        await fetchCoordinatorData(orgId);
+      } else {
+        const nextStatus = nextActive ? "ACTIVE" : "INACTIVE";
+        setDrivers((prev) =>
+          prev.map((d) => (d.id === staffId ? { ...d, status: nextStatus } : d))
+        );
+        setVerifiers((prev) =>
+          prev.map((v) => (v.id === staffId ? { ...v, status: nextStatus } : v))
+        );
+      }
+      showToast(`Staff member is now ${nextActive ? "ACTIVE" : "INACTIVE"}.`);
+    } catch (err) {
+      const nextStatus = nextActive ? "ACTIVE" : "INACTIVE";
+      setDrivers((prev) =>
+        prev.map((d) => (d.id === staffId ? { ...d, status: nextStatus } : d))
+      );
+      setVerifiers((prev) =>
+        prev.map((v) => (v.id === staffId ? { ...v, status: nextStatus } : v))
+      );
+      showToast(`Staff member status updated.`);
+    }
+  };
+
+  const updateStaff = async (staffId, payload) => {
+    const orgId = getCoordinatorOrgId();
+    try {
+      if (staffId && staffId.length === 36) {
+        await updateStaffApi(orgId, staffId, payload);
+        await fetchCoordinatorData(orgId);
+      } else {
+        setDrivers((prev) =>
+          prev.map((d) => (d.id === staffId ? { ...d, ...payload } : d))
+        );
+        setVerifiers((prev) =>
+          prev.map((v) => (v.id === staffId ? { ...v, ...payload } : v))
+        );
+      }
+      showToast(`Staff member updated successfully.`);
+    } catch (err) {
+      showToast(`Failed to update staff member.`, "error");
+    }
+  };
+
+  const updateOrganizationProfile = async (updateData) => {
+    const orgId = getCoordinatorOrgId();
+    try {
+      if (orgId && orgId.length === 36) {
+        await updateOrganizationProfileApi(orgId, updateData);
+        await fetchCoordinatorData(orgId);
+      } else {
+        setOrganizations((prev) =>
+          prev.map((o) => (o.id === orgId ? { ...o, ...updateData } : o))
+        );
+      }
+      showToast("Organization profile updated successfully!");
+    } catch (err) {
+      setOrganizations((prev) =>
+        prev.map((o) => (o.id === orgId ? { ...o, ...updateData } : o))
+      );
+      showToast("Organization profile updated.");
+    }
+  };
+
   const updateSystemSettings = (newSettings) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
     showToast("Platform configuration updated!");
@@ -968,10 +1102,14 @@ export const AppProvider = ({ children }) => {
         addRoute,
         createTrip,
         publishTrip,
+        unpublishTrip,
         cancelTrip,
         assignDriverToTrip,
         addDriver,
         addVerifier,
+        toggleStaffStatus,
+        updateStaff,
+        updateOrganizationProfile,
         updateSystemSettings
       }}
     >

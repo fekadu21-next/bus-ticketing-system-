@@ -86,6 +86,16 @@ export const cancelTripApi = async (orgId, tripId) => {
   return data;
 };
 
+export const publishTripApi = async (orgId, tripId) => {
+  const { data } = await api.post(`/organizations/${orgId}/trips/${tripId}/publish`);
+  return data;
+};
+
+export const unpublishTripApi = async (orgId, tripId) => {
+  const { data } = await api.post(`/organizations/${orgId}/trips/${tripId}/unpublish`);
+  return data;
+};
+
 export const getTripSeatsApi = async (orgId, tripId) => {
   const { data } = await api.get(`/organizations/${orgId}/trips/${tripId}/seats`);
   return data;
@@ -155,6 +165,28 @@ export const createStaffApi = async (orgId, payload) => {
   return data;
 };
 
+export const toggleStaffStatusApi = async (orgId, staffId, isActive) => {
+  const { data } = await api.patch(`/organizations/${orgId}/staff/${staffId}/status`, { isActive });
+  return data;
+};
+
+export const updateStaffApi = async (orgId, staffId, payload) => {
+  const { data } = await api.patch(`/organizations/${orgId}/staff/${staffId}`, payload);
+  return data;
+};
+
+// ─── Organization Profile & Management ────────────────────────────────────────
+
+export const getOrganizationDetailsApi = async (orgId) => {
+  const { data } = await api.get(`/organizations/${orgId}`);
+  return data;
+};
+
+export const updateOrganizationProfileApi = async (orgId, payload) => {
+  const { data } = await api.patch(`/organizations/${orgId}`, payload);
+  return data;
+};
+
 // ─── Ticket Verification ─────────────────────────────────────────────────────
 
 export const verifyTicketApi = async (orgId, payload) => {
@@ -165,6 +197,10 @@ export const verifyTicketApi = async (orgId, payload) => {
 export default {
   getStaffApi,
   createStaffApi,
+  toggleStaffStatusApi,
+  updateStaffApi,
+  getOrganizationDetailsApi,
+  updateOrganizationProfileApi,
   getBusesApi,
   getBusByIdApi,
   createBusApi,
@@ -180,6 +216,8 @@ export default {
   createTripApi,
   updateTripApi,
   cancelTripApi,
+  publishTripApi,
+  unpublishTripApi,
   getTripSeatsApi,
   updateSeatStatusApi,
   batchUpdateSeatsApi,
