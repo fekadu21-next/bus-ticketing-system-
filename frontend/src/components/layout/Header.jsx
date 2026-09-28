@@ -54,16 +54,16 @@ export const Header = () => {
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     user?.name ||
-    (currentRole === "ADMIN" ? "Solomon Tekle" : "Company Manager");
+    (currentRole === "ADMIN" ? "Solomon Tekle" : "Booking Coordinator");
 
   const userInitials = displayName
     .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2) || (currentRole === "ADMIN" ? "ST" : "CM");
+    .slice(0, 2) || (currentRole === "ADMIN" ? "ST" : "BC");
 
-  const userEmail = user?.email || (currentRole === "ADMIN" ? "admin@busticket.com" : "manager@busticket.com");
+  const userEmail = user?.email || (currentRole === "ADMIN" ? "admin@busticket.com" : "coordinator@busticket.com");
 
   return (
     <header className="top-header">
@@ -115,25 +115,34 @@ export const Header = () => {
 
       {/* Right actions */}
       <div className="header-right">
-        {/* Role Switcher – only visible for Platform Admin */}
-        {user?.roles?.includes("ADMIN") && (
-          <div className="mode-switcher header-role-switcher">
-            <button
-              className={currentRole === "ADMIN" ? "active" : ""}
-              onClick={() => setCurrentRole("ADMIN")}
-            >
+        {/* Role Badge Indicator — strict separation without cross-role navigation buttons */}
+        <div
+          className="header-role-indicator"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "5px 12px",
+            backgroundColor: currentRole === "ADMIN" ? "rgba(239, 68, 68, 0.08)" : "rgba(37, 99, 235, 0.08)",
+            border: `1px solid ${currentRole === "ADMIN" ? "#fca5a5" : "#bfdbfe"}`,
+            borderRadius: "20px",
+            fontSize: "0.82rem",
+            fontWeight: 700,
+            color: currentRole === "ADMIN" ? "#dc2626" : "#2563eb",
+          }}
+        >
+          {currentRole === "ADMIN" ? (
+            <>
               <ShieldCheck size={14} />
-              <span className="role-label">Admin</span>
-            </button>
-            <button
-              className={currentRole === "MANAGER" ? "active" : ""}
-              onClick={() => setCurrentRole("MANAGER")}
-            >
+              <span>Platform Admin</span>
+            </>
+          ) : (
+            <>
               <Building2 size={14} />
-              <span className="role-label">Manager</span>
-            </button>
-          </div>
-        )}
+              <span>Booking Coordinator</span>
+            </>
+          )}
+        </div>
 
         {/* Organization Scope */}
         {currentRole === "ADMIN" ? (
@@ -242,7 +251,7 @@ export const Header = () => {
               <span>
                 {currentRole === "ADMIN"
                   ? "Platform Admin"
-                  : `${activeOrg?.name || "Company"} Manager`}
+                  : `${activeOrg?.name || "Company"} Booking Coordinator`}
               </span>
             </div>
             <ChevronDown size={14} color="var(--text-muted)" className="desktop-only" />

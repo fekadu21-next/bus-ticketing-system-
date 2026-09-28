@@ -148,7 +148,7 @@ export const Sidebar = () => {
       <nav className="sidebar-nav">
         {!isSidebarCollapsed && (
           <div className="nav-group-title">
-            {currentRole === "ADMIN" ? "ADMIN" : "MANAGER"}
+            {currentRole === "ADMIN" ? "ADMIN" : "BOOKING COORDINATOR"}
           </div>
         )}
 
@@ -183,7 +183,7 @@ export const Sidebar = () => {
             <ShieldCheck size={16} />
             {!isSidebarCollapsed && (
               <span>
-                {currentRole === "ADMIN" ? "Admin" : "Manager"}
+                {currentRole === "ADMIN" ? "Admin" : "Booking Coordinator"}
               </span>
             )}
           </div>
