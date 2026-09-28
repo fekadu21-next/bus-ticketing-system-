@@ -2,6 +2,7 @@ import React from "react";
 import { useApp } from "../../context/AppContext";
 import { StatCard } from "../../components/ui/StatCard";
 import { Badge } from "../../components/ui/Badge";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import {
   Building2,
   AlertTriangle,
@@ -13,29 +14,36 @@ import {
   DollarSign,
   ArrowRight,
   ShieldAlert,
-  Plus
+  Plus,
+  Users,
+  RefreshCw,
 } from "lucide-react";
 
 export const AdminDashboardPage = () => {
   const {
     organizations,
+    users,
     trips,
     bookings,
     payments,
     verifications,
+    adminStats,
     setActivePage,
     approveOrganization,
-    rejectOrganization
+    rejectOrganization,
+    isLoadingData,
+    fetchAdminData,
   } = useApp();
 
-  const totalOrgs = organizations.length;
+  const totalOrgs = adminStats?.organizations?.total ?? organizations.length;
   const pendingOrgs = organizations.filter((o) => o.status === "PENDING");
-  const activeOrgs = organizations.filter((o) => o.status === "APPROVED").length;
-  const todayTrips = trips.length;
-  const todayBookings = bookings.length;
-  const successfulPayments = payments.filter((p) => p.status === "SUCCESS");
-  const totalRevenue = successfulPayments.reduce((acc, p) => acc + p.amount, 0);
-  const totalPlatformFees = (totalRevenue * 0.035).toFixed(2);
+  const pendingOrgsCount = adminStats?.organizations?.pending ?? pendingOrgs.length;
+  const activeOrgs = adminStats?.organizations?.approved ?? organizations.filter((o) => o.status === "APPROVED").length;
+  const todayTrips = adminStats?.trips?.total ?? trips.length;
+  const todayBookings = adminStats?.bookings?.total ?? bookings.length;
+  const successfulPayments = payments.filter((p) => p.status === "SUCCESS" || p.status === "COMPLETED");
+  const totalRevenue = adminStats?.financials?.totalRevenue ?? successfulPayments.reduce((acc, p) => acc + p.amount, 0);
+  const totalPlatformFees = adminStats?.financials?.platformCommission ?? (totalRevenue * 0.035).toFixed(2);
   const validScans = verifications.filter((v) => v.status === "VALID").length;
 
   return (
@@ -45,7 +53,14 @@ export const AdminDashboardPage = () => {
           <h1>Admin Dashboard</h1>
           <p>Overview of intercity bus operators, trips, bookings, and payments.</p>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => fetchAdminData()}
+            title="Refresh Platform State"
+          >
+            <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+          </button>
           <button className="btn btn-secondary" onClick={() => setActivePage("reports")}>
             Reports
           </button>
@@ -55,20 +70,33 @@ export const AdminDashboardPage = () => {
         </div>
       </div>
 
+      {isLoadingData && !adminStats && (
+        <div style={{ padding: "2rem", textAlign: "center" }}>
+          <LoadingSpinner label="Synchronizing platform monitoring data..." />
+        </div>
+      )}
+
       {/* KPI Stat Grid */}
       <div className="stats-grid">
         <StatCard
           title="Total Organizations"
           value={totalOrgs}
           icon={Building2}
-          subtitle={`${activeOrgs} active, ${pendingOrgs.length} pending`}
+          subtitle={`${activeOrgs} active, ${pendingOrgsCount} pending, ${adminStats?.organizations?.suspended ?? organizations.filter((o) => o.status === "SUSPENDED").length} suspended`}
           onClick={() => setActivePage("organizations")}
         />
         <StatCard
+          title="Platform Users"
+          value={adminStats?.users?.total ?? users.length}
+          icon={Users}
+          subtitle={`${adminStats?.users?.active ?? users.filter((u) => u.status === "ACTIVE").length} active accounts`}
+          onClick={() => setActivePage("users")}
+        />
+        <StatCard
           title="Pending Approvals"
-          value={pendingOrgs.length}
+          value={pendingOrgsCount}
           icon={AlertTriangle}
-          trend={pendingOrgs.length > 0 ? "⚠ Requires Review" : "✓ Clean"}
+          trend={pendingOrgsCount > 0 ? "⚠ Requires Review" : "✓ Clean"}
           subtitle="Operators awaiting verification"
           onClick={() => setActivePage("organizations")}
         />
@@ -91,7 +119,7 @@ export const AdminDashboardPage = () => {
           value={`${totalRevenue.toLocaleString()} ETB`}
           icon={CreditCard}
           trend="3.5% fee split"
-          subtitle={`Platform Fee: ${totalPlatformFees} ETB`}
+          subtitle={`Platform Fee: ${Number(totalPlatformFees).toLocaleString()} ETB`}
           onClick={() => setActivePage("payments")}
         />
         <StatCard

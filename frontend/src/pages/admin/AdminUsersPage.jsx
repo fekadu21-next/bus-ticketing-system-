@@ -1,19 +1,31 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
-import { Search, UserCheck, Shield, UserX } from "lucide-react";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { Search, Shield, RefreshCw } from "lucide-react";
 
 export const AdminUsersPage = () => {
-  const { users, toggleUserStatus } = useApp();
+  const { users, toggleUserStatus, isLoadingData, fetchAdminData } = useApp();
   const [filterRole, setFilterRole] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredUsers = users.filter((u) => {
-    const matchesRole = filterRole === "ALL" || u.role === filterRole;
+    const roleUpper = (u.role || "").toUpperCase();
+    const matchesRole =
+      filterRole === "ALL" ||
+      roleUpper === filterRole ||
+      (filterRole === "ADMIN" && roleUpper.includes("ADMIN")) ||
+      (filterRole === "COORDINATOR" && (roleUpper.includes("COORDINATOR") || roleUpper.includes("MANAGER"))) ||
+      (filterRole === "PASSENGER" && roleUpper.includes("PASSENGER")) ||
+      (filterRole === "DRIVER" && roleUpper.includes("DRIVER")) ||
+      (filterRole === "VERIFIER" && roleUpper.includes("VERIFIER"));
+
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.phone.includes(searchQuery);
+      (u.name || "").toLowerCase().includes(q) ||
+      (u.email || "").toLowerCase().includes(q) ||
+      (u.phone || "").includes(q);
+
     return matchesRole && matchesSearch;
   });
 
@@ -24,6 +36,13 @@ export const AdminUsersPage = () => {
           <h1>Users Overview</h1>
           <p>Supervise platform user accounts and permissions.</p>
         </div>
+        <button
+          className="btn btn-secondary"
+          onClick={() => fetchAdminData()}
+          title="Refresh Users"
+        >
+          <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+        </button>
       </div>
 
       <div className="card-table-wrapper">
@@ -44,12 +63,15 @@ export const AdminUsersPage = () => {
               onChange={(e) => setFilterRole(e.target.value)}
             >
               <option value="ALL">All Roles</option>
-              <option value="Admin">Admin</option>
-              <option value="Manager">Operational Manager</option>
-              <option value="Passenger">Passenger</option>
-              <option value="Driver">Driver</option>
-              <option value="Verifier">Ticket Verifier</option>
+              <option value="ADMIN">Platform Admin</option>
+              <option value="COORDINATOR">Booking Coordinator</option>
+              <option value="PASSENGER">Passenger</option>
+              <option value="DRIVER">Driver</option>
+              <option value="VERIFIER">Ticket Verifier</option>
             </select>
+          </div>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+            Showing <strong>{filteredUsers.length}</strong> of <strong>{users.length}</strong> users
           </div>
         </div>
 
@@ -66,42 +88,56 @@ export const AdminUsersPage = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((u) => (
-              <tr key={u.id}>
-                <td>
-                  <strong>{u.name}</strong>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>ID: {u.id}</div>
-                </td>
-                <td>
-                  <div>{u.email}</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{u.phone}</div>
-                </td>
-                <td>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.3rem",
-                      fontWeight: 600,
-                      fontSize: "0.78rem"
-                    }}
-                  >
-                    <Shield size={13} color="var(--primary)" /> {u.role}
-                  </span>
-                </td>
-                <td>{u.organizationName || "—"}</td>
-                <td><Badge status={u.status} /></td>
-                <td>{u.createdAt}</td>
-                <td>
-                  <button
-                    className={`btn btn-sm ${u.status === "ACTIVE" ? "btn-secondary" : "btn-success"}`}
-                    onClick={() => toggleUserStatus(u.id)}
-                  >
-                    {u.status === "ACTIVE" ? "Suspend" : "Activate"}
-                  </button>
+            {isLoadingData && users.length === 0 ? (
+              <tr>
+                <td colSpan="7" style={{ textAlign: "center", padding: "2.5rem" }}>
+                  <LoadingSpinner label="Loading platform users..." />
                 </td>
               </tr>
-            ))}
+            ) : filteredUsers.length === 0 ? (
+              <tr>
+                <td colSpan="7" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                  No users found matching the selected criteria.
+                </td>
+              </tr>
+            ) : (
+              filteredUsers.map((u) => (
+                <tr key={u.id}>
+                  <td>
+                    <strong>{u.name}</strong>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>ID: {u.id}</div>
+                  </td>
+                  <td>
+                    <div>{u.email}</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{u.phone}</div>
+                  </td>
+                  <td>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.3rem",
+                        fontWeight: 600,
+                        fontSize: "0.78rem"
+                      }}
+                    >
+                      <Shield size={13} color="var(--primary)" /> {u.role}
+                    </span>
+                  </td>
+                  <td>{u.organizationName || "—"}</td>
+                  <td><Badge status={u.status} /></td>
+                  <td>{u.createdAt}</td>
+                  <td>
+                    <button
+                      className={`btn btn-sm ${u.status === "ACTIVE" ? "btn-secondary" : "btn-success"}`}
+                      onClick={() => toggleUserStatus(u.id)}
+                    >
+                      {u.status === "ACTIVE" ? "Suspend" : "Activate"}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
-import { Building2, CheckCircle2, XCircle, AlertTriangle, ShieldCheck, Eye, Search } from "lucide-react";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { Building2, CheckCircle2, XCircle, AlertTriangle, ShieldCheck, Eye, Search, RefreshCw } from "lucide-react";
 
 export const AdminOrganizationsPage = () => {
   const {
@@ -10,7 +11,9 @@ export const AdminOrganizationsPage = () => {
     approveOrganization,
     rejectOrganization,
     suspendOrganization,
-    reactivateOrganization
+    reactivateOrganization,
+    isLoadingData,
+    fetchAdminData,
   } = useApp();
 
   const [selectedOrg, setSelectedOrg] = useState(null);
@@ -24,10 +27,12 @@ export const AdminOrganizationsPage = () => {
 
   const filteredOrgs = organizations.filter((org) => {
     const matchesStatus = filterStatus === "ALL" || org.status === filterStatus;
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      org.registrationNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      org.contactName.toLowerCase().includes(searchQuery.toLowerCase());
+      (org.name || "").toLowerCase().includes(q) ||
+      (org.registrationNumber || "").toLowerCase().includes(q) ||
+      (org.contactName || "").toLowerCase().includes(q) ||
+      (org.address || "").toLowerCase().includes(q);
     return matchesStatus && matchesSearch;
   });
 
@@ -103,76 +108,90 @@ export const AdminOrganizationsPage = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredOrgs.map((org) => (
-              <tr key={org.id}>
-                <td>
-                  <strong>{org.name}</strong>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.address}</div>
+            {isLoadingData && organizations.length === 0 ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem" }}>
+                  <LoadingSpinner label="Loading registered organizations..." />
                 </td>
-                <td>
-                  <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>{org.type}</span>
+              </tr>
+            ) : filteredOrgs.length === 0 ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                  No organizations found matching the selected filter or search term.
                 </td>
-                <td><code>{org.registrationNumber}</code></td>
-                <td>
-                  <div>{org.contactName}</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.phone} | {org.email}</div>
-                </td>
-                <td>
-                  <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>{org.totalBuses} buses</span>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.activeTrips} active trips</div>
-                </td>
-                <td><Badge status={org.status} /></td>
-                <td>{org.createdAt}</td>
-                <td>
-                  <div style={{ display: "flex", gap: "0.35rem" }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setSelectedOrg(org)}
-                    >
-                      <Eye size={13} /> View
-                    </button>
-                    {org.status === "PENDING" && (
-                      <>
-                        <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => approveOrganization(org.id)}
-                        >
-                          Approve
-                        </button>
+              </tr>
+            ) : (
+              filteredOrgs.map((org) => (
+                <tr key={org.id}>
+                  <td>
+                    <strong>{org.name}</strong>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.address}</div>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>{org.type}</span>
+                  </td>
+                  <td><code>{org.registrationNumber}</code></td>
+                  <td>
+                    <div>{org.contactName}</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.phone} | {org.email}</div>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>{org.totalBuses} buses</span>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.activeTrips} active trips</div>
+                  </td>
+                  <td><Badge status={org.status} /></td>
+                  <td>{org.createdAt}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: "0.35rem" }}>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setSelectedOrg(org)}
+                      >
+                        <Eye size={13} /> View
+                      </button>
+                      {org.status === "PENDING" && (
+                        <>
+                          <button
+                            className="btn btn-success btn-sm"
+                            onClick={() => approveOrganization(org.id)}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => {
+                              setTargetOrgId(org.id);
+                              setShowRejectModal(true);
+                            }}
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+                      {org.status === "APPROVED" && (
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => {
                             setTargetOrgId(org.id);
-                            setShowRejectModal(true);
+                            setShowSuspendModal(true);
                           }}
                         >
-                          Reject
+                          Suspend
                         </button>
-                      </>
-                    )}
-                    {org.status === "APPROVED" && (
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => {
-                          setTargetOrgId(org.id);
-                          setShowSuspendModal(true);
-                        }}
-                      >
-                        Suspend
-                      </button>
-                    )}
-                    {org.status === "SUSPENDED" && (
-                      <button
-                        className="btn btn-success btn-sm"
-                        onClick={() => reactivateOrganization(org.id)}
-                      >
-                        Reactivate
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      )}
+                      {org.status === "SUSPENDED" && (
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => reactivateOrganization(org.id)}
+                        >
+                          Reactivate
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
