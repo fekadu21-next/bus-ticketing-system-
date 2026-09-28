@@ -52,6 +52,8 @@ import reportRoutes from './coordinator/report.route.js';
 // Coordinator sub-routes scoped to organization
 const requireCoordinator = authorizeOrgRole([ROLES.BOOKING_COORDINATOR], (req) => req.params.orgId);
 
+import coordinatorStaffController from '../controllers/coordinator/staff.controller.js';
+
 router.use('/:orgId/buses', requireCoordinator, busRoutes);
 router.use('/:orgId/routes', requireCoordinator, routeRoutes);
 router.use('/:orgId/trips', requireCoordinator, tripRoutes);
@@ -59,6 +61,8 @@ router.use('/:orgId/bookings', requireCoordinator, bookingRoutes);
 router.use('/:orgId/payments', requireCoordinator, paymentRoutes);
 router.use('/:orgId/reports', requireCoordinator, reportRoutes);
 router.use('/:orgId/coordinator', requireCoordinator, coordinatorRouter);
+router.get('/:orgId/staff', requireCoordinator, coordinatorStaffController.getStaff);
+router.post('/:orgId/staff', requireCoordinator, coordinatorStaffController.createStaff);
 
 // Verify ticket for organization (Admin, BOOKING_COORDINATOR, or TICKET_VERIFIER of that org)
 router.post(

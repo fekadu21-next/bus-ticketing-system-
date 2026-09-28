@@ -39,6 +39,65 @@ export class AdminDashboardRepository {
       emailVerified,
     };
   }
+
+  /**
+   * Real fleet statistics
+   */
+  async getFleetStats() {
+    const [total, active] = await Promise.all([
+      prisma.buses.count(),
+      prisma.buses.count({ where: { is_active: true } }),
+    ]);
+    return { total, active, maintenance: total - active };
+  }
+
+  /**
+   * Real trip statistics
+   */
+  async getTripStats() {
+    const [total, scheduled, inTransit, completed, cancelled] = await Promise.all([
+      prisma.trips.count(),
+      prisma.trips.count({ where: { status: 'SCHEDULED' } }),
+      prisma.trips.count({ where: { status: 'IN_TRANSIT' } }),
+      prisma.trips.count({ where: { status: 'COMPLETED' } }),
+      prisma.trips.count({ where: { status: 'CANCELLED' } }),
+    ]);
+    return { total, scheduled, inTransit, completed, cancelled };
+  }
+
+  /**
+   * Real booking statistics
+   */
+  async getBookingStats() {
+    const [total, confirmed, pending, cancelled] = await Promise.all([
+      prisma.bookings.count(),
+      prisma.bookings.count({ where: { status: 'CONFIRMED' } }),
+      prisma.bookings.count({ where: { status: 'PENDING' } }),
+      prisma.bookings.count({ where: { status: 'CANCELLED' } }),
+    ]);
+    return { total, confirmed, pending, cancelled };
+  }
+
+  /**
+   * Real financial statistics
+   */
+  async getFinancialStats() {
+    const aggregate = await prisma.payments.aggregate({
+      where: { status: 'COMPLETED' },
+      _sum: { amount: true },
+      _count: { _all: true },
+    });
+
+    const totalRevenue = Number(aggregate._sum.amount || 0);
+    const platformCommission = Number((totalRevenue * 0.035).toFixed(2));
+
+    return {
+      totalRevenue,
+      platformCommission,
+      completedTransactions: aggregate._count._all || 0,
+      currency: 'ETB',
+    };
+  }
 }
 
 export const adminDashboardRepository = new AdminDashboardRepository();
