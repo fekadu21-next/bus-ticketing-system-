@@ -24,5 +24,5 @@ export const updateTripSchema = z.object({
   arrivalTime: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid arrival date/time' }).optional().nullable(),
   fare: z.number().positive().optional(),
   price: z.number().positive().optional(),
-  status: z.enum(['SCHEDULED', 'IN_TRANSIT', 'COMPLETED', 'CANCELLED']).optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'SCHEDULED', 'IN_TRANSIT', 'COMPLETED', 'CANCELLED']).optional(),
 });

@@ -182,6 +182,24 @@ export class TripService {
     return tripRepository.cancel(tripId, organizationId);
   }
 
+  async publishTrip(tripId, organizationId) {
+    const trip = await this.getTripById(tripId, organizationId);
+    if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
+      throw new ApiError(400, `Cannot publish trip with status '${trip.status}'.`);
+    }
+
+    return tripRepository.update(tripId, organizationId, { status: 'PUBLISHED' });
+  }
+
+  async unpublishTrip(tripId, organizationId) {
+    const trip = await this.getTripById(tripId, organizationId);
+    if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
+      throw new ApiError(400, `Cannot unpublish trip with status '${trip.status}'.`);
+    }
+
+    return tripRepository.update(tripId, organizationId, { status: 'DRAFT' });
+  }
+
   // --- Seat Operations ---
   async getTripSeats(tripId, organizationId) {
     await this.getTripById(tripId, organizationId);

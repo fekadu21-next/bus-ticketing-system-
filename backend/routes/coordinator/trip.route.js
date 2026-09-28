@@ -15,6 +15,8 @@ router.route('/:tripId')
   .patch(validate(updateTripSchema), tripController.updateTrip);
 
 router.post('/:tripId/cancel', tripController.cancelTrip);
+router.post('/:tripId/publish', tripController.publishTrip);
+router.post('/:tripId/unpublish', tripController.unpublishTrip);
 
 // Seat management sub-routes
 router.get('/:tripId/seats', tripController.getTripSeats);

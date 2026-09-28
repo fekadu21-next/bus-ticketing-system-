@@ -61,6 +61,26 @@ export class TripController {
     });
   });
 
+  publishTrip = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    const trip = await tripService.publishTrip(tripId, req.organizationId);
+    res.status(200).json({
+      success: true,
+      message: 'Trip published successfully.',
+      data: { trip },
+    });
+  });
+
+  unpublishTrip = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    const trip = await tripService.unpublishTrip(tripId, req.organizationId);
+    res.status(200).json({
+      success: true,
+      message: 'Trip unpublished (set to draft).',
+      data: { trip },
+    });
+  });
+
   // Seat endpoints
   getTripSeats = asyncHandler(async (req, res) => {
     const { tripId } = req.params;
