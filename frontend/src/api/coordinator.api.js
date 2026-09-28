@@ -1,6 +1,6 @@
 /**
  * Coordinator API — wraps all /organizations/:orgId/* endpoints
- * exposed by the feature/auth backend for BOOKING_COORDINATOR role.
+ * exposed by the backend for BOOKING_COORDINATOR role.
  */
 import api from '@/services/api';
 
@@ -8,6 +8,11 @@ import api from '@/services/api';
 
 export const getBusesApi = async (orgId, params = {}) => {
   const { data } = await api.get(`/organizations/${orgId}/buses`, { params });
+  return data;
+};
+
+export const getBusByIdApi = async (orgId, busId) => {
+  const { data } = await api.get(`/organizations/${orgId}/buses/${busId}`);
   return data;
 };
 
@@ -30,6 +35,11 @@ export const deleteBusApi = async (orgId, busId) => {
 
 export const getRoutesApi = async (orgId, params = {}) => {
   const { data } = await api.get(`/organizations/${orgId}/routes`, { params });
+  return data;
+};
+
+export const getRouteByIdApi = async (orgId, routeId) => {
+  const { data } = await api.get(`/organizations/${orgId}/routes/${routeId}`);
   return data;
 };
 
@@ -71,7 +81,8 @@ export const updateTripApi = async (orgId, tripId, payload) => {
 };
 
 export const cancelTripApi = async (orgId, tripId) => {
-  const { data } = await api.delete(`/organizations/${orgId}/trips/${tripId}`);
+  // Backend route is POST /organizations/:orgId/trips/:tripId/cancel
+  const { data } = await api.post(`/organizations/${orgId}/trips/${tripId}/cancel`);
   return data;
 };
 
@@ -84,6 +95,14 @@ export const updateSeatStatusApi = async (orgId, tripId, seatId, status) => {
   const { data } = await api.patch(
     `/organizations/${orgId}/trips/${tripId}/seats/${seatId}`,
     { status }
+  );
+  return data;
+};
+
+export const batchUpdateSeatsApi = async (orgId, tripId, seatNumbers, status) => {
+  const { data } = await api.patch(
+    `/organizations/${orgId}/trips/${tripId}/seats/batch`,
+    { seatNumbers, status }
   );
   return data;
 };
@@ -112,20 +131,27 @@ export const getPaymentByIdApi = async (orgId, paymentId) => {
   return data;
 };
 
-// ─── Reports ─────────────────────────────────────────────────────────────────
+// ─── Reports & Operational Statistics ───────────────────────────────────────
 
-export const getDashboardReportApi = async (orgId, params = {}) => {
-  const { data } = await api.get(`/organizations/${orgId}/reports/dashboard`, { params });
+export const getOperationalStatsApi = async (orgId) => {
+  const { data } = await api.get(`/organizations/${orgId}/reports`);
   return data;
 };
 
-export const getRevenueReportApi = async (orgId, params = {}) => {
-  const { data } = await api.get(`/organizations/${orgId}/reports/revenue`, { params });
+// Alias for backward compatibility
+export const getDashboardReportApi = async (orgId) => {
+  return getOperationalStatsApi(orgId);
+};
+
+// ─── Staff (Drivers & Verifiers) ─────────────────────────────────────────────
+
+export const getStaffApi = async (orgId, params = {}) => {
+  const { data } = await api.get(`/organizations/${orgId}/staff`, { params });
   return data;
 };
 
-export const getTripReportApi = async (orgId, params = {}) => {
-  const { data } = await api.get(`/organizations/${orgId}/reports/trips`, { params });
+export const createStaffApi = async (orgId, payload) => {
+  const { data } = await api.post(`/organizations/${orgId}/staff`, payload);
   return data;
 };
 
@@ -137,11 +163,15 @@ export const verifyTicketApi = async (orgId, payload) => {
 };
 
 export default {
+  getStaffApi,
+  createStaffApi,
   getBusesApi,
+  getBusByIdApi,
   createBusApi,
   updateBusApi,
   deleteBusApi,
   getRoutesApi,
+  getRouteByIdApi,
   createRouteApi,
   updateRouteApi,
   deleteRouteApi,
@@ -152,12 +182,12 @@ export default {
   cancelTripApi,
   getTripSeatsApi,
   updateSeatStatusApi,
+  batchUpdateSeatsApi,
   getBookingsApi,
   getBookingByIdApi,
   getPaymentsApi,
   getPaymentByIdApi,
+  getOperationalStatsApi,
   getDashboardReportApi,
-  getRevenueReportApi,
-  getTripReportApi,
   verifyTicketApi,
 };

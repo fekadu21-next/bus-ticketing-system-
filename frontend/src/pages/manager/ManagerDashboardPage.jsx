@@ -25,6 +25,7 @@ export const ManagerDashboardPage = () => {
     payments,
     drivers,
     verifiers,
+    coordinatorStats,
     setActivePage,
     selectedOrgId
   } = useApp();
@@ -36,13 +37,14 @@ export const ManagerDashboardPage = () => {
   const orgPayments = payments.filter((p) => p.organizationId === selectedOrgId);
   const orgDrivers = drivers.filter((d) => d.organizationId === selectedOrgId);
 
-  const activeBuses = orgBuses.filter((b) => b.status === "ACTIVE").length;
-  const publishedTrips = orgTrips.filter((t) => t.status === "PUBLISHED").length;
-  const totalBookedSeats = orgTrips.reduce((acc, t) => acc + (t.bookedSeatsCount || 0), 0);
+  const totalBusesCount = coordinatorStats?.buses?.total ?? orgBuses.length;
+  const activeBuses = coordinatorStats?.buses?.active ?? orgBuses.filter((b) => b.status === "ACTIVE").length;
+  const publishedTrips = coordinatorStats?.trips?.scheduled ?? orgTrips.filter((t) => t.status === "PUBLISHED" || t.status === "SCHEDULED").length;
+  const totalBookedSeats = coordinatorStats?.bookings?.confirmed ?? orgTrips.reduce((acc, t) => acc + (t.bookedSeatsCount || 0), 0);
   const totalCapacity = orgTrips.reduce((acc, t) => acc + (t.totalSeats || 0), 0);
-  const availableSeats = totalCapacity - totalBookedSeats;
+  const availableSeats = Math.max(0, totalCapacity - totalBookedSeats);
 
-  const paidBookingsCount = orgBookings.filter((b) => b.paymentStatus === "SUCCESS").length;
+  const paidBookingsCount = coordinatorStats?.payments?.totalCompletedTransactions ?? orgBookings.filter((b) => b.paymentStatus === "SUCCESS").length;
   const unassignedTrips = orgTrips.filter((t) => t.driverName === "Unassigned" || !t.driverId);
 
   return (
@@ -67,7 +69,7 @@ export const ManagerDashboardPage = () => {
       <div className="stats-grid">
         <StatCard
           title="Fleet Buses"
-          value={orgBuses.length}
+          value={totalBusesCount}
           icon={Bus}
           subtitle={`${activeBuses} active, ${orgBuses.length - activeBuses} maintenance`}
           onClick={() => setActivePage("buses")}

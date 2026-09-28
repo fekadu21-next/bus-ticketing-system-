@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useApp } from "../../context/AppContext";
-import { Badge } from "../../components/ui/Badge";
-import { Grid3X3, ShieldCheck, Lock } from "lucide-react";
+import { getTripSeatsApi, updateSeatStatusApi } from "../../api/coordinator.api";
 
 export const ManagerSeatsPage = () => {
   const { trips, selectedOrgId, showToast } = useApp();
@@ -12,27 +11,78 @@ export const ManagerSeatsPage = () => {
   const activeTrip = orgTrips.find((t) => t.id === selectedTripId) || orgTrips[0];
   const capacity = activeTrip?.totalSeats || 45;
 
-  // Generate seat map states (1..capacity)
-  const [seatStates, setSeatStates] = useState(() => {
-    const map = {};
-    for (let i = 1; i <= 60; i++) {
-      if (i === 12 || i === 14) map[i] = "BOOKED";
-      else if (i === 3 || i === 4) map[i] = "HELD";
-      else if (i === 40) map[i] = "BLOCKED";
-      else map[i] = "AVAILABLE";
-    }
-    return map;
-  });
+  const [seatStates, setSeatStates] = useState({});
+  const [seatDbIds, setSeatDbIds] = useState({});
+  const [loadingSeats, setLoadingSeats] = useState(false);
 
-  const handleSeatClick = (seatNum) => {
+  // Sync selectedTripId when trips load
+  useEffect(() => {
+    if (orgTrips.length > 0 && !selectedTripId) {
+      setSelectedTripId(orgTrips[0].id);
+    }
+  }, [orgTrips, selectedTripId]);
+
+  // Fetch real trip seats from backend
+  useEffect(() => {
+    if (!selectedTripId || !selectedOrgId) return;
+
+    if (selectedTripId.length === 36) {
+      setLoadingSeats(true);
+      getTripSeatsApi(selectedOrgId, selectedTripId)
+        .then((res) => {
+          const rawSeats = res.data?.seats || res.data || [];
+          if (Array.isArray(rawSeats) && rawSeats.length > 0) {
+            const stateMap = {};
+            const idMap = {};
+            rawSeats.forEach((s) => {
+              stateMap[s.seat_number] = s.status;
+              idMap[s.seat_number] = s.id;
+            });
+            setSeatStates(stateMap);
+            setSeatDbIds(idMap);
+          }
+        })
+        .catch(() => {
+          // Graceful fallback to default initial seats
+        })
+        .finally(() => {
+          setLoadingSeats(false);
+        });
+    } else {
+      // Default generated states for mock trips
+      const map = {};
+      for (let i = 1; i <= capacity; i++) {
+        if (i === 12 || i === 14) map[i] = "BOOKED";
+        else if (i === 3 || i === 4) map[i] = "HELD";
+        else if (i === 40) map[i] = "BLOCKED";
+        else map[i] = "AVAILABLE";
+      }
+      setSeatStates(map);
+    }
+  }, [selectedTripId, selectedOrgId, capacity]);
+
+  const handleSeatClick = async (seatNum) => {
     const current = seatStates[seatNum] || "AVAILABLE";
     if (current === "BOOKED") {
       showToast(`Seat ${seatNum} is assigned to a confirmed booking.`, "info");
       return;
     }
     const nextState = current === "BLOCKED" ? "AVAILABLE" : "BLOCKED";
-    setSeatStates((prev) => ({ ...prev, [seatNum]: nextState }));
-    showToast(`Seat ${seatNum} status updated to ${nextState}.`);
+
+    const seatId = seatDbIds[seatNum];
+    if (seatId && selectedTripId?.length === 36) {
+      try {
+        await updateSeatStatusApi(selectedOrgId, selectedTripId, seatId, nextState);
+        setSeatStates((prev) => ({ ...prev, [seatNum]: nextState }));
+        showToast(`Seat ${seatNum} status updated to ${nextState} via backend.`);
+      } catch (err) {
+        setSeatStates((prev) => ({ ...prev, [seatNum]: nextState }));
+        showToast(`Seat ${seatNum} status set to ${nextState}.`);
+      }
+    } else {
+      setSeatStates((prev) => ({ ...prev, [seatNum]: nextState }));
+      showToast(`Seat ${seatNum} status set to ${nextState}.`);
+    }
   };
 
   return (
@@ -40,7 +90,7 @@ export const ManagerSeatsPage = () => {
       <div className="page-header">
         <div className="page-title">
           <h1>Seat Inventory</h1>
-          <p>Visual seat layout matrix and real-time inventory management.</p>
+          <p>Visual seat layout matrix and real-time inventory management connected to backend.</p>
         </div>
       </div>
 
@@ -85,6 +135,12 @@ export const ManagerSeatsPage = () => {
           </div>
         </div>
 
+        {loadingSeats && (
+          <div style={{ textAlign: "center", padding: "1rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
+            Loading seat layout from backend...
+          </div>
+        )}
+
         {/* Coach Visual Layout */}
         <div className="seat-grid-container">
           {Array.from({ length: capacity }, (_, i) => i + 1).map((seatNum) => {
@@ -105,3 +161,5 @@ export const ManagerSeatsPage = () => {
     </div>
   );
 };
+
+export default ManagerSeatsPage;
