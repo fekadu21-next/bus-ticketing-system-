@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
-import { MapPin, Plus, Search, Edit2 } from "lucide-react";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { MapPin, Plus, Search, Edit2, RefreshCw } from "lucide-react";
 
 export const AdminStationsPage = () => {
-  const { stations, addStation, updateStation } = useApp();
+  const { stations, addStation, updateStation, isLoadingData, fetchAdminData } = useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [name, setName] = useState("");
@@ -13,12 +14,15 @@ export const AdminStationsPage = () => {
   const [code, setCode] = useState("");
   const [address, setAddress] = useState("");
 
-  const filteredStations = stations.filter(
-    (s) =>
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredStations = stations.filter((s) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      (s.name || "").toLowerCase().includes(q) ||
+      (s.city || "").toLowerCase().includes(q) ||
+      (s.code || "").toLowerCase().includes(q) ||
+      (s.address || "").toLowerCase().includes(q)
+    );
+  });
 
   const handleCreateStation = (e) => {
     e.preventDefault();
@@ -38,9 +42,18 @@ export const AdminStationsPage = () => {
           <h1>Stations & Physical Locations Registry</h1>
           <p>Maintain centralized bus terminal records utilized by transport routes across Ethiopia.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-          <Plus size={16} /> Add New Station
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => fetchAdminData()}
+            title="Refresh Stations"
+          >
+            <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+            <Plus size={16} /> Add New Station
+          </button>
+        </div>
       </div>
 
       <div className="card-table-wrapper">
@@ -55,7 +68,7 @@ export const AdminStationsPage = () => {
             />
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-            Total Stations: <strong>{stations.length}</strong>
+            Showing <strong>{filteredStations.length}</strong> of <strong>{stations.length}</strong> stations
           </div>
         </div>
 
@@ -73,35 +86,49 @@ export const AdminStationsPage = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredStations.map((s) => (
-              <tr key={s.id}>
-                <td>
-                  <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                    <MapPin size={14} color="var(--primary)" /> {s.name}
-                  </strong>
-                </td>
-                <td>{s.city}</td>
-                <td><code>{s.code}</code></td>
-                <td>{s.address}</td>
-                <td>
-                  <span style={{ fontWeight: 700 }}>{s.activeRoutesCount} routes</span>
-                </td>
-                <td><Badge status={s.status} /></td>
-                <td>{s.createdAt}</td>
-                <td>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() =>
-                      updateStation(s.id, {
-                        status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE"
-                      })
-                    }
-                  >
-                    {s.status === "ACTIVE" ? "Deactivate" : "Activate"}
-                  </button>
+            {isLoadingData && stations.length === 0 ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem" }}>
+                  <LoadingSpinner label="Loading stations directory..." />
                 </td>
               </tr>
-            ))}
+            ) : filteredStations.length === 0 ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                  No bus stations found matching your search.
+                </td>
+              </tr>
+            ) : (
+              filteredStations.map((s) => (
+                <tr key={s.id}>
+                  <td>
+                    <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      <MapPin size={14} color="var(--primary)" /> {s.name}
+                    </strong>
+                  </td>
+                  <td>{s.city}</td>
+                  <td><code>{s.code}</code></td>
+                  <td>{s.address}</td>
+                  <td>
+                    <span style={{ fontWeight: 700 }}>{s.activeRoutesCount} routes</span>
+                  </td>
+                  <td><Badge status={s.status} /></td>
+                  <td>{s.createdAt}</td>
+                  <td>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() =>
+                        updateStation(s.id, {
+                          status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE"
+                        })
+                      }
+                    >
+                      {s.status === "ACTIVE" ? "Deactivate" : "Activate"}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
-import { CalendarDays, Search } from "lucide-react";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { CalendarDays, Search, RefreshCw } from "lucide-react";
 
 export const AdminTripsPage = () => {
-  const { trips, organizations } = useApp();
+  const { trips, organizations, isLoadingData, fetchAdminData } = useApp();
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,9 +13,12 @@ export const AdminTripsPage = () => {
   const filteredTrips = trips.filter((t) => {
     const matchesOrg = filterOrg === "ALL" || t.organizationId === filterOrg;
     const matchesStatus = filterStatus === "ALL" || t.status === filterStatus;
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      t.tripCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.routeName.toLowerCase().includes(searchQuery.toLowerCase());
+      (t.tripCode || "").toLowerCase().includes(q) ||
+      (t.routeName || "").toLowerCase().includes(q) ||
+      (t.organizationName || "").toLowerCase().includes(q) ||
+      (t.busPlateNumber || "").toLowerCase().includes(q);
     return matchesOrg && matchesStatus && matchesSearch;
   });
 
@@ -25,6 +29,13 @@ export const AdminTripsPage = () => {
           <h1>Platform Trips Monitor</h1>
           <p>Monitor scheduled departures created and operated by companies nationwide.</p>
         </div>
+        <button
+          className="btn btn-secondary"
+          onClick={() => fetchAdminData()}
+          title="Refresh Trips"
+        >
+          <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+        </button>
       </div>
 
       <div className="card-table-wrapper">
@@ -56,10 +67,14 @@ export const AdminTripsPage = () => {
             >
               <option value="ALL">All Statuses</option>
               <option value="PUBLISHED">PUBLISHED</option>
+              <option value="SCHEDULED">SCHEDULED</option>
               <option value="DRAFT">DRAFT</option>
               <option value="COMPLETED">COMPLETED</option>
               <option value="CANCELLED">CANCELLED</option>
             </select>
+          </div>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+            Showing <strong>{filteredTrips.length}</strong> of <strong>{trips.length}</strong> scheduled departures
           </div>
         </div>
 
@@ -78,26 +93,40 @@ export const AdminTripsPage = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredTrips.map((t) => (
-              <tr key={t.id}>
-                <td><code>{t.tripCode}</code></td>
-                <td><strong>{t.organizationName}</strong></td>
-                <td>{t.routeName}</td>
-                <td><code>{t.busPlateNumber}</code></td>
-                <td>{t.driverName}</td>
-                <td>
-                  <div>{t.departureDate}</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{t.departureTime}</div>
+            {isLoadingData && trips.length === 0 ? (
+              <tr>
+                <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem" }}>
+                  <LoadingSpinner label="Loading scheduled departures..." />
                 </td>
-                <td><strong>{t.fareAmount} ETB</strong></td>
-                <td>
-                  <span style={{ fontWeight: 700, color: t.bookedSeatsCount === t.totalSeats ? "var(--danger)" : "var(--text-main)" }}>
-                    {t.bookedSeatsCount} / {t.totalSeats}
-                  </span>
-                </td>
-                <td><Badge status={t.status} /></td>
               </tr>
-            ))}
+            ) : filteredTrips.length === 0 ? (
+              <tr>
+                <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                  No departures found matching your filter criteria.
+                </td>
+              </tr>
+            ) : (
+              filteredTrips.map((t) => (
+                <tr key={t.id}>
+                  <td><code>{t.tripCode}</code></td>
+                  <td><strong>{t.organizationName}</strong></td>
+                  <td>{t.routeName}</td>
+                  <td><code>{t.busPlateNumber}</code></td>
+                  <td>{t.driverName}</td>
+                  <td>
+                    <div>{t.departureDate}</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{t.departureTime}</div>
+                  </td>
+                  <td><strong>{t.fareAmount} ETB</strong></td>
+                  <td>
+                    <span style={{ fontWeight: 700, color: t.bookedSeatsCount === t.totalSeats ? "var(--danger)" : "var(--text-main)" }}>
+                      {t.bookedSeatsCount} / {t.totalSeats}
+                    </span>
+                  </td>
+                  <td><Badge status={t.status} /></td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

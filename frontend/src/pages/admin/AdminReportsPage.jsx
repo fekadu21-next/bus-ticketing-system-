@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import {
   BarChart3,
   TrendingUp,
@@ -9,6 +10,7 @@ import {
   ShieldCheck,
   Download,
   ArrowUpRight,
+  RefreshCw,
 } from "lucide-react";
 
 const MetricBlock = ({ label, value, sub, highlight }) => (
@@ -88,14 +90,23 @@ const ScanBar = ({ label, value, pct, shade }) => (
 );
 
 export const AdminReportsPage = () => {
-  const { organizations, trips, bookings, payments, verifications, showToast } =
-    useApp();
+  const {
+    organizations,
+    trips,
+    bookings,
+    payments,
+    verifications,
+    showToast,
+    adminReports,
+    isLoadingData,
+    fetchAdminData,
+  } = useApp();
   const [activeTab, setActiveTab] = useState("operators");
 
-  const successPayments = payments.filter((p) => p.status === "SUCCESS");
-  const totalRev = successPayments.reduce((acc, p) => acc + p.amount, 0);
-  const platformFees = (totalRev * 0.035).toFixed(2);
-  const activeOrgs = organizations.filter((o) => o.status === "APPROVED");
+  const successPayments = payments.filter((p) => p.status === "SUCCESS" || p.status === "COMPLETED");
+  const totalRev = adminReports?.financials?.totalRevenue ?? successPayments.reduce((acc, p) => acc + p.amount, 0);
+  const platformFees = adminReports?.financials?.platformCommission ?? (totalRev * 0.035).toFixed(2);
+  const activeOrgs = adminReports?.organizations?.active ?? organizations.filter((o) => o.status === "APPROVED").length;
   const validScans = verifications.filter((v) => v.status === "VALID").length;
   const totalScans = verifications.length;
   const scanAccuracy =
@@ -113,7 +124,14 @@ export const AdminReportsPage = () => {
           <h1>Platform Reports</h1>
           <p>Revenue, operator performance, and ticket verification analytics.</p>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => fetchAdminData()}
+            title="Refresh Reports"
+          >
+            <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+          </button>
           <button
             className="btn btn-secondary"
             onClick={() => exportReport("CSV")}

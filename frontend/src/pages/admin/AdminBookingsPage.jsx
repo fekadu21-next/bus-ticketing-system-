@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
-import { Ticket, Search, ExternalLink } from "lucide-react";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { Ticket, Search, ExternalLink, RefreshCw } from "lucide-react";
 
 export const AdminBookingsPage = () => {
-  const { bookings, organizations, setActivePage } = useApp();
+  const { bookings, organizations, setActivePage, isLoadingData, fetchAdminData } = useApp();
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,10 +13,12 @@ export const AdminBookingsPage = () => {
   const filteredBookings = bookings.filter((b) => {
     const matchesOrg = filterOrg === "ALL" || b.organizationId === filterOrg;
     const matchesStatus = filterStatus === "ALL" || b.status === filterStatus;
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      b.bookingReference.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.passengerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.tripCode.toLowerCase().includes(searchQuery.toLowerCase());
+      (b.bookingReference || "").toLowerCase().includes(q) ||
+      (b.passengerName || "").toLowerCase().includes(q) ||
+      (b.tripCode || "").toLowerCase().includes(q) ||
+      (b.routeName || "").toLowerCase().includes(q);
     return matchesOrg && matchesStatus && matchesSearch;
   });
 
@@ -26,6 +29,13 @@ export const AdminBookingsPage = () => {
           <h1>Platform Bookings Monitor</h1>
           <p>Supervise passenger reservations, assigned seat allocations, and payment link associations.</p>
         </div>
+        <button
+          className="btn btn-secondary"
+          onClick={() => fetchAdminData()}
+          title="Refresh Bookings"
+        >
+          <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+        </button>
       </div>
 
       <div className="card-table-wrapper">
@@ -62,6 +72,9 @@ export const AdminBookingsPage = () => {
               <option value="EXPIRED">EXPIRED</option>
             </select>
           </div>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+            Showing <strong>{filteredBookings.length}</strong> of <strong>{bookings.length}</strong> reservations
+          </div>
         </div>
 
         <table className="data-table">
@@ -79,42 +92,56 @@ export const AdminBookingsPage = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredBookings.map((b) => (
-              <tr key={b.id}>
-                <td><code>{b.bookingReference}</code></td>
-                <td>
-                  <strong>{b.passengerName}</strong>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{b.passengerPhone}</div>
-                </td>
-                <td>{b.organizationName}</td>
-                <td>
-                  <div>{b.routeName}</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{b.tripCode}</div>
-                </td>
-                <td><span style={{ fontWeight: 700 }}>Seat {b.seatNumber}</span></td>
-                <td><strong>{b.amount} ETB</strong></td>
-                <td><Badge status={b.paymentStatus} /></td>
-                <td><Badge status={b.status} /></td>
-                <td>
-                  <div style={{ display: "flex", gap: "0.3rem" }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      title="View Payment"
-                      onClick={() => setActivePage("payments")}
-                    >
-                      Payment <ExternalLink size={12} />
-                    </button>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      title="View Ticket"
-                      onClick={() => setActivePage("tickets")}
-                    >
-                      Ticket <ExternalLink size={12} />
-                    </button>
-                  </div>
+            {isLoadingData && bookings.length === 0 ? (
+              <tr>
+                <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem" }}>
+                  <LoadingSpinner label="Loading platform bookings..." />
                 </td>
               </tr>
-            ))}
+            ) : filteredBookings.length === 0 ? (
+              <tr>
+                <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                  No reservations found matching your filter criteria.
+                </td>
+              </tr>
+            ) : (
+              filteredBookings.map((b) => (
+                <tr key={b.id}>
+                  <td><code>{b.bookingReference}</code></td>
+                  <td>
+                    <strong>{b.passengerName}</strong>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{b.passengerPhone}</div>
+                  </td>
+                  <td>{b.organizationName}</td>
+                  <td>
+                    <div>{b.routeName}</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{b.tripCode}</div>
+                  </td>
+                  <td><span style={{ fontWeight: 700 }}>Seat {b.seatNumber}</span></td>
+                  <td><strong>{b.amount ?? b.totalFare ?? 0} ETB</strong></td>
+                  <td><Badge status={b.paymentStatus} /></td>
+                  <td><Badge status={b.status} /></td>
+                  <td>
+                    <div style={{ display: "flex", gap: "0.3rem" }}>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        title="View Payment"
+                        onClick={() => setActivePage("payments")}
+                      >
+                        Payment <ExternalLink size={12} />
+                      </button>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        title="View Ticket"
+                        onClick={() => setActivePage("tickets")}
+                      >
+                        Ticket <ExternalLink size={12} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

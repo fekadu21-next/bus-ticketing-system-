@@ -2,20 +2,24 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
-import { QrCode, Search, Eye, ShieldCheck } from "lucide-react";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { QrCode, Search, Eye, ShieldCheck, RefreshCw } from "lucide-react";
 
 export const AdminTicketsPage = () => {
-  const { tickets, verifications } = useApp();
+  const { tickets, verifications, isLoadingData, fetchAdminData } = useApp();
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("TICKETS");
 
-  const filteredTickets = tickets.filter(
-    (t) =>
-      t.ticketNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.passengerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.qrToken.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTickets = tickets.filter((t) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      (t.ticketNumber || "").toLowerCase().includes(q) ||
+      (t.passengerName || "").toLowerCase().includes(q) ||
+      (t.qrToken || "").toLowerCase().includes(q) ||
+      (t.organizationName || "").toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div>
@@ -24,6 +28,13 @@ export const AdminTicketsPage = () => {
           <h1>Tickets & QR Verification Inspector</h1>
           <p>Monitor digital ticket issuance and live QR code verification scans conducted by terminal staff.</p>
         </div>
+        <button
+          className="btn btn-secondary"
+          onClick={() => fetchAdminData()}
+          title="Refresh Tickets"
+        >
+          <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+        </button>
       </div>
 
       {/* Tabs */}
@@ -71,26 +82,40 @@ export const AdminTicketsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredTickets.map((t) => (
-                <tr key={t.id}>
-                  <td><code>{t.ticketNumber}</code></td>
-                  <td><strong>{t.passengerName}</strong></td>
-                  <td>{t.organizationName}</td>
-                  <td>{t.tripCode}</td>
-                  <td><span style={{ fontWeight: 700 }}>Seat {t.seatNumber}</span></td>
-                  <td><code>{t.qrToken}</code></td>
-                  <td><Badge status={t.status} /></td>
-                  <td>{t.issuedAt}</td>
-                  <td>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setSelectedTicket(t)}
-                    >
-                      <Eye size={13} /> View QR
-                    </button>
+              {isLoadingData && tickets.length === 0 ? (
+                <tr>
+                  <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem" }}>
+                    <LoadingSpinner label="Loading digital tickets..." />
                   </td>
                 </tr>
-              ))}
+              ) : filteredTickets.length === 0 ? (
+                <tr>
+                  <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                    No digital tickets found matching your query.
+                  </td>
+                </tr>
+              ) : (
+                filteredTickets.map((t) => (
+                  <tr key={t.id}>
+                    <td><code>{t.ticketNumber}</code></td>
+                    <td><strong>{t.passengerName}</strong></td>
+                    <td>{t.organizationName}</td>
+                    <td>{t.tripCode}</td>
+                    <td><span style={{ fontWeight: 700 }}>Seat {t.seatNumber}</span></td>
+                    <td><code>{t.qrToken}</code></td>
+                    <td><Badge status={t.status} /></td>
+                    <td>{t.issuedAt}</td>
+                    <td>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setSelectedTicket(t)}
+                      >
+                        <Eye size={13} /> View QR
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -117,18 +142,26 @@ export const AdminTicketsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {verifications.map((v) => (
-                <tr key={v.id}>
-                  <td><code>{v.id}</code></td>
-                  <td><code>{v.ticketNumber}</code></td>
-                  <td>{v.passengerName}</td>
-                  <td>{v.verifierName}</td>
-                  <td>{v.stationName}</td>
-                  <td><Badge status={v.status} /></td>
-                  <td>{v.scannedAt}</td>
-                  <td style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{v.notes}</td>
+              {verifications.length === 0 ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                    No QR scan verification events recorded yet.
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                verifications.map((v) => (
+                  <tr key={v.id}>
+                    <td><code>{v.id}</code></td>
+                    <td><code>{v.ticketNumber}</code></td>
+                    <td>{v.passengerName}</td>
+                    <td>{v.verifierName}</td>
+                    <td>{v.stationName}</td>
+                    <td><Badge status={v.status} /></td>
+                    <td>{v.scannedAt}</td>
+                    <td style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{v.notes}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
