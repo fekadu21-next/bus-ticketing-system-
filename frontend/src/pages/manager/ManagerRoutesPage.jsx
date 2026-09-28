@@ -2,35 +2,56 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
-import { Route as RouteIcon, Plus, Search } from "lucide-react";
+import { Route as RouteIcon, Plus, Search, RefreshCw, AlertCircle } from "lucide-react";
 
 export const ManagerRoutesPage = () => {
-  const { routes, stations, addRoute } = useApp();
+  const {
+    routes,
+    stations,
+    selectedOrgId,
+    addRoute,
+    fetchCoordinatorData,
+    isLoadingData
+  } = useApp();
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("ALL");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [originStationId, setOriginStationId] = useState(stations[0]?.id || "");
   const [destinationStationId, setDestinationStationId] = useState(stations[1]?.id || "");
   const [distanceKm, setDistanceKm] = useState(400);
   const [estimatedDuration, setEstimatedDuration] = useState("6h 00m");
 
-  const filteredRoutes = routes.filter((r) =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const orgRoutes = routes.filter((r) => r.organizationId === selectedOrgId);
+  const filteredRoutes = orgRoutes.filter((r) => {
+    const matchesStatus = filterStatus === "ALL" || r.status === filterStatus;
+    const matchesSearch =
+      (r.name && r.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (r.originStationName && r.originStationName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (r.destinationStationName && r.destinationStationName.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesStatus && matchesSearch;
+  });
 
-  const handleAddRoute = (e) => {
+  const handleAddRoute = async (e) => {
     e.preventDefault();
     if (originStationId === destinationStationId) {
-      alert("Origin and Destination stations must be different.");
+      alert("Origin and Destination terminal stations must be different.");
       return;
     }
-    addRoute({
-      originStationId,
-      destinationStationId,
-      distanceKm: Number(distanceKm),
-      estimatedDuration
-    });
-    setShowAddModal(false);
+    setIsSubmitting(true);
+    try {
+      await addRoute({
+        originStationId,
+        destinationStationId,
+        distanceKm: Number(distanceKm),
+        estimatedDuration
+      });
+      setShowAddModal(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -38,54 +59,93 @@ export const ManagerRoutesPage = () => {
       <div className="page-header">
         <div className="page-title">
           <h1>Company Reusable Routes</h1>
-          <p>Configure route corridors connecting physical stations for your company departures.</p>
+          <p>Configure and manage intercity route corridors connecting stations for your departures.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-          <Plus size={16} /> Create Reusable Route
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => fetchCoordinatorData(selectedOrgId)}
+            disabled={isLoadingData}
+          >
+            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+            <Plus size={16} /> Create Reusable Route
+          </button>
+        </div>
       </div>
 
       <div className="card-table-wrapper">
         <div className="card-header-toolbar">
-          <div className="header-search" style={{ width: "260px" }}>
-            <Search className="search-icon" size={15} />
-            <input
-              type="text"
-              placeholder="Search routes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <div className="header-search" style={{ width: "260px" }}>
+              <Search className="search-icon" size={15} />
+              <input
+                type="text"
+                placeholder="Search routes by city or name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <select
+              className="org-selector-select"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </div>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+            Total Organization Corridors: <strong>{orgRoutes.length}</strong>
           </div>
         </div>
 
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Route Name</th>
-              <th>Origin Terminal</th>
-              <th>Destination Terminal</th>
-              <th>Distance (KM)</th>
-              <th>Est. Duration</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRoutes.map((r) => (
-              <tr key={r.id}>
-                <td>
-                  <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                    <RouteIcon size={14} color="var(--primary)" /> {r.name}
-                  </strong>
-                </td>
-                <td>{r.originStationName}</td>
-                <td>{r.destinationStationName}</td>
-                <td><strong>{r.distanceKm} km</strong></td>
-                <td>{r.estimatedDuration}</td>
-                <td><Badge status={r.status} /></td>
+        {filteredRoutes.length === 0 ? (
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
+            <RouteIcon size={36} style={{ opacity: 0.4, marginBottom: "0.5rem" }} />
+            <div>No route corridors matching your filter.</div>
+            {orgRoutes.length === 0 && (
+              <button
+                className="btn btn-primary btn-sm"
+                style={{ marginTop: "1rem" }}
+                onClick={() => setShowAddModal(true)}
+              >
+                <Plus size={14} /> Create First Route
+              </button>
+            )}
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Route Name</th>
+                <th>Origin Terminal</th>
+                <th>Destination Terminal</th>
+                <th>Distance (KM)</th>
+                <th>Est. Duration</th>
+                <th>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredRoutes.map((r) => (
+                <tr key={r.id}>
+                  <td>
+                    <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      <RouteIcon size={14} color="var(--primary)" /> {r.name}
+                    </strong>
+                  </td>
+                  <td>{r.originStationName}</td>
+                  <td>{r.destinationStationName}</td>
+                  <td><strong>{r.distanceKm} km</strong></td>
+                  <td>{r.estimatedDuration}</td>
+                  <td><Badge status={r.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Add Route Modal */}
@@ -94,55 +154,79 @@ export const ManagerRoutesPage = () => {
         onClose={() => setShowAddModal(false)}
         title="Create New Reusable Route"
         footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleAddRoute}>Save Route</button>
-          </>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", width: "100%" }}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowAddModal(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={handleAddRoute}
+              disabled={isSubmitting || originStationId === destinationStationId}
+            >
+              {isSubmitting ? "Creating..." : "Save Route"}
+            </button>
+          </div>
         }
       >
-        <form onSubmit={handleAddRoute}>
-          <div className="form-group">
-            <label>Origin Terminal Station</label>
+        <form onSubmit={handleAddRoute} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+              Origin Terminal Station
+            </label>
             <select
               value={originStationId}
               onChange={(e) => setOriginStationId(e.target.value)}
               required
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
             >
               {stations.map((s) => (
                 <option key={s.id} value={s.id}>{s.name} ({s.city})</option>
               ))}
             </select>
           </div>
-          <div className="form-group">
-            <label>Destination Terminal Station</label>
+          <div>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+              Destination Terminal Station
+            </label>
             <select
               value={destinationStationId}
               onChange={(e) => setDestinationStationId(e.target.value)}
               required
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
             >
               {stations.map((s) => (
                 <option key={s.id} value={s.id}>{s.name} ({s.city})</option>
               ))}
             </select>
           </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Distance (KM)</label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div>
+              <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+                Distance (KM)
+              </label>
               <input
                 type="number"
                 value={distanceKm}
                 onChange={(e) => setDistanceKm(e.target.value)}
                 required
+                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
               />
             </div>
-            <div className="form-group">
-              <label>Estimated Duration</label>
+            <div>
+              <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+                Estimated Duration
+              </label>
               <input
                 type="text"
                 placeholder="e.g. 5h 30m"
                 value={estimatedDuration}
                 onChange={(e) => setEstimatedDuration(e.target.value)}
                 required
+                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
               />
             </div>
           </div>
@@ -151,3 +235,5 @@ export const ManagerRoutesPage = () => {
     </div>
   );
 };
+
+export default ManagerRoutesPage;

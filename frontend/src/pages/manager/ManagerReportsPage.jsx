@@ -10,6 +10,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  RefreshCw
 } from "lucide-react";
 
 const MetricBlock = ({ label, value, sub, trend }) => (
@@ -76,16 +77,28 @@ const OccupancyBar = ({ value }) => {
 };
 
 export const ManagerReportsPage = () => {
-  const { activeOrg, trips, bookings, selectedOrgId, showToast } = useApp();
+  const {
+    activeOrg,
+    trips,
+    bookings,
+    selectedOrgId,
+    coordinatorStats,
+    fetchCoordinatorData,
+    isLoadingData,
+    showToast
+  } = useApp();
   const [activeTab, setActiveTab] = useState("routes");
 
   const orgTrips = trips.filter((t) => t.organizationId === selectedOrgId);
   const orgBookings = bookings.filter(
-    (b) => b.organizationId === selectedOrgId && b.status === "CONFIRMED"
+    (b) => b.organizationId === selectedOrgId && (b.status === "CONFIRMED" || b.status === "SUCCESS")
   );
 
-  const totalRev = orgBookings.reduce((acc, b) => acc + b.amount, 0);
-  const totalBookedSeats = orgTrips.reduce(
+  const totalRev = coordinatorStats?.payments?.totalRevenue ?? orgBookings.reduce(
+    (acc, b) => acc + Number(b.totalFare || b.amount || 0),
+    0
+  );
+  const totalBookedSeats = coordinatorStats?.bookings?.confirmed ?? orgTrips.reduce(
     (acc, t) => acc + (t.bookedSeatsCount || 0),
     0
   );
@@ -93,12 +106,36 @@ export const ManagerReportsPage = () => {
   const seatUtilizationRate =
     totalCap > 0 ? ((totalBookedSeats / totalCap) * 100).toFixed(1) : "0.0";
 
-  const publishedTrips = orgTrips.filter((t) => t.status === "PUBLISHED").length;
+  const publishedTrips = coordinatorStats?.trips?.scheduled ?? orgTrips.filter((t) => t.status === "PUBLISHED" || t.status === "SCHEDULED").length;
   const draftTrips = orgTrips.filter((t) => t.status === "DRAFT").length;
-  const cancelledTrips = orgTrips.filter((t) => t.status === "CANCELLED").length;
+  const cancelledTrips = coordinatorStats?.trips?.cancelled ?? orgTrips.filter((t) => t.status === "CANCELLED").length;
 
   const handleExport = (format) => {
-    showToast(`Exporting ${activeOrg?.name} report as ${format}...`);
+    if (format === "CSV") {
+      const rows = [
+        ["Trip Code", "Route", "Departure Date", "Booked Seats", "Total Capacity", "Status", "Fare (ETB)"],
+        ...orgTrips.map((t) => [
+          t.tripCode,
+          `"${t.routeName}"`,
+          t.departureDate,
+          t.bookedSeatsCount,
+          t.totalSeats,
+          t.status,
+          t.fareAmount || 0
+        ])
+      ];
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map((e) => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `${(activeOrg?.name || "org").replace(/\s+/g, "_")}_report.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`Exported ${activeOrg?.name} report as CSV!`);
+    } else {
+      showToast(`Generating ${activeOrg?.name} PDF report preview...`);
+    }
   };
 
   return (
@@ -107,11 +144,18 @@ export const ManagerReportsPage = () => {
       <div className="page-header">
         <div className="page-title">
           <h1>Reports & Analytics</h1>
-          <p>Route performance, booking volumes, and revenue breakdown.</p>
+          <p>Route performance, booking volumes, and revenue breakdown for {activeOrg?.name || "organization"}.</p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => fetchCoordinatorData(selectedOrgId)}
+            disabled={isLoadingData}
+          >
+            <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+          </button>
           <button className="btn btn-secondary" onClick={() => handleExport("CSV")}>
-            <Download size={14} /> CSV
+            <Download size={14} /> Export CSV
           </button>
           <button className="btn btn-primary" onClick={() => handleExport("PDF")}>
             <Download size={14} /> PDF

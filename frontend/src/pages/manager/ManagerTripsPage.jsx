@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
-import { CalendarDays, Plus, Search, UserCheck, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
+import { CalendarDays, Plus, Search, UserCheck, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Clock } from "lucide-react";
 
 export const ManagerTripsPage = () => {
   const {
@@ -13,8 +13,11 @@ export const ManagerTripsPage = () => {
     selectedOrgId,
     createTrip,
     publishTrip,
+    unpublishTrip,
     cancelTrip,
-    assignDriverToTrip
+    assignDriverToTrip,
+    fetchCoordinatorData,
+    isLoadingData
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,8 +46,10 @@ export const ManagerTripsPage = () => {
   const filteredTrips = orgTrips.filter((t) => {
     const matchesStatus = filterStatus === "ALL" || t.status === filterStatus;
     const matchesSearch =
-      t.tripCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.routeName.toLowerCase().includes(searchQuery.toLowerCase());
+      (t.tripCode && t.tripCode.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (t.routeName && t.routeName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (t.busPlateNumber && t.busPlateNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (t.driverName && t.driverName.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
 
@@ -83,15 +88,24 @@ export const ManagerTripsPage = () => {
           <h1>Trip Operations</h1>
           <p>Schedule, publish, and manage company bus departures.</p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setShowWizardModal(true);
-            setWizardStep(1);
-          }}
-        >
-          <Plus size={16} /> Schedule Trip
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => fetchCoordinatorData(selectedOrgId)}
+            disabled={isLoadingData}
+          >
+            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setShowWizardModal(true);
+              setWizardStep(1);
+            }}
+          >
+            <Plus size={16} /> Schedule Trip
+          </button>
+        </div>
       </div>
 
       <div className="card-table-wrapper">
@@ -101,7 +115,7 @@ export const ManagerTripsPage = () => {
               <Search className="search-icon" size={15} />
               <input
                 type="text"
-                placeholder="Search trip code or route..."
+                placeholder="Search trip code, route, bus..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -118,75 +132,105 @@ export const ManagerTripsPage = () => {
               <option value="COMPLETED">COMPLETED</option>
             </select>
           </div>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+            Total Organization Trips: <strong>{orgTrips.length}</strong>
+          </div>
         </div>
 
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Trip Code</th>
-              <th>Route Name</th>
-              <th>Bus Plate</th>
-              <th>Assigned Driver</th>
-              <th>Departure Time</th>
-              <th>Fare</th>
-              <th>Booked / Seats</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTrips.map((t) => (
-              <tr key={t.id}>
-                <td><code>{t.tripCode}</code></td>
-                <td><strong>{t.routeName}</strong></td>
-                <td><code>{t.busPlateNumber}</code></td>
-                <td>
-                  <span style={{ fontWeight: 600, color: t.driverName === "Unassigned" ? "var(--warning-text)" : "var(--text-main)" }}>
-                    {t.driverName}
-                  </span>
-                </td>
-                <td>
-                  <div>{t.departureDate}</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{t.departureTime}</div>
-                </td>
-                <td><strong>{t.fareAmount} ETB</strong></td>
-                <td>
-                  <span style={{ fontWeight: 700 }}>{t.bookedSeatsCount} / {t.totalSeats}</span>
-                </td>
-                <td><Badge status={t.status} /></td>
-                <td>
-                  <div style={{ display: "flex", gap: "0.3rem" }}>
-                    {t.status === "DRAFT" && (
-                      <button
-                        className="btn btn-success btn-sm"
-                        onClick={() => publishTrip(t.id)}
-                      >
-                        Publish
-                      </button>
-                    )}
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setTargetTripId(t.id);
-                        setShowDriverModal(true);
-                      }}
-                    >
-                      Driver
-                    </button>
-                    {t.status !== "CANCELLED" && (
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => cancelTrip(t.id)}
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                </td>
+        {filteredTrips.length === 0 ? (
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
+            <Clock size={36} style={{ opacity: 0.4, marginBottom: "0.5rem" }} />
+            <div>No departure trips matching your criteria.</div>
+            {orgTrips.length === 0 && (
+              <button
+                className="btn btn-primary btn-sm"
+                style={{ marginTop: "1rem" }}
+                onClick={() => {
+                  setShowWizardModal(true);
+                  setWizardStep(1);
+                }}
+              >
+                <Plus size={14} /> Schedule First Trip
+              </button>
+            )}
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Trip Code</th>
+                <th>Route Name</th>
+                <th>Bus Plate</th>
+                <th>Assigned Driver</th>
+                <th>Departure Time</th>
+                <th>Fare</th>
+                <th>Booked / Seats</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredTrips.map((t) => (
+                <tr key={t.id}>
+                  <td><code>{t.tripCode}</code></td>
+                  <td><strong>{t.routeName}</strong></td>
+                  <td><code>{t.busPlateNumber}</code></td>
+                  <td>
+                    <span style={{ fontWeight: 600, color: t.driverName === "Unassigned" ? "var(--warning-text)" : "var(--text-main)" }}>
+                      {t.driverName}
+                    </span>
+                  </td>
+                  <td>
+                    <div>{t.departureDate}</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{t.departureTime}</div>
+                  </td>
+                  <td><strong>{t.fareAmount} ETB</strong></td>
+                  <td>
+                    <span style={{ fontWeight: 700 }}>{t.bookedSeatsCount} / {t.totalSeats}</span>
+                  </td>
+                  <td><Badge status={t.status} /></td>
+                  <td>
+                    <div style={{ display: "flex", gap: "0.3rem" }}>
+                      {t.status === "DRAFT" ? (
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => publishTrip(t.id)}
+                        >
+                          Publish
+                        </button>
+                      ) : (t.status === "PUBLISHED" || t.status === "SCHEDULED") && (
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => unpublishTrip(t.id)}
+                          title="Move trip back to draft"
+                        >
+                          Unpublish
+                        </button>
+                      )}
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setTargetTripId(t.id);
+                          setShowDriverModal(true);
+                        }}
+                      >
+                        Driver
+                      </button>
+                      {t.status !== "CANCELLED" && (
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => cancelTrip(t.id)}
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* 10-Step Wizard Modal */}
