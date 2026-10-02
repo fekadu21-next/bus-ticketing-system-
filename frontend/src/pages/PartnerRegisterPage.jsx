@@ -191,84 +191,93 @@ export const PartnerRegisterPage = () => {
   };
 
   return (
-    <div className="partner-register-page">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Top Banner Header */}
-      <div className="partner-header-bar">
-        <div className="partner-header-container">
-          <div>
-            <h1 className="partner-page-title">{t('partnerRegister.pageTitle')}</h1>
-            <p className="partner-page-subtitle">
+      <div className="bg-gradient-to-r from-amber-500 to-orange-500 py-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('partnerRegister.pageTitle')}</h1>
+            <p className="text-amber-100">
               {t('partnerRegister.pageSubtitle')}
             </p>
           </div>
 
           {/* Stepper Pill Indicator */}
-          <div className="step-pill-indicator">
-            <div className={`step-pill-item ${currentStep >= 1 ? 'active' : ''}`}>
-              <span className="step-num">1</span>
-              <span className="step-text">{t('partnerRegister.steps.org')}</span>
+          <div className="flex items-center justify-center gap-2 md:gap-4">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${currentStep >= 1 ? 'bg-white text-amber-600' : 'bg-white/20 text-white'}`}>
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+              <span className="text-sm font-medium hidden sm:inline">{t('partnerRegister.steps.org')}</span>
             </div>
-            <div className="step-pill-line" />
-            <div className={`step-pill-item ${currentStep >= 2 ? 'active' : ''}`}>
-              <span className="step-num">2</span>
-              <span className="step-text">{t('partnerRegister.steps.rep')}</span>
+            <div className="w-8 h-0.5 bg-white/30" />
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${currentStep >= 2 ? 'bg-white text-amber-600' : 'bg-white/20 text-white'}`}>
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+              <span className="text-sm font-medium hidden sm:inline">{t('partnerRegister.steps.rep')}</span>
             </div>
-            <div className="step-pill-line" />
-            <div className={`step-pill-item ${currentStep >= 3 ? 'active' : ''}`}>
-              <span className="step-num">3</span>
-              <span className="step-text">{t('partnerRegister.steps.account')}</span>
+            <div className="w-8 h-0.5 bg-white/30" />
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${currentStep >= 3 ? 'bg-white text-amber-600' : 'bg-white/20 text-white'}`}>
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+              <span className="text-sm font-medium hidden sm:inline">{t('partnerRegister.steps.account')}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="partner-body-container">
+      <div className="max-w-4xl mx-auto px-6 py-12">
         {errorMsg && (
-          <div style={{ maxWidth: 800, margin: '0 auto 20px' }}>
-            <Alert type="danger" message={errorMsg} onClose={() => setErrorMsg(null)} />
+          <div className="mb-6">
+            <Alert variant="danger">{errorMsg}</Alert>
           </div>
         )}
 
         {isSuccess ? (
-          <div className="registration-success-card">
-            <div className="success-icon-badge">
-              <CheckCircle2 size={48} color="#059669" />
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-8 md:p-12 border border-slate-200 dark:border-slate-700 shadow-sm text-center">
+            <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 size={48} className="text-green-600 dark:text-green-400" />
             </div>
-            <h2>{t('partnerRegister.success.title')}</h2>
-            <p className="success-message">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">{t('partnerRegister.success.title')}</h2>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
               {t('partnerRegister.success.desc')}{' '}
-              <strong>{formData.loginEmail || formData.repEmail}</strong>.
+              <strong className="text-slate-900 dark:text-white">{formData.loginEmail || formData.repEmail}</strong>.
             </p>
-            <div className="success-info-box">
-              <h4>{t('partnerRegister.success.nextTitle')}</h4>
-              <ul>
-                <li>{t('partnerRegister.success.next1')}</li>
-                <li>{t('partnerRegister.success.next2')}</li>
-                <li>{t('partnerRegister.success.next3')}</li>
+            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-6 mb-8 text-left">
+              <h4 className="font-semibold text-slate-900 dark:text-white mb-3">{t('partnerRegister.success.nextTitle')}</h4>
+              <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 mt-0.5">•</span>
+                  <span>{t('partnerRegister.success.next1')}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 mt-0.5">•</span>
+                  <span>{t('partnerRegister.success.next2')}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 mt-0.5">•</span>
+                  <span>{t('partnerRegister.success.next3')}</span>
+                </li>
               </ul>
             </div>
-            <div className="success-actions">
-              <Link to="/login" className="btn btn-primary btn-lg">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/login" className="px-6 py-3 bg-blue-600 text-white rounded-lg text-base font-semibold hover:bg-blue-700 transition-colors duration-200">
                 {t('partnerRegister.success.proceedLogin')}
               </Link>
-              <Link to="/" className="btn btn-outline btn-lg">
+              <Link to="/" className="px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg text-base font-semibold hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
                 {t('partnerRegister.success.returnHome')}
               </Link>
             </div>
           </div>
         ) : (
-          <div className="wizard-card-wrapper">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
             {/* STEP 1: ORGANIZATION INFORMATION */}
             {currentStep === 1 && (
-              <div className="wizard-step-card animate-fade">
-                <div className="step-badge-counter">{t('partnerRegister.step1.counter')}</div>
-                <h3 className="wizard-card-title">{t('partnerRegister.step1.title')}</h3>
+              <div className="animate-in fade-in duration-300">
+                <div className="inline-block px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm font-semibold mb-4">{t('partnerRegister.step1.counter')}</div>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">{t('partnerRegister.step1.title')}</h3>
 
-                <form onSubmit={handleNext} className="wizard-form">
-                  <div className="form-row-2col">
-                    <div className="form-group">
-                      <label className="form-label">
-                        {t('partnerRegister.step1.orgName')} <span className="text-danger">*</span>
+                <form onSubmit={handleNext} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('partnerRegister.step1.orgName')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -276,34 +285,38 @@ export const PartnerRegisterPage = () => {
                         value={formData.orgName}
                         onChange={handleChange}
                         placeholder="e.g. Selam Bus"
-                        className={`form-input ${stepErrors.orgName ? 'input-error' : ''}`}
+                        className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          stepErrors.orgName 
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                            : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                        }`}
                       />
-                      {stepErrors.orgName && <span className="form-error-text">{stepErrors.orgName}</span>}
+                      {stepErrors.orgName && <span className="text-xs text-red-500">{stepErrors.orgName}</span>}
                     </div>
 
-                    <div className="form-group">
-                      <label className="form-label">{t('partnerRegister.step1.orgEmail')}</label>
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('partnerRegister.step1.orgEmail')}</label>
                       <input
                         type="email"
                         name="orgEmail"
                         value={formData.orgEmail}
                         onChange={handleChange}
                         placeholder="e.g. info@company.com"
-                        className="form-input"
+                        className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </div>
 
-                  <div className="form-row-2col">
-                    <div className="form-group">
-                      <label className="form-label">
-                        {t('partnerRegister.step1.orgType')} <span className="text-danger">*</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('partnerRegister.step1.orgType')} <span className="text-red-500">*</span>
                       </label>
                       <select
                         name="orgType"
                         value={formData.orgType}
                         onChange={handleChange}
-                        className="form-select"
+                        className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white appearance-none transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="Private Bus Company">Private Bus Company</option>
                         <option value="Public Transport Enterprise">Public Transport Enterprise</option>
@@ -312,15 +325,15 @@ export const PartnerRegisterPage = () => {
                       </select>
                     </div>
 
-                    <div className="form-group">
-                      <label className="form-label">
-                        {t('partnerRegister.step1.city')} <span className="text-danger">*</span>
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('partnerRegister.step1.city')} <span className="text-red-500">*</span>
                       </label>
                       <select
                         name="city"
                         value={formData.city}
                         onChange={handleChange}
-                        className="form-select"
+                        className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white appearance-none transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="Addis Ababa">Addis Ababa</option>
                         <option value="Hawassa">Hawassa</option>
@@ -334,10 +347,10 @@ export const PartnerRegisterPage = () => {
                     </div>
                   </div>
 
-                  <div className="form-row-2col">
-                    <div className="form-group">
-                      <label className="form-label">
-                        {t('partnerRegister.step1.regNumber')} <span className="text-danger">*</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('partnerRegister.step1.regNumber')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -345,14 +358,18 @@ export const PartnerRegisterPage = () => {
                         value={formData.regNumber}
                         onChange={handleChange}
                         placeholder="e.g. REG-12345"
-                        className={`form-input ${stepErrors.regNumber ? 'input-error' : ''}`}
+                        className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          stepErrors.regNumber 
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                            : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                        }`}
                       />
-                      {stepErrors.regNumber && <span className="form-error-text">{stepErrors.regNumber}</span>}
+                      {stepErrors.regNumber && <span className="text-xs text-red-500">{stepErrors.regNumber}</span>}
                     </div>
 
-                    <div className="form-group">
-                      <label className="form-label">
-                        {t('partnerRegister.step1.address')} <span className="text-danger">*</span>
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('partnerRegister.step1.address')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -360,16 +377,20 @@ export const PartnerRegisterPage = () => {
                         value={formData.address}
                         onChange={handleChange}
                         placeholder="e.g. 123 Main Street, Addis Ababa"
-                        className={`form-input ${stepErrors.address ? 'input-error' : ''}`}
+                        className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          stepErrors.address 
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                            : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                        }`}
                       />
-                      {stepErrors.address && <span className="form-error-text">{stepErrors.address}</span>}
+                      {stepErrors.address && <span className="text-xs text-red-500">{stepErrors.address}</span>}
                     </div>
                   </div>
 
-                  <div className="form-row-2col">
-                    <div className="form-group">
-                      <label className="form-label">
-                        {t('partnerRegister.step1.phone')} <span className="text-danger">*</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('partnerRegister.step1.phone')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -377,15 +398,19 @@ export const PartnerRegisterPage = () => {
                         value={formData.orgPhone}
                         onChange={handleChange}
                         placeholder="e.g. 09xxxxxxxx"
-                        className={`form-input ${stepErrors.orgPhone ? 'input-error' : ''}`}
+                        className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          stepErrors.orgPhone 
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                            : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                        }`}
                       />
-                      {stepErrors.orgPhone && <span className="form-error-text">{stepErrors.orgPhone}</span>}
+                      {stepErrors.orgPhone && <span className="text-xs text-red-500">{stepErrors.orgPhone}</span>}
                     </div>
                   </div>
 
-                  <div className="wizard-actions-right">
-                    <button type="submit" className="btn btn-primary btn-md">
-                      {t('common.next')} <ArrowRight size={16} style={{ marginLeft: 6 }} />
+                  <div className="flex justify-end">
+                    <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2">
+                      {t('common.next')} <ArrowRight size={16} />
                     </button>
                   </div>
                 </form>
@@ -394,14 +419,14 @@ export const PartnerRegisterPage = () => {
 
             {/* STEP 2: AUTHORIZED REPRESENTATIVE */}
             {currentStep === 2 && (
-              <div className="wizard-step-card animate-fade">
-                <div className="step-badge-counter">{t('partnerRegister.step2.counter')}</div>
-                <h3 className="wizard-card-title">{t('partnerRegister.step2.title')}</h3>
+              <div className="animate-in fade-in duration-300">
+                <div className="inline-block px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm font-semibold mb-4">{t('partnerRegister.step2.counter')}</div>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">{t('partnerRegister.step2.title')}</h3>
 
-                <form onSubmit={handleNext} className="wizard-form">
-                  <div className="form-group">
-                    <label className="form-label">
-                      {t('partnerRegister.step2.fullName')} <span className="text-danger">*</span>
+                <form onSubmit={handleNext} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {t('partnerRegister.step2.fullName')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -409,20 +434,24 @@ export const PartnerRegisterPage = () => {
                       value={formData.repFullName}
                       onChange={handleChange}
                       placeholder="e.g. Ahmed Mohammed"
-                      className={`form-input ${stepErrors.repFullName ? 'input-error' : ''}`}
+                      className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        stepErrors.repFullName 
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                          : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                      }`}
                     />
-                    {stepErrors.repFullName && <span className="form-error-text">{stepErrors.repFullName}</span>}
+                    {stepErrors.repFullName && <span className="text-xs text-red-500">{stepErrors.repFullName}</span>}
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">
-                      {t('partnerRegister.step2.position')} <span className="text-danger">*</span>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {t('partnerRegister.step2.position')} <span className="text-red-500">*</span>
                     </label>
                     <select
                       name="repPosition"
                       value={formData.repPosition}
                       onChange={handleChange}
-                      className="form-select"
+                      className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white appearance-none transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="Operations Manager">Operations Manager</option>
                       <option value="General Manager">General Manager</option>
@@ -431,9 +460,9 @@ export const PartnerRegisterPage = () => {
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">
-                      {t('partnerRegister.step2.phone')} <span className="text-danger">*</span>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {t('partnerRegister.step2.phone')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -441,14 +470,18 @@ export const PartnerRegisterPage = () => {
                       value={formData.repPhone}
                       onChange={handleChange}
                       placeholder="e.g. 09xxxxxxxx"
-                      className={`form-input ${stepErrors.repPhone ? 'input-error' : ''}`}
+                      className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        stepErrors.repPhone 
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                          : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                      }`}
                     />
-                    {stepErrors.repPhone && <span className="form-error-text">{stepErrors.repPhone}</span>}
+                    {stepErrors.repPhone && <span className="text-xs text-red-500">{stepErrors.repPhone}</span>}
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">
-                      {t('partnerRegister.step2.email')} <span className="text-danger">*</span>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {t('partnerRegister.step2.email')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
@@ -456,17 +489,21 @@ export const PartnerRegisterPage = () => {
                       value={formData.repEmail}
                       onChange={handleChange}
                       placeholder="e.g. ahmed@company.com"
-                      className={`form-input ${stepErrors.repEmail ? 'input-error' : ''}`}
+                      className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        stepErrors.repEmail 
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                          : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                      }`}
                     />
-                    {stepErrors.repEmail && <span className="form-error-text">{stepErrors.repEmail}</span>}
+                    {stepErrors.repEmail && <span className="text-xs text-red-500">{stepErrors.repEmail}</span>}
                   </div>
 
-                  <div className="wizard-actions-split">
-                    <button type="button" onClick={handleBack} className="btn btn-outline btn-md">
-                      <ArrowLeft size={16} style={{ marginRight: 6 }} /> {t('common.back')}
+                  <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                    <button type="button" onClick={handleBack} className="px-6 py-2.5 border-2 border-slate-300 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
+                      <ArrowLeft size={16} /> {t('common.back')}
                     </button>
-                    <button type="submit" className="btn btn-primary btn-md">
-                      {t('common.next')} <ArrowRight size={16} style={{ marginLeft: 6 }} />
+                    <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2">
+                      {t('common.next')} <ArrowRight size={16} />
                     </button>
                   </div>
                 </form>
@@ -475,14 +512,14 @@ export const PartnerRegisterPage = () => {
 
             {/* STEP 3: CREATE ACCOUNT */}
             {currentStep === 3 && (
-              <div className="wizard-step-card animate-fade">
-                <div className="step-badge-counter">{t('partnerRegister.step3.counter')}</div>
-                <h3 className="wizard-card-title">{t('partnerRegister.step3.title')}</h3>
+              <div className="animate-in fade-in duration-300">
+                <div className="inline-block px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm font-semibold mb-4">{t('partnerRegister.step3.counter')}</div>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">{t('partnerRegister.step3.title')}</h3>
 
-                <form onSubmit={handleNext} className="wizard-form">
-                  <div className="form-group">
-                    <label className="form-label">
-                      {t('partnerRegister.step3.loginEmail')} <span className="text-danger">*</span>
+                <form onSubmit={handleNext} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {t('partnerRegister.step3.loginEmail')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
@@ -490,14 +527,18 @@ export const PartnerRegisterPage = () => {
                       value={formData.loginEmail}
                       onChange={handleChange}
                       placeholder="e.g. ahmed@company.com"
-                      className={`form-input ${stepErrors.loginEmail ? 'input-error' : ''}`}
+                      className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        stepErrors.loginEmail 
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                          : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                      }`}
                     />
-                    {stepErrors.loginEmail && <span className="form-error-text">{stepErrors.loginEmail}</span>}
+                    {stepErrors.loginEmail && <span className="text-xs text-red-500">{stepErrors.loginEmail}</span>}
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">
-                      {t('partnerRegister.step3.password')} <span className="text-danger">*</span>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {t('partnerRegister.step3.password')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
@@ -505,14 +546,18 @@ export const PartnerRegisterPage = () => {
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="••••••••••••"
-                      className={`form-input ${stepErrors.password ? 'input-error' : ''}`}
+                      className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        stepErrors.password 
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                          : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                      }`}
                     />
-                    {stepErrors.password && <span className="form-error-text">{stepErrors.password}</span>}
+                    {stepErrors.password && <span className="text-xs text-red-500">{stepErrors.password}</span>}
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">
-                      {t('partnerRegister.step3.confirmPassword')} <span className="text-danger">*</span>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {t('partnerRegister.step3.confirmPassword')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
@@ -520,32 +565,35 @@ export const PartnerRegisterPage = () => {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       placeholder="••••••••••••"
-                      className={`form-input ${stepErrors.confirmPassword ? 'input-error' : ''}`}
+                      className={`w-full px-4 py-2.5 text-sm rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        stepErrors.confirmPassword 
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/10 text-slate-900 dark:text-white' 
+                          : 'border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500'
+                      }`}
                     />
-                    {stepErrors.confirmPassword && <span className="form-error-text">{stepErrors.confirmPassword}</span>}
+                    {stepErrors.confirmPassword && <span className="text-xs text-red-500">{stepErrors.confirmPassword}</span>}
                   </div>
 
-                  <div className="form-checkbox-row">
-                    <label className="checkbox-container">
-                      <input
-                        type="checkbox"
-                        name="agreeTerms"
-                        checked={formData.agreeTerms}
-                        onChange={handleChange}
-                      />
-                      <span className="checkbox-text">
-                        {t('partnerRegister.step3.agreeTerms')}
-                      </span>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      name="agreeTerms"
+                      checked={formData.agreeTerms}
+                      onChange={handleChange}
+                      className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label className="text-sm text-slate-600 dark:text-slate-400">
+                      {t('partnerRegister.step3.agreeTerms')}
                     </label>
-                    {stepErrors.agreeTerms && <span className="form-error-text">{stepErrors.agreeTerms}</span>}
                   </div>
+                  {stepErrors.agreeTerms && <span className="text-xs text-red-500 ml-7">{stepErrors.agreeTerms}</span>}
 
-                  <div className="wizard-actions-split">
-                    <button type="button" onClick={handleBack} className="btn btn-outline btn-md">
-                      <ArrowLeft size={16} style={{ marginRight: 6 }} /> {t('common.back')}
+                  <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                    <button type="button" onClick={handleBack} className="px-6 py-2.5 border-2 border-slate-300 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
+                      <ArrowLeft size={16} /> {t('common.back')}
                     </button>
-                    <button type="submit" className="btn btn-primary btn-md">
-                      {t('partnerRegister.step3.reviewBtn')} <ArrowRight size={16} style={{ marginLeft: 6 }} />
+                    <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2">
+                      {t('partnerRegister.step3.reviewBtn')} <ArrowRight size={16} />
                     </button>
                   </div>
                 </form>
@@ -554,87 +602,87 @@ export const PartnerRegisterPage = () => {
 
             {/* STEP 4: REVIEW APPLICATION */}
             {currentStep === 4 && (
-              <div className="wizard-step-card animate-fade">
-                <div className="step-badge-counter">{t('partnerRegister.step4.counter')}</div>
-                <h3 className="wizard-card-title">{t('partnerRegister.step4.title')}</h3>
+              <div className="animate-in fade-in duration-300">
+                <div className="inline-block px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm font-semibold mb-4">{t('partnerRegister.step4.counter')}</div>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">{t('partnerRegister.step4.title')}</h3>
 
-                <div className="review-summary-container">
+                <div className="space-y-6">
                   {/* Organization Review Block */}
-                  <div className="review-block">
-                    <div className="review-block-header">
-                      <Building2 size={18} color="#2563eb" />
-                      <h4>{t('partnerRegister.step4.orgSection')}</h4>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Building2 size={18} className="text-blue-600 dark:text-blue-400" />
+                      <h4 className="font-semibold text-slate-900 dark:text-white">{t('partnerRegister.step4.orgSection')}</h4>
                     </div>
-                    <div className="review-details-list">
-                      <div className="review-row">
-                        <span className="review-label">Name:</span>
-                        <span className="review-value">{formData.orgName}</span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Name:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.orgName}</span>
                       </div>
-                      <div className="review-row">
-                        <span className="review-label">Type:</span>
-                        <span className="review-value">{formData.orgType}</span>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Type:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.orgType}</span>
                       </div>
-                      <div className="review-row">
-                        <span className="review-label">License:</span>
-                        <span className="review-value">{formData.regNumber}</span>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">License:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.regNumber}</span>
                       </div>
-                      <div className="review-row">
-                        <span className="review-label">Location:</span>
-                        <span className="review-value">{formData.address}, {formData.city}</span>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Location:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.address}, {formData.city}</span>
                       </div>
-                      <div className="review-row">
-                        <span className="review-label">Phone:</span>
-                        <span className="review-value">{formData.orgPhone}</span>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Phone:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.orgPhone}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Representative Review Block */}
-                  <div className="review-block">
-                    <div className="review-block-header">
-                      <UserCheck size={18} color="#2563eb" />
-                      <h4>{t('partnerRegister.step4.repSection')}</h4>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <UserCheck size={18} className="text-blue-600 dark:text-blue-400" />
+                      <h4 className="font-semibold text-slate-900 dark:text-white">{t('partnerRegister.step4.repSection')}</h4>
                     </div>
-                    <div className="review-details-list">
-                      <div className="review-row">
-                        <span className="review-label">Full Name:</span>
-                        <span className="review-value">{formData.repFullName}</span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Full Name:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.repFullName}</span>
                       </div>
-                      <div className="review-row">
-                        <span className="review-label">Position:</span>
-                        <span className="review-value">{formData.repPosition}</span>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Position:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.repPosition}</span>
                       </div>
-                      <div className="review-row">
-                        <span className="review-label">Phone:</span>
-                        <span className="review-value">{formData.repPhone}</span>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Phone:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.repPhone}</span>
                       </div>
-                      <div className="review-row">
-                        <span className="review-label">Email:</span>
-                        <span className="review-value">{formData.repEmail}</span>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Email:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.repEmail}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Account Review Block */}
-                  <div className="review-block">
-                    <div className="review-block-header">
-                      <KeyRound size={18} color="#2563eb" />
-                      <h4>{t('partnerRegister.step4.accSection')}</h4>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <KeyRound size={18} className="text-blue-600 dark:text-blue-400" />
+                      <h4 className="font-semibold text-slate-900 dark:text-white">{t('partnerRegister.step4.accSection')}</h4>
                     </div>
-                    <div className="review-details-list">
-                      <div className="review-row">
-                        <span className="review-label">Login Email:</span>
-                        <span className="review-value">{formData.loginEmail || formData.repEmail}</span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Login Email:</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{formData.loginEmail || formData.repEmail}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="wizard-actions-split">
+                <div className="flex flex-col sm:flex-row gap-4 justify-between mt-8">
                   <button
                     type="button"
                     onClick={() => setCurrentStep(1)}
-                    className="btn btn-outline btn-md"
+                    className="px-6 py-2.5 border-2 border-slate-300 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
                     disabled={isSubmitting}
                   >
                     &larr; {t('partnerRegister.step4.editBtn')}
@@ -642,7 +690,7 @@ export const PartnerRegisterPage = () => {
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    className="btn btn-partner btn-md"
+                    className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg text-sm font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-200"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? t('partnerRegister.step4.submitting') : t('partnerRegister.step4.submitBtn')}

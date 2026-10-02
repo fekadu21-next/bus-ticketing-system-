@@ -1,300 +1,373 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  MapPin,
-  Calendar,
-  Search,
   Shield,
   Clock,
   Smartphone,
   Headphones,
-  CheckCircle,
-  Building,
+  Star,
   ArrowRight,
+  CheckCircle,
+  Zap,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+  Ticket,
   Bus,
+  Mountain,
 } from 'lucide-react';
-import heroBusImg from '@/assets/hero.png';
+import TripSearchBar from '@/components/TripSearchBar';
 
-export const HomePage = () => {
-  const { t } = useTranslation();
+export default function HomePage() {
   const navigate = useNavigate();
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [departureDate, setDepartureDate] = useState('');
+  const [origin, setOrigin] = useState('Addis Ababa');
+  const [destination, setDestination] = useState('Bahir Dar');
+  const [departureDate, setDepartureDate] = useState('2024-10-10');
+  const [openFaq, setOpenFaq] = useState(null);
 
-  const handleSearchSubmit = (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
-    navigate(`/search-trips?from=${encodeURIComponent(origin)}&to=${encodeURIComponent(destination)}&date=${encodeURIComponent(departureDate)}`);
+    const params = new URLSearchParams({
+      from: origin,
+      to: destination,
+      date: departureDate,
+    });
+    navigate(`/search-trips?${params.toString()}`);
   };
 
-  const partnerFeatures = [
-    t('home.partnerSection.f1'),
-    t('home.partnerSection.f2'),
-    t('home.partnerSection.f3'),
-    t('home.partnerSection.f4'),
-    t('home.partnerSection.f5'),
-    t('home.partnerSection.f6'),
-    t('home.partnerSection.f7'),
+  const operators = [
+    {
+      id: 'selam',
+      name: 'Selam Bus',
+      type: 'Private Bus Company',
+      logoText: 'SB',
+      logoBg: 'bg-[#1e3a8a]',
+      rating: '4.6',
+      reviews: '1.2k reviews',
+      routeFrom: 'Addis Ababa',
+      routeTo: 'Bahir Dar',
+      extraRoutes: '+3 more',
+      image: '/images/operators/selam-bus.png',
+    },
+    {
+      id: 'abay',
+      name: 'Abay Association',
+      type: 'Transport Association',
+      logo: 'mountain',
+      logoBg: 'bg-[#2563eb]',
+      rating: '4.4',
+      reviews: '856 reviews',
+      routeFrom: 'Addis Ababa',
+      routeTo: 'Hawassa',
+      extraRoutes: '+2 more',
+      image: '/images/operators/abay-association.png',
+    },
+    {
+      id: 'gebeya',
+      name: 'Gebeya Bus',
+      type: 'Private Bus Company',
+      logoText: 'GB',
+      logoBg: 'bg-[#16a34a]',
+      rating: '4.5',
+      reviews: '642 reviews',
+      routeFrom: 'Addis Ababa',
+      routeTo: 'Dire Dawa',
+      extraRoutes: '+3 more',
+      image: '/images/operators/gebeya-bus.png',
+    },
+    {
+      id: 'mekelle',
+      name: 'Mekelle Transport',
+      type: 'Transport Association',
+      logo: 'bus',
+      logoBg: 'bg-[#1d4ed8]',
+      rating: '4.3',
+      reviews: '521 reviews',
+      routeFrom: 'Addis Ababa',
+      routeTo: 'Mekelle',
+      extraRoutes: '+2 more',
+      image: '/images/operators/mekelle-transport.png',
+    },
   ];
 
-  const popularCities = [
-    'Addis Ababa',
-    'Hawassa',
-    'Bahir Dar',
-    'Gondar',
-    'Mekelle',
-    'Dire Dawa',
-    'Jimma',
-    'Adama (Nazret)',
-    'Arba Minch',
+  const testimonials = [
+    {
+      id: 1,
+      name: 'Abebe Kebede',
+      role: 'Passenger',
+      avatar: '/images/avatars/abebe.jpg',
+      text: '"The booking process is so easy and fast. I love the digital ticket and QR verification!"',
+    },
+    {
+      id: 2,
+      name: 'Selam Bus',
+      role: 'Operator',
+      avatar: '/images/avatars/dawit.jpg',
+      text: '"This platform helps us manage our trips and reach more passengers efficiently."',
+    },
+    {
+      id: 3,
+      name: 'Mulu Alemu',
+      role: 'Passenger',
+      avatar: '/images/avatars/sara.jpg',
+      text: '"Excellent service, reliable and safe. I always book my trips here."',
+    },
   ];
 
+  const faqs = [
+    'How do I book a bus ticket?',
+    'What payment methods are available?',
+    'Can I change or cancel my booking?',
+    'How do I get my e-ticket?',
+    'Is the platform safe and secure?',
+  ];
+
+  const faqAnswers = [
+    'Select your origin, destination, and date, then choose a trip, pick a seat, and complete payment.',
+    'We support Telebirr, CBE Birr, cards, and other local digital wallets.',
+    'Yes. You can change or cancel from My Trips up to 6 hours before departure.',
+    'Your e-ticket with a QR code is sent to your email and SMS as soon as payment is confirmed.',
+    'Yes. We use SSL encryption and secure payment gateways to protect your information.',
+  ];
+
+  const features = [
+    { icon: Shield, title: 'Safe & Reliable', desc: 'Trusted operators and secure payments.' },
+    { icon: Clock, title: 'Real-Time Availability', desc: 'See live seat availability and choose your best option.' },
+    { icon: Smartphone, title: 'Book Anywhere', desc: 'Use our website or mobile app for a seamless experience.' },
+    { icon: Headphones, title: '24/7 Support', desc: "We're here to help, anytime, anywhere." },
+  ];
+
+  const appPerks = [
+    { icon: CheckCircle, title: 'Easy Booking', desc: 'Book in just a few taps.' },
+    { icon: Ticket, title: 'Instant Tickets', desc: 'Get your e-ticket instantly.' },
+    { icon: Zap, title: 'Real-time Updates', desc: 'Track your trip live.' },
+    { icon: Lock, title: 'Secure Payments', desc: 'Multiple payment options.' },
+  ];
   return (
-    <div className="home-page-container">
-      {/* 1. HERO SECTION */}
-      <section className="hero-section">
-        <div className="hero-content-wrapper">
-          <div className="hero-text-col">
-            <span className="hero-badge">{t('home.heroBadge')}</span>
-            <h1 className="hero-heading">
-              {t('home.heroTitle1')} <br />
-              <span className="highlight-text">{t('home.heroTitle2')}</span>
-            </h1>
-            <p className="hero-subheading">
-              {t('home.heroSubtitle')}
-            </p>
+    <div className="home-page bg-white text-[#1e293b]">
+      <section className="home-hero">
+        <div className="home-hero-visual">
+          <img
+            src="/images/hero-banner.png"
+            alt="Blue BusTicket coach on a mountain lakeside road"
+            className="home-hero-art"
+          />
+          <h1 className="sr-only">Book Bus Tickets Easily &amp; Securely</h1>
+        </div>
+      </section>
 
-            {/* TRIP SEARCH FORM CARD */}
-            <div className="trip-search-card">
-              <form onSubmit={handleSearchSubmit} className="search-form-grid">
-                {/* FROM */}
-                <div className="search-field-group">
-                  <div className="search-field-icon">
-                    <MapPin size={20} className="field-icon" />
-                  </div>
-                  <div className="search-field-inputs">
-                    <label className="search-field-label">{t('home.searchForm.from')}</label>
-                    <select
-                      value={origin}
-                      onChange={(e) => setOrigin(e.target.value)}
-                      className="search-field-select"
-                    >
-                      <option value="">{t('home.searchForm.selectOrigin')}</option>
-                      {popularCities.map((city) => (
-                        <option key={city} value={city}>
-                          {city}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="search-divider" />
-
-                {/* TO */}
-                <div className="search-field-group">
-                  <div className="search-field-icon">
-                    <MapPin size={20} className="field-icon" />
-                  </div>
-                  <div className="search-field-inputs">
-                    <label className="search-field-label">{t('home.searchForm.to')}</label>
-                    <select
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      className="search-field-select"
-                    >
-                      <option value="">{t('home.searchForm.selectDestination')}</option>
-                      {popularCities.map((city) => (
-                        <option key={city} value={city}>
-                          {city}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="search-divider" />
-
-                {/* DEPARTURE DATE */}
-                <div className="search-field-group">
-                  <div className="search-field-icon">
-                    <Calendar size={20} className="field-icon" />
-                  </div>
-                  <div className="search-field-inputs">
-                    <label className="search-field-label">{t('home.searchForm.date')}</label>
-                    <input
-                      type="date"
-                      value={departureDate}
-                      onChange={(e) => setDepartureDate(e.target.value)}
-                      className="search-field-date"
-                    />
-                  </div>
-                </div>
-
-                {/* SEARCH BUTTON */}
-                <div className="search-btn-wrapper">
-                  <button type="submit" className="btn btn-primary search-action-btn">
-                    <Search size={18} style={{ marginRight: 8 }} />
-                    {t('home.searchForm.searchBtn')}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {/* HERO IMAGE / COACH BUS */}
-          <div className="hero-image-col">
-            <div className="hero-bus-graphic">
-              <img
-                src={heroBusImg}
-                alt="BusTicket Modern Coach Bus"
-                className="hero-bus-img"
-              />
-              <div className="bus-floating-badge">
-                <Bus size={18} color="var(--color-primary)" />
-                <span>Verified Operators Only</span>
+      <section className="bg-[#f7fafc] border-t border-slate-100">
+        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 py-11 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {features.map((item) => (
+            <div key={item.title} className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-full bg-[#2563eb] text-white flex items-center justify-center flex-shrink-0 shadow-[0_8px_18px_rgba(37,99,235,0.28)]">
+                <item.icon size={20} strokeWidth={2} />
+              </div>
+              <div>
+                <h3 className="text-[15px] font-bold text-[#0f172a]">{item.title}</h3>
+                <p className="text-[13px] text-slate-500 leading-snug mt-1">{item.desc}</p>
               </div>
             </div>
+          ))}
+        </div>
+      </section>
+      <section className="bg-white py-14">
+        <div className="max-w-[1180px] mx-auto px-5 sm:px-8">
+          <div className="flex items-end justify-between gap-6 mb-8">
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.22em] text-[#2563eb] uppercase mb-2">
+                Meet Our Trusted
+              </p>
+              <h2 className="text-[30px] sm:text-[34px] font-extrabold text-[#0b1b3a] leading-tight">
+                Popular Operators
+              </h2>
+              <p className="mt-2 text-[14px] text-slate-500 max-w-xl">
+                Choose from top bus companies and transport associations
+                <br className="hidden sm:block" />
+                across the country.
+              </p>
+            </div>
+            <Link
+              to="/search-trips"
+              className="hidden sm:inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#2563eb] hover:underline whitespace-nowrap"
+            >
+              View All Operators <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {operators.map((op) => (
+              <article
+                key={op.id}
+                className="bg-white rounded-2xl border border-slate-100 shadow-[0_10px_30px_rgba(15,23,42,0.06)] overflow-hidden"
+              >
+                <div className="h-[118px] overflow-hidden">
+                  <img src={op.image} alt={op.name} className="w-full h-full object-cover" />
+                </div>
+                <div className="px-4 pt-4 pb-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-10 h-10 ${op.logoBg} text-white rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0`}>
+                      {op.logo === 'mountain' && <Mountain size={16} />}
+                      {op.logo === 'bus' && <Bus size={16} />}
+                      {op.logoText}
+                    </div>
+                    <div>
+                      <h3 className="text-[14px] font-bold text-[#0f172a] leading-tight">{op.name}</h3>
+                      <p className="text-[12px] text-slate-500">{op.type}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[13px] mb-3">
+                    <Star size={14} className="fill-amber-400 text-amber-400" />
+                    <span className="font-semibold text-slate-800">{op.rating}</span>
+                    <span className="text-slate-400">({op.reviews})</span>
+                  </div>
+                  <p className="text-[12px] text-slate-500 mb-4">
+                    {op.routeFrom} <span className="text-slate-300">→</span> {op.routeTo}{' '}
+                    <span className="text-slate-400">{op.extraRoutes}</span>
+                  </p>
+                  <Link
+                    to={`/search-trips?from=${encodeURIComponent(op.routeFrom)}&to=${encodeURIComponent(op.routeTo)}&date=${departureDate}`}
+                    className="flex items-center justify-center gap-1.5 text-[13px] font-semibold text-[#2563eb] border border-[#2563eb] rounded-lg py-2 hover:bg-blue-50 transition-colors"
+                  >
+                    View Trips <ArrowRight size={14} />
+                  </Link>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 2. FEATURES TRUST BAR */}
-      <section className="features-trust-bar">
-        <div className="features-container">
-          <div className="feature-item-card">
-            <div className="feature-icon-wrapper">
-              <Shield size={24} color="#2563eb" />
-            </div>
-            <div className="feature-texts">
-              <h4 className="feature-title">{t('home.features.safeTitle')}</h4>
-              <p className="feature-desc">{t('home.features.safeDesc')}</p>
-            </div>
-          </div>
-
-          <div className="feature-item-card">
-            <div className="feature-icon-wrapper">
-              <Clock size={24} color="#2563eb" />
-            </div>
-            <div className="feature-texts">
-              <h4 className="feature-title">{t('home.features.liveTitle')}</h4>
-              <p className="feature-desc">{t('home.features.liveDesc')}</p>
-            </div>
-          </div>
-
-          <div className="feature-item-card">
-            <div className="feature-icon-wrapper">
-              <Smartphone size={24} color="#2563eb" />
-            </div>
-            <div className="feature-texts">
-              <h4 className="feature-title">{t('home.features.mobileTitle')}</h4>
-              <p className="feature-desc">{t('home.features.mobileDesc')}</p>
-            </div>
-          </div>
-
-          <div className="feature-item-card">
-            <div className="feature-icon-wrapper">
-              <Headphones size={24} color="#2563eb" />
-            </div>
-            <div className="feature-texts">
-              <h4 className="feature-title">{t('home.features.supportTitle')}</h4>
-              <p className="feature-desc">{t('home.features.supportDesc')}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. BECOME A PARTNER & HOW IT WORKS (SPLIT SECTION) */}
-      <section className="partner-how-section">
-        <div className="partner-how-container">
-          {/* LEFT: BECOME A PARTNER */}
-          <div className="partner-info-box">
-            <span className="section-label-blue">{t('home.partnerSection.badge')}</span>
-            <h2 className="section-title">{t('home.partnerSection.title')}</h2>
-            <p className="section-desc">
-              {t('home.partnerSection.desc')}
+      <section className="relative overflow-hidden bg-[#eef6fc]">
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(to_top,#d7e8f5,transparent)]" />
+        <div className="relative z-10 max-w-[1180px] mx-auto px-5 sm:px-8 py-14 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-4">
+            <p className="text-[11px] font-semibold tracking-[0.22em] text-[#2563eb] uppercase mb-3">On The Go</p>
+            <h2 className="text-[30px] sm:text-[36px] font-extrabold text-[#0b1b3a] leading-[1.15]">
+              Book Your Ticket
+              <br />
+              with Our Mobile App
+            </h2>
+            <p className="mt-4 text-[14px] text-slate-500 leading-relaxed max-w-sm">
+              Get the best experience with our mobile app.
+              <br />
+              Available on both Android and iOS.
             </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <a href="#google-play" className="store-badge">
+                <svg width="18" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M3.6 2.2c-.4.3-.6.8-.6 1.4v16.8c0 .6.2 1.1.6 1.4l10.3-9.8L3.6 2.2z" />
+                  <path d="M16.7 15.6 13.4 12.4 16.7 9.2l4.1 2.3c1.2.7 1.2 2.1 0 2.8l-4.1 2.3z" />
+                  <path d="M13.4 12.4 3.6 21.8c.5.1 1.1 0 1.6-.3l9.6-5.5-1.4-3.6z" />
+                  <path d="M13.4 12.4 14.8 8.8 5.2 3.3C4.7 3 4.1 2.9 3.6 3l9.8 9.4z" />
+                </svg>
+                <span className="text-left leading-tight">
+                  <span className="block text-[8px] uppercase tracking-wider text-slate-300">Get it on</span>
+                  <span className="block text-[13px] font-semibold">Google Play</span>
+                </span>
+              </a>
+              <a href="#app-store" className="store-badge">
+                <svg width="18" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M16.4 12.7c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.6.9s-1.9-1-3.2-.9c-1.6.1-3.1 1-3.9 2.5-1.7 2.9-.4 7.2 1.2 9.6.8 1.2 1.7 2.5 3 2.4 1.2-.1 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.6s-2.5-1-2.3-3.9zM14.3 5.8c.6-.8 1.1-1.9.9-3-1 .1-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.2-.5 2.9-1.4z" />
+                </svg>
+                <span className="text-left leading-tight">
+                  <span className="block text-[8px] uppercase tracking-wider text-slate-300">Download on the</span>
+                  <span className="block text-[13px] font-semibold">App Store</span>
+                </span>
+              </a>
+            </div>
+          </div>
 
-            <ul className="partner-checklist">
-              {partnerFeatures.map((feat, index) => (
-                <li key={index} className="checklist-row">
-                  <CheckCircle size={18} color="#059669" className="check-icon" />
-                  <span>{feat}</span>
-                </li>
+          <div className="lg:col-span-5 flex justify-center">
+            <img
+              src="/images/mobile-app-mockup.png"
+              alt="BusTicket mobile app"
+              className="w-full max-w-[420px] drop-shadow-2xl"
+            />
+          </div>
+
+          <div className="lg:col-span-3 space-y-5">
+            {appPerks.map((item) => (
+              <div key={item.title} className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-full bg-[#2563eb] text-white flex items-center justify-center flex-shrink-0 shadow-[0_8px_18px_rgba(37,99,235,0.25)]">
+                  <item.icon size={18} strokeWidth={2} />
+                </div>
+                <div>
+                  <h4 className="text-[14px] font-bold text-[#0f172a]">{item.title}</h4>
+                  <p className="text-[12px] text-slate-500">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white">
+        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 py-16 grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div className="lg:col-span-7">
+            <p className="text-[11px] font-semibold tracking-[0.22em] text-[#2563eb] uppercase mb-2">
+              What Our Customers Say
+            </p>
+            <h2 className="text-[30px] sm:text-[32px] font-extrabold text-[#0b1b3a]">Trusted by Thousands</h2>
+            <p className="mt-2 mb-7 text-[14px] text-slate-500">
+              See what our passengers and operators have to say about BusTicket.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {testimonials.map((t) => (
+                <article key={t.id} className="rounded-xl border border-slate-100 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.05)] p-4">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <img src={t.avatar} alt={t.name} className="w-9 h-9 rounded-full object-cover" />
+                    <div>
+                      <h4 className="text-[13px] font-bold text-[#0f172a] leading-tight">{t.name}</h4>
+                      <p className="text-[11px] text-slate-400">{t.role}</p>
+                    </div>
+                  </div>
+                  <p className="text-[12px] text-slate-600 leading-relaxed min-h-[72px] italic">{t.text}</p>
+                  <div className="flex gap-0.5 mt-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={13} className="fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                </article>
               ))}
-            </ul>
-
-            <div className="partner-cta-row">
-              <Link to="/partner-register" className="btn btn-partner btn-lg">
-                {t('home.partnerSection.btn')} <ArrowRight size={18} style={{ marginLeft: 8 }} />
-              </Link>
             </div>
           </div>
 
-          {/* RIGHT: HOW IT WORKS */}
-          <div className="how-it-works-box">
-            <h2 className="section-title">{t('home.howItWorks.title')}</h2>
-            <div className="how-steps-timeline">
-              <div className="how-step-item">
-                <div className="step-circle-badge">1</div>
-                <div className="step-content">
-                  <h4 className="step-title">{t('home.howItWorks.s1Title')}</h4>
-                  <p className="step-desc">{t('home.howItWorks.s1Desc')}</p>
+          <div className="lg:col-span-5">
+            <p className="text-[11px] font-semibold tracking-[0.22em] text-[#2563eb] uppercase mb-2">
+              Frequently Asked Questions
+            </p>
+            <h2 className="text-[30px] sm:text-[32px] font-extrabold text-[#0b1b3a]">Need Help? We&apos;re Here.</h2>
+            <p className="mt-2 mb-6 text-[14px] text-slate-500">
+              Find answers to common questions about our platform.
+            </p>
+            <div className="space-y-2.5">
+              {faqs.map((question, index) => (
+                <div key={question} className="rounded-lg border border-slate-200 bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                    className="w-full px-4 py-3 flex items-center justify-between text-left text-[14px] text-slate-700 hover:text-[#2563eb]"
+                  >
+                    <span>{question}</span>
+                    {openFaq === index ? (
+                      <ChevronUp size={16} className="text-[#2563eb] flex-shrink-0" />
+                    ) : (
+                      <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />
+                    )}
+                  </button>
+                  {openFaq === index && (
+                    <p className="px-4 pb-3 text-[13px] text-slate-500 leading-relaxed">{faqAnswers[index]}</p>
+                  )}
                 </div>
-              </div>
-
-              <div className="how-step-connector" />
-
-              <div className="how-step-item">
-                <div className="step-circle-badge">2</div>
-                <div className="step-content">
-                  <h4 className="step-title">{t('home.howItWorks.s2Title')}</h4>
-                  <p className="step-desc">{t('home.howItWorks.s2Desc')}</p>
-                </div>
-              </div>
-
-              <div className="how-step-connector" />
-
-              <div className="how-step-item">
-                <div className="step-circle-badge">3</div>
-                <div className="step-content">
-                  <h4 className="step-title">{t('home.howItWorks.s3Title')}</h4>
-                  <p className="step-desc">{t('home.howItWorks.s3Desc')}</p>
-                </div>
-              </div>
-
-              <div className="how-step-connector" />
-
-              <div className="how-step-item">
-                <div className="step-circle-badge">4</div>
-                <div className="step-content">
-                  <h4 className="step-title">{t('home.howItWorks.s4Title')}</h4>
-                  <p className="step-desc">{t('home.howItWorks.s4Desc')}</p>
-                </div>
-              </div>
+              ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. OPERATOR REGISTRATION PREVIEW BANNER */}
-      <section className="operator-banner-section">
-        <div className="operator-banner-card">
-          <div className="banner-text">
-            <h3>{t('home.operatorBanner.title')}</h3>
-            <p>{t('home.operatorBanner.desc')}</p>
-          </div>
-          <div className="banner-action">
-            <Link to="/partner-register" className="btn btn-partner btn-lg">
-              <Building size={18} style={{ marginRight: 8 }} />
-              {t('home.operatorBanner.btn')}
+            <Link to="/contact" className="inline-flex items-center gap-1.5 mt-5 text-[14px] font-semibold text-[#2563eb] hover:underline">
+              View All FAQs <ArrowRight size={16} />
             </Link>
           </div>
         </div>
       </section>
     </div>
   );
-};
-
-export default HomePage;
+}

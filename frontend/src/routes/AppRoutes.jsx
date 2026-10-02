@@ -6,6 +6,11 @@ import { useAuth } from '@/context/AuthContext';
 // Public Pages
 import HomePage from '@/pages/HomePage';
 import SearchTripsPage from '@/pages/SearchTripsPage';
+import TripDetailsPage from '@/pages/TripDetailsPage';
+import PassengerInfoPage from '@/pages/PassengerInfoPage';
+import PaymentPage from '@/pages/PaymentPage';
+import BookingConfirmationPage from '@/pages/BookingConfirmationPage';
+import MyBookingsPage from '@/pages/MyBookingsPage';
 import AboutPage from '@/pages/AboutPage';
 import ContactPage from '@/pages/ContactPage';
 import PartnerRegisterPage from '@/pages/PartnerRegisterPage';
@@ -30,6 +35,10 @@ export const AppRoutes = () => {
       {/* Public Pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/search-trips" element={<SearchTripsPage />} />
+      <Route path="/trips/:tripId" element={<TripDetailsPage />} />
+      <Route path="/passenger-info" element={<PassengerInfoPage />} />
+      <Route path="/payment" element={<PaymentPage />} />
+      <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/partner-register" element={<PartnerRegisterPage />} />
@@ -54,7 +63,7 @@ export const AppRoutes = () => {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <Navigate to="/profile" replace />
           </ProtectedRoute>
         }
       />
@@ -63,6 +72,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-bookings"
+        element={
+          <ProtectedRoute>
+            <MyBookingsPage />
           </ProtectedRoute>
         }
       />

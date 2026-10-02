@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/constants/roles';
@@ -13,20 +13,23 @@ import {
   KeyRound,
   ArrowRight,
   Info,
+  LogOut,
+  Ticket,
 } from 'lucide-react';
 
 const ROLE_BADGE_CONFIG = {
-  [ROLES.ADMIN]: { label: 'Admin (Platform)', color: '#ef4444', bg: '#fef2f2', border: '#fca5a5' },
-  PLATFORM_ADMIN: { label: 'Platform Admin', color: '#ef4444', bg: '#fef2f2', border: '#fca5a5' },
-  [ROLES.BOOKING_COORDINATOR]: { label: 'Booking Coordinator', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-  OPERATIONAL_MANAGER: { label: 'Operational Manager', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-  [ROLES.TICKET_VERIFIER]: { label: 'Ticket Verifier', color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
-  [ROLES.PASSENGER]: { label: 'Passenger', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+  [ROLES.ADMIN]: { label: 'Admin (Platform)', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800' },
+  PLATFORM_ADMIN: { label: 'Platform Admin', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800' },
+  [ROLES.BOOKING_COORDINATOR]: { label: 'Booking Coordinator', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800' },
+  OPERATIONAL_MANAGER: { label: 'Operational Manager', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800' },
+  [ROLES.TICKET_VERIFIER]: { label: 'Ticket Verifier', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-200 dark:border-purple-800' },
+  [ROLES.PASSENGER]: { label: 'Passenger', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800' },
 };
 
 export const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() ||
     user?.name ||
@@ -35,86 +38,67 @@ export const DashboardPage = () => {
   const userRoles = Array.isArray(user?.roles) ? user.roles : [ROLES.PASSENGER];
   const isEmailVerified = user?.isEmailVerified ?? user?.emailVerified ?? false;
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
-    <main className="main-content" style={{ maxWidth: '1080px', margin: '0 auto', padding: '36px 20px' }}>
+    <main className="max-w-6xl mx-auto px-5 py-9">
       {/* Welcome Header */}
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px', color: 'var(--color-text)' }}>
+      <div className="mb-7">
+        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">
           {t('dashboard.title', { name: displayName })}
         </h1>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '1rem', margin: 0 }}>
+        <p className="text-slate-600 dark:text-slate-400 text-base">
           {t('dashboard.subtitle', 'Your centralized authenticated portal for BusTicket system.')}
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginBottom: '28px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-7">
         {/* Account & Role Overview Card */}
-        <div className="card" style={{ padding: '24px', borderRadius: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-            <div
-              style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-                border: '2px solid var(--color-primary, #2563eb)',
-                flexShrink: 0,
-              }}
-            >
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+          <div className="flex items-center gap-4 mb-5">
+            <div className="w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center overflow-hidden border-2 border-blue-600 dark:border-blue-400 flex-shrink-0">
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
                   alt={displayName}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <User size={28} color="var(--color-primary, #2563eb)" />
+                <User size={28} className="text-blue-600 dark:text-blue-400" />
               )}
             </div>
 
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--color-text)' }}>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
                 {displayName}
               </h2>
-              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 {user?.email}
               </p>
               {user?.phone && (
-                <p style={{ margin: '2px 0 0 0', fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   {user.phone}
                 </p>
               )}
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
+          <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
             {/* Roles */}
-            <div style={{ marginBottom: '14px' }}>
-              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-text-muted)', display: 'block', marginBottom: '8px' }}>
+            <div className="mb-3.5">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
                 {t('dashboard.rolesLabel', 'Assigned Roles')}:
               </span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <div className="flex flex-wrap gap-2">
                 {userRoles.map((role) => {
-                  const config = ROLE_BADGE_CONFIG[role] || { label: role, color: '#4b5563', bg: '#f3f4f6', border: '#e5e7eb' };
+                  const config = ROLE_BADGE_CONFIG[role] || { label: role, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-slate-800', border: 'border-slate-300 dark:border-slate-600' };
                   return (
                     <span
                       key={role}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        backgroundColor: config.bg,
-                        color: config.color,
-                        border: `1px solid ${config.border}`,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                      }}
+                      className={`px-2.5 py-1 rounded-full text-xs font-bold ${config.bg} ${config.color} ${config.border} border inline-flex items-center gap-1.5`}
                     >
                       <ShieldCheck size={13} />
                       {config.label}
@@ -125,25 +109,25 @@ export const DashboardPage = () => {
             </div>
 
             {/* Statuses */}
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+            <div className="flex gap-4 flex-wrap text-sm">
               <div>
-                <span style={{ color: 'var(--color-text-muted)', marginRight: '6px' }}>
+                <span className="text-slate-500 dark:text-slate-400 mr-1.5">
                   {t('dashboard.statusLabel', 'Status')}:
                 </span>
-                <span style={{ color: '#059669', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <span className="text-green-600 dark:text-green-400 font-semibold inline-flex items-center gap-1">
                   <CheckCircle2 size={14} /> {t('common.active', 'Active')}
                 </span>
               </div>
               <div>
-                <span style={{ color: 'var(--color-text-muted)', marginRight: '6px' }}>
+                <span className="text-slate-500 dark:text-slate-400 mr-1.5">
                   {t('dashboard.emailStatusLabel', 'Email')}:
                 </span>
                 {isEmailVerified ? (
-                  <span style={{ color: '#059669', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <span className="text-green-600 dark:text-green-400 font-semibold inline-flex items-center gap-1">
                     <CheckCircle2 size={14} /> {t('common.verified', 'Verified')}
                   </span>
                 ) : (
-                  <span style={{ color: '#d97706', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center gap-1">
                     <Clock size={14} /> {t('common.unverified', 'Pending Verification')}
                   </span>
                 )}
@@ -153,38 +137,17 @@ export const DashboardPage = () => {
         </div>
 
         {/* Integration Notice Entry Point Card */}
-        <div
-          className="card"
-          style={{
-            padding: '24px',
-            borderRadius: '12px',
-            borderLeft: '4px solid var(--color-primary, #2563eb)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 border-l-4 border-l-blue-600 dark:border-l-blue-400 flex flex-col justify-between">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--color-primary, #2563eb)',
-                }}
-              >
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
                 <Info size={20} />
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 {t('dashboard.integrationNoticeTitle', 'Dashboard Entry Point')}
               </h3>
             </div>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.92rem', lineHeight: 1.6, margin: 0 }}>
+            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
               {t(
                 'dashboard.integrationNoticeDesc',
                 'Welcome to your authenticated account. Role-specific operational dashboards (Platform Admin, Booking Coordinator, Ticket Verifier, and Passenger booking management) will be integrated here in the upcoming phase. All authentication, security, and profile features are fully active.'
@@ -192,8 +155,8 @@ export const DashboardPage = () => {
             </p>
           </div>
 
-          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+          <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               Next step: Operational dashboards will be activated in the next development milestone.
             </span>
           </div>
@@ -202,130 +165,70 @@ export const DashboardPage = () => {
 
       {/* Quick Navigation Cards */}
       <div>
-        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '16px', color: 'var(--color-text)' }}>
-          {t('dashboard.quickNavTitle', 'Quick Actions')}
+        <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">
+          Passenger Dashboard
         </h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link
             to="/profile"
-            className="card"
-            style={{
-              padding: '20px',
-              borderRadius: '12px',
-              textDecoration: 'none',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
+            className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 no-underline transition-transform duration-200 hover:shadow-md flex items-center justify-between"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--color-primary, #2563eb)',
-                }}
-              >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
                 <User size={20} />
               </div>
               <div>
-                <h4 style={{ margin: '0 0 2px 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)' }}>
-                  {t('dashboard.goToProfile', 'View & Edit Profile')}
+                <h4 className="m-0 mb-0.5 text-sm font-bold text-slate-900 dark:text-white">
+                  My Profile
                 </h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                  Manage details and photo
+                <p className="m-0 text-xs text-slate-600 dark:text-slate-400">
+                  View and update profile info
                 </p>
               </div>
             </div>
-            <ArrowRight size={18} color="var(--color-text-muted)" />
+            <ArrowRight size={18} className="text-slate-400" />
           </Link>
 
           <Link
-            to="/change-password"
-            className="card"
-            style={{
-              padding: '20px',
-              borderRadius: '12px',
-              textDecoration: 'none',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
+            to="/my-bookings"
+            className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 no-underline transition-transform duration-200 hover:shadow-md flex items-center justify-between"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#059669',
-                }}
-              >
-                <KeyRound size={20} />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400">
+                <Ticket size={20} />
               </div>
               <div>
-                <h4 style={{ margin: '0 0 2px 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)' }}>
-                  {t('dashboard.goToChangePassword', 'Security Settings')}
+                <h4 className="m-0 mb-0.5 text-sm font-bold text-slate-900 dark:text-white">
+                  My Bookings
                 </h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                  Update your password
+                <p className="m-0 text-xs text-slate-600 dark:text-slate-400">
+                  View past and upcoming bookings
                 </p>
               </div>
             </div>
-            <ArrowRight size={18} color="var(--color-text-muted)" />
+            <ArrowRight size={18} className="text-slate-400" />
           </Link>
 
-          <Link
-            to="/search-trips"
-            className="card"
-            style={{
-              padding: '20px',
-              borderRadius: '12px',
-              textDecoration: 'none',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
+          <button
+            onClick={handleLogout}
+            className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 transition-transform duration-200 hover:shadow-md flex items-center justify-between w-full cursor-pointer"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#d97706',
-                }}
-              >
-                <Search size={20} />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-600 dark:text-red-400">
+                <LogOut size={20} />
               </div>
               <div>
-                <h4 style={{ margin: '0 0 2px 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)' }}>
-                  {t('dashboard.goToSearchTrips', 'Search Bus Trips')}
+                <h4 className="m-0 mb-0.5 text-sm font-bold text-slate-900 dark:text-white">
+                  Logout
                 </h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                  Find routes & departure schedules
+                <p className="m-0 text-xs text-slate-600 dark:text-slate-400">
+                  Sign out of your account
                 </p>
               </div>
             </div>
-            <ArrowRight size={18} color="var(--color-text-muted)" />
-          </Link>
+            <ArrowRight size={18} className="text-slate-400" />
+          </button>
         </div>
       </div>
     </main>

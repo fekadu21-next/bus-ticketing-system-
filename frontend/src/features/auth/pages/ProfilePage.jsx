@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const ProfilePage = () => {
-  const { user, logout, updateUserAvatar } = useAuth();
+  const { user, logout, updateUserAvatar, updateUser } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -28,6 +28,13 @@ export const ProfilePage = () => {
 
   const [permissionsExpanded, setPermissionsExpanded] = useState(false);
   const [photoMessage, setPhotoMessage] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    phone: user?.phone || '',
+  });
+  const [editMessage, setEditMessage] = useState(null);
 
   const handleLogout = async () => {
     await logout();
@@ -38,16 +45,16 @@ export const ProfilePage = () => {
     switch (role) {
       case ROLES.PLATFORM_ADMIN:
       case ROLES.ADMIN:
-        return 'badge-admin';
+        return 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800';
       case ROLES.OPERATIONAL_MANAGER:
       case ROLES.BOOKING_COORDINATOR:
-        return 'badge-manager';
+        return 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800';
       case ROLES.TICKET_VERIFIER:
-        return 'badge-verifier';
+        return 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800';
       case ROLES.PASSENGER:
-        return 'badge-passenger';
+        return 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800';
       default:
-        return 'badge-neutral';
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600';
     }
   };
 
@@ -111,32 +118,48 @@ export const ProfilePage = () => {
     setTimeout(() => setPhotoMessage(null), 4000);
   };
 
+  const handleEditToggle = () => {
+    if (isEditing) {
+      setEditFormData({
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        phone: user?.phone || '',
+      });
+    }
+    setIsEditing(!isEditing);
+    setEditMessage(null);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    updateUser(editFormData);
+    setEditMessage({
+      type: 'success',
+      text: 'Profile updated successfully!',
+    });
+    setIsEditing(false);
+    setTimeout(() => setEditMessage(null), 4000);
+  };
+
   return (
-    <div className="main-content">
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
+      <div className="max-w-3xl mx-auto">
         {/* Welcome State if user just logged in */}
         {isWelcome && (
-          <div className="profile-welcome-banner">
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
-                backgroundColor: 'var(--color-primary-light)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--color-primary)',
-                flexShrink: 0,
-              }}
-            >
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-5 mb-6 flex items-center gap-4">
+            <div className="w-11 h-11 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
               <Sparkles size={24} />
             </div>
-            <div style={{ flex: 1 }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)', marginBottom: 2 }}>
+            <div className="flex-1">
+              <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-0.5">
                 {t('profile.welcomeTitle', 'Welcome to Your Profile')}
               </h2>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
                 {t('profile.welcomeSubtitle', 'Manage your profile details, photo, and system access.')}
               </p>
             </div>
@@ -144,46 +167,31 @@ export const ProfilePage = () => {
         )}
 
         {/* Top Header with Avatar & Quick Actions */}
-        <div
-          className="card"
-          style={{
-            marginBottom: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '18px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-            <div className="profile-header-avatar" style={{ position: 'relative' }}>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-6 flex items-center justify-between flex-wrap gap-4.5">
+          <div className="flex items-center gap-4.5">
+            <div className="relative">
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
                   alt={userDisplayName}
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '3px solid var(--color-primary)',
-                    display: 'block',
-                  }}
+                  className="w-18 h-18 rounded-full object-cover border-3 border-blue-600 dark:border-blue-400 block"
                 />
               ) : (
-                <div className="profile-avatar">{initials}</div>
+                <div className="w-18 h-18 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-2xl font-bold border-2 border-blue-200 dark:border-blue-800">
+                  {initials}
+                </div>
               )}
             </div>
             <div>
-              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '2px', color: 'var(--color-text)' }}>
+              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-0.5">
                 {userDisplayName}
               </h1>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: 0 }}>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
                 {user?.email}
               </p>
-              <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+              <div className="flex gap-1.5 mt-1.5 flex-wrap">
                 {user?.roles?.map((role) => (
-                  <span key={role} className={`badge ${getRoleBadgeClass(role)}`}>
+                  <span key={role} className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getRoleBadgeClass(role)}`}>
                     {role}
                   </span>
                 ))}
@@ -191,86 +199,46 @@ export const ProfilePage = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <Link to="/change-password" className="btn btn-secondary btn-sm">
+          <div className="flex gap-2.5 flex-wrap">
+            <Link to="/change-password" className="px-3 py-1.5 bg-slate-600 text-white rounded-lg text-xs font-semibold hover:bg-slate-700 transition-colors duration-200 inline-flex items-center gap-2">
               <KeyRound size={15} /> {t('profile.changePasswordBtn', 'Change Password')}
             </Link>
-            <button onClick={handleLogout} className="btn btn-ghost btn-sm" title={t('profile.signOutBtn', 'Sign Out')}>
+            <button onClick={handleLogout} className="px-3 py-1.5 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-xs font-semibold transition-colors duration-200 inline-flex items-center gap-2" title={t('profile.signOutBtn', 'Sign Out')}>
               <LogOut size={15} /> {t('profile.signOutBtn', 'Sign Out')}
             </button>
           </div>
         </div>
 
         {/* Optional Profile Photo Card — available to all roles */}
-        <div className="card" style={{ marginBottom: '24px' }}>
-          <div className="card-header">
-            <h2 className="card-title">
-              <Camera size={18} color="var(--color-primary)" />
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Camera size={18} className="text-blue-600 dark:text-blue-400" />
               {t('profile.photo.title', 'Profile Photo')}
             </h2>
-            <span
-              className="badge badge-neutral"
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
+            <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-xs font-bold border border-slate-300 dark:border-slate-600 uppercase tracking-wider">
               {t('profile.photo.optionalBadge', 'Optional')}
             </span>
           </div>
 
-          <div
-            className="profile-photo-row"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '20px',
-              flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ position: 'relative' }}>
+          <div className="flex items-center gap-5 flex-wrap">
+            <div className="relative">
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
                   alt={userDisplayName}
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '3px solid var(--color-primary-light)',
-                    display: 'block',
-                  }}
+                  className="w-20 h-20 rounded-full object-cover border-3 border-blue-200 dark:border-blue-800 block"
                 />
               ) : (
-                <div
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--color-bg-secondary, #f1f5f9)',
-                    color: 'var(--color-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.6rem',
-                    fontWeight: 700,
-                    border: '2px dashed var(--color-border)',
-                  }}
-                >
+                <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 flex items-center justify-center text-2xl font-bold border-2 border-dashed border-slate-300 dark:border-slate-600">
                   {initials}
                 </div>
               )}
             </div>
 
-            <div style={{ flex: 1, minWidth: '220px' }}>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                <label
-                  className="btn btn-primary btn-sm"
-                  style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
+            <div className="flex-1 min-w-[220px]">
+              <div className="flex gap-2.5 flex-wrap mb-2">
+                <label className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors duration-200 inline-flex items-center gap-1.5 cursor-pointer">
                   <Upload size={14} />
                   {user?.avatarUrl
                     ? t('profile.photo.changeBtn', 'Change Photo')
@@ -278,7 +246,7 @@ export const ProfilePage = () => {
                   <input
                     type="file"
                     accept="image/png, image/jpeg, image/webp"
-                    style={{ display: 'none' }}
+                    className="hidden"
                     onChange={handlePhotoSelect}
                   />
                 </label>
@@ -287,35 +255,19 @@ export const ProfilePage = () => {
                   <button
                     type="button"
                     onClick={handlePhotoRemove}
-                    className="btn btn-outline btn-sm"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      color: 'var(--color-danger, #ef4444)',
-                    }}
+                    className="px-3 py-1.5 bg-transparent border border-slate-300 dark:border-slate-600 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-200 inline-flex items-center gap-1.5"
                   >
                     <Trash2 size={14} />
                     {t('profile.photo.removeBtn', 'Remove Photo')}
                   </button>
                 )}
               </div>
-              <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', margin: 0 }}>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {t('profile.photo.hint', 'Optional: JPG, PNG or WEBP (Max 2MB)')}
               </p>
 
               {photoMessage && (
-                <div
-                  style={{
-                    marginTop: '10px',
-                    fontSize: '0.85rem',
-                    fontWeight: 500,
-                    color: photoMessage.type === 'error' ? 'var(--color-danger, #ef4444)' : 'var(--color-success, #10b981)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                >
+                <div className={`mt-2.5 text-xs font-medium flex items-center gap-1.5 ${photoMessage.type === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                   {photoMessage.type === 'error' ? <AlertCircle size={15} /> : <CheckCircle size={15} />}
                   <span>{photoMessage.text}</span>
                 </div>
@@ -325,82 +277,144 @@ export const ProfilePage = () => {
         </div>
 
         {/* Personal Details Card */}
-        <div className="card" style={{ marginBottom: '24px' }}>
-          <div className="card-header">
-            <h2 className="card-title">
-              <User size={18} color="var(--color-primary)" />
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <User size={18} className="text-blue-600 dark:text-blue-400" />
               {t('profile.personalInfo', 'Personal Information')}
             </h2>
-            <span className={`badge ${user?.isActive ? 'badge-verifier' : 'badge-admin'}`}>
-              {user?.isActive
-                ? t('profile.activeAccount', 'Active Account')
-                : t('profile.suspended', 'Suspended')}
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleEditToggle}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors duration-200"
+              >
+                {isEditing ? 'Cancel' : 'Edit'}
+              </button>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${user?.isActive ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'}`}>
+                {user?.isActive
+                  ? t('profile.activeAccount', 'Active Account')
+                  : t('profile.suspended', 'Suspended')}
+              </span>
+            </div>
           </div>
 
-          <div className="data-grid">
-            <div className="data-row">
-              <span className="data-label">{t('profile.fullName', 'Full Name')}</span>
-              <span className="data-value" style={{ fontWeight: 600 }}>{userDisplayName}</span>
+          {editMessage && (
+            <div className={`mb-4 p-3 rounded-lg text-xs font-medium flex items-center gap-1.5 ${editMessage.type === 'error' ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400'}`}>
+              {editMessage.type === 'error' ? <AlertCircle size={15} /> : <CheckCircle size={15} />}
+              <span>{editMessage.text}</span>
             </div>
+          )}
 
-            <div className="data-row">
-              <span className="data-label">{t('profile.emailAddress', 'Email Address')}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span className="data-value">{user?.email}</span>
-                {user?.emailVerified ? (
-                  <span
-                    style={{
-                      color: 'var(--color-success)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <CheckCircle size={13} /> {t('profile.verified', 'Verified')}
-                  </span>
-                ) : (
-                  <span
-                    style={{
-                      color: 'var(--color-warning)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <AlertCircle size={13} /> {t('profile.unverified', 'Unverified')}
-                  </span>
-                )}
+          {isEditing ? (
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm text-slate-500 dark:text-slate-400 mb-1.5">First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={editFormData.firstName}
+                  onChange={handleEditChange}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-500 dark:text-slate-400 mb-1.5">Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={editFormData.lastName}
+                  onChange={handleEditChange}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-500 dark:text-slate-400 mb-1.5">Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={editFormData.phone}
+                  onChange={handleEditChange}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+                />
+              </div>
+              <div className="flex justify-between items-start py-2 border-b border-slate-100 dark:border-slate-700">
+                <span className="text-sm text-slate-500 dark:text-slate-400">{t('profile.emailAddress', 'Email Address')}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-slate-900 dark:text-white">{user?.email}</span>
+                  {user?.emailVerified ? (
+                    <span className="text-green-600 dark:text-green-400 inline-flex items-center gap-0.5 text-xs font-semibold">
+                      <CheckCircle size={13} /> {t('profile.verified', 'Verified')}
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 dark:text-amber-400 inline-flex items-center gap-0.5 text-xs font-semibold">
+                      <AlertCircle size={13} /> {t('profile.unverified', 'Unverified')}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors duration-200"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEditToggle}
+                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-300 transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex justify-between items-start py-2 border-b border-slate-100 dark:border-slate-700">
+                <span className="text-sm text-slate-500 dark:text-slate-400">{t('profile.fullName', 'Full Name')}</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">{userDisplayName}</span>
+              </div>
+
+              <div className="flex justify-between items-start py-2 border-b border-slate-100 dark:border-slate-700">
+                <span className="text-sm text-slate-500 dark:text-slate-400">{t('profile.emailAddress', 'Email Address')}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-slate-900 dark:text-white">{user?.email}</span>
+                  {user?.emailVerified ? (
+                    <span className="text-green-600 dark:text-green-400 inline-flex items-center gap-0.5 text-xs font-semibold">
+                      <CheckCircle size={13} /> {t('profile.verified', 'Verified')}
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 dark:text-amber-400 inline-flex items-center gap-0.5 text-xs font-semibold">
+                      <AlertCircle size={13} /> {t('profile.unverified', 'Unverified')}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-start py-2">
+                <span className="text-sm text-slate-500 dark:text-slate-400">{t('profile.phoneNumber', 'Phone Number')}</span>
+                <span className="text-sm text-slate-900 dark:text-white">{user?.phone || t('profile.notProvided', 'Not provided')}</span>
               </div>
             </div>
-
-            <div className="data-row">
-              <span className="data-label">{t('profile.phoneNumber', 'Phone Number')}</span>
-              <span className="data-value">{user?.phone || t('profile.notProvided', 'Not provided')}</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Roles & System Access Card */}
-        <div className="card" style={{ marginBottom: '24px' }}>
-          <div className="card-header">
-            <h2 className="card-title">
-              <Shield size={18} color="var(--color-primary)" />
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Shield size={18} className="text-blue-600 dark:text-blue-400" />
               {t('profile.rolesAccess', 'Roles & System Access')}
             </h2>
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
-            <span className="data-label" style={{ display: 'block', marginBottom: '8px' }}>
+          <div className="mb-4">
+            <span className="text-sm text-slate-500 dark:text-slate-400 block mb-2">
               {t('profile.assignedRoles', 'Assigned Roles')}
             </span>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div className="flex gap-2 flex-wrap">
               {user?.roles?.map((role) => (
-                <span key={role} className={`badge ${getRoleBadgeClass(role)}`}>
+                <span key={role} className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getRoleBadgeClass(role)}`}>
                   {role}
                 </span>
               ))}
@@ -409,36 +423,26 @@ export const ProfilePage = () => {
 
           {/* Operational Organization Context */}
           {user?.organizationContext && user.organizationContext.length > 0 && (
-            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
-              <span className="data-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                <Building2 size={15} color="var(--color-primary)" />
+            <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-2.5">
+                <Building2 size={15} className="text-blue-600 dark:text-blue-400" />
                 {t('profile.orgContext', 'Assigned Transport Organization')}
               </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="flex flex-col gap-2">
                 {user.organizationContext.map((org, idx) => (
                   <div
                     key={idx}
-                    style={{
-                      backgroundColor: 'var(--color-bg)',
-                      padding: '12px 16px',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--color-border)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '8px',
-                    }}
+                    className="bg-slate-50 dark:bg-slate-900 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2"
                   >
                     <div>
-                      <p style={{ fontWeight: 700, color: 'var(--color-text)', fontSize: '0.95rem', margin: '0 0 4px 0' }}>
+                      <p className="font-bold text-slate-900 dark:text-white text-sm mb-1">
                         {org.organizationName || 'Assigned Organization'}
                       </p>
-                      <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', margin: 0 }}>
-                        {t('profile.orgId', 'Organization ID')}: <code>{org.organizationId}</code>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs">
+                        {t('profile.orgId', 'Organization ID')}: <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded">{org.organizationId}</code>
                       </p>
                     </div>
-                    <span className="badge badge-manager">{org.role}</span>
+                    <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold border border-blue-200 dark:border-blue-800">{org.role}</span>
                   </div>
                 ))}
               </div>
@@ -447,10 +451,10 @@ export const ProfilePage = () => {
 
           {/* Permissions Accordion */}
           {user?.permissions && user.permissions.length > 0 && (
-            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
+            <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
               <button
                 type="button"
-                className="collapsible-trigger"
+                className="w-full flex items-center justify-between text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
                 onClick={() => setPermissionsExpanded((prev) => !prev)}
               >
                 <span>
@@ -460,9 +464,9 @@ export const ProfilePage = () => {
               </button>
 
               {permissionsExpanded && (
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '12px' }}>
+                <div className="flex gap-1.5 flex-wrap mt-3">
                   {user.permissions.map((perm) => (
-                    <span key={perm} className="permission-chip">
+                    <span key={perm} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs border border-slate-300 dark:border-slate-600">
                       {perm}
                     </span>
                   ))}

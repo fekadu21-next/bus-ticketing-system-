@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
 
   /** Helper to get dashboard route */
   const getDashboardPath = useCallback(() => {
-    return '/dashboard';
+    return '/profile';
   }, []);
 
   /** Helper to attach locally cached avatar if available */
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
         updateAccessToken(response.data.accessToken);
         const userWithAvatar = attachCachedAvatar(response.data.user);
         setUser(userWithAvatar);
-        return { success: true, user: userWithAvatar, redirectPath: '/dashboard' };
+        return { success: true, user: userWithAvatar, redirectPath: '/profile' };
       }
       throw new Error(response.message || 'Login failed');
     } catch (err) {

@@ -47,27 +47,27 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card">
-        <div className="auth-lang-row">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+        <div className="flex justify-end mb-4">
           <LanguageSwitcher variant="compact" />
         </div>
 
-        <div className="auth-header">
-          <h1>{t('auth.resetPassword.title', 'Reset Your Password')}</h1>
-          <p>{t('auth.resetPassword.subtitle', 'Choose a strong new password for your account')}</p>
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('auth.resetPassword.title', 'Reset Your Password')}</h1>
+          <p className="text-slate-600 dark:text-slate-400">{t('auth.resetPassword.subtitle', 'Choose a strong new password for your account')}</p>
         </div>
 
         {successMessage ? (
-          <div style={{ textAlign: 'center', padding: '8px 0' }}>
-            <div className="icon-circle icon-circle-success" style={{ margin: '0 auto 16px' }}>
-              <CheckCircle2 size={36} />
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={36} className="text-green-600 dark:text-green-400" />
             </div>
-            <h3 style={{ fontWeight: 800, color: 'var(--color-success)', marginBottom: 8 }}>
+            <h3 className="text-xl font-bold text-green-600 dark:text-green-400 mb-2">
               {t('auth.resetPassword.successTitle', 'Password Reset Successfully')}
             </h3>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem' }}>{successMessage}</p>
-            <Link to="/login" className="btn btn-primary btn-block">
+            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">{successMessage}</p>
+            <Link to="/login" className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 inline-block flex items-center justify-center gap-2">
               {t('auth.resetPassword.signInNow', 'Sign In with New Password')} <ArrowRight size={15} />
             </Link>
           </div>
@@ -76,55 +76,55 @@ const ResetPasswordPage = () => {
             {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
             {!token && <Alert variant="warning">{t('auth.resetPassword.invalidLink', 'Invalid or expired reset link. Please request a new one.')}</Alert>}
 
-            <form onSubmit={handleSubmit} noValidate>
-              <div className="form-group">
-                <label className="form-label" htmlFor="newPassword">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="newPassword">
                   {t('auth.resetPassword.newPasswordLabel', 'New Password')}
                 </label>
-                <div className="input-wrapper">
+                <div className="relative">
                   <input
                     id="newPassword"
                     type={showNew ? 'text' : 'password'}
                     required
-                    className="form-input with-icon-right"
+                    className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed pr-10"
                     placeholder={t('auth.resetPassword.newPasswordPlaceholder', 'Min 8 characters')}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     disabled={isSubmitting || !token}
                     autoComplete="new-password"
                   />
-                  <button type="button" className="input-icon-right" onClick={() => setShowNew((v) => !v)} tabIndex={-1}>
+                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={() => setShowNew((v) => !v)} tabIndex={-1}>
                     {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="confirmPassword">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="confirmPassword">
                   {t('auth.resetPassword.confirmPasswordLabel', 'Confirm Password')}
                 </label>
-                <div className="input-wrapper">
+                <div className="relative">
                   <input
                     id="confirmPassword"
                     type={showConfirm ? 'text' : 'password'}
                     required
-                    className="form-input with-icon-right"
+                    className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed pr-10"
                     placeholder={t('auth.resetPassword.confirmPasswordPlaceholder', 'Repeat password')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isSubmitting || !token}
                     autoComplete="new-password"
                   />
-                  <button type="button" className="input-icon-right" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1}>
+                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1}>
                     {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting || !token} style={{ marginTop: 6 }}>
+              <button type="submit" className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled={isSubmitting || !token}>
                 {isSubmitting ? (
                   <>
-                    <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     {t('auth.resetPassword.submitting', 'Updating password...')}
                   </>
                 ) : (

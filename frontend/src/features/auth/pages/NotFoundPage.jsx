@@ -7,21 +7,18 @@ export const NotFoundPage = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="main-content" style={{ textAlign: 'center', padding: '80px 20px' }}>
-      <div style={{ maxWidth: '420px', margin: '0 auto' }}>
-        <div
-          className="icon-circle icon-circle-danger"
-          style={{ margin: '0 auto 20px' }}
-        >
-          <AlertCircle size={36} />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-6">
+          <AlertCircle size={36} className="text-red-600 dark:text-red-400" />
         </div>
-        <h1 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '6px', lineHeight: 1 }}>
+        <h1 className="text-5xl font-bold text-slate-900 dark:text-white mb-2 leading-none">
           {t('notFound.title')}
         </h1>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '1.1rem', marginBottom: '28px' }}>
+        <p className="text-slate-600 dark:text-slate-400 text-lg mb-8">
           {t('notFound.subtitle')}
         </p>
-        <Link to="/dashboard" className="btn btn-primary btn-block">
+        <Link to="/dashboard" className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 inline-block flex items-center justify-center gap-2">
           <ArrowLeft size={16} /> {t('notFound.backBtn')}
         </Link>
       </div>

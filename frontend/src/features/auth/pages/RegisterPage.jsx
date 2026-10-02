@@ -19,17 +19,17 @@ const getPasswordStrength = (password) => {
 };
 
 const STRENGTH_COLORS = {
-  1: 'active-weak',
-  2: 'active-fair',
-  3: 'active-good',
-  4: 'active-strong',
+  1: 'bg-red-500',
+  2: 'bg-orange-500',
+  3: 'bg-yellow-500',
+  4: 'bg-green-500',
 };
 
 const STRENGTH_TEXT_COLORS = {
-  1: '#ef4444',
-  2: '#f97316',
-  3: '#eab308',
-  4: '#22c55e',
+  1: 'text-red-500',
+  2: 'text-orange-500',
+  3: 'text-yellow-500',
+  4: 'text-green-500',
 };
 
 const RegisterPage = () => {
@@ -115,60 +115,58 @@ const RegisterPage = () => {
 
   if (successMessage) {
     return (
-      <div className="auth-wrapper">
-        <div className="auth-card" style={{ textAlign: 'center' }}>
-          <div className="auth-lang-row">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
+          <div className="flex justify-end mb-4">
             <LanguageSwitcher variant="compact" />
           </div>
-          <div style={{ padding: '8px 0' }}>
-            <div className="icon-circle icon-circle-success" style={{ margin: '0 auto 16px' }}>
-              <CheckCircle2 size={36} />
-            </div>
-            <h2 style={{ fontWeight: 800, marginBottom: 8 }}>
-              {t('auth.register.successTitle', 'Registration Successful')}
-            </h2>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
-              {successMessage}
-            </p>
-            <Link to="/resend-verification" className="btn btn-secondary btn-block">
-              {t('auth.verifyEmail.resendBtn', 'Resend Verification Email')}
-            </Link>
+          <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 size={36} className="text-green-600 dark:text-green-400" />
           </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+            {t('auth.register.successTitle', 'Registration Successful')}
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
+            {successMessage}
+          </p>
+          <Link to="/resend-verification" className="w-full px-4 py-2.5 bg-slate-600 text-white rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors duration-200 inline-block">
+            {t('auth.verifyEmail.resendBtn', 'Resend Verification Email')}
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card" style={{ maxWidth: 520 }}>
-        <div className="auth-lang-row">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-6">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+        <div className="flex justify-end mb-4">
           <LanguageSwitcher variant="compact" />
         </div>
 
-        <div className="auth-header">
-          <div className="auth-logo">
-            <Bus size={26} color="var(--color-primary)" />
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Bus size={26} className="text-white" />
           </div>
-          <h1>{t('auth.register.title', 'Create an Account')}</h1>
-          <p>{t('auth.register.subtitle', 'Register as a passenger to book intercity trips')}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('auth.register.title', 'Create an Account')}</h1>
+          <p className="text-slate-600 dark:text-slate-400">{t('auth.register.subtitle', 'Register as a passenger to book intercity trips')}</p>
         </div>
 
         {errorMessage && (
           <Alert variant="danger">
             <div>{errorMessage}</div>
             {errorDetails.length > 0 && (
-              <ul style={{ marginTop: 6, paddingLeft: 18, fontSize: '0.82rem' }}>
+              <ul className="mt-2 ml-5 text-sm list-disc">
                 {errorDetails.map((err, i) => <li key={i}>{err}</li>)}
               </ul>
             )}
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="form-grid-2">
-            <div className="form-group">
-              <label className="form-label" htmlFor="firstName">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="firstName">
                 {t('auth.register.firstNameLabel', 'First Name')} *
               </label>
               <input
@@ -176,15 +174,15 @@ const RegisterPage = () => {
                 name="firstName"
                 type="text"
                 required
-                className="form-input"
+                className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder={t('auth.register.firstNamePlaceholder', 'Abebe')}
                 value={formData.firstName}
                 onChange={handleChange}
                 disabled={isSubmitting}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="lastName">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="lastName">
                 {t('auth.register.lastNameLabel', 'Last Name')} *
               </label>
               <input
@@ -192,7 +190,7 @@ const RegisterPage = () => {
                 name="lastName"
                 type="text"
                 required
-                className="form-input"
+                className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder={t('auth.register.lastNamePlaceholder', 'Kebede')}
                 value={formData.lastName}
                 onChange={handleChange}
@@ -201,8 +199,8 @@ const RegisterPage = () => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="email">
               {t('auth.register.emailLabel', 'Email Address')} *
             </label>
             <input
@@ -210,7 +208,7 @@ const RegisterPage = () => {
               name="email"
               type="email"
               required
-              className="form-input"
+              className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder={t('auth.register.emailPlaceholder', 'abebe@example.com')}
               value={formData.email}
               onChange={handleChange}
@@ -219,15 +217,15 @@ const RegisterPage = () => {
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="phone">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="phone">
               {t('auth.register.phoneLabel', 'Phone Number')}
             </label>
             <input
               id="phone"
               name="phone"
               type="tel"
-              className="form-input"
+              className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder={t('auth.register.phonePlaceholder', '+251 911 234567')}
               value={formData.phone}
               onChange={handleChange}
@@ -235,70 +233,70 @@ const RegisterPage = () => {
             />
           </div>
 
-          <div className="form-grid-2">
-            <div className="form-group">
-              <label className="form-label" htmlFor="password">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="password">
                 {t('auth.register.passwordLabel', 'Password')} *
               </label>
-              <div className="input-wrapper">
+              <div className="relative">
                 <input
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  className="form-input with-icon-right"
+                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed pr-10"
                   placeholder={t('auth.register.passwordPlaceholder', 'Min 8 characters')}
                   value={formData.password}
                   onChange={handleChange}
                   disabled={isSubmitting}
                   autoComplete="new-password"
                 />
-                <button type="button" className="input-icon-right" onClick={() => setShowPassword((v) => !v)} tabIndex={-1}>
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={() => setShowPassword((v) => !v)} tabIndex={-1}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {formData.password && (
-                <div className="password-strength">
-                  <div className="strength-bars">
+                <div className="mt-2">
+                  <div className="flex gap-1 h-1">
                     {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className={`strength-bar ${score >= i ? STRENGTH_COLORS[score] : ''}`} />
+                      <div key={i} className={`flex-1 rounded-full ${score >= i ? STRENGTH_COLORS[score] : 'bg-slate-200 dark:bg-slate-700'}`} />
                     ))}
                   </div>
-                  <span className="strength-label" style={{ color: STRENGTH_TEXT_COLORS[score] }}>
+                  <span className={`text-xs mt-1 block ${STRENGTH_TEXT_COLORS[score]}`}>
                     {labelKey ? t(`auth.register.${labelKey}`, labelKey.replace('strength', '')) : ''}
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="confirmPassword">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="confirmPassword">
                 {t('auth.register.confirmPasswordLabel', 'Confirm Password')} *
               </label>
-              <div className="input-wrapper">
+              <div className="relative">
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
                   type={showConfirm ? 'text' : 'password'}
                   required
-                  className="form-input with-icon-right"
+                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed pr-10"
                   placeholder={t('auth.register.confirmPasswordPlaceholder', 'Repeat password')}
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   disabled={isSubmitting}
                   autoComplete="new-password"
                 />
-                <button type="button" className="input-icon-right" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1}>
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1}>
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting} style={{ marginTop: 6 }}>
+          <button type="submit" className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
-                <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 {t('auth.register.submitting', 'Creating account...')}
               </>
             ) : (
@@ -309,13 +307,15 @@ const RegisterPage = () => {
           </button>
         </form>
 
-        <div className="auth-footer-link">
+        <div className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
           {t('auth.register.hasAccount', 'Already have an account?')}{' '}
-          <Link to="/login">{t('auth.register.loginLink', 'Sign in here')}</Link>
+          <Link to="/login" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+            {t('auth.register.loginLink', 'Sign in here')}
+          </Link>
         </div>
 
-        <div className="auth-operator-shortcut">
-          <Link to="/partner-register" className="operator-link">
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <Link to="/partner-register" className="flex items-center justify-center gap-2 text-sm text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-medium">
             {t('auth.register.operatorLink', 'Are you a bus operator? Register your organization →')}
           </Link>
         </div>

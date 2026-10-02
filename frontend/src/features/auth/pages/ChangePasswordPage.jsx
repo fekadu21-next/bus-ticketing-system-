@@ -67,38 +67,38 @@ export const ChangePasswordPage = () => {
   };
 
   return (
-    <div className="main-content">
-      <div style={{ maxWidth: '520px', margin: '0 auto' }}>
-        <Link to="/profile" className="back-link">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
+      <div className="max-w-lg mx-auto">
+        <Link to="/profile" className="text-sm text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-300 flex items-center gap-2 mb-6">
           <ArrowLeft size={16} /> {t('auth.changePassword.backToProfile', 'Back to Profile')}
         </Link>
 
-        <div style={{ marginBottom: '20px' }}>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <KeyRound size={24} color="var(--color-primary)" />
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+            <KeyRound size={24} className="text-blue-600 dark:text-blue-400" />
             {t('auth.changePassword.title', 'Change Password')}
           </h1>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+          <p className="text-slate-600 dark:text-slate-400 text-sm">
             {t('auth.changePassword.subtitle', 'Update your account password to keep your account secure')}
           </p>
         </div>
 
-        <div className="card">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
           {successMessage && <Alert variant="success">{successMessage}</Alert>}
 
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="form-group">
-              <label className="form-label" htmlFor="currentPassword">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="currentPassword">
                 {t('auth.changePassword.currentPasswordLabel', 'Current Password')}
               </label>
-              <div className="input-wrapper">
+              <div className="relative">
                 <input
                   id="currentPassword"
                   name="currentPassword"
                   type={showCurrent ? 'text' : 'password'}
                   required
-                  className="form-input with-icon-right"
+                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed pr-10"
                   placeholder="••••••••"
                   value={formData.currentPassword}
                   onChange={handleChange}
@@ -107,7 +107,7 @@ export const ChangePasswordPage = () => {
                 />
                 <button
                   type="button"
-                  className="input-icon-right"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                   onClick={() => setShowCurrent((v) => !v)}
                   tabIndex={-1}
                   aria-label={showCurrent ? 'Hide password' : 'Show password'}
@@ -117,17 +117,17 @@ export const ChangePasswordPage = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="newPassword">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="newPassword">
                 {t('auth.changePassword.newPasswordLabel', 'New Password')}
               </label>
-              <div className="input-wrapper">
+              <div className="relative">
                 <input
                   id="newPassword"
                   name="newPassword"
                   type={showNew ? 'text' : 'password'}
                   required
-                  className="form-input with-icon-right"
+                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed pr-10"
                   placeholder="••••••••"
                   value={formData.newPassword}
                   onChange={handleChange}
@@ -136,7 +136,7 @@ export const ChangePasswordPage = () => {
                 />
                 <button
                   type="button"
-                  className="input-icon-right"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                   onClick={() => setShowNew((v) => !v)}
                   tabIndex={-1}
                   aria-label={showNew ? 'Hide password' : 'Show password'}
@@ -146,17 +146,17 @@ export const ChangePasswordPage = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="confirmPassword">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="confirmPassword">
                 {t('auth.changePassword.confirmPasswordLabel', 'Confirm New Password')}
               </label>
-              <div className="input-wrapper">
+              <div className="relative">
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
                   type={showConfirm ? 'text' : 'password'}
                   required
-                  className="form-input with-icon-right"
+                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed pr-10"
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={handleChange}
@@ -165,7 +165,7 @@ export const ChangePasswordPage = () => {
                 />
                 <button
                   type="button"
-                  className="input-icon-right"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                   onClick={() => setShowConfirm((v) => !v)}
                   tabIndex={-1}
                   aria-label={showConfirm ? 'Hide password' : 'Show password'}
@@ -177,13 +177,12 @@ export const ChangePasswordPage = () => {
 
             <button
               type="submit"
-              className="btn btn-primary btn-block"
+              className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               disabled={isSubmitting}
-              style={{ marginTop: '10px' }}
             >
               {isSubmitting ? (
                 <>
-                  <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   {t('auth.changePassword.submitting', 'Updating password...')}
                 </>
               ) : (
