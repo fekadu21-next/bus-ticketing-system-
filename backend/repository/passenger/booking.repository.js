@@ -95,7 +95,7 @@ export class PassengerBookingRepository {
       });
 
       return booking;
-    });
+    }, { maxWait: 10000, timeout: 25000 });
   }
 
   async findPassengerBookings(passengerId, { page = 1, limit = 20, status = null } = {}) {

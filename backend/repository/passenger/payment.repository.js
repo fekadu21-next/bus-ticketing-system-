@@ -211,7 +211,7 @@ export class PassengerPaymentRepository {
         booking: updatedBooking,
         ticket,
       };
-    });
+    }, { maxWait: 10000, timeout: 25000 });
   }
 }
 

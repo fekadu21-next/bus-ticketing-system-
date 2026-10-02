@@ -25,7 +25,11 @@ export class VerifierController {
     const result = await verifierService.verifyTicket(req.user, req.body);
 
     res.status(200).json({
-      success: true,
+      success: result.valid,
+      valid: result.valid,
+      status: result.status,
+      message: result.message,
+      ticket: result.ticket,
       data: result,
     });
   });

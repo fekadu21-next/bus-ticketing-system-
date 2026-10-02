@@ -203,7 +203,7 @@ export class VerifierRepository {
       });
 
       return updateResult.count > 0;
-    });
+    }, { maxWait: 10000, timeout: 25000 });
   }
 
   async getRecentVerifications(verifierId, organizationId, limit = 20) {
