@@ -22,7 +22,6 @@ import {
   ChevronDown,
   Ticket,
 } from 'lucide-react';
-
 export const Navbar = () => {
   const { user, isAuthenticated, logout, getDashboardPath } = useAuth();
   const { isDark, toggleTheme } = useTheme();

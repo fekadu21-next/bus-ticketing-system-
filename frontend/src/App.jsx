@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AppRoutes from '@/routes/AppRoutes';
 import '@/i18n';
-import './index.css';
+import '@/styles/landing.css';
 
 function App() {
   return (
