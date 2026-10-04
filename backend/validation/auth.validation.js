@@ -51,9 +51,12 @@ export const loginSchema = z.object({
     .min(1, 'Password is required'),
 });
 
-export const refreshTokenSchema = z.object({
-  refreshToken: z.string().optional(),
-});
+export const refreshTokenSchema = z
+  .object({
+    refreshToken: z.string().optional(),
+  })
+  .optional()
+  .default({});
 
 export const verifyEmailSchema = z.object({
   token: z

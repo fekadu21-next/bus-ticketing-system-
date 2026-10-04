@@ -1,0 +1,846 @@
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+/* ============================================================
+   RESPONSIVE LAYOUT ΓÇö Mobile, Tablet, Desktop
+   ============================================================ */
+
+/* --- Mobile Sidebar Overlay Backdrop --- */
+.sidebar-mobile-overlay {
+  display: none;
+}
+
+/* --- Header utilities --- */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-main);
+  flex-shrink: 0;
+}
+
+.mobile-search-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-main);
+}
+
+.desktop-search {
+  display: flex;
+}
+
+.mobile-search-bar {
+  display: none;
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.65rem 1rem;
+  z-index: 20;
+  gap: 0.5rem;
+  align-items: center;
+
+  input {
+    flex: 1;
+    padding: 0.4rem 0.65rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    outline: none;
+
+    &:focus {
+      border-color: var(--primary);
+    }
+  }
+}
+
+.desktop-toggle {
+  display: flex;
+}
+
+.mobile-close-btn {
+  display: none;
+}
+
+.org-selector-wrap {
+  display: flex;
+  align-items: center;
+}
+
+/* Header icon button */
+.header-icon-btn {
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  color: var(--text-main);
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+}
+
+.header-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--danger);
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Dropdown panels */
+.dropdown-panel {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.notif-panel {
+  width: 300px;
+}
+
+.user-panel {
+  width: 190px;
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+
+  h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+}
+
+.notif-item {
+  background: #f8fafc;
+  padding: 0.55rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.notif-item.notif-warning {
+  background: var(--warning-bg);
+  border-color: #fde68a;
+}
+
+.dropdown-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-main);
+
+  &:hover {
+    background: #f8fafc;
+  }
+}
+
+.dropdown-btn.danger-btn {
+  color: var(--danger);
+}
+
+.desktop-only {
+  /* visible by default on desktop */
+}
+
+.role-label {
+  /* visible by default on desktop */
+}
+
+/* ============================================================
+   TABLET  (Γëñ 1024px)
+   ============================================================ */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 220px;
+  }
+
+  .sidebar.collapsed {
+    width: 64px;
+  }
+
+  .header-search.desktop-search input {
+    width: 220px;
+  }
+
+  /* Collapse role-label text inside mode-switcher */
+  .role-label {
+    display: none;
+  }
+
+  /* Collapse org selector label */
+  .org-selector-wrap span {
+    display: none;
+  }
+
+  /* Reports grid ΓåÆ 2 cols */
+  .page-container [style*="repeat(4, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ============================================================
+   MOBILE  (Γëñ 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Sidebar becomes a full-height drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 60;
+    width: 260px !important;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* When NOT collapsed ΓåÆ drawer is open (slide in) */
+  .sidebar:not(.collapsed) {
+    transform: translateX(0);
+  }
+
+  /* When collapsed ΓåÆ keep off-screen */
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: 260px !important;
+  }
+
+  /* Show the dark overlay backdrop */
+  .sidebar-mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 55;
+    backdrop-filter: blur(2px);
+  }
+
+  /* Show hamburger & mobile search icon, hide desktop elements */
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .mobile-search-btn {
+    display: flex;
+  }
+
+  .desktop-search {
+    display: none !important;
+  }
+
+  .desktop-toggle {
+    display: none !important;
+  }
+
+  .mobile-close-btn {
+    display: flex !important;
+  }
+
+  /* Show mobile search bar when active */
+  .mobile-search-bar {
+    display: flex;
+  }
+
+  /* Header shrinks */
+  .top-header {
+    padding: 0 0.85rem;
+    height: 56px;
+    position: relative;
+  }
+
+  /* Hide desktop user info text in header */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Role switcher becomes icon-only */
+  .header-role-switcher button {
+    padding: 0.35rem 0.5rem;
+  }
+
+  /* Org selector smaller */
+  .org-selector-wrap {
+    display: none;
+  }
+
+  /* Page container narrower padding */
+  .page-container {
+    padding: 1rem 0.85rem;
+  }
+
+  /* Page header stacks vertically */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .page-header > div:last-child {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Stats grid ΓåÆ 2 cols on mobile */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem;
+  }
+
+  /* Metric blocks in reports ΓåÆ 2 cols */
+  .page-container [style*="repeat(4, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Side-by-side grids ΓåÆ single column */
+  .page-container [style*="1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tables: make horizontally scrollable */
+  .card-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .data-table {
+    min-width: 600px;
+  }
+
+  /* Form rows ΓåÆ single column */
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Card toolbar wraps */
+  .card-header-toolbar {
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  /* Modal fills screen */
+  .modal-content {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  /* Toast at bottom */
+  .toast-notification {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    font-size: 0.8rem;
+  }
+
+  /* Notifications & user dropdowns full-width */
+  .notif-panel {
+    width: calc(100vw - 2rem);
+    right: -1rem;
+  }
+
+  .user-panel {
+    right: 0;
+    width: 180px;
+  }
+
+  /* Seat grid responsive */
+  .seat-grid-container {
+    max-width: 100%;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 0.4rem;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   ============================================================ */
+/* 1. Large Tablets (<= 1024px) */
+@media (max-width: 1024px) {
+  .hero-content-wrapper {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 36px;
+  }
+
+  .hero-subheading {
+    margin: 0 auto 28px;
+  }
+
+  .hero-image-col {
+    order: 2;
+  }
+
+  .hero-bus-graphic {
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  .features-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .partner-how-container {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .footer-top {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .trip-result-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .trip-pricing-action {
+    align-items: flex-start;
+  }
+
+  .verifier-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 2. Small Tablets & Landscape Phones (<= 900px) */
+@media (max-width: 900px) {
+  .desktop-nav,
+  .guest-nav-buttons,
+  .auth-user-controls {
+    display: none !important;
+  }
+
+  .mobile-hamburger-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .navbar-dark .navbar-container {
+    padding: 0 16px;
+  }
+}
+
+/* 3. Medium Mobile & Tablets (<= 768px) */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 20px 14px;
+  }
+
+  .hero-section {
+    padding: 40px 16px 48px;
+  }
+
+  .hero-heading {
+    font-size: 2.2rem;
+  }
+
+  .search-form-grid {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .search-divider {
+    width: 100%;
+    height: 1px;
+    margin: 2px 0;
+  }
+
+  .search-btn-wrapper {
+    margin-left: 0;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .search-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .features-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .form-row-2col,
+  .review-details-list,
+  .contact-grid,
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .partner-info-box,
+  .how-it-works-box {
+    padding: 28px 20px;
+    border-radius: 14px;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .footer-top {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 36px 18px 24px;
+  }
+
+  .partner-header {
+    padding: 24px 16px;
+  }
+
+  .partner-header-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .step-pill-indicator {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .wizard-step-card {
+    padding: 24px 18px;
+  }
+
+  .dashboard-container {
+    padding: 16px 10px;
+  }
+
+  .dashboard-header-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px 16px;
+  }
+
+  .dashboard-header-strip .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .dashboard-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    padding-bottom: 4px;
+  }
+
+  .tab-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+
+  .overview-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .stat-card {
+    padding: 18px 16px;
+  }
+
+  .data-table-card {
+    padding: 18px 14px;
+  }
+
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .table-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .page-hero-banner {
+    padding: 36px 16px;
+  }
+
+  .about-content-section,
+  .contact-content-container {
+    padding: 28px 16px;
+  }
+
+  .contact-info-card,
+  .contact-form-card {
+    padding: 24px 18px;
+  }
+
+  .about-cta-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 24px 18px;
+  }
+
+  .about-cta-banner .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* 4. Small Mobile Phones (<= 640px) */
+@media (max-width: 640px) {
+  .trip-time-route {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .duration-indicator {
+    width: 100%;
+    margin: 4px 0;
+  }
+
+  .trip-pricing-action {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+    border-top: 1px solid var(--color-border);
+    padding-top: 14px;
+  }
+
+  .search-header-bar {
+    padding: 24px 16px;
+  }
+
+  .quick-filter-strip {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .filter-pill {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .ticket-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ticket-route-display {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ticket-meta-details {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .footer-bottom-container {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
+
+/* 5. Extra Small Phones (<= 480px) */
+@media (max-width: 480px) {
+  .navbar-dark .navbar-container {
+    height: 64px;
+    padding: 0 12px;
+  }
+
+  .brand-logo-img {
+    height: 36px;
+    max-width: 110px;
+  }
+
+  .brand-title {
+    font-size: 1.05rem;
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+
+  .nav-right-actions {
+    gap: 6px;
+  }
+
+  .hero-heading {
+    font-size: 1.75rem;
+    line-height: 1.2;
+  }
+
+  .hero-subheading {
+    font-size: 0.92rem;
+    margin-bottom: 20px;
+  }
+
+  .trip-search-card {
+    padding: 14px 12px;
+  }
+
+  .bus-floating-badge {
+    bottom: 12px;
+    left: 12px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+
+  .auth-card {
+    padding: 28px 18px;
+    border-radius: 12px;
+  }
+
+  .step-pill-indicator {
+    padding: 6px 10px;
+  }
+
+  .step-pill-item span:not(.step-num) {
+    display: none;
+  }
+
+  .step-pill-line {
+    width: 12px;
+    margin: 0 4px;
+  }
+
+  .wizard-actions-split {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .wizard-actions-split .btn,
+  .wizard-actions-right .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .data-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .profile-welcome-banner {
+    padding: 16px 14px;
+    gap: 12px;
+  }
+
+  .profile-photo-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+}
+
+/* 6. Ultra-narrow Phones (<= 360px) */
+@media (max-width: 360px) {
+  .brand-title {
+    display: none;
+  }
+  .navbar-container {
+    padding: 0 8px;
+  }
+  .auth-card {
+    padding: 22px 14px;
+  }
+}
+
+/* ============================================================
+   SMALL PHONES  (Γëñ 480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-container [style*="repeat(4, 1fr)"],
+  .page-container [style*="repeat(3, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mode-switcher.header-role-switcher {
+    display: none;
+  }
+
+  .stat-card .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .page-title h1 {
+    font-size: 1.1rem;
+  }
+
+  .data-table {
+    min-width: 520px;
+  }
+}
