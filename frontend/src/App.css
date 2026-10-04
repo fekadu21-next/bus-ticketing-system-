@@ -1,3 +1,12 @@
+/* ===== Modular Styles (distributed to avoid cross-branch index.css conflicts) ===== */
+@import './styles/layout.css';
+@import './styles/components.css';
+@import './styles/auth.css';
+@import './styles/dashboard.css';
+@import './styles/landing.css';
+@import './styles/theme.css';
+@import './styles/responsive.css';
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;
