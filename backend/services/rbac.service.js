@@ -83,8 +83,8 @@ export class RbacService {
     }
 
     // 4. Role-Organization Validation:
-    // BOOKING_COORDINATOR and TICKET_VERIFIER must be bound to a valid organization
-    if (roleName === ROLES.BOOKING_COORDINATOR || roleName === ROLES.TICKET_VERIFIER) {
+    // BOOKING_COORDINATOR, TICKET_VERIFIER, and DRIVER must be bound to a valid organization
+    if (roleName === ROLES.BOOKING_COORDINATOR || roleName === ROLES.TICKET_VERIFIER || roleName === ROLES.DRIVER) {
       if (!organizationId) {
         throw new ApiError(400, `Organization ID is required for role '${roleName}'.`);
       }

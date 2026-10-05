@@ -54,6 +54,7 @@ model organizations {
   tickets              tickets[]
   ticket_verifications ticket_verifications[]
   feedbacks            feedbacks[]
+  trip_problem_reports trip_problem_reports[]
 
   @@index([status])
   @@index([type])
@@ -100,6 +101,9 @@ model users {
   verified_tickets          tickets[]               @relation("VerifiedTickets")
   ticket_verifications      ticket_verifications[]  @relation("VerifierVerifications")
   feedbacks                 feedbacks[]             @relation("PassengerFeedbacks")
+  driven_trips              trips[]                 @relation("DriverTrips")
+  driver_problems           trip_problem_reports[]  @relation("DriverProblems")
+  resolved_problems         trip_problem_reports[]  @relation("ResolvedProblems")
 }
 
 model refresh_tokens {
@@ -200,20 +204,24 @@ model trips {
   arrival_time    DateTime?     @db.Timestamptz(6)
   fare            Decimal       @db.Decimal(10, 2)
   status          String        @default("SCHEDULED") @db.VarChar(30)
+  driver_id       String?       @db.Uuid
   created_at      DateTime      @default(now()) @db.Timestamptz(6)
   updated_at      DateTime      @default(now()) @db.Timestamptz(6)
   organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   buses           buses         @relation(fields: [bus_id], references: [id], onDelete: Restrict)
   routes          routes        @relation(fields: [route_id], references: [id], onDelete: Restrict)
+  driver          users?        @relation("DriverTrips", fields: [driver_id], references: [id], onDelete: SetNull)
   seats           seats[]
   bookings        bookings[]
   tickets         tickets[]
   ticket_verifications ticket_verifications[]
   feedbacks       feedbacks[]
+  trip_problem_reports trip_problem_reports[]
 
   @@index([organization_id])
   @@index([bus_id])
   @@index([route_id])
+  @@index([driver_id])
   @@index([departure_time])
   @@index([status])
 }
@@ -350,4 +358,29 @@ model feedbacks {
   @@index([trip_id])
   @@index([passenger_id])
   @@index([organization_id])
+}
+
+model trip_problem_reports {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trip_id         String        @db.Uuid
+  driver_id       String        @db.Uuid
+  organization_id String        @db.Uuid
+  type            String        @db.VarChar(50)
+  description     String        @db.Text
+  status          String        @default("PENDING") @db.VarChar(30)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  resolved_at     DateTime?     @db.Timestamptz(6)
+  resolved_by     String?       @db.Uuid
+
+  trips           trips         @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  driver          users         @relation("DriverProblems", fields: [driver_id], references: [id], onDelete: Restrict)
+  resolver        users?        @relation("ResolvedProblems", fields: [resolved_by], references: [id], onDelete: SetNull)
+  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([trip_id])
+  @@index([driver_id])
+  @@index([organization_id])
+  @@index([status])
+  @@index([created_at])
 }

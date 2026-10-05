@@ -51,6 +51,20 @@ export class TripController {
     });
   });
 
+  assignDriver = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    const { driverId } = req.body;
+    const trip = await tripService.assignDriver(tripId, req.organizationId, driverId, req.user, {
+      clientIp: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+    res.status(200).json({
+      success: true,
+      message: driverId ? 'Driver assigned to trip successfully.' : 'Driver unassigned from trip.',
+      data: { trip },
+    });
+  });
+
   cancelTrip = asyncHandler(async (req, res) => {
     const { tripId } = req.params;
     const trip = await tripService.cancelTrip(tripId, req.organizationId);

@@ -48,7 +48,7 @@ export class AdminDashboardRepository {
       prisma.buses.count(),
       prisma.buses.count({ where: { is_active: true } }),
     ]);
-    return { total, active, maintenance: total - active };
+    return { total, active, maintenance: total - active, status: 'UNAVAILABLE' };
   }
 
   /**
@@ -62,7 +62,7 @@ export class AdminDashboardRepository {
       prisma.trips.count({ where: { status: 'COMPLETED' } }),
       prisma.trips.count({ where: { status: 'CANCELLED' } }),
     ]);
-    return { total, scheduled, inTransit, completed, cancelled };
+    return { total, scheduled, inTransit, completed, cancelled, status: 'UNAVAILABLE' };
   }
 
   /**
@@ -75,7 +75,7 @@ export class AdminDashboardRepository {
       prisma.bookings.count({ where: { status: 'PENDING' } }),
       prisma.bookings.count({ where: { status: 'CANCELLED' } }),
     ]);
-    return { total, confirmed, pending, cancelled };
+    return { total, confirmed, pending, cancelled, status: 'UNAVAILABLE' };
   }
 
   /**
@@ -96,6 +96,7 @@ export class AdminDashboardRepository {
       platformCommission,
       completedTransactions: aggregate._count._all || 0,
       currency: 'ETB',
+      status: 'UNAVAILABLE',
     };
   }
 }

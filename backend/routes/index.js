@@ -7,6 +7,7 @@ import adminRoutes from './admin/index.js';
 import coordinatorRoutes from './coordinator/index.js';
 import passengerRoutes from './passenger/index.js';
 import verifierRoutes from './verifier/index.js';
+import driverRoutes from './driver/index.js';
 import authenticate from '../middleware/authenticate.middleware.js';
 import { authorizeRole, authorizePermission } from '../middleware/authorize.middleware.js';
 import { authorizeOrgRole } from '../middleware/organization.middleware.js';
@@ -56,8 +57,9 @@ router.use('/users', userRoutes);
 router.use('/rbac', rbacRoutes);
 router.use('/organizations', organizationRoutes);
 router.use('/admin', adminRoutes);
-router.use('/coordinator', authenticate, authorizeOrgRole([ROLES.BOOKING_COORDINATOR]), coordinatorRoutes);
+router.use('/coordinator', authenticate, authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]), coordinatorRoutes);
 router.use('/passenger', authenticate, authorizeRole(ROLES.PASSENGER), passengerRoutes);
 router.use('/verifier', authenticate, authorizeRole(ROLES.TICKET_VERIFIER), verifierRoutes);
+router.use('/driver', authenticate, authorizeRole(ROLES.DRIVER), driverRoutes);
 
 export default router;

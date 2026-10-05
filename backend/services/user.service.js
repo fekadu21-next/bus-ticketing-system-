@@ -45,8 +45,8 @@ export class UserService {
     }
 
     // Role-organization validation:
-    // If role is BOOKING_COORDINATOR or TICKET_VERIFIER, organizationId is required!
-    if (role === ROLES.BOOKING_COORDINATOR || role === ROLES.TICKET_VERIFIER) {
+    // If role is BOOKING_COORDINATOR, TICKET_VERIFIER, or DRIVER, organizationId is required!
+    if (role === ROLES.BOOKING_COORDINATOR || role === ROLES.TICKET_VERIFIER || role === ROLES.DRIVER) {
       if (!organizationId) {
         throw new ApiError(400, `Organization ID is required when creating a ${role}`);
       }
