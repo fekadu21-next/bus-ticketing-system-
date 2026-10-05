@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import AppRoutes from './routes/AppRoutes';
 import './i18n';
 import './index.css';
+import './App.css';
 
 function MainLayout() {
   const location = useLocation();
