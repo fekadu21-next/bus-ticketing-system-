@@ -1,9 +1,10 @@
-import React from 'react';
+import React from "react";
 
 export const Badge = ({
+  status,
   children,
-  variant = 'primary', // 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'
-  className = '',
+  variant,
+  className = "",
 }) => {
   const variantClass = {
     primary: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',

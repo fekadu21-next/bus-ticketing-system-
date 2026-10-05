@@ -33,20 +33,38 @@ router.get(
   organizationController.getOrganizationById
 );
 
-// Update organization (Admin only)
+// Update organization (Admin or Coordinator of that org)
 router.patch(
   '/:orgId',
-  authorizeRole(ROLES.ADMIN),
+  authorizeOrgRole([ROLES.BOOKING_COORDINATOR], (req) => req.params.orgId),
   validate(updateOrganizationSchema),
   organizationController.updateOrganization
 );
 
-// Schedule trip for organization (Admin or BOOKING_COORDINATOR of that org)
-router.post(
-  '/:orgId/trips',
-  authorizeOrgRole([ROLES.BOOKING_COORDINATOR], (req) => req.params.orgId),
-  organizationController.createTrip
-);
+import coordinatorRouter from './coordinator/index.js';
+import busRoutes from './coordinator/bus.route.js';
+import routeRoutes from './coordinator/route.route.js';
+import tripRoutes from './coordinator/trip.route.js';
+import bookingRoutes from './coordinator/booking.route.js';
+import paymentRoutes from './coordinator/payment.route.js';
+import reportRoutes from './coordinator/report.route.js';
+
+// Coordinator sub-routes scoped to organization
+const requireCoordinator = authorizeOrgRole([ROLES.BOOKING_COORDINATOR], (req) => req.params.orgId);
+
+import coordinatorStaffController from '../controllers/coordinator/staff.controller.js';
+
+router.use('/:orgId/buses', requireCoordinator, busRoutes);
+router.use('/:orgId/routes', requireCoordinator, routeRoutes);
+router.use('/:orgId/trips', requireCoordinator, tripRoutes);
+router.use('/:orgId/bookings', requireCoordinator, bookingRoutes);
+router.use('/:orgId/payments', requireCoordinator, paymentRoutes);
+router.use('/:orgId/reports', requireCoordinator, reportRoutes);
+router.use('/:orgId/coordinator', requireCoordinator, coordinatorRouter);
+router.get('/:orgId/staff', requireCoordinator, coordinatorStaffController.getStaff);
+router.post('/:orgId/staff', requireCoordinator, coordinatorStaffController.createStaff);
+router.patch('/:orgId/staff/:staffId/status', requireCoordinator, coordinatorStaffController.toggleStaffStatus);
+router.patch('/:orgId/staff/:staffId', requireCoordinator, coordinatorStaffController.updateStaff);
 
 // Verify ticket for organization (Admin, BOOKING_COORDINATOR, or TICKET_VERIFIER of that org)
 router.post(

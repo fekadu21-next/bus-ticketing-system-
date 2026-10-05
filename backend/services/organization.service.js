@@ -49,6 +49,7 @@ export class OrganizationService {
       id: org.id,
       name: org.name,
       type: org.type,
+      status: org.status,
       isActive: org.is_active,
       createdAt: org.created_at,
       updatedAt: org.updated_at,
@@ -83,6 +84,7 @@ export class OrganizationService {
       id: org.id,
       name: org.name,
       type: org.type,
+      status: org.status,
       isActive: org.is_active,
       createdAt: org.created_at,
       updatedAt: org.updated_at,
@@ -92,7 +94,7 @@ export class OrganizationService {
   /**
    * Update organization
    */
-  async updateOrganization(id, data, adminUser, reqMeta = {}) {
+  async updateOrganization(id, data, user, reqMeta = {}) {
     const org = await organizationRepository.findById(id);
     if (!org) {
       throw new ApiError(404, 'Organization not found');
@@ -100,17 +102,26 @@ export class OrganizationService {
 
     if (data.name && data.name.trim().toLowerCase() !== org.name.toLowerCase()) {
       const existing = await organizationRepository.findByName(data.name.trim());
-      if (existing) {
+      if (existing && existing.id !== id) {
         throw new ApiError(409, 'An organization with this name already exists.');
       }
     }
 
-    const updated = await organizationRepository.update(id, data);
+    // Guard administrative fields: only platform ADMIN can change status or isActive
+    const isAdmin = user?.roles?.includes(ROLES.ADMIN);
+    const sanitizedData = { ...data };
+    if (!isAdmin) {
+      delete sanitizedData.status;
+      delete sanitizedData.isActive;
+      delete sanitizedData.is_active;
+    }
+
+    const updated = await organizationRepository.update(id, sanitizedData);
 
     await logAuditEvent({
-      userId: adminUser?.id || null,
-      action: 'ADMIN_UPDATE_ORGANIZATION',
-      details: { organizationId: id, updatedFields: Object.keys(data) },
+      userId: user?.id || null,
+      action: isAdmin ? 'ADMIN_UPDATE_ORGANIZATION' : 'MANAGER_UPDATE_ORGANIZATION',
+      details: { organizationId: id, updatedFields: Object.keys(sanitizedData) },
       ipAddress: reqMeta.clientIp,
       userAgent: reqMeta.userAgent,
     });
@@ -119,6 +130,7 @@ export class OrganizationService {
       id: updated.id,
       name: updated.name,
       type: updated.type,
+      status: updated.status,
       isActive: updated.is_active,
       updatedAt: updated.updated_at,
     };

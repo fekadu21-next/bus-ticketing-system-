@@ -150,9 +150,26 @@ export const DashboardPage = () => {
             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
               {t(
                 'dashboard.integrationNoticeDesc',
-                'Welcome to your authenticated account. Role-specific operational dashboards (Platform Admin, Booking Coordinator, Ticket Verifier, and Passenger booking management) will be integrated here in the upcoming phase. All authentication, security, and profile features are fully active.'
+                'Access your role-specific dashboard, interactive sidebar controls, fleet management, trip scheduling, bookings, payments, and system settings.'
               )}
             </p>
+            <div style={{ marginTop: '16px' }}>
+              <Link
+                to="/portal"
+                className="btn btn-primary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
+              >
+                Launch Management Console <ArrowRight size={16} />
+              </Link>
+            </div>
           </div>
 
           <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">

@@ -174,6 +174,33 @@ The system strictly decouples **identity**, **system roles**, **permissions**, a
 | `POST` | `/auth/change-password` | Authenticated | Change password (requires current password) |
 | `GET` | `/health` | Public | Service health check |
 
+### Passenger Endpoints (`/api/v1/passenger`)
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/passenger/trips` | `PASSENGER` | Search trips with origin, destination, travel date, operator, pagination & sorting |
+| `GET` | `/passenger/trips/:tripId` | `PASSENGER` | View trip details, operator, bus, route, and seat inventory |
+| `GET` | `/passenger/trips/:tripId/seats` | `PASSENGER` | Get real-time seat availability map for a trip |
+| `POST` | `/passenger/bookings` | `PASSENGER` | Atomically book/reserve a seat (prevents double booking) |
+| `GET` | `/passenger/bookings` | `PASSENGER` | Retrieve passenger's personal bookings list |
+| `GET` | `/passenger/bookings/:id` | `PASSENGER` | View personal booking details (strict ownership isolation) |
+| `POST` | `/passenger/payments/initialize` | `PASSENGER` | Initialize payment session (Chapa, Telebirr, CBE) |
+| `POST` | `/passenger/payments/verify` | `PASSENGER` | Verify payment and automatically issue digital ticket |
+| `GET` | `/passenger/payments/booking/:bookingId` | `PASSENGER` | Check payment status for booking |
+| `GET` | `/passenger/tickets` | `PASSENGER` | View passenger's digital boarding passes |
+| `GET` | `/passenger/tickets/:id` | `PASSENGER` | Retrieve digital ticket with cryptographic QR verification token |
+| `POST` | `/passenger/feedback` | `PASSENGER` | Submit rating & review for completed trip |
+| `GET` | `/passenger/feedback` | `PASSENGER` | View personal feedback history |
+
+### Ticket Verifier Endpoints (`/api/v1/verifier`)
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/verifier/trips` | `TICKET_VERIFIER` | List assigned operator trips with verification progress summary |
+| `GET` | `/verifier/trips/:tripId` | `TICKET_VERIFIER` | View passenger manifest for assigned trip |
+| `POST` | `/verifier/tickets/verify` | `TICKET_VERIFIER` | Atomically verify QR boarding pass (`VALID`, `ALREADY_USED`, `INVALID`, `CANCELLED`, `WRONG_TRIP`) |
+| `GET` | `/verifier/history` | `TICKET_VERIFIER` | View recent audit log records of scans |
+
 ---
 
 ## 🚀 Getting Started

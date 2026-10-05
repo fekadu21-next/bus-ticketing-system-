@@ -19,8 +19,17 @@ export const errorHandler = (err, req, res, next) => {
   // Handle specific Prisma errors safely without leaking internal SQL
   if (err.code === 'P2002') {
     statusCode = 409;
-    message = 'A record with this value already exists.';
-    errors = err.meta?.target ? [`Conflict on field: ${err.meta.target}`] : [];
+    const target = Array.isArray(err.meta?.target) ? err.meta.target.join(', ') : String(err.meta?.target || '');
+    if (target.includes('plate') || target.includes('uq_bus_org_plate')) {
+      message = 'A bus with this plate number already exists in your organization.';
+    } else if (target.includes('email') || target.includes('users_email_key')) {
+      message = 'A user with this email address already exists.';
+    } else if (target.includes('route')) {
+      message = 'A route between these locations already exists in your organization.';
+    } else {
+      message = 'A record with this unique value already exists.';
+    }
+    errors = target ? [`Conflict on field: ${target}`] : [];
   } else if (err.code === 'P2025') {
     statusCode = 404;
     message = 'Requested resource was not found.';

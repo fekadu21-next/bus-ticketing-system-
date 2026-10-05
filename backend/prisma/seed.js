@@ -30,11 +30,15 @@ const PERMISSION_DEFINITIONS = [
   { name: PERMISSIONS.CANCEL_TICKET, description: 'Cancel personal booking' },
   { name: PERMISSIONS.VIEW_TICKETS, description: 'View personal tickets and QR passes' },
   { name: PERMISSIONS.VERIFY_TICKET, description: 'Scan and validate boarding tickets' },
+  { name: PERMISSIONS.MANAGE_ROUTES, description: 'Create, update, and manage bus routes' },
+  { name: PERMISSIONS.VIEW_ROUTES, description: 'View organization and public routes' },
+  { name: PERMISSIONS.VIEW_PAYMENTS, description: 'View transaction logs and payment records' },
+  { name: PERMISSIONS.VIEW_REPORTS, description: 'View organization operational analytics and reports' },
 ];
 
 export async function seedDatabase() {
   await connectDB();
-  console.log('🌱 Starting database seed...');
+  console.log('≡ƒî▒ Starting database seed...');
 
   // 1. Seed Roles
   const roleMap = new Map();
@@ -46,7 +50,7 @@ export async function seedDatabase() {
     });
     roleMap.set(role.name, role.id);
   }
-  console.log('✅ Roles seeded successfully:', Array.from(roleMap.keys()));
+  console.log('Γ£à Roles seeded successfully:', Array.from(roleMap.keys()));
 
   // 2. Migrate any legacy roles (PLATFORM_ADMIN -> ADMIN, OPERATIONAL_MANAGER -> BOOKING_COORDINATOR)
   const legacyAdminRole = await prisma.roles.findUnique({ where: { name: 'PLATFORM_ADMIN' } });
@@ -65,7 +69,7 @@ export async function seedDatabase() {
     }
     await prisma.role_permissions.deleteMany({ where: { role_id: legacyAdminRole.id } });
     await prisma.roles.delete({ where: { id: legacyAdminRole.id } });
-    console.log('🔄 Migrated legacy PLATFORM_ADMIN to ADMIN');
+    console.log('≡ƒöä Migrated legacy PLATFORM_ADMIN to ADMIN');
   }
 
   const legacyOpManager = await prisma.roles.findUnique({ where: { name: 'OPERATIONAL_MANAGER' } });
@@ -84,7 +88,7 @@ export async function seedDatabase() {
     }
     await prisma.role_permissions.deleteMany({ where: { role_id: legacyOpManager.id } });
     await prisma.roles.delete({ where: { id: legacyOpManager.id } });
-    console.log('🔄 Migrated legacy OPERATIONAL_MANAGER to BOOKING_COORDINATOR');
+    console.log('≡ƒöä Migrated legacy OPERATIONAL_MANAGER to BOOKING_COORDINATOR');
   }
 
   // 3. Batch Seed Permissions
@@ -94,7 +98,7 @@ export async function seedDatabase() {
   });
   const allPermissions = await prisma.permissions.findMany();
   const permissionMap = new Map(allPermissions.map((p) => [p.name, p.id]));
-  console.log(`✅ Permissions verified (${allPermissions.length} total)`);
+  console.log(`Γ£à Permissions verified (${allPermissions.length} total)`);
 
   // 4. Batch Seed Role-Permissions
   const rolePermissionRecords = [];
@@ -113,7 +117,7 @@ export async function seedDatabase() {
     data: rolePermissionRecords,
     skipDuplicates: true,
   });
-  console.log(`✅ Role-Permissions mapped (${rolePermissionRecords.length} relations)`);
+  console.log(`Γ£à Role-Permissions mapped (${rolePermissionRecords.length} relations)`);
 
   // 5. Seed Organizations
   await prisma.organizations.upsert({
@@ -137,7 +141,7 @@ export async function seedDatabase() {
       is_active: true,
     },
   });
-  console.log('✅ Organizations verified and seeded');
+  console.log('Γ£à Organizations verified and seeded');
 
   // 6. Seed Initial Admin Account
   const adminEmail = 'admin@busticket.com';
@@ -176,7 +180,7 @@ export async function seedDatabase() {
       });
     }
   }
-  console.log('✅ Default Platform Admin configured with ADMIN role:', adminEmail);
+  console.log('Γ£à Default Platform Admin configured with ADMIN role:', adminEmail);
 
   // 7. Seed Ticket Verifier Accounts
   const verifierRoleId = roleMap.get(ROLES.TICKET_VERIFIER);
@@ -213,7 +217,7 @@ export async function seedDatabase() {
       });
     }
   }
-  console.log('✅ Ticket Verifier 1 configured for Selam Bus Line:', verifier1Email);
+  console.log('Γ£à Ticket Verifier 1 configured for Selam Bus Line:', verifier1Email);
 
   // Verifier 2: Sky Bus
   const verifier2Email = 'verifier2@busticket.com';
@@ -246,7 +250,7 @@ export async function seedDatabase() {
       });
     }
   }
-  console.log('✅ Ticket Verifier 2 configured for Sky Bus:', verifier2Email);
+  console.log('Γ£à Ticket Verifier 2 configured for Sky Bus:', verifier2Email);
 
   // 8. Seed Booking Coordinator Account
   const coordinatorRoleId = roleMap.get(ROLES.BOOKING_COORDINATOR);
@@ -282,9 +286,9 @@ export async function seedDatabase() {
       });
     }
   }
-  console.log('✅ Booking Coordinator configured for Selam Bus Line:', coordinatorEmail);
+  console.log('Γ£à Booking Coordinator configured for Selam Bus Line:', coordinatorEmail);
 
-  console.log('🎉 Seeding complete.');
+  console.log('≡ƒÄë Seeding complete.');
 }
 
 if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
