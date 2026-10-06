@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Shield,
@@ -17,13 +17,39 @@ import {
   Mountain,
 } from 'lucide-react';
 import TripSearchBar from '@/components/TripSearchBar';
+import { getPublicOperatorsApi } from '@/api/trip.api';
+
+const getTodayString = () => new Date().toISOString().split('T')[0];
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [origin, setOrigin] = useState('Addis Ababa');
   const [destination, setDestination] = useState('Bahir Dar');
-  const [departureDate, setDepartureDate] = useState('2024-10-10');
+  const [departureDate, setDepartureDate] = useState(getTodayString());
   const [openFaq, setOpenFaq] = useState(null);
+  const [operators, setOperators] = useState([]);
+  const [loadingOperators, setLoadingOperators] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchOperators = async () => {
+      try {
+        setLoadingOperators(true);
+        const data = await getPublicOperatorsApi();
+        if (isMounted && data) {
+          setOperators(data);
+        }
+      } catch (err) {
+        console.error('Failed to load operators from backend:', err);
+      } finally {
+        if (isMounted) setLoadingOperators(false);
+      }
+    };
+    fetchOperators();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -35,60 +61,7 @@ export default function HomePage() {
     navigate(`/search-trips?${params.toString()}`);
   };
 
-  const operators = [
-    {
-      id: 'selam',
-      name: 'Selam Bus',
-      type: 'Private Bus Company',
-      logoText: 'SB',
-      logoBg: 'bg-[#1e3a8a]',
-      rating: '4.6',
-      reviews: '1.2k reviews',
-      routeFrom: 'Addis Ababa',
-      routeTo: 'Bahir Dar',
-      extraRoutes: '+3 more',
-      image: '/images/operators/selam-bus.png',
-    },
-    {
-      id: 'abay',
-      name: 'Abay Association',
-      type: 'Transport Association',
-      logo: 'mountain',
-      logoBg: 'bg-[#2563eb]',
-      rating: '4.4',
-      reviews: '856 reviews',
-      routeFrom: 'Addis Ababa',
-      routeTo: 'Hawassa',
-      extraRoutes: '+2 more',
-      image: '/images/operators/abay-association.png',
-    },
-    {
-      id: 'gebeya',
-      name: 'Gebeya Bus',
-      type: 'Private Bus Company',
-      logoText: 'GB',
-      logoBg: 'bg-[#16a34a]',
-      rating: '4.5',
-      reviews: '642 reviews',
-      routeFrom: 'Addis Ababa',
-      routeTo: 'Dire Dawa',
-      extraRoutes: '+3 more',
-      image: '/images/operators/gebeya-bus.png',
-    },
-    {
-      id: 'mekelle',
-      name: 'Mekelle Transport',
-      type: 'Transport Association',
-      logo: 'bus',
-      logoBg: 'bg-[#1d4ed8]',
-      rating: '4.3',
-      reviews: '521 reviews',
-      routeFrom: 'Addis Ababa',
-      routeTo: 'Mekelle',
-      extraRoutes: '+2 more',
-      image: '/images/operators/mekelle-transport.png',
-    },
-  ];
+
 
   const testimonials = [
     {
@@ -153,6 +126,17 @@ export default function HomePage() {
             className="home-hero-art"
           />
           <h1 className="sr-only">Book Bus Tickets Easily &amp; Securely</h1>
+          <div className="home-hero-search">
+            <TripSearchBar
+              origin={origin}
+              destination={destination}
+              departureDate={departureDate}
+              onOriginChange={setOrigin}
+              onDestinationChange={setDestination}
+              onDateChange={setDepartureDate}
+              onSubmit={handleSearch}
+            />
+          </div>
         </div>
       </section>
 
@@ -196,44 +180,54 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {operators.map((op) => (
-              <article
-                key={op.id}
-                className="bg-white rounded-2xl border border-slate-100 shadow-[0_10px_30px_rgba(15,23,42,0.06)] overflow-hidden"
-              >
-                <div className="h-[118px] overflow-hidden">
-                  <img src={op.image} alt={op.name} className="w-full h-full object-cover" />
+            {loadingOperators && operators.length === 0 ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 animate-pulse">
+                  <div className="h-[118px] bg-slate-100 rounded-xl mb-4" />
+                  <div className="h-4 bg-slate-100 rounded w-3/4 mb-2" />
+                  <div className="h-3 bg-slate-100 rounded w-1/2" />
                 </div>
-                <div className="px-4 pt-4 pb-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-10 h-10 ${op.logoBg} text-white rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0`}>
-                      {op.logo === 'mountain' && <Mountain size={16} />}
-                      {op.logo === 'bus' && <Bus size={16} />}
-                      {op.logoText}
-                    </div>
-                    <div>
-                      <h3 className="text-[14px] font-bold text-[#0f172a] leading-tight">{op.name}</h3>
-                      <p className="text-[12px] text-slate-500">{op.type}</p>
-                    </div>
+              ))
+            ) : (
+              operators.map((op) => (
+                <article
+                  key={op.id}
+                  className="bg-white rounded-2xl border border-slate-100 shadow-[0_10px_30px_rgba(15,23,42,0.06)] overflow-hidden"
+                >
+                  <div className="h-[118px] overflow-hidden">
+                    <img src={op.image} alt={op.name} className="w-full h-full object-cover" />
                   </div>
-                  <div className="flex items-center gap-1.5 text-[13px] mb-3">
-                    <Star size={14} className="fill-amber-400 text-amber-400" />
-                    <span className="font-semibold text-slate-800">{op.rating}</span>
-                    <span className="text-slate-400">({op.reviews})</span>
+                  <div className="px-4 pt-4 pb-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-10 h-10 ${op.logoBg} text-white rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0`}>
+                        {op.logo === 'mountain' && <Mountain size={16} />}
+                        {op.logo === 'bus' && <Bus size={16} />}
+                        {op.logoText}
+                      </div>
+                      <div>
+                        <h3 className="text-[14px] font-bold text-[#0f172a] leading-tight">{op.name}</h3>
+                        <p className="text-[12px] text-slate-500">{op.type}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[13px] mb-3">
+                      <Star size={14} className="fill-amber-400 text-amber-400" />
+                      <span className="font-semibold text-slate-800">{op.rating}</span>
+                      <span className="text-slate-400">({op.reviews})</span>
+                    </div>
+                    <p className="text-[12px] text-slate-500 mb-4">
+                      {op.routeFrom} <span className="text-slate-300">→</span> {op.routeTo}{' '}
+                      <span className="text-slate-400">{op.extraRoutes}</span>
+                    </p>
+                    <Link
+                      to={`/search-trips?operator=${encodeURIComponent(op.name)}&from=${encodeURIComponent(op.routeFrom)}&to=${encodeURIComponent(op.routeTo)}&date=${departureDate}`}
+                      className="flex items-center justify-center gap-1.5 text-[13px] font-semibold text-[#2563eb] border border-[#2563eb] rounded-lg py-2 hover:bg-blue-50 transition-colors"
+                    >
+                      View Trips <ArrowRight size={14} />
+                    </Link>
                   </div>
-                  <p className="text-[12px] text-slate-500 mb-4">
-                    {op.routeFrom} <span className="text-slate-300">→</span> {op.routeTo}{' '}
-                    <span className="text-slate-400">{op.extraRoutes}</span>
-                  </p>
-                  <Link
-                    to={`/search-trips?from=${encodeURIComponent(op.routeFrom)}&to=${encodeURIComponent(op.routeTo)}&date=${departureDate}`}
-                    className="flex items-center justify-center gap-1.5 text-[13px] font-semibold text-[#2563eb] border border-[#2563eb] rounded-lg py-2 hover:bg-blue-50 transition-colors"
-                  >
-                    View Trips <ArrowRight size={14} />
-                  </Link>
-                </div>
-              </article>
-            ))}
+                </article>
+              ))
+            )}
           </div>
         </div>
       </section>

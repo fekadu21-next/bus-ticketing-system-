@@ -12,7 +12,9 @@ export class PassengerTripRepository {
     sortBy = 'departureTime',
     sortOrder = 'asc',
   }) {
-    const skip = (page - 1) * limit;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
+    const skip = (pageNum - 1) * limitNum;
 
     // Filters for passenger-visible bookable trips
     const where = {
@@ -72,7 +74,7 @@ export class PassengerTripRepository {
       prisma.trips.findMany({
         where,
         skip,
-        take: limit,
+        take: limitNum,
         orderBy,
         include: {
           organizations: {
@@ -126,9 +128,9 @@ export class PassengerTripRepository {
 
     return {
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
       trips: formattedTrips,
     };
   }

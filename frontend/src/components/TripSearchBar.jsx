@@ -1,6 +1,16 @@
 import React from 'react';
 import { MapPin, Calendar, Search, ChevronDown } from 'lucide-react';
-import { CITIES } from '@/data/dummyTrips';
+export const CITIES = [
+  'Addis Ababa',
+  'Bahir Dar',
+  'Hawassa',
+  'Gondar',
+  'Mekelle',
+  'Dire Dawa',
+  'Jimma',
+  'Adama',
+  'Arba Minch',
+];
 
 const formatDate = (value) => {
   if (!value) return 'Select date';

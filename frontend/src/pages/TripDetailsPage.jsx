@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -17,8 +17,31 @@ import {
   Building2,
   Phone,
   Navigation,
+  Loader2,
 } from 'lucide-react';
-import { getTripById, formatEtb, formatPrettyDate, getTripAmenities } from '@/data/dummyTrips';
+import { getTripDetailsApi } from '@/api/trip.api';
+
+export const formatEtb = (amount) => `${Number(amount || 0).toLocaleString('en-US')} ETB`;
+
+export const formatPrettyDate = (iso) => {
+  if (!iso) return '';
+  const date = new Date(iso.includes('T') ? iso : `${iso}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+export const getTripAmenities = (trip) => {
+  const amenities = [];
+  if (trip?.ac) amenities.push({ id: 'ac', label: 'AC' });
+  if (trip?.wifi) amenities.push({ id: 'wifi', label: 'WiFi' });
+  if (trip?.comfortableSeats) amenities.push({ id: 'seats', label: 'Reclining Seats' });
+  if (trip?.tv) amenities.push({ id: 'tv', label: 'TV' });
+  return amenities;
+};
 
 const AmenityIcon = ({ id, size = 14 }) => {
   if (id === 'ac') return <Snowflake size={size} className="text-[#2563eb]" />;
@@ -30,9 +53,41 @@ const AmenityIcon = ({ id, size = 14 }) => {
 export const TripDetailsPage = () => {
   const { tripId } = useParams();
   const navigate = useNavigate();
-  const trip = getTripById(tripId);
-  const [selectedSeats, setSelectedSeats] = useState(['07']);
+  const [trip, setTrip] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedSeats, setSelectedSeats] = useState([]);
   const [showMore, setShowMore] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchTrip = async () => {
+      setLoading(true);
+      try {
+        const data = await getTripDetailsApi(tripId);
+        if (isMounted) {
+          setTrip(data);
+          // Auto-select first available seat if none selected
+          if (data?.seats) {
+            const firstAvailable = data.seats.find((s) => s.status === 'available');
+            if (firstAvailable) {
+              setSelectedSeats([firstAvailable.label]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching trip details:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    if (tripId) {
+      fetchTrip();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [tripId]);
 
   const seatsByRow = useMemo(() => {
     if (!trip?.seats) return [];
@@ -42,6 +97,17 @@ export const TripDetailsPage = () => {
     }
     return rows;
   }, [trip]);
+
+  if (loading) {
+    return (
+      <div className="bg-[#f4f7fb] min-h-screen flex items-center justify-center px-6 py-12">
+        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-md w-full flex flex-col items-center">
+          <Loader2 size={32} className="animate-spin text-[#2563eb] mb-3" />
+          <p className="text-sm font-semibold text-slate-700">Loading trip details from backend...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!trip) {
     return (

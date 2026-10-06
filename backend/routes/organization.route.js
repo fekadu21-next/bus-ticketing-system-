@@ -12,11 +12,12 @@ import { ROLES } from '../constants/index.js';
 
 const router = Router();
 
-// All organization routes require authentication
-router.use(authenticate);
-
-// List organizations (Any authenticated user)
+// List organizations (Public / Any user)
 router.get('/', organizationController.getOrganizations);
+router.get('/public', organizationController.getOrganizations);
+
+// Administrative & scoped organization routes require authentication
+router.use(authenticate);
 
 // Register organization (Admin only)
 router.post(

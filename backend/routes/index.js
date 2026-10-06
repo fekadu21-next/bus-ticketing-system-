@@ -6,6 +6,7 @@ import organizationRoutes from './organization.route.js';
 import adminRoutes from './admin/index.js';
 import coordinatorRoutes from './coordinator/index.js';
 import passengerRoutes from './passenger/index.js';
+import passengerTripRoutes from './passenger/trip.route.js';
 import verifierRoutes from './verifier/index.js';
 import driverRoutes from './driver/index.js';
 import authenticate from '../middleware/authenticate.middleware.js';

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Star,
@@ -16,15 +16,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowRight,
+  Loader2,
 } from 'lucide-react';
 import TripSearchBar from '@/components/TripSearchBar';
-import {
-  DUMMY_TRIPS,
-  formatEtb,
-  formatPrettyDate,
-  OPERATORS,
-  getTripAmenities,
-} from '@/data/dummyTrips';
+import { searchTripsApi, getPublicOperatorsApi } from '@/api/trip.api';
 
 const TIME_FILTERS = [
   { id: 'morning', label: 'Morning (6:00 AM - 11:59 AM)' },
@@ -33,7 +28,30 @@ const TIME_FILTERS = [
 ];
 
 const PAGE_SIZE = 5;
-const NAMED_OPERATORS = OPERATORS.map((op) => op.name);
+
+const getTodayString = () => new Date().toISOString().split('T')[0];
+
+export const formatEtb = (amount) => `${Number(amount || 0).toLocaleString('en-US')} ETB`;
+
+export const formatPrettyDate = (iso) => {
+  if (!iso) return '';
+  const date = new Date(iso.includes('T') ? iso : `${iso}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+export const getTripAmenities = (trip) => {
+  const amenities = [];
+  if (trip?.ac) amenities.push({ id: 'ac', label: 'AC' });
+  if (trip?.wifi) amenities.push({ id: 'wifi', label: 'WiFi' });
+  if (trip?.comfortableSeats) amenities.push({ id: 'seats', label: 'Reclining Seats' });
+  if (trip?.tv) amenities.push({ id: 'tv', label: 'TV' });
+  return amenities;
+};
 
 const minutesFromLabel = (label) => {
   const match = String(label).match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -57,15 +75,94 @@ export const SearchTripsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [origin, setOrigin] = useState(searchParams.get('from') || 'Addis Ababa');
   const [destination, setDestination] = useState(searchParams.get('to') || 'Bahir Dar');
-  const [departureDate, setDepartureDate] = useState(searchParams.get('date') || '2024-10-10');
+  const [departureDate, setDepartureDate] = useState(searchParams.get('date') || getTodayString());
   const [periods, setPeriods] = useState([]);
-  const [priceRange, setPriceRange] = useState(2000);
+  const [priceRange, setPriceRange] = useState(2500);
   const [operatorSearch, setOperatorSearch] = useState('');
-  const [selectedOperators, setSelectedOperators] = useState([]);
+  const [selectedOperators, setSelectedOperators] = useState(
+    searchParams.get('operator') ? [searchParams.get('operator')] : []
+  );
   const [orgTypes, setOrgTypes] = useState([]);
   const [minSeats, setMinSeats] = useState('all');
   const [sortBy, setSortBy] = useState('departure');
   const [currentPage, setCurrentPage] = useState(1);
+  const [backendTrips, setBackendTrips] = useState([]);
+  const [backendOperators, setBackendOperators] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Sync state if URL search params change
+  useEffect(() => {
+    if (searchParams.get('from')) setOrigin(searchParams.get('from'));
+    if (searchParams.get('to')) setDestination(searchParams.get('to'));
+    if (searchParams.get('date')) setDepartureDate(searchParams.get('date'));
+    if (searchParams.get('operator')) setSelectedOperators([searchParams.get('operator')]);
+  }, [searchParams]);
+
+  // Fetch real trips and operators from backend API
+  useEffect(() => {
+    let isMounted = true;
+    const fetchTripsAndOperators = async () => {
+      setLoading(true);
+      try {
+        const fromParam = searchParams.get('from') || origin;
+        const toParam = searchParams.get('to') || destination;
+        const dateParam = searchParams.get('date') || departureDate;
+        const opParam = searchParams.get('operator') || '';
+
+        const [tripsRes, opsRes] = await Promise.all([
+          searchTripsApi({
+            from: fromParam || undefined,
+            to: toParam || undefined,
+            date: dateParam || undefined,
+            operator: opParam || undefined,
+            limit: 50,
+          }),
+          getPublicOperatorsApi(),
+        ]);
+
+        if (isMounted) {
+          let trips = tripsRes?.trips || [];
+
+          // If no trips found for exact date, broaden to any upcoming date for this route
+          if (trips.length === 0 && dateParam) {
+            const broaderRes = await searchTripsApi({
+              from: fromParam || undefined,
+              to: toParam || undefined,
+              operator: opParam || undefined,
+              limit: 50,
+            });
+            if (broaderRes?.trips?.length > 0) {
+              trips = broaderRes.trips;
+            }
+          }
+
+          // If still no trips found, fetch upcoming trips across available routes
+          if (trips.length === 0) {
+            const allRes = await searchTripsApi({
+              limit: 50,
+            });
+            if (allRes?.trips?.length > 0) {
+              trips = allRes.trips;
+            }
+          }
+
+          setBackendTrips(trips);
+          if (opsRes && opsRes.length > 0) {
+            setBackendOperators(opsRes);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching real trips from backend:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchTripsAndOperators();
+    return () => {
+      isMounted = false;
+    };
+  }, [searchParams, origin, destination, departureDate]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -84,7 +181,7 @@ export const SearchTripsPage = () => {
 
   const clearAllFilters = () => {
     setPeriods([]);
-    setPriceRange(2000);
+    setPriceRange(2500);
     setOperatorSearch('');
     setSelectedOperators([]);
     setOrgTypes([]);
@@ -94,46 +191,58 @@ export const SearchTripsPage = () => {
   };
 
   const operatorOptions = useMemo(() => {
-    const counts = DUMMY_TRIPS.reduce((acc, trip) => {
-      const key = NAMED_OPERATORS.includes(trip.operator) ? trip.operator : 'Others';
+    const opNames = Array.from(
+      new Set([
+        ...backendOperators.map((o) => o.name),
+        ...backendTrips.map((t) => t.operator),
+      ])
+    ).filter(Boolean);
+
+    const counts = backendTrips.reduce((acc, trip) => {
+      const key = trip.operator || 'Others';
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
 
-    const named = OPERATORS.map((op) => ({
-      ...op,
-      count: counts[op.name] || 0,
-    })).filter((op) => {
-      if (!operatorSearch.trim()) return true;
-      return op.name.toLowerCase().includes(operatorSearch.toLowerCase());
-    });
+    const named = opNames
+      .map((name) => ({
+        id: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        name,
+        count: counts[name] || 0,
+      }))
+      .filter((op) => {
+        if (!operatorSearch.trim()) return true;
+        return op.name.toLowerCase().includes(operatorSearch.toLowerCase());
+      });
 
     return {
       named,
       others: counts.Others || 0,
     };
-  }, [operatorSearch]);
+  }, [backendOperators, backendTrips, operatorSearch]);
 
   const filteredTrips = useMemo(() => {
-    const from = searchParams.get('from') || origin;
-    const to = searchParams.get('to') || destination;
-
-    let trips = DUMMY_TRIPS.filter((trip) => {
-      const matchesRoute = (!from || trip.from === from) && (!to || trip.to === to);
+    let trips = backendTrips.filter((trip) => {
       const matchesPeriod = periods.length === 0 || periods.includes(trip.period);
       const matchesPrice = trip.price <= priceRange;
       const matchesOperator =
         selectedOperators.length === 0 ||
-        selectedOperators.some((name) =>
-          name === 'Others' ? !NAMED_OPERATORS.includes(trip.operator) : trip.operator === name,
-        );
+        selectedOperators.some((name) => {
+          if (name === 'Others') {
+            return !operatorOptions.named.map((n) => n.name).includes(trip.operator);
+          }
+          if (trip.operator === name) return true;
+          const cleanA = (trip.operator || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const cleanB = (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return cleanA.includes(cleanB) || cleanB.includes(cleanA);
+        });
       const matchesOrg = orgTypes.length === 0 || orgTypes.includes(trip.orgType);
       let matchesSeats = true;
       if (minSeats === '1') matchesSeats = trip.seatsAvailable >= 1;
       else if (minSeats === '5') matchesSeats = trip.seatsAvailable >= 5;
       else if (minSeats === '10') matchesSeats = trip.seatsAvailable >= 10;
       else if (minSeats === '20') matchesSeats = trip.seatsAvailable >= 20;
-      return matchesRoute && matchesPeriod && matchesPrice && matchesOperator && matchesOrg && matchesSeats;
+      return matchesPeriod && matchesPrice && matchesOperator && matchesOrg && matchesSeats;
     });
 
     if (sortBy === 'price-low') trips = [...trips].sort((a, b) => a.price - b.price);
@@ -142,7 +251,7 @@ export const SearchTripsPage = () => {
     else trips = [...trips].sort((a, b) => minutesFromLabel(a.departureTime) - minutesFromLabel(b.departureTime));
 
     return trips;
-  }, [searchParams, origin, destination, periods, priceRange, selectedOperators, orgTypes, minSeats, sortBy]);
+  }, [backendTrips, periods, priceRange, selectedOperators, orgTypes, minSeats, sortBy, operatorOptions]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTrips.length / PAGE_SIZE));
   const page = Math.min(currentPage, totalPages);
@@ -154,10 +263,10 @@ export const SearchTripsPage = () => {
 
   const orgCounts = useMemo(
     () => ({
-      private: DUMMY_TRIPS.filter((trip) => trip.orgType === 'Private Bus Company').length,
-      association: DUMMY_TRIPS.filter((trip) => trip.orgType === 'Transport Association').length,
+      private: backendTrips.filter((trip) => trip.orgType === 'Private Bus Company').length,
+      association: backendTrips.filter((trip) => trip.orgType === 'Transport Association').length,
     }),
-    [],
+    [backendTrips]
   );
 
   return (
