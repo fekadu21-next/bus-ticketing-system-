@@ -33,7 +33,7 @@ export const logoutApi = async () => {
  * Called on app load to restore an existing session.
  */
 export const refreshApi = async () => {
-  const { data } = await api.post('/auth/refresh');
+  const { data } = await api.post('/auth/refresh', {});
   return data;
 };
 
