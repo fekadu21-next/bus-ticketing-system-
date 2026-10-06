@@ -1,6 +1,8 @@
 import prisma from '../../Config/db.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import bcrypt from 'bcryptjs';
+import { logAuditEvent } from '../../utils/auditLogger.js';
+import { ROLES } from '../../constants/index.js';
 
 export class CoordinatorStaffController {
   /**
@@ -63,7 +65,7 @@ export class CoordinatorStaffController {
    */
   createStaff = asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
-    const { name, firstName, lastName, email, phone, role = 'TICKET_VERIFIER' } = req.body;
+    const { name, firstName, lastName, email, phone, password, role = 'TICKET_VERIFIER' } = req.body;
 
     const splitFirst = firstName || (name ? name.split(' ')[0] : 'Staff');
     const splitLast = lastName || (name ? name.split(' ').slice(1).join(' ') : 'Member');
@@ -106,7 +108,8 @@ export class CoordinatorStaffController {
         },
       });
     } else {
-      const defaultPasswordHash = await bcrypt.hash('Staff@123456', 10);
+      const passwordToHash = password || 'Staff@123456';
+      const defaultPasswordHash = await bcrypt.hash(passwordToHash, 10);
       user = await prisma.users.create({
         data: {
           first_name: splitFirst,
@@ -128,6 +131,14 @@ export class CoordinatorStaffController {
       });
     }
 
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      action: role === 'DRIVER' ? 'DRIVER_CREATED' : 'STAFF_CREATED',
+      details: { createdUserId: user.id, email: user.email, role, organizationId: orgId },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
     res.status(201).json({
       success: true,
       message: `${role} account created successfully for organization.`,
@@ -140,6 +151,14 @@ export class CoordinatorStaffController {
           role: targetRole.name,
           status: user.is_active ? 'ACTIVE' : 'INACTIVE',
         },
+        driver: role === 'DRIVER' ? {
+          id: user.id,
+          name: `${user.first_name} ${user.last_name}`.trim(),
+          email: user.email,
+          phone: user.phone,
+          role: targetRole.name,
+          status: user.is_active ? 'ACTIVE' : 'INACTIVE',
+        } : undefined,
       },
     });
   });
@@ -248,6 +267,231 @@ export class CoordinatorStaffController {
           email: updatedUser.email,
           phone: updatedUser.phone,
           role: roleName,
+          status: updatedUser.is_active ? 'ACTIVE' : 'INACTIVE',
+        },
+      },
+    });
+  });
+
+  /**
+   * Driver Management Endpoints for Operator Manager
+   */
+  getDrivers = asyncHandler(async (req, res) => {
+    req.query.role = ROLES.DRIVER;
+    const orgId = req.organizationId;
+
+    const userRoles = await prisma.user_roles.findMany({
+      where: {
+        organization_id: orgId,
+        roles: { name: ROLES.DRIVER },
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            phone: true,
+            is_active: true,
+            created_at: true,
+          },
+        },
+        roles: {
+          select: { id: true, name: true, description: true },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    const drivers = userRoles.map((ur) => ({
+      id: ur.users.id,
+      userRoleId: ur.id,
+      name: [ur.users.first_name, ur.users.last_name].filter(Boolean).join(' ') || ur.users.email,
+      firstName: ur.users.first_name,
+      lastName: ur.users.last_name,
+      email: ur.users.email,
+      phone: ur.users.phone,
+      role: ur.roles.name,
+      status: ur.users.is_active ? 'ACTIVE' : 'INACTIVE',
+      createdAt: ur.users.created_at,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: { drivers, staff: drivers },
+    });
+  });
+
+  getDriverById = asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+    const driverId = req.params.driverId || req.params.staffId || req.params.id;
+
+    const assignment = await prisma.user_roles.findFirst({
+      where: {
+        user_id: driverId,
+        organization_id: orgId,
+        roles: { name: ROLES.DRIVER },
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            phone: true,
+            is_active: true,
+            created_at: true,
+          },
+        },
+        roles: {
+          select: { id: true, name: true, description: true },
+        },
+      },
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found in your organization.',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        driver: {
+          id: assignment.users.id,
+          userRoleId: assignment.id,
+          name: [assignment.users.first_name, assignment.users.last_name].filter(Boolean).join(' ') || assignment.users.email,
+          firstName: assignment.users.first_name,
+          lastName: assignment.users.last_name,
+          email: assignment.users.email,
+          phone: assignment.users.phone,
+          role: assignment.roles.name,
+          status: assignment.users.is_active ? 'ACTIVE' : 'INACTIVE',
+          createdAt: assignment.users.created_at,
+        },
+      },
+    });
+  });
+
+  createDriver = asyncHandler(async (req, res) => {
+    req.body.role = ROLES.DRIVER;
+    return this.createStaff(req, res);
+  });
+
+  updateDriver = asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+    const driverId = req.params.driverId || req.params.staffId || req.params.id;
+
+    const assignment = await prisma.user_roles.findFirst({
+      where: {
+        user_id: driverId,
+        organization_id: orgId,
+        roles: { name: ROLES.DRIVER },
+      },
+      include: { users: true, roles: true },
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found in your organization.',
+      });
+    }
+
+    const { name, firstName, lastName, phone } = req.body;
+    const userData = {};
+    if (firstName) userData.first_name = firstName.trim();
+    if (lastName) userData.last_name = lastName.trim();
+    if (name && !firstName && !lastName) {
+      const parts = name.trim().split(' ');
+      userData.first_name = parts[0];
+      userData.last_name = parts.slice(1).join(' ') || 'Driver';
+    }
+    if (phone !== undefined) userData.phone = phone;
+
+    let updatedUser = assignment.users;
+    if (Object.keys(userData).length > 0) {
+      userData.updated_at = new Date();
+      updatedUser = await prisma.users.update({
+        where: { id: driverId },
+        data: userData,
+      });
+    }
+
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      action: 'DRIVER_UPDATED',
+      details: { driverId, organizationId: orgId, updatedFields: Object.keys(userData) },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Driver updated successfully.',
+      data: {
+        driver: {
+          id: updatedUser.id,
+          name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim(),
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+          role: ROLES.DRIVER,
+          status: updatedUser.is_active ? 'ACTIVE' : 'INACTIVE',
+        },
+      },
+    });
+  });
+
+  toggleDriverStatus = asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+    const driverId = req.params.driverId || req.params.staffId || req.params.id;
+    const { isActive } = req.body;
+
+    const assignment = await prisma.user_roles.findFirst({
+      where: {
+        user_id: driverId,
+        organization_id: orgId,
+        roles: { name: ROLES.DRIVER },
+      },
+      include: { users: true, roles: true },
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found in your organization.',
+      });
+    }
+
+    const nextActive = isActive !== undefined ? Boolean(isActive) : !assignment.users.is_active;
+
+    const updatedUser = await prisma.users.update({
+      where: { id: driverId },
+      data: { is_active: nextActive, updated_at: new Date() },
+    });
+
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      action: 'DRIVER_UPDATED',
+      details: { driverId, organizationId: orgId, isActive: nextActive },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Driver is now ${nextActive ? 'ACTIVE' : 'INACTIVE'}.`,
+      data: {
+        driver: {
+          id: updatedUser.id,
+          name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim(),
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+          role: ROLES.DRIVER,
           status: updatedUser.is_active ? 'ACTIVE' : 'INACTIVE',
         },
       },

@@ -2,7 +2,8 @@ import ApiError from '../utils/apiError.js';
 
 export const validate = (schema, source = 'body') => (req, res, next) => {
   try {
-    const parsed = schema.safeParse(req[source]);
+    const dataToValidate = req[source] ?? {};
+    const parsed = schema.safeParse(dataToValidate);
     if (!parsed.success) {
       const errorMessages = parsed.error.issues.map((issue) => {
         const path = issue.path.join('.');
