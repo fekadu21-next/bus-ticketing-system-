@@ -1,13 +1,14 @@
 import prisma from '../../Config/db.js';
 
 export class TripRepository {
-  async create({ organizationId, busId, routeId, departureTime, arrivalTime, fare, capacity }) {
+  async create({ organizationId, busId, routeId, departureTime, arrivalTime, fare, capacity, driverId = null }) {
     return prisma.$transaction(async (tx) => {
       const trip = await tx.trips.create({
         data: {
           organization_id: organizationId,
           bus_id: busId,
           route_id: routeId,
+          driver_id: driverId || null,
           departure_time: new Date(departureTime),
           arrival_time: arrivalTime ? new Date(arrivalTime) : null,
           fare,
@@ -16,6 +17,9 @@ export class TripRepository {
         include: {
           buses: true,
           routes: true,
+          driver: {
+            select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+          },
         },
       });
 
@@ -35,7 +39,7 @@ export class TripRepository {
       });
 
       return trip;
-    });
+    }, { timeout: 30000, maxWait: 10000 });
   }
 
   async findById(tripId, organizationId = null) {
@@ -48,6 +52,9 @@ export class TripRepository {
       include: {
         buses: true,
         routes: true,
+        driver: {
+          select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+        },
         organizations: {
           select: { id: true, name: true },
         },
@@ -74,6 +81,9 @@ export class TripRepository {
     if (busId) {
       where.bus_id = busId;
     }
+    if (query.driverId) {
+      where.driver_id = query.driverId;
+    }
     if (fromDate || toDate) {
       where.departure_time = {};
       if (fromDate) where.departure_time.gte = new Date(fromDate);
@@ -93,6 +103,9 @@ export class TripRepository {
           },
           routes: {
             select: { id: true, origin: true, destination: true, distance_km: true },
+          },
+          driver: {
+            select: { id: true, first_name: true, last_name: true, email: true, phone: true },
           },
           _count: {
             select: {
@@ -125,6 +138,10 @@ export class TripRepository {
       data.route_id = data.routeId;
       delete data.routeId;
     }
+    if (data.driverId !== undefined) {
+      data.driver_id = data.driverId || null;
+      delete data.driverId;
+    }
 
     return prisma.trips.update({
       where: { id: tripId, organization_id: organizationId },
@@ -132,7 +149,50 @@ export class TripRepository {
       include: {
         buses: true,
         routes: true,
+        driver: {
+          select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+        },
       },
+    });
+  }
+
+  async assignDriver(tripId, organizationId, driverId) {
+    return prisma.trips.update({
+      where: { id: tripId, organization_id: organizationId },
+      data: {
+        driver_id: driverId || null,
+        updated_at: new Date(),
+      },
+      include: {
+        buses: true,
+        routes: true,
+        driver: {
+          select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+        },
+      },
+    });
+  }
+
+  async findDriverConflictingTrip(driverId, departureTime, arrivalTime, excludeTripId = null) {
+    const where = {
+      driver_id: driverId,
+      status: { in: ['SCHEDULED', 'PUBLISHED', 'IN_TRANSIT', 'IN_PROGRESS'] },
+    };
+    if (excludeTripId) {
+      where.id = { not: excludeTripId };
+    }
+
+    const departure = new Date(departureTime);
+    const estimatedArrival = arrivalTime ? new Date(arrivalTime) : new Date(departure.getTime() + 4 * 60 * 60 * 1000);
+
+    const activeTrips = await prisma.trips.findMany({
+      where,
+    });
+
+    return activeTrips.find((t) => {
+      const tripDep = new Date(t.departure_time);
+      const tripArr = t.arrival_time ? new Date(t.arrival_time) : new Date(tripDep.getTime() + 4 * 60 * 60 * 1000);
+      return departure < tripArr && estimatedArrival > tripDep;
     });
   }
 
@@ -153,7 +213,7 @@ export class TripRepository {
       });
 
       return trip;
-    });
+    }, { timeout: 30000, maxWait: 10000 });
   }
 
   // --- Seat Management Methods ---

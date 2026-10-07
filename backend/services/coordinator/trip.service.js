@@ -3,6 +3,8 @@ import busRepository from '../../repository/coordinator/bus.repository.js';
 import routeRepository from '../../repository/coordinator/route.repository.js';
 import prisma from '../../Config/db.js';
 import ApiError from '../../utils/apiError.js';
+import { ROLES } from '../../constants/index.js';
+import { logAuditEvent } from '../../utils/auditLogger.js';
 
 export class TripService {
   async createTrip(organizationId, tripData) {
@@ -77,10 +79,15 @@ export class TripService {
       }
     }
 
+    if (tripData.driverId) {
+      await this.validateDriverAssignment(tripData.driverId, organizationId, departure, tripData.arrivalTime);
+    }
+
     const trip = await tripRepository.create({
       organizationId,
       busId,
       routeId,
+      driverId: tripData.driverId,
       departureTime: departure,
       arrivalTime: tripData.arrivalTime,
       fare,
@@ -92,6 +99,7 @@ export class TripService {
       organizationId: trip.organization_id,
       busId: trip.bus_id,
       routeId: trip.route_id,
+      driverId: trip.driver_id,
       origin: route.origin,
       destination: route.destination,
       departureTime: trip.departure_time,
@@ -110,8 +118,52 @@ export class TripService {
         origin: route.origin,
         destination: route.destination,
       },
+      driver: trip.driver || null,
       createdAt: trip.created_at,
     };
+  }
+
+  async validateDriverAssignment(driverId, organizationId, departureTime, arrivalTime, excludeTripId = null) {
+    if (!driverId) return null;
+
+    // Check if user exists and has DRIVER role in this organization
+    const assignment = await prisma.user_roles.findFirst({
+      where: {
+        user_id: driverId,
+        organization_id: organizationId,
+      },
+      include: {
+        users: true,
+        roles: true,
+      },
+    });
+
+    if (!assignment) {
+      throw new ApiError(404, 'Driver not found in your organization.');
+    }
+
+    if (assignment.roles?.name !== ROLES.DRIVER) {
+      throw new ApiError(400, 'Assigned user does not hold the DRIVER role.');
+    }
+
+    if (!assignment.users?.is_active) {
+      throw new ApiError(400, 'Cannot assign an inactive driver to a trip.');
+    }
+
+    // Schedule conflict prevention
+    if (departureTime) {
+      const conflict = await tripRepository.findDriverConflictingTrip(
+        driverId,
+        departureTime,
+        arrivalTime,
+        excludeTripId
+      );
+      if (conflict) {
+        throw new ApiError(409, 'Driver is already assigned to another active trip during this schedule.');
+      }
+    }
+
+    return assignment.users;
   }
 
   async getTrips(organizationId, query) {
@@ -161,12 +213,45 @@ export class TripService {
       }
     }
 
+    if (updateData.driverId !== undefined) {
+      const depTime = updateData.departureTime ? new Date(updateData.departureTime) : trip.departure_time;
+      const arrTime = updateData.arrivalTime !== undefined ? (updateData.arrivalTime ? new Date(updateData.arrivalTime) : null) : trip.arrival_time;
+      if (updateData.driverId) {
+        await this.validateDriverAssignment(updateData.driverId, organizationId, depTime, arrTime, tripId);
+      }
+    }
+
     const payload = { ...updateData };
     if (payload.price && !payload.fare) {
       payload.fare = payload.price;
     }
 
     return tripRepository.update(tripId, organizationId, payload);
+  }
+
+  async assignDriver(tripId, organizationId, driverId, managerUser = null, reqMeta = {}) {
+    const trip = await this.getTripById(tripId, organizationId);
+    if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
+      throw new ApiError(400, `Cannot assign driver to trip with status '${trip.status}'.`);
+    }
+
+    if (driverId) {
+      await this.validateDriverAssignment(driverId, organizationId, trip.departure_time, trip.arrival_time, tripId);
+    }
+
+    const updated = await tripRepository.assignDriver(tripId, organizationId, driverId);
+
+    if (managerUser) {
+      await logAuditEvent({
+        userId: managerUser.id,
+        action: 'DRIVER_ASSIGNED_TO_TRIP',
+        details: { tripId, driverId, organizationId },
+        ipAddress: reqMeta.clientIp,
+        userAgent: reqMeta.userAgent,
+      });
+    }
+
+    return updated;
   }
 
   async cancelTrip(tripId, organizationId) {

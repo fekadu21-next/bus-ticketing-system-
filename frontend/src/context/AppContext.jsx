@@ -228,7 +228,7 @@ export const AppProvider = ({ children }) => {
 
       if (busesRes.status === "fulfilled" && busesRes.value?.data) {
         const rawBuses = busesRes.value.data.buses || busesRes.value.data;
-        if (Array.isArray(rawBuses) && rawBuses.length > 0) {
+        if (Array.isArray(rawBuses)) {
           setBuses(rawBuses.map((b) => ({
             id: b.id,
             organizationId: b.organization_id,
@@ -246,7 +246,7 @@ export const AppProvider = ({ children }) => {
 
       if (routesRes.status === "fulfilled" && routesRes.value?.data) {
         const rawRoutes = routesRes.value.data.routes || routesRes.value.data;
-        if (Array.isArray(rawRoutes) && rawRoutes.length > 0) {
+        if (Array.isArray(rawRoutes)) {
           setRoutes(rawRoutes.map((r) => ({
             id: r.id,
             organizationId: r.organization_id,
@@ -264,7 +264,7 @@ export const AppProvider = ({ children }) => {
 
       if (tripsRes.status === "fulfilled" && tripsRes.value?.data) {
         const rawTrips = tripsRes.value.data.trips || tripsRes.value.data;
-        if (Array.isArray(rawTrips) && rawTrips.length > 0) {
+        if (Array.isArray(rawTrips)) {
           setTrips(rawTrips.map((t) => ({
             id: t.id,
             tripCode: `TRP-${t.id.slice(0, 6).toUpperCase()}`,
@@ -723,7 +723,7 @@ export const AppProvider = ({ children }) => {
   const addBus = async (busData) => {
     const orgId = getCoordinatorOrgId();
     const payload = {
-      plateNumber: busData.plateNumber,
+      plateNumber: busData.plateNumber?.trim(),
       model: busData.model || "Standard Coach",
       capacity: Number(busData.capacity) || 50,
       isActive: true,
@@ -734,21 +734,9 @@ export const AppProvider = ({ children }) => {
       await fetchCoordinatorData(orgId);
       showToast(`Bus ${busData.busNumber || busData.plateNumber} added to fleet via backend!`);
     } catch (err) {
-      const org = organizations.find((o) => o.id === orgId);
-      const newBus = {
-        id: `bus-${Date.now()}`,
-        organizationId: orgId,
-        organizationName: org?.name || "Company",
-        busNumber: busData.busNumber || busData.plateNumber,
-        plateNumber: busData.plateNumber,
-        model: busData.model || "Standard Coach",
-        capacity: Number(busData.capacity) || 50,
-        status: "ACTIVE",
-        manufactureYear: busData.manufactureYear || "2023",
-        lastMaintenance: new Date().toISOString().split("T")[0],
-      };
-      setBuses((prev) => [newBus, ...prev]);
-      showToast(`Bus ${newBus.busNumber} added.`);
+      const errMsg = err.response?.data?.message || err.message || "Failed to add bus to fleet.";
+      showToast(errMsg, "error");
+      throw err;
     }
   };
 
@@ -759,6 +747,10 @@ export const AppProvider = ({ children }) => {
       await fetchCoordinatorData(orgId);
       showToast(`Bus status updated to ${newStatus}.`);
     } catch (err) {
+      if (err.response?.data?.message) {
+        showToast(err.response.data.message, "error");
+        throw err;
+      }
       setBuses((prev) =>
         prev.map((b) => (b.id === busId ? { ...b, status: newStatus } : b))
       );
@@ -787,19 +779,9 @@ export const AppProvider = ({ children }) => {
       await fetchCoordinatorData(orgId);
       showToast(`Route ${originName} ↔ ${destName} registered via backend!`);
     } catch (err) {
-      const newRoute = {
-        id: `rt-${Date.now()}`,
-        organizationId: orgId,
-        name: `${originName} ↔ ${destName}`,
-        originStationName: originName,
-        destinationStationName: destName,
-        distanceKm: Number(routeData.distanceKm) || 400,
-        estimatedDuration: "6h 00m",
-        assignedOrganizationsCount: 1,
-        status: "ACTIVE",
-      };
-      setRoutes((prev) => [newRoute, ...prev]);
-      showToast(`Route ${newRoute.name} created!`);
+      const errMsg = err.response?.data?.message || err.message || "Failed to register route.";
+      showToast(errMsg, "error");
+      throw err;
     }
   };
 
@@ -831,28 +813,9 @@ export const AppProvider = ({ children }) => {
       showToast(`Trip created and published successfully via backend!`);
       return true;
     } catch (err) {
-      const org = organizations.find((o) => o.id === orgId);
-      const newTrip = {
-        id: `trp-${Date.now()}`,
-        tripCode: `TRIP-${Date.now().toString().slice(-6)}`,
-        organizationId: orgId,
-        organizationName: org?.name || "Company",
-        routeName: route?.name || "Addis Ababa ↔ Hawassa",
-        originStation: route?.originStationName || "Origin",
-        destinationStation: route?.destinationStationName || "Destination",
-        busPlateNumber: bus?.plateNumber || "ET-3-00000",
-        driverName: "Assigned Driver",
-        bookedSeatsCount: 0,
-        availableSeatsCount: bus?.capacity || 45,
-        totalSeats: bus?.capacity || 45,
-        status: "PUBLISHED",
-        fareAmount: Number(tripData.fareAmount || 850),
-        departureTime: tripData.departureTime || "06:00 AM",
-        departureDate: tripData.departureDate || new Date().toISOString().split("T")[0],
-      };
-      setTrips((prev) => [newTrip, ...prev]);
-      showToast(`Trip ${newTrip.tripCode} scheduled!`);
-      return true;
+      const errMsg = err.response?.data?.message || err.message || "Failed to schedule trip.";
+      showToast(errMsg, "error");
+      throw err;
     }
   };
 
@@ -937,17 +900,9 @@ export const AppProvider = ({ children }) => {
       await fetchCoordinatorData(orgId);
       showToast(`Driver ${driverData.name} registered via backend!`);
     } catch (err) {
-      const newDriver = {
-        id: `drv-${Date.now()}`,
-        organizationId: orgId,
-        organizationName: activeOrg?.name || "Company",
-        status: "ACTIVE",
-        totalTripsCompleted: 0,
-        rating: 5.0,
-        ...driverData
-      };
-      setDrivers((prev) => [newDriver, ...prev]);
-      showToast(`Driver account created for ${newDriver.name}.`);
+      const errMsg = err.response?.data?.message || err.message || "Failed to register driver.";
+      showToast(errMsg, "error");
+      throw err;
     }
   };
 
@@ -963,17 +918,9 @@ export const AppProvider = ({ children }) => {
       await fetchCoordinatorData(orgId);
       showToast(`Ticket Verifier ${verifierData.name} registered via backend!`);
     } catch (err) {
-      const newVerifier = {
-        id: `vrf-usr-${Date.now()}`,
-        organizationId: orgId,
-        organizationName: activeOrg?.name || "Company",
-        status: "ACTIVE",
-        scansToday: 0,
-        createdAt: new Date().toISOString().split("T")[0],
-        ...verifierData
-      };
-      setVerifiers((prev) => [newVerifier, ...prev]);
-      showToast(`Ticket Verifier account created for ${newVerifier.name}.`);
+      const errMsg = err.response?.data?.message || err.message || "Failed to register ticket verifier.";
+      showToast(errMsg, "error");
+      throw err;
     }
   };
 

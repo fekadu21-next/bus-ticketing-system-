@@ -7,6 +7,7 @@ const ROLE_DEFINITIONS = [
   { name: ROLES.BOOKING_COORDINATOR, description: 'Manager for organization bus schedules, trips, fleet, and bookings' },
   { name: ROLES.PASSENGER, description: 'Public passenger who searches trips, books, and manages tickets' },
   { name: ROLES.TICKET_VERIFIER, description: 'Station or boarding officer who verifies passenger tickets for an organization' },
+  { name: ROLES.DRIVER, description: 'Vehicle driver assigned to operate trips and report operational problems' },
 ];
 
 const PERMISSION_DEFINITIONS = [
@@ -30,6 +31,8 @@ const PERMISSION_DEFINITIONS = [
   { name: PERMISSIONS.CANCEL_TICKET, description: 'Cancel personal booking' },
   { name: PERMISSIONS.VIEW_TICKETS, description: 'View personal tickets and QR passes' },
   { name: PERMISSIONS.VERIFY_TICKET, description: 'Scan and validate boarding tickets' },
+  { name: PERMISSIONS.OPERATE_TRIP, description: 'Start, operate, and complete assigned trips' },
+  { name: PERMISSIONS.REPORT_TRIP_PROBLEM, description: 'Submit operational or vehicle incident reports' },
   { name: PERMISSIONS.MANAGE_ROUTES, description: 'Create, update, and manage bus routes' },
   { name: PERMISSIONS.VIEW_ROUTES, description: 'View organization and public routes' },
   { name: PERMISSIONS.VIEW_PAYMENTS, description: 'View transaction logs and payment records' },
@@ -286,9 +289,79 @@ export async function seedDatabase() {
       });
     }
   }
-  console.log('Γ£à Booking Coordinator configured for Selam Bus Line:', coordinatorEmail);
+  console.log('✅ Booking Coordinator configured for Selam Bus Line:', coordinatorEmail);
 
-  console.log('≡ƒÄë Seeding complete.');
+  // 9. Seed Driver Accounts
+  const driverRoleId = roleMap.get(ROLES.DRIVER);
+  const driverPasswordHash = await bcrypt.hash('Driver@123456', 12);
+
+  // Driver 1: Selam Bus Line
+  const driver1Email = 'driver@busticket.com';
+  const driver1 = await prisma.users.upsert({
+    where: { email: driver1Email },
+    update: { is_active: true, email_verified: true },
+    create: {
+      first_name: 'Abebe',
+      last_name: 'Bikila',
+      email: driver1Email,
+      phone: '+251911223344',
+      password_hash: driverPasswordHash,
+      is_active: true,
+      email_verified: true,
+      email_verified_at: new Date(),
+    },
+  });
+
+  if (driverRoleId) {
+    const existingDriver1Role = await prisma.user_roles.findFirst({
+      where: { user_id: driver1.id, role_id: driverRoleId },
+    });
+    if (!existingDriver1Role) {
+      await prisma.user_roles.create({
+        data: {
+          user_id: driver1.id,
+          role_id: driverRoleId,
+          organization_id: '00000000-0000-0000-0000-000000000001', // Selam Bus Line
+        },
+      });
+    }
+  }
+  console.log('✅ Driver 1 configured for Selam Bus Line:', driver1Email);
+
+  // Driver 2: Sky Bus
+  const driver2Email = 'driver2@busticket.com';
+  const driver2 = await prisma.users.upsert({
+    where: { email: driver2Email },
+    update: { is_active: true, email_verified: true },
+    create: {
+      first_name: 'Kebede',
+      last_name: 'Tessema',
+      email: driver2Email,
+      phone: '+251922334455',
+      password_hash: driverPasswordHash,
+      is_active: true,
+      email_verified: true,
+      email_verified_at: new Date(),
+    },
+  });
+
+  if (driverRoleId) {
+    const existingDriver2Role = await prisma.user_roles.findFirst({
+      where: { user_id: driver2.id, role_id: driverRoleId },
+    });
+    if (!existingDriver2Role) {
+      await prisma.user_roles.create({
+        data: {
+          user_id: driver2.id,
+          role_id: driverRoleId,
+          organization_id: '00000000-0000-0000-0000-000000000002', // Sky Bus
+        },
+      });
+    }
+  }
+  console.log('✅ Driver 2 configured for Sky Bus:', driver2Email);
+
+  console.log('🎉 Seeding complete.');
 }
 
 if (process.argv[1] && process.argv[1].endsWith('seed.js')) {

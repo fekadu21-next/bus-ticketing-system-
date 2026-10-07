@@ -1,0 +1,397 @@
+/* ===== THEME, BRANDING & DARK MODE ===== */
+/* ============================================================
+   CUSTOM LOGO STYLING
+   ============================================================ */
+.brand-img-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-logo-img {
+  height: 44px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 4px;
+  transition: transform 0.15s ease;
+}
+
+.brand-logo:hover .brand-logo-img {
+  transform: scale(1.05);
+}
+
+/* ============================================================
+   THEME TOGGLE BUTTON & MOBILE DRAWER
+   ============================================================ */
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  color: #fcd34d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: rotate(15deg);
+}
+
+.sun-icon {
+  color: #fbbf24;
+}
+
+.moon-icon {
+  color: #93c5fd;
+}
+
+/* Mobile Hamburger button */
+.mobile-hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.mobile-hamburger-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile Drawer Overlay Backdrop */
+.mobile-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1200;
+  animation: fadeIn 0.25s ease;
+}
+
+/* Mobile Drawer Sliding Menu */
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(85vw, 360px);
+  height: 100vh;
+  background: var(--color-nav-bg);
+  box-shadow: -10px 0 35px rgba(0, 0, 0, 0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 1250;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+.mobile-drawer.open {
+  transform: translateX(0);
+}
+
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.mobile-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-nav-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-nav-links a {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.mobile-nav-links a:hover,
+.mobile-nav-links a.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.mobile-auth-section,
+.mobile-auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 900px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .guest-nav-buttons,
+  .auth-user-controls {
+    display: none;
+  }
+
+  .mobile-hamburger-btn {
+    display: block;
+  }
+}
+
+/* ============================================================
+   DARK MODE SYSTEM (Tokens & Comprehensive Overrides)
+   ============================================================ */
+[data-theme="dark"],
+.dark {
+  --color-bg: #090e1a;
+  --color-surface: #111a2e;
+  --color-surface-hover: #17233d;
+  --color-border: #1e2c48;
+  --color-border-focus: #3b82f6;
+
+  --color-text: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-text-subtle: #64748b;
+
+  --color-primary-light: #162447;
+  --color-primary-border: #1d3568;
+
+  --color-success-light: #062a1b;
+  --color-success-border: #0b4a30;
+
+  --color-danger-light: #321114;
+  --color-danger-border: #521c21;
+
+  --color-warning-light: #2d1c07;
+  --color-warning-border: #4d2f0a;
+
+  --color-nav-bg: #060b14;
+  --color-nav-link: #cbd5e1;
+  --color-hero-bg: #0a1122;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* Dark mode specific component backgrounds & borders */
+[data-theme="dark"] .hero-section {
+  background: linear-gradient(180deg, #090e1a 0%, #0d1629 100%);
+  border-bottom-color: #1e2c48;
+}
+
+[data-theme="dark"] .trip-search-card,
+[data-theme="dark"] .features-trust-bar,
+[data-theme="dark"] .partner-info-box,
+[data-theme="dark"] .how-it-works-box,
+[data-theme="dark"] .wizard-step-card,
+[data-theme="dark"] .trip-result-card,
+[data-theme="dark"] .dashboard-header-strip,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .data-table-card,
+[data-theme="dark"] .verifier-form-card,
+[data-theme="dark"] .passenger-ticket-card,
+[data-theme="dark"] .about-card,
+[data-theme="dark"] .contact-info-card,
+[data-theme="dark"] .contact-form-card,
+[data-theme="dark"] .about-cta-banner,
+[data-theme="dark"] .auth-card,
+[data-theme="dark"] .registration-success-card,
+[data-theme="dark"] .card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .hero-heading,
+[data-theme="dark"] .section-title,
+[data-theme="dark"] .wizard-card-title,
+[data-theme="dark"] .stat-number,
+[data-theme="dark"] .card-title,
+[data-theme="dark"] .departure-time,
+[data-theme="dark"] .arrival-time,
+[data-theme="dark"] .operator-name,
+[data-theme="dark"] .review-block-header h4,
+[data-theme="dark"] .step-title,
+[data-theme="dark"] .feature-title,
+[data-theme="dark"] .form-label,
+[data-theme="dark"] .table-header h3 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .hero-subheading,
+[data-theme="dark"] .section-desc,
+[data-theme="dark"] .feature-desc,
+[data-theme="dark"] .step-desc,
+[data-theme="dark"] .review-label,
+[data-theme="dark"] .search-field-label,
+[data-theme="dark"] .results-count-bar,
+[data-theme="dark"] .stat-label {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .search-field-select,
+[data-theme="dark"] .search-field-date,
+[data-theme="dark"] textarea.form-input {
+  background: #0d1527;
+  border-color: #243452;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] .form-select:focus {
+  border-color: #3b82f6;
+  background: #0f182d;
+}
+
+[data-theme="dark"] .review-block,
+[data-theme="dark"] .ticket-route-display,
+[data-theme="dark"] .success-info-box,
+[data-theme="dark"] .pass-body {
+  background: #0d1527;
+  border-color: #1e2c48;
+}
+
+[data-theme="dark"] .checklist-row,
+[data-theme="dark"] .review-value,
+[data-theme="dark"] .stop-name,
+[data-theme="dark"] .meta-value {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .app-data-table th {
+  background: #0d1527;
+  color: #94a3b8;
+  border-bottom-color: #1e2c48;
+}
+
+[data-theme="dark"] .app-data-table td {
+  color: #f1f5f9;
+  border-bottom-color: #162035;
+}
+
+[data-theme="dark"] .operator-logo-badge,
+[data-theme="dark"] .feature-icon-wrapper,
+[data-theme="dark"] .contact-icon-box,
+[data-theme="dark"] .about-card-icon {
+  background: #17233d;
+}
+
+[data-theme="dark"] .partner-hover-popover {
+  background: #111a2e;
+  border-color: #1e2c48;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .partner-popover-header h4 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .partner-features-list li {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .bus-floating-badge {
+  background: #111a2e;
+  color: #f8fafc;
+  border: 1px solid #1e2c48;
+}
+
+[data-theme="dark"] .search-divider {
+  background-color: #1e2c48;
+}
+
+[data-theme="dark"] .how-step-connector {
+  background-color: #1e2c48;
+}
+
+[data-theme="dark"] .tab-btn {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .tab-btn.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+[data-theme="dark"] .tab-btn:hover {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .direct-badge {
+  background: #172847;
+  color: #38bdf8;
+}
+
+[data-theme="dark"] .partner-how-section,
+[data-theme="dark"] .partner-register-page,
+[data-theme="dark"] .search-trips-page,
+[data-theme="dark"] .about-page,
+[data-theme="dark"] .contact-page {
+  background: #090e1a;
+}
+
+[data-theme="dark"] .btn-outline {
+  border-color: #2e4165;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .btn-outline:hover {
+  background: #1e2c48;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .modal-container {
+  background: #111a2e;
+  color: #f8fafc;
+  border: 1px solid #1e2c48;
+}

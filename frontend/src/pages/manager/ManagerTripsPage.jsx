@@ -53,20 +53,29 @@ export const ManagerTripsPage = () => {
     return matchesStatus && matchesSearch;
   });
 
-  const handleCreateTripSubmit = () => {
-    const success = createTrip({
-      routeId: selectedRouteId,
-      busId: selectedBusId,
-      departureDate,
-      departureTime,
-      arrivalTime,
-      fareAmount: Number(fareAmount),
-      driverId: selectedDriverId
-    });
+  const [tripError, setTripError] = useState("");
+  const [isSubmittingTrip, setIsSubmittingTrip] = useState(false);
 
-    if (success !== false) {
+  const handleCreateTripSubmit = async () => {
+    setTripError("");
+    setIsSubmittingTrip(true);
+    try {
+      await createTrip({
+        routeId: selectedRouteId,
+        busId: selectedBusId,
+        departureDate,
+        departureTime,
+        arrivalTime,
+        fareAmount: Number(fareAmount),
+        driverId: selectedDriverId
+      });
+      setTripError("");
       setShowWizardModal(false);
       setWizardStep(1);
+    } catch (err) {
+      setTripError(err.response?.data?.message || err.message || "Failed to schedule trip.");
+    } finally {
+      setIsSubmittingTrip(false);
     }
   };
 
@@ -99,6 +108,7 @@ export const ManagerTripsPage = () => {
           <button
             className="btn btn-primary"
             onClick={() => {
+              setTripError("");
               setShowWizardModal(true);
               setWizardStep(1);
             }}
@@ -250,14 +260,36 @@ export const ManagerTripsPage = () => {
                 Next Step <ArrowRight size={14} />
               </button>
             ) : (
-              <button className="btn btn-success" onClick={handleCreateTripSubmit}>
-                Confirm & Create Trip
+              <button
+                className="btn btn-success"
+                onClick={handleCreateTripSubmit}
+                disabled={isSubmittingTrip}
+              >
+                {isSubmittingTrip ? "Creating Trip..." : "Confirm & Create Trip"}
               </button>
             )}
           </div>
         }
       >
         <div>
+          {tripError && (
+            <div style={{
+              padding: "0.75rem 1rem",
+              backgroundColor: "rgba(239, 68, 68, 0.12)",
+              border: "1px solid rgba(239, 68, 68, 0.35)",
+              borderRadius: "0.375rem",
+              color: "#ef4444",
+              fontSize: "0.85rem",
+              marginBottom: "1.25rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem"
+            }}>
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{tripError}</span>
+            </div>
+          )}
+
           {/* Step Progress Bar */}
           <div style={{ display: "flex", gap: "2px", marginBottom: "1.25rem" }}>
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((step) => (

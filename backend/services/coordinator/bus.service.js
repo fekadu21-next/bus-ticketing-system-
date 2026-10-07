@@ -7,15 +7,20 @@ export class BusService {
       throw new ApiError(400, 'Organization context is required.');
     }
 
-    const existingBus = await busRepository.findByPlateNumber(busData.plateNumber, organizationId);
+    const plateNumber = busData.plateNumber?.trim();
+    if (!plateNumber) {
+      throw new ApiError(400, 'Plate number is required.');
+    }
+
+    const existingBus = await busRepository.findByPlateNumber(plateNumber, organizationId);
     if (existingBus) {
-      throw new ApiError(409, `A bus with plate number '${busData.plateNumber}' already exists in your organization.`);
+      throw new ApiError(409, `A bus with plate number '${plateNumber}' already exists in your organization. Please provide a unique plate number.`);
     }
 
     return busRepository.create({
       organizationId,
-      plateNumber: busData.plateNumber,
-      model: busData.model,
+      plateNumber,
+      model: busData.model?.trim() || null,
       capacity: busData.capacity,
       isActive: busData.isActive ?? true,
     });
@@ -44,11 +49,15 @@ export class BusService {
   async updateBus(busId, organizationId, updateData) {
     const bus = await this.getBusById(busId, organizationId);
 
-    if (updateData.plateNumber && updateData.plateNumber.toLowerCase() !== bus.plate_number.toLowerCase()) {
-      const duplicate = await busRepository.findByPlateNumber(updateData.plateNumber, organizationId);
-      if (duplicate && duplicate.id !== busId) {
-        throw new ApiError(409, `A bus with plate number '${updateData.plateNumber}' already exists in your organization.`);
+    if (updateData.plateNumber) {
+      const plateNumber = updateData.plateNumber.trim();
+      if (plateNumber.toLowerCase() !== bus.plate_number.toLowerCase()) {
+        const duplicate = await busRepository.findByPlateNumber(plateNumber, organizationId);
+        if (duplicate && duplicate.id !== busId) {
+          throw new ApiError(409, `A bus with plate number '${plateNumber}' already exists in your organization. Please provide a unique plate number.`);
+        }
       }
+      updateData.plateNumber = plateNumber;
     }
 
     return busRepository.update(busId, organizationId, updateData);
