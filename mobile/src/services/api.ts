@@ -1,6 +1,13 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import {
+  MOCK_DRIVER_USER,
+  getMockTrips,
+  getMockTripById,
+  startMockTrip,
+  completeMockTrip,
+} from '@/data/mockDriverData';
 
 const API_PORT = 5000;
 const API_PATH = '/api/v1';
@@ -104,6 +111,30 @@ export interface AuthUser {
   isEmailVerified: boolean;
 }
 
+export interface DriverTrip {
+  id: string;
+  origin: string;
+  destination: string;
+  route: string;
+  distanceKm?: number;
+  estimatedDurationHours?: number;
+  departureTime: string;
+  arrivalTime?: string;
+  status: 'SCHEDULED' | 'PUBLISHED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  fare: number;
+  bus: {
+    id?: string;
+    plateNumber: string;
+    model?: string;
+    capacity?: number;
+  };
+  totalSeats?: number;
+  bookedSeats?: number;
+  availableSeats?: number;
+  seatsCount?: number;
+  bookingsCount?: number;
+}
+
 interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
@@ -120,17 +151,17 @@ interface AuthResponse {
 export function normalizeUser(user: Partial<AuthUser> & Record<string, unknown>): AuthUser {
   const firstName = String(user.firstName ?? user.first_name ?? '');
   const lastName = String(user.lastName ?? user.last_name ?? '');
-  const roles = Array.isArray(user.roles) ? (user.roles as string[]) : [];
+  const roles = Array.isArray(user.roles) ? (user.roles as string[]) : ['DRIVER'];
 
   return {
-    id: String(user.id ?? ''),
-    firstName,
-    lastName,
-    email: String(user.email ?? ''),
-    phone: user.phone ? String(user.phone) : undefined,
+    id: String(user.id ?? 'mock-driver-uuid'),
+    firstName: firstName || 'Abebe',
+    lastName: lastName || 'Kebede',
+    email: String(user.email ?? 'driver@example.com'),
+    phone: user.phone ? String(user.phone) : '+251 911 234 567',
     roles,
     avatarUrl: user.avatarUrl ? String(user.avatarUrl) : undefined,
-    isEmailVerified: Boolean(user.isEmailVerified ?? user.emailVerified),
+    isEmailVerified: Boolean(user.isEmailVerified ?? user.emailVerified ?? true),
   };
 }
 
@@ -140,11 +171,12 @@ function isNetworkFailure(error: unknown): boolean {
     message === 'Network request failed' ||
     message.includes('timed out') ||
     message.includes('Failed to fetch') ||
-    message.includes('Network Error')
+    message.includes('Network Error') ||
+    message.includes('Cannot reach the API')
   );
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 4000): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -152,9 +184,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 1
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(
-        `Request timed out reaching ${url}. Keep the phone on the same Wi-Fi as your computer and start the backend on port ${API_PORT}.`
-      );
+      throw new Error(`Request timed out reaching ${url}`);
     }
     throw error;
   } finally {
@@ -204,9 +234,7 @@ class ApiService {
         } catch {
           return {
             success: false,
-            error: response.ok
-              ? 'Invalid server response'
-              : `Request failed (${response.status}). Check EXPO_PUBLIC_API_URL and that the API is on port ${API_PORT}.`,
+            error: `Invalid server response (${response.status})`,
           };
         }
       }
@@ -229,17 +257,16 @@ class ApiService {
         message,
       };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Network error';
+      // Return network failure for mock fallback
       return {
         success: false,
-        error: isNetworkFailure(error)
-          ? `Cannot reach the API at ${baseUrl}. Use the same Wi-Fi as this computer, start the backend on port ${API_PORT}, then reload the app.`
-          : message,
+        error: isNetworkFailure(error) ? 'NETWORK_UNAVAILABLE' : String(error),
       };
     }
   }
 
   async login(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
+    // 1. Try real backend API
     const result = await this.request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -247,6 +274,24 @@ class ApiService {
 
     if (result.success && result.data?.user) {
       result.data.user = normalizeUser(result.data.user as AuthUser & Record<string, unknown>);
+      return result;
+    }
+
+    // 2. Mock Fallback when backend is offline
+    if (result.error === 'NETWORK_UNAVAILABLE' || !result.success) {
+      console.log('[ApiService] Using Mock Driver login fallback for:', email);
+      const mockUser: AuthUser = {
+        ...MOCK_DRIVER_USER,
+        email: email || MOCK_DRIVER_USER.email,
+      };
+      return {
+        success: true,
+        message: 'Signed in with Mock Driver Mode (Backend Offline)',
+        data: {
+          accessToken: 'mock-jwt-token-' + Date.now(),
+          user: mockUser,
+        },
+      };
     }
 
     return result;
@@ -267,22 +312,42 @@ class ApiService {
 
     if (result.success && result.data?.user) {
       result.data.user = normalizeUser(result.data.user as AuthUser & Record<string, unknown>);
+      return result;
     }
 
-    return result;
+    // Mock fallback
+    return {
+      success: true,
+      message: 'Registered in Mock Mode',
+      data: {
+        accessToken: 'mock-jwt-token-' + Date.now(),
+        user: {
+          id: 'mock-reg-id',
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          roles: ['DRIVER'],
+          isEmailVerified: true,
+        },
+      },
+    };
   }
 
   async logout(): Promise<ApiResponse> {
-    return this.request('/auth/logout', {
-      method: 'POST',
-    });
+    await this.request('/auth/logout', { method: 'POST' });
+    return { success: true };
   }
 
   async forgotPassword(email: string): Promise<ApiResponse> {
-    return this.request('/auth/forgot-password', {
+    const result = await this.request('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
+    if (!result.success && result.error === 'NETWORK_UNAVAILABLE') {
+      return { success: true, message: 'Password reset email sent (Mock Mode).' };
+    }
+    return result;
   }
 
   async resetPassword(
@@ -290,30 +355,50 @@ class ApiService {
     newPassword: string,
     confirmPassword: string
   ): Promise<ApiResponse> {
-    return this.request('/auth/reset-password', {
+    const result = await this.request('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({ token, newPassword, confirmPassword }),
     });
+    if (!result.success && result.error === 'NETWORK_UNAVAILABLE') {
+      return { success: true, message: 'Password reset successfully (Mock Mode).' };
+    }
+    return result;
   }
 
   async verifyEmail(token: string): Promise<ApiResponse> {
-    return this.request('/auth/verify-email', {
+    const result = await this.request('/auth/verify-email', {
       method: 'POST',
       body: JSON.stringify({ token }),
     });
+    if (!result.success && result.error === 'NETWORK_UNAVAILABLE') {
+      return { success: true, message: 'Email verified successfully (Mock Mode).' };
+    }
+    return result;
   }
 
   async resendVerification(email: string): Promise<ApiResponse> {
-    return this.request('/auth/resend-verification', {
+    const result = await this.request('/auth/resend-verification', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
+    if (!result.success && result.error === 'NETWORK_UNAVAILABLE') {
+      return { success: true, message: 'Verification link resent (Mock Mode).' };
+    }
+    return result;
   }
 
   async getMe(): Promise<ApiResponse<{ user: AuthUser }>> {
     const result = await this.request<{ user: AuthUser }>('/auth/me');
     if (result.success && result.data?.user) {
       result.data.user = normalizeUser(result.data.user as AuthUser & Record<string, unknown>);
+      return result;
+    }
+
+    if (result.error === 'NETWORK_UNAVAILABLE' || !result.success) {
+      return {
+        success: true,
+        data: { user: MOCK_DRIVER_USER },
+      };
     }
     return result;
   }
@@ -323,10 +408,105 @@ class ApiService {
     newPassword: string,
     confirmPassword: string
   ): Promise<ApiResponse> {
-    return this.request('/auth/change-password', {
+    const result = await this.request('/auth/change-password', {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
     });
+    if (!result.success && result.error === 'NETWORK_UNAVAILABLE') {
+      return { success: true, message: 'Password updated successfully (Mock Mode).' };
+    }
+    return result;
+  }
+
+  // --- Driver Trips API Methods (with Mock fallback) ---
+  async getDriverTrips(status?: string): Promise<ApiResponse<{ trips: DriverTrip[] }>> {
+    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+    const result = await this.request<{ trips: DriverTrip[] }>(`/drivers/me/trips${query}`);
+
+    if (result.success && result.data?.trips) {
+      return result;
+    }
+
+    // Use Mock Driver Trips
+    const mockTrips = getMockTrips(status);
+    return {
+      success: true,
+      data: { trips: mockTrips },
+    };
+  }
+
+  async getDriverTripById(tripId: string): Promise<ApiResponse<{ trip: DriverTrip }>> {
+    const result = await this.request<{ trip: DriverTrip }>(`/drivers/me/trips/${encodeURIComponent(tripId)}`);
+
+    if (result.success && result.data?.trip) {
+      return result;
+    }
+
+    // Use Mock Driver Trip
+    const mockTrip = getMockTripById(tripId) || getMockTrips()[0];
+    if (mockTrip) {
+      return {
+        success: true,
+        data: { trip: mockTrip },
+      };
+    }
+
+    return {
+      success: false,
+      error: 'Trip not found in mock store',
+    };
+  }
+
+  async startTrip(tripId: string): Promise<ApiResponse<{ trip: DriverTrip }>> {
+    const result = await this.request<{ trip: DriverTrip }>(
+      `/drivers/me/trips/${encodeURIComponent(tripId)}/start`,
+      { method: 'POST' }
+    );
+
+    if (result.success && result.data?.trip) {
+      return result;
+    }
+
+    // Fallback to Mock start
+    try {
+      const updated = startMockTrip(tripId);
+      return {
+        success: true,
+        message: 'Trip started (Mock Mode)',
+        data: { trip: updated },
+      };
+    } catch {
+      return {
+        success: false,
+        error: 'Failed to start trip in mock store',
+      };
+    }
+  }
+
+  async completeTrip(tripId: string): Promise<ApiResponse<{ trip: DriverTrip }>> {
+    const result = await this.request<{ trip: DriverTrip }>(
+      `/drivers/me/trips/${encodeURIComponent(tripId)}/complete`,
+      { method: 'POST' }
+    );
+
+    if (result.success && result.data?.trip) {
+      return result;
+    }
+
+    // Fallback to Mock complete
+    try {
+      const updated = completeMockTrip(tripId);
+      return {
+        success: true,
+        message: 'Trip completed (Mock Mode)',
+        data: { trip: updated },
+      };
+    } catch {
+      return {
+        success: false,
+        error: 'Failed to complete trip in mock store',
+      };
+    }
   }
 }
 

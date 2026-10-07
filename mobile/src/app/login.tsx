@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { KeyboardScreen } from '@/components/keyboard-screen';
 import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/services/api';
+import { MOCK_DRIVER_USER } from '@/data/mockDriverData';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,12 +23,12 @@ export default function LoginPage() {
 
   const handleSubmit = async () => {
     if (!formData.email.trim() || !formData.password) {
-      setFormError('Email and password are required');
+      setFormError('Driver email and password are required');
       return;
     }
 
     setIsSubmitting(true);
-    const result = await login(formData.email, formData.password);
+    const result = await login(formData.email.trim(), formData.password);
     setIsSubmitting(false);
 
     if (result.success) {
@@ -35,22 +36,32 @@ export default function LoginPage() {
     }
   };
 
+  const handleQuickDemoFill = () => {
+    setFormData({
+      email: MOCK_DRIVER_USER.email,
+      password: 'password123',
+    });
+    setFormError('');
+  };
+
   const displayError = formError || error;
 
   return (
     <KeyboardScreen>
       <View style={styles.header}>
-        <Text style={styles.logo}>🚌</Text>
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Sign in to your account</Text>
+        <View style={styles.iconCircle}>
+          <Text style={styles.logo}>🚌</Text>
+        </View>
+        <Text style={styles.title}>Driver Sign In</Text>
+        <Text style={styles.subtitle}>Log in to access your assigned trips & route terminal</Text>
       </View>
 
       <View style={styles.form}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Email Address</Text>
+          <Text style={styles.label}>Driver Email / Username</Text>
           <TextInput
             style={styles.input}
-            placeholder="name@example.com"
+            placeholder="driver@example.com"
             placeholderTextColor="#94a3b8"
             value={formData.email}
             onChangeText={(value) => handleChange('email', value)}
@@ -93,33 +104,33 @@ export default function LoginPage() {
 
         {displayError ? (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{displayError}</Text>
+            <Text style={styles.errorText}>⚠️ {displayError}</Text>
           </View>
         ) : null}
 
-        {__DEV__ ? (
-          <Text style={styles.debugText}>API: {apiService.getBaseUrl()}</Text>
-        ) : null}
+        {/* Quick Demo Fill Button */}
+        <TouchableOpacity
+          style={styles.demoFillBtn}
+          onPress={handleQuickDemoFill}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.demoFillBtnText}>⚡ Fill Demo Driver Credentials</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
           onPress={() => void handleSubmit()}
-          disabled={isSubmitting}>
-          <Text style={styles.submitButtonText}>{isSubmitting ? 'Signing in...' : 'Sign In'}</Text>
+          disabled={isSubmitting}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.submitButtonText}>
+            {isSubmitting ? 'Signing in...' : 'Sign In as Driver'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Don&apos;t have an account?{' '}
-          <Text style={styles.link} onPress={() => router.push('/register')}>
-            Register here
-          </Text>
-        </Text>
-      </View>
-
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>← Back</Text>
+        <Text style={styles.backButtonText}>← Back to Welcome</Text>
       </TouchableOpacity>
     </KeyboardScreen>
   );
@@ -128,42 +139,52 @@ export default function LoginPage() {
 const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 28,
+  },
+  iconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#ccfbf1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   logo: {
-    fontSize: 60,
-    marginBottom: 16,
+    fontSize: 34,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '800',
     color: '#0f172a',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#64748b',
     textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 12,
   },
   form: {
-    marginBottom: 24,
-  },
-  inputGroup: {
     marginBottom: 20,
   },
+  inputGroup: {
+    marginBottom: 16,
+  },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#334155',
+    marginBottom: 6,
   },
   input: {
     backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#cbd5e1',
     borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+    padding: 14,
+    fontSize: 15,
     color: '#0f172a',
   },
   passwordInput: {
@@ -173,7 +194,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   inputWrapper: {
     position: 'relative',
@@ -181,44 +202,57 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     position: 'absolute',
-    right: 16,
+    right: 14,
     height: '100%',
     justifyContent: 'center',
   },
   eyeText: {
     fontSize: 13,
     color: '#0f766e',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   forgotPassword: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#0f766e',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   errorContainer: {
     backgroundColor: '#fee2e2',
     borderWidth: 1,
     borderColor: '#fecaca',
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 12,
-    marginBottom: 20,
+    marginBottom: 14,
   },
   errorText: {
     color: '#dc2626',
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '600',
   },
-  debugText: {
-    fontSize: 11,
-    color: '#94a3b8',
+  demoFillBtn: {
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1,
+    borderColor: '#86efac',
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
     marginBottom: 12,
-    textAlign: 'center',
+  },
+  demoFillBtnText: {
+    color: '#15803d',
+    fontSize: 13,
+    fontWeight: '700',
   },
   submitButton: {
     backgroundColor: '#0f766e',
-    padding: 18,
+    paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 8,
+    shadowColor: '#0f766e',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
   },
   submitButtonDisabled: {
     opacity: 0.6,
@@ -226,25 +260,15 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  footer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  footerText: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  link: {
-    color: '#0f766e',
-    fontWeight: '600',
+    fontWeight: '800',
   },
   backButton: {
     alignItems: 'center',
+    paddingVertical: 12,
   },
   backButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#64748b',
+    fontWeight: '600',
   },
 });
