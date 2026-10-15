@@ -10,7 +10,20 @@ export const normalizeTrip = (raw) => {
   const id = raw.id;
   const fromCity = raw.origin || raw.route?.origin || 'Addis Ababa';
   const toCity = raw.destination || raw.route?.destination || 'Bahir Dar';
-  const rawDate = raw.departureDate || (raw.departureTime ? String(raw.departureTime).split('T')[0] : '');
+  const formatTripDate = (rawDateVal, rawTimeVal) => {
+    if (rawDateVal && String(rawDateVal).trim()) return String(rawDateVal).split('T')[0];
+    if (rawTimeVal) {
+      const d = new Date(rawTimeVal);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+    }
+    return '';
+  };
+  const rawDate = formatTripDate(raw.departureDate, raw.departureTime);
 
   // Format departure / arrival time strings (e.g. 06:00 AM)
   const formatTimeStr = (isoOrStr) => {
@@ -80,29 +93,36 @@ export const normalizeTrip = (raw) => {
     logoText = initials || 'BT';
   }
 
+  const totalSeats = raw.totalSeats || raw.bus?.capacity || (Array.isArray(raw.seats) && raw.seats.length > 0 ? raw.seats.length : 40);
+
   // Normalize seats if present
   let seats = [];
   if (Array.isArray(raw.seats) && raw.seats.length > 0) {
     seats = raw.seats.map((s, idx) => {
-      const num = s.seatNumber !== undefined ? s.seatNumber : idx + 1;
+      const num = s.seatNumber !== undefined ? s.seatNumber : (s.seat_number !== undefined ? s.seat_number : idx + 1);
       const numStr = num < 10 ? `0${num}` : `${num}`;
       const row = Math.ceil(num / 4);
       const cols = ['A', 'B', 'C', 'D'];
       const col = cols[(num - 1) % 4] || 'A';
       const statusLower = String(s.status || 'AVAILABLE').toLowerCase();
+      let status = 'available';
+      if (statusLower === 'booked') status = 'booked';
+      else if (statusLower === 'held') status = 'held';
+      else if (statusLower === 'blocked') status = 'blocked';
+      else if (statusLower === 'locked') status = 'locked';
+
       return {
         id: s.id || `${row}${col}`,
         seatNumber: num,
         row,
         col,
         label: numStr,
-        status: statusLower === 'booked' ? 'booked' : 'available',
+        status,
       };
     });
   } else {
-    // Generate standard 40 seats if not returned in list endpoint
-    const bookedNums = new Set(['03', '04', '07', '08', '12', '19']);
-    for (let num = 1; num <= 40; num++) {
+    // Generate dynamic seats up to exact bus capacity
+    for (let num = 1; num <= totalSeats; num++) {
       const numStr = num < 10 ? `0${num}` : `${num}`;
       const row = Math.ceil(num / 4);
       const cols = ['A', 'B', 'C', 'D'];
@@ -113,7 +133,7 @@ export const normalizeTrip = (raw) => {
         row,
         col,
         label: numStr,
-        status: bookedNums.has(numStr) ? 'booked' : 'available',
+        status: 'available',
       });
     }
   }
@@ -125,7 +145,6 @@ export const normalizeTrip = (raw) => {
         ? raw.availableSeats
         : seats.filter((s) => s.status === 'available').length;
 
-  const totalSeats = raw.totalSeats || raw.bus?.capacity || 40;
   const busNumber = raw.bus?.plate_number || `ETH-${logoText}-101`;
   const busType = raw.bus?.model || 'Scania Touring HD';
 
@@ -143,6 +162,7 @@ export const normalizeTrip = (raw) => {
     fare,
     period,
     seatsAvailable,
+    availableSeatsCount: seatsAvailable,
     totalSeats,
     operator: operatorName,
     operatorId: operatorObj.id || raw.organization_id || '',
@@ -195,163 +215,249 @@ export const normalizeTrip = (raw) => {
  * Search bus trips with filtering and pagination
  */
 export const searchTripsApi = async (params = {}) => {
-  const query = {};
-  if (params.from || params.origin) query.origin = params.from || params.origin;
-  if (params.to || params.destination) query.destination = params.to || params.destination;
-  if (params.date) query.date = params.date;
-  if (params.operator) query.operator = params.operator;
-  if (params.operatorId) query.operatorId = params.operatorId;
-  if (params.page) query.page = params.page;
-  if (params.limit) query.limit = params.limit;
-  if (params.sortBy) query.sortBy = params.sortBy;
-  if (params.sortOrder) query.sortOrder = params.sortOrder;
+  try {
+    const query = {};
+    if (params.from || params.origin) query.origin = params.from || params.origin;
+    if (params.to || params.destination) query.destination = params.to || params.destination;
+    if (params.date) query.date = params.date;
+    if (params.operator) query.operator = params.operator;
+    if (params.operatorId) query.operatorId = params.operatorId;
+    if (params.page) query.page = params.page;
+    if (params.limit) query.limit = params.limit;
+    if (params.sortBy) query.sortBy = params.sortBy;
+    if (params.sortOrder) query.sortOrder = params.sortOrder;
 
-  const { data } = await api.get('/passenger/trips', { params: query });
-  const rawTrips = data?.data?.trips || [];
-  const normalizedTrips = rawTrips.map(normalizeTrip);
+    const { data } = await api.get('/passenger/trips', { params: query });
+    console.log('Search trips response:', data);
+    const rawTrips = data?.data?.trips || [];
+    const normalizedTrips = rawTrips.map(normalizeTrip);
 
-  return {
-    total: data?.data?.total || normalizedTrips.length,
-    page: data?.data?.page || 1,
-    limit: data?.data?.limit || 20,
-    totalPages: data?.data?.totalPages || 1,
-    trips: normalizedTrips,
-  };
+    return {
+      total: data?.data?.total || normalizedTrips.length,
+      page: data?.data?.page || 1,
+      limit: data?.data?.limit || 20,
+      totalPages: data?.data?.totalPages || 1,
+      trips: normalizedTrips,
+    };
+  } catch (err) {
+    console.error('Error searching trips:', err);
+    return {
+      total: 0,
+      page: 1,
+      limit: 20,
+      totalPages: 0,
+      trips: [],
+    };
+  }
 };
 
 /**
  * Fetch trip details by UUID
  */
 export const getTripDetailsApi = async (tripId) => {
-  const { data } = await api.get(`/passenger/trips/${tripId}`);
-  const rawTrip = data?.data?.trip;
-  return normalizeTrip(rawTrip);
+  try {
+    const { data } = await api.get(`/passenger/trips/${tripId}`);
+    const rawTrip = data?.data?.trip;
+    console.log('Raw trip from backend:', rawTrip);
+    return normalizeTrip(rawTrip);
+  } catch (err) {
+    console.error('Error fetching trip details:', err);
+    return null;
+  }
 };
 
 /**
  * Fetch seat layout & availability for a trip
  */
 export const getTripSeatsApi = async (tripId) => {
-  const { data } = await api.get(`/passenger/trips/${tripId}/seats`);
-  const rawData = data?.data;
-  if (!rawData) return null;
+  try {
+    const { data } = await api.get(`/passenger/trips/${tripId}/seats`);
+    const rawData = data?.data;
+    console.log('Raw seats from backend:', rawData);
+    if (!rawData) return null;
 
-  const seats = (rawData.seats || []).map((s, idx) => {
-    const num = s.seatNumber !== undefined ? s.seatNumber : idx + 1;
-    const numStr = num < 10 ? `0${num}` : `${num}`;
-    const row = Math.ceil(num / 4);
-    const cols = ['A', 'B', 'C', 'D'];
-    const col = cols[(num - 1) % 4] || 'A';
-    const statusLower = String(s.status || 'AVAILABLE').toLowerCase();
+    const seats = (rawData.seats || []).map((s, idx) => {
+      const num = s.seatNumber !== undefined ? s.seatNumber : idx + 1;
+      const numStr = num < 10 ? `0${num}` : `${num}`;
+      const row = Math.ceil(num / 4);
+      const cols = ['A', 'B', 'C', 'D'];
+      const col = cols[(num - 1) % 4] || 'A';
+      const statusLower = String(s.status || 'AVAILABLE').toLowerCase();
+      let status = 'available';
+      if (statusLower === 'booked') status = 'booked';
+      else if (statusLower === 'held') status = 'held';
+      else if (statusLower === 'blocked') status = 'blocked';
+      else if (statusLower === 'locked') status = 'locked';
+
+      return {
+        id: s.id || `${row}${col}`,
+        seatNumber: num,
+        row,
+        col,
+        label: numStr,
+        status,
+      };
+    });
+
+    const liveAvailableSeatsCount =
+      rawData.availableSeatsCount !== undefined
+        ? rawData.availableSeatsCount
+        : seats.filter((s) => s.status === 'available').length;
+
     return {
-      id: s.id || `${row}${col}`,
-      seatNumber: num,
-      row,
-      col,
-      label: numStr,
-      status: statusLower === 'booked' ? 'booked' : 'available',
+      tripId: rawData.tripId,
+      bus: rawData.bus,
+      totalSeats: rawData.totalSeats || seats.length,
+      availableSeatsCount: liveAvailableSeatsCount,
+      seatsAvailable: liveAvailableSeatsCount,
+      bookedSeatsCount: rawData.bookedSeatsCount,
+      heldSeatsCount: rawData.heldSeatsCount,
+      blockedSeatsCount: rawData.blockedSeatsCount,
+      seats,
     };
-  });
-
-  return {
-    tripId: rawData.tripId,
-    bus: rawData.bus,
-    totalSeats: rawData.totalSeats || seats.length,
-    availableSeatsCount: rawData.availableSeatsCount,
-    bookedSeatsCount: rawData.bookedSeatsCount,
-    seats,
-  };
+  } catch (err) {
+    console.error('Error fetching trip seats:', err);
+    return null;
+  }
 };
 
 /**
  * Fetch public operators / organizations from backend
  */
 export const getPublicOperatorsApi = async (params = {}) => {
-  const { data } = await api.get('/organizations', {
-    params: {
-      limit: params.limit || 50,
-      search: params.search || '',
-      isActive: true,
-    },
-  });
+  try {
+    const { data } = await api.get('/organizations', {
+      params: {
+        limit: params.limit || 50,
+        search: params.search || '',
+        isActive: true,
+      },
+    });
 
-  const orgs = data?.data?.organizations || [];
-  return orgs.map((org) => {
-    let logoBg = 'bg-[#1d4ed8]';
-    let logoText = 'SB';
-    let image = '/images/operators/selam-bus.png';
-    const lower = org.name.toLowerCase();
+    const orgs = data?.data?.organizations || data?.data || [];
+    console.log('Organizations from backend:', orgs);
+    return orgs.map((org) => {
+      let logoBg = 'bg-[#1d4ed8]';
+      let logoText = 'SB';
+      let image = '/images/operators/selam-bus.png';
+      const lower = org.name.toLowerCase();
 
-    if (lower.includes('abay')) {
-      logoBg = 'bg-[#0e7490]';
-      logoText = 'AA';
-      image = '/images/operators/abay-association.png';
-    } else if (lower.includes('gebeya')) {
-      logoBg = 'bg-[#10b981]';
-      logoText = 'GB';
-      image = '/images/operators/gebeya-bus.png';
-    } else if (lower.includes('mekelle')) {
-      logoBg = 'bg-[#2563eb]';
-      logoText = 'MT';
-      image = '/images/operators/mekelle-transport.png';
-    } else if (lower.includes('sky')) {
-      logoBg = 'bg-[#0284c7]';
-      logoText = 'SE';
-      image = '/images/operators/selam-bus.png';
-    } else {
-      const words = org.name.split(' ').filter(Boolean);
-      logoText = words.map((w) => w[0].toUpperCase()).slice(0, 2).join('') || 'OP';
-    }
-
-    const type =
-      org.type === 'ASSOCIATION' || org.type === 'Transport Association'
-        ? 'Transport Association'
-        : 'Private Bus Company';
-
-    // Extract actual unique routes from database
-    const uniqueRoutes = [];
-    if (org.trips && Array.isArray(org.trips)) {
-      org.trips.forEach((t) => {
-        if (t.routes?.origin && t.routes?.destination) {
-          const pairKey = `${t.routes.origin} -> ${t.routes.destination}`;
-          if (!uniqueRoutes.includes(pairKey)) {
-            uniqueRoutes.push(pairKey);
-          }
-        }
-      });
-    }
-
-    let routeFrom = 'Addis Ababa';
-    let routeTo = 'Bahir Dar';
-    let extraRoutes = '';
-
-    if (uniqueRoutes.length > 0) {
-      const [from, to] = uniqueRoutes[0].split(' -> ');
-      routeFrom = from;
-      routeTo = to;
-      if (uniqueRoutes.length > 1) {
-        extraRoutes = `+${uniqueRoutes.length - 1} more`;
+      if (lower.includes('abay')) {
+        logoBg = 'bg-[#0e7490]';
+        logoText = 'AA';
+        image = '/images/operators/abay-association.png';
+      } else if (lower.includes('gebeya')) {
+        logoBg = 'bg-[#10b981]';
+        logoText = 'GB';
+        image = '/images/operators/gebeya-bus.png';
+      } else if (lower.includes('mekelle')) {
+        logoBg = 'bg-[#2563eb]';
+        logoText = 'MT';
+        image = '/images/operators/mekelle-transport.png';
+      } else if (lower.includes('sky')) {
+        logoBg = 'bg-[#0284c7]';
+        logoText = 'SE';
+        image = '/images/operators/selam-bus.png';
+      } else {
+        const words = org.name.split(' ').filter(Boolean);
+        logoText = words.map((w) => w[0].toUpperCase()).slice(0, 2).join('') || 'OP';
       }
-    } else if (lower.includes('mekelle')) {
-      routeTo = 'Mekelle';
-    }
 
-    return {
-      id: org.id,
-      name: org.name,
-      type,
-      logoText,
-      logoBg,
-      rating: '4.7',
-      reviews: `${org.tripCount || 30}+ trips`,
-      tripCount: org.tripCount || 0,
-      busCount: org.busCount || 0,
-      routeFrom,
-      routeTo,
-      extraRoutes,
-      image,
-    };
-  });
+      const type =
+        org.type === 'ASSOCIATION' || org.type === 'Transport Association'
+          ? 'Transport Association'
+          : 'Private Bus Company';
+
+      // Extract actual unique routes from database
+      const uniqueRoutes = [];
+      if (org.trips && Array.isArray(org.trips)) {
+        org.trips.forEach((t) => {
+          if (t.routes?.origin && t.routes?.destination) {
+            const pairKey = `${t.routes.origin} -> ${t.routes.destination}`;
+            if (!uniqueRoutes.includes(pairKey)) {
+              uniqueRoutes.push(pairKey);
+            }
+          }
+        });
+      }
+
+      let routeFrom = 'Addis Ababa';
+      let routeTo = 'Bahir Dar';
+      let extraRoutes = '';
+
+      if (uniqueRoutes.length > 0) {
+        const [from, to] = uniqueRoutes[0].split(' -> ');
+        routeFrom = from;
+        routeTo = to;
+        if (uniqueRoutes.length > 1) {
+          extraRoutes = `+${uniqueRoutes.length - 1} more`;
+        }
+      } else if (lower.includes('mekelle')) {
+        routeTo = 'Mekelle';
+      }
+
+      return {
+        id: org.id,
+        name: org.name,
+        type,
+        logoText,
+        logoBg,
+        rating: '4.7',
+        reviews: `${org.tripCount || 30}+ trips`,
+        tripCount: org.tripCount || 0,
+        busCount: org.busCount || 0,
+        routeFrom,
+        routeTo,
+        extraRoutes,
+        image,
+      };
+    });
+  } catch (err) {
+    console.error('Error fetching operators:', err);
+    return [];
+  }
+};
+
+/**
+ * Initialize payment for a booking
+ */
+export const initializePaymentApi = async (paymentData) => {
+  try {
+    const { data } = await api.post('/passenger/payments/initialize', paymentData);
+    console.log('Payment initialized:', data);
+    return data;
+  } catch (err) {
+    console.error('Error initializing payment:', err);
+    throw err;
+  }
+};
+
+/**
+ * Get current user's bookings
+ */
+export const getMyBookingsApi = async () => {
+  try {
+    const { data } = await api.get('/passenger/bookings');
+    console.log('My bookings:', data);
+    return data;
+  } catch (err) {
+    console.error('Error fetching my bookings:', err);
+    throw err;
+  }
+};
+
+/**
+ * Verify payment with backend
+ */
+export const verifyPaymentApi = async (paymentData) => {
+  try {
+    const { data } = await api.post('/passenger/payments/verify', paymentData);
+    console.log('Payment verified:', data);
+    return data;
+  } catch (err) {
+    console.error('Error verifying payment:', err);
+    throw err;
+  }
 };
 
 export default {
@@ -359,5 +465,6 @@ export default {
   getTripDetailsApi,
   getTripSeatsApi,
   getPublicOperatorsApi,
+  initializePaymentApi,
   normalizeTrip,
 };

@@ -4,8 +4,92 @@
 @import './styles/auth.css';
 @import './styles/dashboard.css';
 @import './styles/publicpage.css';
+@import './styles/landing.css';
 @import './styles/theme.css';
 @import './styles/responsive.css';
+
+/* ===== CSS VARIABLES (Design System) ===== */
+:root {
+  /* Colors - Backgrounds */
+  --bg-card: #ffffff;
+  --bg-sidebar: #0f172a;
+  --bg-sidebar-hover: #1e293b;
+  --bg-sidebar-active: #2563eb;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f5f9;
+
+  /* Colors - Borders */
+  --border-color: #e2e8f0;
+  --border-dark: #334155;
+  --color-border: #e2e8f0;
+  --color-border-focus: #3b82f6;
+  --color-primary-border: #bfdbfe;
+
+  /* Colors - Text */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-subtle: #94a3b8;
+
+  /* Colors - Primary */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #eff6ff;
+
+  /* Colors - Success */
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --success-text: #047857;
+  --color-success: #059669;
+  --color-success-light: #ecfdf5;
+  --color-success-border: #bbf7d0;
+
+  /* Colors - Danger */
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+  --danger-text: #b91c1c;
+  --color-danger: #dc2626;
+  --color-danger-light: #fef2f2;
+  --color-danger-border: #fecaca;
+
+  /* Colors - Warning */
+  --warning: #f59e0b;
+  --warning-bg: #fef3c7;
+  --warning-text: #b45309;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-warning-border: #fde68a;
+
+  /* Colors - Info */
+  --info: #0ea5e9;
+  --info-bg: #e0f2fe;
+  --info-text: #0369a1;
+  --color-info: #0ea5e9;
+  --color-info-light: #e0f2fe;
+  --color-info-border: #bae6fd;
+
+  /* Colors - Partner */
+  --color-partner: #059669;
+  --color-partner-hover: #047857;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Transition */
+  --transition: 0.15s ease;
+}
 
 .counter {
   font-size: 16px;

@@ -20,10 +20,19 @@ export const ManagerRoutesPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  const [originStationId, setOriginStationId] = useState(stations[0]?.id || "");
-  const [destinationStationId, setDestinationStationId] = useState(stations[1]?.id || "");
+  const [originStationId, setOriginStationId] = useState("");
+  const [destinationStationId, setDestinationStationId] = useState("");
   const [distanceKm, setDistanceKm] = useState(400);
   const [estimatedDuration, setEstimatedDuration] = useState("6h 00m");
+
+  const openAddModal = () => {
+    setFormError("");
+    if (stations.length > 0) {
+      setOriginStationId(stations[0]?.id || "");
+      setDestinationStationId(stations[1]?.id || stations[0]?.id || "");
+    }
+    setShowAddModal(true);
+  };
 
   const orgRoutes = routes.filter((r) => r.organizationId === selectedOrgId);
   const filteredRoutes = orgRoutes.filter((r) => {
@@ -48,11 +57,16 @@ export const ManagerRoutesPage = () => {
     }
     setIsSubmitting(true);
     try {
+      const originStn = stations.find((s) => s.id === originStationId);
+      const destStn = stations.find((s) => s.id === destinationStationId);
       await addRoute({
+        origin: originStn?.city || originStn?.name,
+        destination: destStn?.city || destStn?.name,
         originStationId,
         destinationStationId,
         distanceKm: Number(distanceKm),
-        estimatedDuration
+        estimatedDurationHours: parseFloat(estimatedDuration) || 6.0,
+        estimatedDuration,
       });
       setFormError("");
       setShowAddModal(false);
@@ -126,7 +140,8 @@ export const ManagerRoutesPage = () => {
             )}
           </div>
         ) : (
-          <table className="data-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "800px" }}>
             <thead>
               <tr>
                 <th>Route Name</th>
@@ -154,6 +169,7 @@ export const ManagerRoutesPage = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

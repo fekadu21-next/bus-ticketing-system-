@@ -148,7 +148,8 @@ export const ManagerBusesPage = () => {
             )}
           </div>
         ) : (
-          <table className="data-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "900px" }}>
             <thead>
               <tr>
                 <th>Bus Code</th>
@@ -191,6 +192,7 @@ export const ManagerBusesPage = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

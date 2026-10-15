@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
-import { Ticket, Search, RefreshCw, Eye, User, Calendar, CreditCard } from "lucide-react";
+import { Ticket, Search, RefreshCw, Eye, User, Calendar, CreditCard, DollarSign, TrendingUp } from "lucide-react";
+import { StatCard } from "../../components/ui/StatCard";
 
 export const ManagerBookingsPage = () => {
   const {
     bookings,
     selectedOrgId,
+    settings,
     fetchCoordinatorData,
     isLoadingData
   } = useApp();
@@ -15,10 +17,45 @@ export const ManagerBookingsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [dateFilter, setDateFilter] = useState("ALL"); // ALL, TODAY, CUSTOM
+  const [customDate, setCustomDate] = useState("");
 
-  const orgBookings = bookings.filter((b) => b.organizationId === selectedOrgId);
+  const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
+  const commissionRate = commissionPercent / 100;
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const isTodayDate = (dateVal) => {
+    if (!dateVal) return false;
+    if (typeof dateVal === "string" && dateVal.includes(todayStr)) return true;
+    const d = new Date(dateVal);
+    return !isNaN(d.getTime()) && d.toISOString().split("T")[0] === todayStr;
+  };
+
+  const matchesDateFilter = (dateVal) => {
+    if (dateFilter === "ALL") return true;
+    if (dateFilter === "TODAY") return isTodayDate(dateVal);
+    if (dateFilter === "CUSTOM" && customDate) {
+      if (typeof dateVal === "string" && dateVal.includes(customDate)) return true;
+      const d = new Date(dateVal);
+      return !isNaN(d.getTime()) && d.toISOString().split("T")[0] === customDate;
+    }
+    return true;
+  };
+
+  const orgBookings = bookings.filter((b) => b.organizationId === selectedOrgId || b.organization_id === selectedOrgId);
+
+  // Financial calculations
+  const totalGrossValue = orgBookings.reduce((acc, b) => acc + (Number(b.totalFare || b.amount) || 0), 0);
+  const totalNetRevenue = totalGrossValue * (1 - commissionRate);
+  const totalCommissionDeducted = totalGrossValue * commissionRate;
+
+  const todayBookings = orgBookings.filter((b) => isTodayDate(b.bookingDate || b.created_at));
+  const todayGrossValue = todayBookings.reduce((acc, b) => acc + (Number(b.totalFare || b.amount) || 0), 0);
+  const todayNetRevenue = todayGrossValue * (1 - commissionRate);
+
   const filteredBookings = orgBookings.filter((b) => {
     const matchesStatus = filterStatus === "ALL" || b.status === filterStatus;
+    const matchesDate = matchesDateFilter(b.bookingDate || b.created_at);
     const q = searchQuery.toLowerCase();
     const matchesSearch =
       (b.bookingReference && b.bookingReference.toLowerCase().includes(q)) ||
@@ -26,15 +63,18 @@ export const ManagerBookingsPage = () => {
       (b.passengerPhone && b.passengerPhone.toLowerCase().includes(q)) ||
       (b.routeName && b.routeName.toLowerCase().includes(q)) ||
       (b.tripCode && b.tripCode.toLowerCase().includes(q));
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesSearch && matchesDate;
   });
+
+  const filteredGross = filteredBookings.reduce((acc, b) => acc + (Number(b.totalFare || b.amount) || 0), 0);
+  const filteredNet = filteredGross * (1 - commissionRate);
 
   return (
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Company Bookings & Tickets</h1>
-          <p>Operational view of passenger reservations, seat allocations, and payment verification for your fleet.</p>
+          <h1>Company Bookings & Revenue</h1>
+          <p>Passenger reservations, seat allocations, net operator revenue, and platform fee ({commissionPercent}%).</p>
         </div>
         <button
           className="btn btn-secondary"
@@ -45,18 +85,78 @@ export const ManagerBookingsPage = () => {
         </button>
       </div>
 
+      {/* Financial & Net Revenue Cards */}
+      <div className="stats-grid" style={{ marginBottom: "1.5rem" }}>
+        <StatCard
+          title="Total Bookings Value"
+          value={`${Math.round(totalGrossValue).toLocaleString()} ETB`}
+          icon={Ticket}
+          subtitle={`${orgBookings.length} total passenger bookings`}
+        />
+        <StatCard
+          title="Net Operator Revenue"
+          value={`${Math.round(totalNetRevenue).toLocaleString()} ETB`}
+          icon={DollarSign}
+          trend={`${(100 - commissionPercent).toFixed(1)}% Share`}
+          subtitle={`Net revenue after ${commissionPercent}% fee`}
+        />
+        <StatCard
+          title="Today's Bookings Value"
+          value={`${Math.round(todayGrossValue).toLocaleString()} ETB`}
+          icon={Calendar}
+          subtitle={`${todayBookings.length} bookings created today`}
+        />
+        <StatCard
+          title="Today's Net Revenue"
+          value={`${Math.round(todayNetRevenue).toLocaleString()} ETB`}
+          icon={TrendingUp}
+          trend={`Daily Net`}
+          subtitle={`Net revenue earned today`}
+        />
+      </div>
+
       <div className="card-table-wrapper">
         <div className="card-header-toolbar">
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <div className="header-search" style={{ width: "260px" }}>
+          <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
+            <div className="header-search" style={{ width: "220px" }}>
               <Search className="search-icon" size={15} />
               <input
                 type="text"
-                placeholder="Search booking ref, passenger, phone..."
+                placeholder="Search booking ref, passenger..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+
+            {/* Quick Date Filters */}
+            <div style={{ display: "flex", alignItems: "center", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "2px 4px" }}>
+              <button
+                type="button"
+                className={`btn btn-sm ${dateFilter === "ALL" ? "btn-primary" : "btn-secondary"}`}
+                style={{ border: "none", fontSize: "0.75rem", padding: "3px 8px" }}
+                onClick={() => { setDateFilter("ALL"); setCustomDate(""); }}
+              >
+                All Dates
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${dateFilter === "TODAY" ? "btn-primary" : "btn-secondary"}`}
+                style={{ border: "none", fontSize: "0.75rem", padding: "3px 8px" }}
+                onClick={() => { setDateFilter("TODAY"); setCustomDate(todayStr); }}
+              >
+                Today
+              </button>
+              <input
+                type="date"
+                value={customDate}
+                onChange={(e) => {
+                  setCustomDate(e.target.value);
+                  setDateFilter(e.target.value ? "CUSTOM" : "ALL");
+                }}
+                style={{ fontSize: "0.75rem", padding: "2px 6px", border: "1px solid #cbd5e1", borderRadius: "4px" }}
+              />
+            </div>
+
             <select
               className="org-selector-select"
               value={filterStatus}
@@ -68,8 +168,8 @@ export const ManagerBookingsPage = () => {
               <option value="CANCELLED">CANCELLED</option>
             </select>
           </div>
-          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-            Total Bookings: <strong>{orgBookings.length}</strong>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            Showing <strong>{filteredBookings.length}</strong> bookings | Filtered Net: <strong style={{ color: "var(--primary)" }}>{Math.round(filteredNet).toLocaleString()} ETB</strong> (Gross: {Math.round(filteredGross).toLocaleString()} ETB)
           </div>
         </div>
 
@@ -79,7 +179,8 @@ export const ManagerBookingsPage = () => {
             <div>No bookings found matching your search.</div>
           </div>
         ) : (
-          <table className="data-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "1000px" }}>
             <thead>
               <tr>
                 <th>Booking Ref</th>
@@ -122,6 +223,7 @@ export const ManagerBookingsPage = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

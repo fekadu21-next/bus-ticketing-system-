@@ -19,7 +19,7 @@ import {
   Navigation,
   Loader2,
 } from 'lucide-react';
-import { getTripDetailsApi } from '@/api/trip.api';
+import { getTripDetailsApi, getTripSeatsApi } from '@/api/trip.api';
 
 export const formatEtb = (amount) => `${Number(amount || 0).toLocaleString('en-US')} ETB`;
 
@@ -64,13 +64,37 @@ export const TripDetailsPage = () => {
       setLoading(true);
       try {
         const data = await getTripDetailsApi(tripId);
+        console.log('Trip details from backend:', data);
         if (isMounted) {
           setTrip(data);
+          let allSeats = data?.seats || [];
+          // If seats not included in trip details, fetch them separately
+          if (!allSeats || allSeats.length === 0) {
+            try {
+              const seatsData = await getTripSeatsApi(tripId);
+              console.log('Seats from backend:', seatsData);
+              if (seatsData?.seats) {
+                allSeats = seatsData.seats;
+                const liveCount = seatsData.availableSeatsCount ?? seatsData.seats.filter(s => s.status === 'available').length;
+                setTrip(prev => ({
+                  ...prev,
+                  seats: seatsData.seats,
+                  totalSeats: seatsData.totalSeats,
+                  availableSeatsCount: liveCount,
+                  seatsAvailable: liveCount,
+                }));
+              }
+            } catch (seatErr) {
+              console.error('Error fetching seats:', seatErr);
+            }
+          }
           // Auto-select first available seat if none selected
-          if (data?.seats) {
-            const firstAvailable = data.seats.find((s) => s.status === 'available');
+          if (allSeats.length > 0) {
+            const firstAvailable = allSeats.find((s) => s.status === 'available');
             if (firstAvailable) {
               setSelectedSeats([firstAvailable.label]);
+            } else {
+              setSelectedSeats([]);
             }
           }
         }
@@ -90,12 +114,23 @@ export const TripDetailsPage = () => {
   }, [tripId]);
 
   const seatsByRow = useMemo(() => {
-    if (!trip?.seats) return [];
+    if (!trip?.seats || trip.seats.length === 0) return [];
+    const maxRow = Math.max(1, ...trip.seats.map((seat) => seat.row || Math.ceil(seat.seatNumber / 4)));
     const rows = [];
-    for (let row = 1; row <= 10; row += 1) {
-      rows.push(trip.seats.filter((seat) => seat.row === row));
+    for (let row = 1; row <= maxRow; row += 1) {
+      const inRow = trip.seats.filter((seat) => (seat.row || Math.ceil(seat.seatNumber / 4)) === row);
+      if (inRow.length > 0) {
+        rows.push(inRow);
+      }
     }
     return rows;
+  }, [trip]);
+
+  const liveAvailableSeatsCount = useMemo(() => {
+    if (Array.isArray(trip?.seats) && trip.seats.length > 0) {
+      return trip.seats.filter((s) => s.status === 'available').length;
+    }
+    return trip?.availableSeatsCount ?? trip?.seatsAvailable ?? 0;
   }, [trip]);
 
   if (loading) {
@@ -128,7 +163,7 @@ export const TripDetailsPage = () => {
   }
 
   const toggleSeat = (seat) => {
-    if (seat.status === 'booked') return;
+    if (['booked', 'held', 'blocked', 'locked'].includes(seat.status)) return;
     setSelectedSeats((current) =>
       current.includes(seat.label) ? current.filter((label) => label !== seat.label) : [...current, seat.label],
     );
@@ -198,7 +233,7 @@ export const TripDetailsPage = () => {
                 <p className="text-[24px] font-black text-slate-900 leading-none">{formatEtb(trip.price)}</p>
                 <p className="text-[12px] text-slate-400 mt-1">per person</p>
               </div>
-              <p className="text-[12px] font-semibold text-[#16a34a]">{trip.seatsAvailable} seats available</p>
+              <p className="text-[12px] font-semibold text-[#16a34a]">{liveAvailableSeatsCount} seats available</p>
               <a
                 href="#seat-selection"
                 className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[12px] font-semibold"
@@ -210,7 +245,7 @@ export const TripDetailsPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-[18px] border border-slate-200/80 px-4 sm:px-6 py-4 grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-[18px] border border-slate-200/80 px-4 sm:px-6 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="flex items-start gap-2.5">
             <MapPin size={16} className="text-[#2563eb] mt-0.5" />
             <div>
@@ -229,7 +264,14 @@ export const TripDetailsPage = () => {
             <Calendar size={16} className="text-[#2563eb] mt-0.5" />
             <div>
               <p className="text-[13px] font-bold text-slate-900">{formatPrettyDate(trip.date)}</p>
-              <p className="text-[11px] text-slate-400">Date</p>
+              <p className="text-[11px] text-slate-400">Departure Date</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <Clock size={16} className="text-[#2563eb] mt-0.5" />
+            <div>
+              <p className="text-[13px] font-bold text-[#2563eb]">{trip.departureTime}</p>
+              <p className="text-[11px] text-slate-400">Departure Time</p>
             </div>
           </div>
           <div className="flex items-start gap-2.5">
@@ -425,6 +467,9 @@ export const TripDetailsPage = () => {
                 <span className="w-3 h-3 rounded-[3px] bg-[#2563eb]" /> Selected
               </span>
               <span className="inline-flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-[3px] bg-amber-100 border border-amber-300" /> Held
+              </span>
+              <span className="inline-flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-[3px] bg-slate-200 border border-slate-300" /> Booked
               </span>
             </div>
@@ -443,18 +488,26 @@ export const TripDetailsPage = () => {
                       {rowSeats.slice(0, 2).map((seat) => {
                         const isSelected = selectedSeats.includes(seat.label);
                         const isBooked = seat.status === 'booked';
+                        const isHeld = seat.status === 'held' || seat.status === 'locked';
+                        const isBlocked = seat.status === 'blocked';
+                        const isDisabled = isBooked || isHeld || isBlocked;
                         return (
                           <button
                             key={seat.id}
                             type="button"
-                            disabled={isBooked}
+                            disabled={isDisabled}
                             onClick={() => toggleSeat(seat)}
+                            title={isHeld ? `Seat ${seat.label} is held` : isBooked ? `Seat ${seat.label} is booked` : isBlocked ? `Seat ${seat.label} is blocked` : `Select Seat ${seat.label}`}
                             className={`w-7 h-7 rounded-[6px] text-[9px] font-bold ${
-                              isBooked
+                              isSelected
+                                ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400'
+                                : isHeld
+                                ? 'bg-amber-100 text-amber-700 border border-amber-300 cursor-not-allowed'
+                                : isBlocked
+                                ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                : isBooked
                                 ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                : isSelected
-                                  ? 'bg-[#2563eb] text-white'
-                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 cursor-pointer'
                             }`}
                           >
                             {seat.label}
@@ -467,18 +520,26 @@ export const TripDetailsPage = () => {
                       {rowSeats.slice(2, 4).map((seat) => {
                         const isSelected = selectedSeats.includes(seat.label);
                         const isBooked = seat.status === 'booked';
+                        const isHeld = seat.status === 'held' || seat.status === 'locked';
+                        const isBlocked = seat.status === 'blocked';
+                        const isDisabled = isBooked || isHeld || isBlocked;
                         return (
                           <button
                             key={seat.id}
                             type="button"
-                            disabled={isBooked}
+                            disabled={isDisabled}
                             onClick={() => toggleSeat(seat)}
+                            title={isHeld ? `Seat ${seat.label} is held` : isBooked ? `Seat ${seat.label} is booked` : isBlocked ? `Seat ${seat.label} is blocked` : `Select Seat ${seat.label}`}
                             className={`w-7 h-7 rounded-[6px] text-[9px] font-bold ${
-                              isBooked
+                              isSelected
+                                ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400'
+                                : isHeld
+                                ? 'bg-amber-100 text-amber-700 border border-amber-300 cursor-not-allowed'
+                                : isBlocked
+                                ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                : isBooked
                                 ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                : isSelected
-                                  ? 'bg-[#2563eb] text-white'
-                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 cursor-pointer'
                             }`}
                           >
                             {seat.label}
@@ -504,8 +565,13 @@ export const TripDetailsPage = () => {
 
             <button
               type="button"
-              onClick={() => navigate('/passenger-info', { state: { tripData: trip, selectedSeats } })}
-              className="mt-4 w-full h-11 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2"
+              disabled={selectedSeats.length === 0}
+              onClick={() => navigate('/passenger-info', { state: { tripData: { ...trip, price: trip.price || trip.fare || 0 }, selectedSeats } })}
+              className={`mt-4 w-full h-11 rounded-full text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2 ${
+                selectedSeats.length === 0
+                  ? 'bg-slate-300 cursor-not-allowed'
+                  : 'bg-[#2563eb] hover:bg-[#1d4ed8]'
+              }`}
             >
               Continue to Passenger Info
               <ArrowRight size={15} />

@@ -4,18 +4,37 @@ import { Settings, ShieldCheck, Lock, Save } from "lucide-react";
 
 export const AdminSettingsPage = () => {
   const { settings, updateSystemSettings } = useApp();
-  const [fee, setFee] = useState(settings.platformFeePercent);
-  const [holdTime, setHoldTime] = useState(settings.holdDurationMinutes);
-  const [requireDriver, setRequireDriver] = useState(settings.requireDriverAssignmentBeforePublish);
+  const [fee, setFee] = useState(settings?.platformFeePercent ?? 5.0);
+  const [holdTime, setHoldTime] = useState(settings?.holdDurationMinutes ?? 15);
+  const [requireDriver, setRequireDriver] = useState(settings?.requireDriverAssignmentBeforePublish ?? true);
+
+  // Sync state if settings change externally
+  React.useEffect(() => {
+    if (settings?.platformFeePercent !== undefined) {
+      setFee(settings.platformFeePercent);
+    }
+    if (settings?.holdDurationMinutes !== undefined) {
+      setHoldTime(settings.holdDurationMinutes);
+    }
+    if (settings?.requireDriverAssignmentBeforePublish !== undefined) {
+      setRequireDriver(settings.requireDriverAssignmentBeforePublish);
+    }
+  }, [settings]);
 
   const handleSave = (e) => {
     e.preventDefault();
+    const feeVal = Math.max(0, Math.min(100, Number(fee) || 5.0));
     updateSystemSettings({
-      platformFeePercent: Number(fee),
-      holdDurationMinutes: Number(holdTime),
+      platformFeePercent: feeVal,
+      holdDurationMinutes: Number(holdTime) || 15,
       requireDriverAssignmentBeforePublish: requireDriver
     });
   };
+
+  const currentFeeNum = Number(fee) || 0;
+  const sampleFare = 1000;
+  const platformTakes = ((sampleFare * currentFeeNum) / 100).toFixed(2);
+  const operatorGets = (sampleFare - platformTakes).toFixed(2);
 
   return (
     <div>
@@ -42,6 +61,15 @@ export const AdminSettingsPage = () => {
               required
             />
             <span className="help-text">Deducted automatically from total booking fare prior to operator payout.</span>
+            <div style={{ marginTop: "0.6rem", padding: "0.75rem 1rem", background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)", borderRadius: "6px", fontSize: "0.82rem" }}>
+              <div style={{ fontWeight: 600, color: "var(--primary)", marginBottom: "0.25rem" }}>
+                💡 Live Commission Split Example (1,000 ETB Passenger Booking):
+              </div>
+              <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+                <div>Platform Revenue ({currentFeeNum}%): <strong style={{ color: "var(--primary)" }}>{platformTakes} ETB</strong></div>
+                <div>Operator Net Share ({(100 - currentFeeNum).toFixed(1)}%): <strong style={{ color: "#10b981" }}>{operatorGets} ETB</strong></div>
+              </div>
+            </div>
           </div>
 
           <div className="form-group">

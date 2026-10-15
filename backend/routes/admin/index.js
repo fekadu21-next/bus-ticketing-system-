@@ -2,7 +2,10 @@ import { Router } from 'express';
 import dashboardRoutes from './dashboard.route.js';
 import organizationRoutes from './organization.route.js';
 import adminOverviewController from '../../controllers/admin/overview.controller.js';
+import stationsController from '../../controllers/admin/stations.controller.js';
 import authenticate from '../../middleware/authenticate.middleware.js';
+import validate from '../../middleware/validate.middleware.js';
+import { createStationSchema, updateStationSchema } from '../../validation/admin/station.validation.js';
 import { authorizeRole } from '../../middleware/authorize.middleware.js';
 import { ROLES } from '../../constants/index.js';
 
@@ -25,6 +28,14 @@ router.get('/bookings', adminOverviewController.getBookings);
 router.get('/payments', adminOverviewController.getPayments);
 router.get('/audit-logs', adminOverviewController.getAuditLogs);
 router.get('/reports', adminOverviewController.getPlatformReports);
-router.get('/stations', adminOverviewController.getStations);
+
+// Stations CRUD - Note: specific routes must come before parameterized routes
+router.get('/stations', stationsController.getStations);
+router.get('/stations/active', stationsController.getActiveStations);
+router.post('/stations', validate(createStationSchema), stationsController.createStation);
+router.get('/stations/:stationId', stationsController.getStationById);
+router.put('/stations/:stationId', validate(updateStationSchema), stationsController.updateStation);
+router.patch('/stations/:stationId', validate(updateStationSchema), stationsController.updateStation);
+router.delete('/stations/:stationId', stationsController.deleteStation);
 
 export default router;

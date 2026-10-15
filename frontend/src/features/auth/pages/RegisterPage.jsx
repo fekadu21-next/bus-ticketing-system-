@@ -89,7 +89,7 @@ const RegisterPage = () => {
       // If session/token was already established by register
       if (result.data?.accessToken) {
         setIsSubmitting(false);
-        navigate('/dashboard', { replace: true });
+        navigate(result.redirectPath || '/profile', { replace: true });
         return;
       }
 
@@ -98,7 +98,7 @@ const RegisterPage = () => {
       setIsSubmitting(false);
 
       if (loginResult.success) {
-        navigate('/dashboard', { replace: true });
+        navigate(loginResult.redirectPath || '/profile', { replace: true });
         return;
       } else {
         // If login failed (e.g. backend requires verified email before login)

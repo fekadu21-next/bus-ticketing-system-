@@ -3,22 +3,47 @@ import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { QrCode, Search, Eye, ShieldCheck, RefreshCw } from "lucide-react";
+import { QrCode, Search, Eye, ShieldCheck, RefreshCw, Building2 } from "lucide-react";
 
 export const AdminTicketsPage = () => {
-  const { tickets, verifications, isLoadingData, fetchAdminData } = useApp();
+  const { tickets = [], verifications = [], organizations = [], isLoadingData, fetchAdminData } = useApp();
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterOrg, setFilterOrg] = useState("ALL");
   const [activeTab, setActiveTab] = useState("TICKETS");
 
   const filteredTickets = tickets.filter((t) => {
+    const matchesOrg =
+      filterOrg === "ALL" ||
+      t.organizationId === filterOrg ||
+      (organizations.find((o) => o.id === filterOrg)?.name &&
+        t.organizationName?.toLowerCase() === organizations.find((o) => o.id === filterOrg)?.name?.toLowerCase());
+
     const q = searchQuery.toLowerCase();
-    return (
+    const matchesSearch =
       (t.ticketNumber || "").toLowerCase().includes(q) ||
       (t.passengerName || "").toLowerCase().includes(q) ||
       (t.qrToken || "").toLowerCase().includes(q) ||
-      (t.organizationName || "").toLowerCase().includes(q)
-    );
+      (t.organizationName || "").toLowerCase().includes(q);
+
+    return matchesOrg && matchesSearch;
+  });
+
+  const filteredVerifications = verifications.filter((v) => {
+    const matchesOrg =
+      filterOrg === "ALL" ||
+      v.organizationId === filterOrg ||
+      (organizations.find((o) => o.id === filterOrg)?.name &&
+        v.organizationName?.toLowerCase() === organizations.find((o) => o.id === filterOrg)?.name?.toLowerCase());
+
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      (v.ticketNumber || "").toLowerCase().includes(q) ||
+      (v.passengerName || "").toLowerCase().includes(q) ||
+      (v.verifierName || "").toLowerCase().includes(q) ||
+      (v.stationName || "").toLowerCase().includes(q);
+
+    return matchesOrg && matchesSearch;
   });
 
   return (
@@ -30,7 +55,7 @@ export const AdminTicketsPage = () => {
         </div>
         <button
           className="btn btn-secondary"
-          onClick={() => fetchAdminData()}
+          onClick={() => fetchAdminData && fetchAdminData()}
           title="Refresh Tickets"
         >
           <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
@@ -43,27 +68,47 @@ export const AdminTicketsPage = () => {
           className={`btn ${activeTab === "TICKETS" ? "btn-primary" : "btn-secondary"}`}
           onClick={() => setActiveTab("TICKETS")}
         >
-          <QrCode size={15} /> Issued Digital Tickets ({tickets.length})
+          <QrCode size={15} /> Issued Digital Tickets ({filteredTickets.length})
         </button>
         <button
           className={`btn ${activeTab === "LOGS" ? "btn-primary" : "btn-secondary"}`}
           onClick={() => setActiveTab("LOGS")}
         >
-          <ShieldCheck size={15} /> Live QR Scan Events ({verifications.length})
+          <ShieldCheck size={15} /> Live QR Scan Events ({filteredVerifications.length})
         </button>
       </div>
 
       {activeTab === "TICKETS" ? (
         <div className="card-table-wrapper">
           <div className="card-header-toolbar">
-            <div className="header-search" style={{ width: "280px" }}>
-              <Search className="search-icon" size={15} />
-              <input
-                type="text"
-                placeholder="Search ticket # or QR token..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+              <div className="header-search" style={{ width: "260px" }}>
+                <Search className="search-icon" size={15} />
+                <input
+                  type="text"
+                  placeholder="Search ticket # or QR token..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Organization Filter */}
+              <select
+                className="org-selector-select"
+                value={filterOrg}
+                onChange={(e) => setFilterOrg(e.target.value)}
+                title="Filter tickets by transport company"
+              >
+                <option value="ALL">🏢 All Organizations</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              Showing <strong>{filteredTickets.length}</strong> of <strong>{tickets.length}</strong> tickets
             </div>
           </div>
 
@@ -99,9 +144,14 @@ export const AdminTicketsPage = () => {
                   <tr key={t.id}>
                     <td><code>{t.ticketNumber}</code></td>
                     <td><strong>{t.passengerName}</strong></td>
-                    <td>{t.organizationName}</td>
-                    <td>{t.tripCode}</td>
-                    <td><span style={{ fontWeight: 700 }}>Seat {t.seatNumber}</span></td>
+                    <td>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
+                        <Building2 size={13} color="var(--primary)" />
+                        {t.organizationName}
+                      </span>
+                    </td>
+                    <td><code>{t.tripCode}</code></td>
+                    <td><strong>{t.seatNumber}</strong></td>
                     <td><code>{t.qrToken}</code></td>
                     <td><Badge status={t.status} /></td>
                     <td>{t.issuedAt}</td>
@@ -109,6 +159,7 @@ export const AdminTicketsPage = () => {
                       <button
                         className="btn btn-secondary btn-sm"
                         onClick={() => setSelectedTicket(t)}
+                        title="Inspect QR Code"
                       >
                         <Eye size={13} /> View QR
                       </button>
@@ -122,9 +173,34 @@ export const AdminTicketsPage = () => {
       ) : (
         <div className="card-table-wrapper">
           <div className="card-header-toolbar">
-            <div className="card-title">
-              <h3>Terminal Boarding Scan Log</h3>
-              <p>Validation results: VALID, ALREADY_USED, INVALID, WRONG_TRIP</p>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+              <div className="header-search" style={{ width: "260px" }}>
+                <Search className="search-icon" size={15} />
+                <input
+                  type="text"
+                  placeholder="Search scan logs by ticket, passenger..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Organization Filter */}
+              <select
+                className="org-selector-select"
+                value={filterOrg}
+                onChange={(e) => setFilterOrg(e.target.value)}
+                title="Filter scan events by transport company"
+              >
+                <option value="ALL">🏢 All Organizations</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              Showing <strong>{filteredVerifications.length}</strong> of <strong>{verifications.length}</strong> events
             </div>
           </div>
 
@@ -142,14 +218,14 @@ export const AdminTicketsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {verifications.length === 0 ? (
+              {filteredVerifications.length === 0 ? (
                 <tr>
                   <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
-                    No QR scan verification events recorded yet.
+                    No QR scan verification events recorded matching your filter.
                   </td>
                 </tr>
               ) : (
-                verifications.map((v) => (
+                filteredVerifications.map((v) => (
                   <tr key={v.id}>
                     <td><code>{v.id}</code></td>
                     <td><code>{v.ticketNumber}</code></td>
@@ -218,9 +294,22 @@ export const AdminTicketsPage = () => {
                 fontSize: "0.78rem"
               }}
             >
-              <div><strong>Operator:</strong> {selectedTicket.organizationName}</div>
-              <div><strong>Trip Reference:</strong> {selectedTicket.tripCode}</div>
-              <div><strong>Booking Ref:</strong> {selectedTicket.bookingReference}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+                <span style={{ color: "var(--text-muted)" }}>Operating Carrier:</span>
+                <strong>{selectedTicket.organizationName}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+                <span style={{ color: "var(--text-muted)" }}>Trip Code:</span>
+                <code>{selectedTicket.tripCode}</code>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+                <span style={{ color: "var(--text-muted)" }}>Assigned Bus:</span>
+                <code>{selectedTicket.busPlateNumber}</code>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-muted)" }}>Departure Time:</span>
+                <strong>{selectedTicket.departureDate} at {selectedTicket.departureTime}</strong>
+              </div>
             </div>
           </div>
         )}
@@ -228,3 +317,5 @@ export const AdminTicketsPage = () => {
     </div>
   );
 };
+
+export default AdminTicketsPage;

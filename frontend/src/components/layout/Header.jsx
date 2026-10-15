@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
+import { formatUserFullName } from "../../utils/userUtils";
 import {
   Search,
   Bell,
@@ -14,6 +15,7 @@ import {
   Menu,
   X,
   Lock,
+  Globe,
 } from "lucide-react";
 
 export const Header = () => {
@@ -28,6 +30,7 @@ export const Header = () => {
     globalSearchQuery,
     setGlobalSearchQuery,
     activeOrg,
+    setActivePage,
     isSidebarCollapsed,
     setIsSidebarCollapsed,
   } = useApp();
@@ -51,19 +54,34 @@ export const Header = () => {
     navigate(path);
   };
 
-  const displayName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-    user?.name ||
-    (currentRole === "ADMIN" ? "Solomon Tekle" : "Booking Coordinator");
+  const handleProfileClick = () => {
+    setShowUserMenu(false);
+    const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+    if (setActivePage) setActivePage("profile");
+    navigate(`${basePath}/profile`);
+  };
+
+  const handleChangePasswordClick = () => {
+    setShowUserMenu(false);
+    const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+    if (setActivePage) setActivePage("change-password");
+    navigate(`${basePath}/change-password`);
+  };
+
+  const displayName = formatUserFullName(
+    user,
+    currentRole === "ADMIN" ? "System Admin" : "Booking Coordinator"
+  );
 
   const userInitials = displayName
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2) || (currentRole === "ADMIN" ? "ST" : "BC");
+    .slice(0, 2) || (currentRole === "ADMIN" ? "SA" : "BC");
 
-  const userEmail = user?.email || (currentRole === "ADMIN" ? "admin@busticket.com" : "coordinator@busticket.com");
+  const userEmail = user?.email || "";
 
   return (
     <header className="top-header">
@@ -263,10 +281,10 @@ export const Header = () => {
                 <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>{displayName}</div>
                 <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{userEmail}</div>
               </div>
-              <button className="dropdown-btn" onClick={() => handleNavigate("/profile")}>
+              <button className="dropdown-btn" onClick={handleProfileClick}>
                 <User size={14} /> Profile & Account
               </button>
-              <button className="dropdown-btn" onClick={() => handleNavigate("/change-password")}>
+              <button className="dropdown-btn" onClick={handleChangePasswordClick}>
                 <KeyRound size={14} /> Change Password
               </button>
               <button className="dropdown-btn danger-btn" onClick={handleLogout}>

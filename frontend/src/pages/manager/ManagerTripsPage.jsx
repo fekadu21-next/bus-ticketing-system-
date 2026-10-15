@@ -31,9 +31,9 @@ export const ManagerTripsPage = () => {
 
   const [selectedRouteId, setSelectedRouteId] = useState(routes[0]?.id || "");
   const [selectedBusId, setSelectedBusId] = useState(orgBuses[0]?.id || "");
-  const [departureDate, setDepartureDate] = useState("2026-09-27");
-  const [departureTime, setDepartureTime] = useState("06:00 AM");
-  const [arrivalTime, setArrivalTime] = useState("02:30 PM");
+  const [departureDate, setDepartureDate] = useState("");
+  const [departureTime, setDepartureTime] = useState("");
+  const [arrivalTime, setArrivalTime] = useState("");
   const [fareAmount, setFareAmount] = useState(850);
   const [selectedDriverId, setSelectedDriverId] = useState(orgDrivers[0]?.id || "");
 
@@ -60,6 +60,11 @@ export const ManagerTripsPage = () => {
     setTripError("");
     setIsSubmittingTrip(true);
     try {
+      if (!departureDate || !departureTime) {
+        setTripError("Departure date and time are required.");
+        setIsSubmittingTrip(false);
+        return;
+      }
       await createTrip({
         routeId: selectedRouteId,
         busId: selectedBusId,
@@ -72,6 +77,9 @@ export const ManagerTripsPage = () => {
       setTripError("");
       setShowWizardModal(false);
       setWizardStep(1);
+      setDepartureDate("");
+      setDepartureTime("");
+      setArrivalTime("");
     } catch (err) {
       setTripError(err.response?.data?.message || err.message || "Failed to schedule trip.");
     } finally {
@@ -165,7 +173,8 @@ export const ManagerTripsPage = () => {
             )}
           </div>
         ) : (
-          <table className="data-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "900px" }}>
             <thead>
               <tr>
                 <th>Trip Code</th>
@@ -191,8 +200,8 @@ export const ManagerTripsPage = () => {
                     </span>
                   </td>
                   <td>
-                    <div>{t.departureDate}</div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{t.departureTime}</div>
+                    <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{t.departureDate}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--primary)", fontWeight: 700 }}>{t.departureTime}</div>
                   </td>
                   <td><strong>{t.fareAmount} ETB</strong></td>
                   <td>
@@ -240,6 +249,7 @@ export const ManagerTripsPage = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -364,12 +374,12 @@ export const ManagerTripsPage = () => {
                 </div>
                 <div className="form-group">
                   <label>Departure Time</label>
-                  <input type="text" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)} />
+                  <input type="time" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)} />
                 </div>
               </div>
               <div className="form-group">
                 <label>Estimated Arrival Time</label>
-                <input type="text" value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)} />
+                <input type="time" value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)} />
               </div>
             </div>
           )}

@@ -1,10 +1,23 @@
-import api from '@/services/api';
+import api, { refreshSession } from '@/services/api';
 
 /**
  * Passenger registration
  */
 export const registerApi = async (payload) => {
   const { data } = await api.post('/auth/register', payload);
+  // If the response includes accessToken (auto-login), store it
+  if (data.data?.accessToken) {
+    // The auth context will handle this on the next page load via refresh
+    // Or we could explicitly store it here if needed
+  }
+  return data;
+};
+
+/**
+ * Partner organization & operator registration
+ */
+export const registerPartnerApi = async (payload) => {
+  const { data } = await api.post('/auth/register-partner', payload);
   return data;
 };
 
@@ -28,8 +41,7 @@ export const logoutApi = async () => {
  * Refresh access token
  */
 export const refreshApi = async () => {
-  const { data } = await api.post('/auth/refresh', {});
-  return data;
+  return refreshSession();
 };
 
 /**

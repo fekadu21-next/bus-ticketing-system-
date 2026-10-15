@@ -8,6 +8,7 @@ import { Building2, CheckCircle2, XCircle, AlertTriangle, ShieldCheck, Eye, Sear
 export const AdminOrganizationsPage = () => {
   const {
     organizations,
+    buses = [],
     approveOrganization,
     rejectOrganization,
     suspendOrganization,
@@ -18,6 +19,7 @@ export const AdminOrganizationsPage = () => {
 
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [filterType, setFilterType] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [rejectReason, setRejectReason] = useState("");
   const [suspendReason, setSuspendReason] = useState("");
@@ -25,16 +27,31 @@ export const AdminOrganizationsPage = () => {
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [targetOrgId, setTargetOrgId] = useState(null);
 
+  const categories = Array.from(new Set(organizations.map((o) => o.type).filter(Boolean)));
+
+  const getOrgBusCount = (org) => {
+    if (org.totalBuses !== undefined && org.totalBuses > 0) return org.totalBuses;
+    const fromBuses = (buses || []).filter((b) => b.organizationId === org.id || b.organization_id === org.id).length;
+    return fromBuses || (org._count?.buses ?? org.buses?.length ?? 0);
+  };
+
   const filteredOrgs = organizations.filter((org) => {
     const matchesStatus = filterStatus === "ALL" || org.status === filterStatus;
+    const matchesType = filterType === "ALL" || org.type === filterType;
     const q = searchQuery.toLowerCase();
     const matchesSearch =
       (org.name || "").toLowerCase().includes(q) ||
       (org.registrationNumber || "").toLowerCase().includes(q) ||
       (org.contactName || "").toLowerCase().includes(q) ||
       (org.address || "").toLowerCase().includes(q);
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesType && matchesSearch;
   });
+
+  React.useEffect(() => {
+    if (fetchAdminData) {
+      fetchAdminData();
+    }
+  }, [fetchAdminData]);
 
   const handleConfirmReject = () => {
     if (targetOrgId) {
@@ -78,6 +95,17 @@ export const AdminOrganizationsPage = () => {
             </div>
             <select
               className="org-selector-select"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              title="Filter by operator category / type"
+            >
+              <option value="ALL">All Categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <select
+              className="org-selector-select"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -87,6 +115,25 @@ export const AdminOrganizationsPage = () => {
               <option value="SUSPENDED">Suspended</option>
               <option value="REJECTED">Rejected</option>
             </select>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                padding: "0.45rem 0.85rem",
+                fontSize: "0.825rem",
+                cursor: "pointer",
+                borderRadius: "0.5rem"
+              }}
+              onClick={() => fetchAdminData && fetchAdminData()}
+              disabled={isLoadingData}
+              title="Refresh organizations list from backend"
+            >
+              <RefreshCw size={13} className={isLoadingData ? "animate-spin" : ""} />
+              Refresh
+            </button>
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
             Showing <strong>{filteredOrgs.length}</strong> of <strong>{organizations.length}</strong> registered operators
@@ -94,7 +141,8 @@ export const AdminOrganizationsPage = () => {
         </div>
 
         {/* Operators Table */}
-        <table className="data-table">
+        <div style={{ overflowX: "auto" }}>
+          <table className="data-table" style={{ minWidth: "1000px" }}>
           <thead>
             <tr>
               <th>Organization</th>
@@ -136,7 +184,7 @@ export const AdminOrganizationsPage = () => {
                     <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.phone} | {org.email}</div>
                   </td>
                   <td>
-                    <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>{org.totalBuses} buses</span>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--primary)" }}>{getOrgBusCount(org)} buses</span>
                     <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.activeTrips} active trips</div>
                   </td>
                   <td><Badge status={org.status} /></td>
@@ -194,6 +242,7 @@ export const AdminOrganizationsPage = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Detail View Modal */}
@@ -249,7 +298,7 @@ export const AdminOrganizationsPage = () => {
               </div>
               <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Operational Fleet</span>
-                <div style={{ fontWeight: 700 }}>{selectedOrg.totalBuses} Registered Buses</div>
+                <div style={{ fontWeight: 700 }}>{getOrgBusCount(selectedOrg)} Registered Buses</div>
                 <div style={{ fontSize: "0.75rem" }}>{selectedOrg.activeTrips} Active Departure Schedules</div>
               </div>
             </div>

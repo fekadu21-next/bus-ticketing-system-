@@ -16,7 +16,7 @@ import Alert from '@/components/ui/Alert';
 export const PartnerRegisterPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { registerPartner } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,40 +145,30 @@ export const PartnerRegisterPage = () => {
 
     const nameParts = formData.repFullName.trim().split(' ');
     const firstName = nameParts[0] || 'Representative';
-    const lastName = nameParts.slice(1).join(' ') || 'Contact';
+    const lastName = nameParts.slice(1).join(' ') || 'Manager';
 
     try {
-      const regResult = await register({
+      const regResult = await registerPartner({
+        orgName: formData.orgName.trim(),
+        orgType: formData.orgType,
+        orgEmail: formData.orgEmail || formData.repEmail,
+        orgPhone: formData.orgPhone,
+        city: formData.city,
+        regNumber: formData.regNumber,
+        address: formData.address,
+        repFullName: formData.repFullName,
+        repPosition: formData.repPosition,
+        repPhone: formData.repPhone,
+        repEmail: formData.repEmail,
         firstName,
         lastName,
-        email: formData.loginEmail || formData.repEmail,
+        email: (formData.loginEmail || formData.repEmail).trim(),
         phone: formData.repPhone || formData.orgPhone,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
       });
 
       if (regResult.success) {
-        const partnerProfile = {
-          organization: {
-            name: formData.orgName,
-            email: formData.orgEmail || formData.repEmail,
-            type: formData.orgType,
-            city: formData.city,
-            regNumber: formData.regNumber,
-            address: formData.address,
-            phone: formData.orgPhone,
-          },
-          representative: {
-            fullName: formData.repFullName,
-            position: formData.repPosition,
-            phone: formData.repPhone,
-            email: formData.repEmail,
-          },
-          submittedAt: new Date().toISOString(),
-          status: 'PENDING_APPROVAL',
-        };
-        localStorage.setItem(`partner_app_${formData.loginEmail}`, JSON.stringify(partnerProfile));
-
         setIsSuccess(true);
       } else {
         setErrorMsg(regResult.error || 'Failed to submit application. Please check your information.');
@@ -257,7 +247,15 @@ export const PartnerRegisterPage = () => {
               </ul>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/login" className="px-6 py-3 bg-blue-600 text-white rounded-lg text-base font-semibold hover:bg-blue-700 transition-colors duration-200">
+              <Link
+                to="/login"
+                state={{
+                  email: formData.loginEmail || formData.repEmail,
+                  isPartner: true,
+                  from: { pathname: '/operator' },
+                }}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg text-base font-semibold hover:bg-blue-700 transition-colors duration-200"
+              >
                 {t('partnerRegister.success.proceedLogin')}
               </Link>
               <Link to="/" className="px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg text-base font-semibold hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">

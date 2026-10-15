@@ -19,7 +19,7 @@ import {
   Trash2,
 } from 'lucide-react';
 
-export const ProfilePage = () => {
+export const ProfilePage = ({ embedded = false }) => {
   const { user, logout, updateUserAvatar, updateUser } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -146,9 +146,13 @@ export const ProfilePage = () => {
     setTimeout(() => setEditMessage(null), 4000);
   };
 
+  const changePasswordLink = embedded
+    ? (user?.roles?.includes('ADMIN') || user?.roles?.includes('PLATFORM_ADMIN') ? '/admin/change-password' : '/operator/change-password')
+    : '/change-password';
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-      <div className="max-w-3xl mx-auto">
+    <div className={embedded ? "w-full max-w-4xl mx-auto py-2" : "min-h-screen bg-slate-50 dark:bg-slate-900 p-6"}>
+      <div className={embedded ? "w-full" : "max-w-3xl mx-auto"}>
         {/* Welcome State if user just logged in */}
         {isWelcome && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-5 mb-6 flex items-center gap-4">
@@ -200,7 +204,7 @@ export const ProfilePage = () => {
           </div>
 
           <div className="flex gap-2.5 flex-wrap">
-            <Link to="/change-password" className="px-3 py-1.5 bg-slate-600 text-white rounded-lg text-xs font-semibold hover:bg-slate-700 transition-colors duration-200 inline-flex items-center gap-2">
+            <Link to={changePasswordLink} className="px-3 py-1.5 bg-slate-600 text-white rounded-lg text-xs font-semibold hover:bg-slate-700 transition-colors duration-200 inline-flex items-center gap-2">
               <KeyRound size={15} /> {t('profile.changePasswordBtn', 'Change Password')}
             </Link>
             <button onClick={handleLogout} className="px-3 py-1.5 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-xs font-semibold transition-colors duration-200 inline-flex items-center gap-2" title={t('profile.signOutBtn', 'Sign Out')}>

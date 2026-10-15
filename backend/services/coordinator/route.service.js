@@ -7,19 +7,29 @@ export class RouteService {
       throw new ApiError(400, 'Organization context is required.');
     }
 
+    if (!routeData.originStationId || !routeData.destinationStationId) {
+      throw new ApiError(400, 'Origin station and destination station are required.');
+    }
+
+    if (routeData.originStationId === routeData.destinationStationId) {
+      throw new ApiError(400, 'Origin and destination stations cannot be the same.');
+    }
+
     const existing = await routeRepository.findDuplicate(
       organizationId,
-      routeData.origin,
-      routeData.destination
+      routeData.originStationId,
+      routeData.destinationStationId
     );
     if (existing) {
-      throw new ApiError(409, `Route from '${routeData.origin}' to '${routeData.destination}' already exists in your organization.`);
+      throw new ApiError(409, 'Route between these stations already exists in your organization.');
     }
 
     return routeRepository.create({
       organizationId,
       origin: routeData.origin,
       destination: routeData.destination,
+      originStationId: routeData.originStationId,
+      destinationStationId: routeData.destinationStationId,
       distanceKm: routeData.distanceKm,
       estimatedDurationHours: routeData.estimatedDurationHours,
       isActive: routeData.isActive ?? true,
@@ -49,17 +59,17 @@ export class RouteService {
   async updateRoute(routeId, organizationId, updateData) {
     const route = await this.getRouteById(routeId, organizationId);
 
-    const newOrigin = updateData.origin || route.origin;
-    const newDestination = updateData.destination || route.destination;
+    const newOriginStationId = updateData.originStationId || route.origin_station_id;
+    const newDestinationStationId = updateData.destinationStationId || route.destination_station_id;
 
-    if (newOrigin.toLowerCase() === newDestination.toLowerCase()) {
-      throw new ApiError(400, 'Origin and destination cannot be identical.');
+    if (newOriginStationId === newDestinationStationId) {
+      throw new ApiError(400, 'Origin and destination stations cannot be the same.');
     }
 
-    if (updateData.origin || updateData.destination) {
-      const duplicate = await routeRepository.findDuplicate(organizationId, newOrigin, newDestination);
+    if (updateData.originStationId || updateData.destinationStationId) {
+      const duplicate = await routeRepository.findDuplicate(organizationId, newOriginStationId, newDestinationStationId);
       if (duplicate && duplicate.id !== routeId) {
-        throw new ApiError(409, `Route from '${newOrigin}' to '${newDestination}' already exists in your organization.`);
+        throw new ApiError(409, 'Route between these stations already exists in your organization.');
       }
     }
 

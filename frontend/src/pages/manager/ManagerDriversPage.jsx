@@ -21,9 +21,17 @@ export const ManagerDriversPage = () => {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+251911000000");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("Driver@123456");
   const [licenseNumber, setLicenseNumber] = useState("");
-  const [licenseCategory, setLicenseCategory] = useState("Heavy Commercial (Grade 4)");
-  const [licenseExpiry, setLicenseExpiry] = useState("2028-12-31");
+
+  const resetForm = () => {
+    setName("");
+    setPhone("+251911000000");
+    setEmail("");
+    setPassword("Driver@123456");
+    setLicenseNumber("");
+  };
 
   const orgDrivers = drivers.filter((d) => d.organizationId === selectedOrgId);
   const filteredDrivers = orgDrivers.filter((d) => {
@@ -40,18 +48,26 @@ export const ManagerDriversPage = () => {
     if (!name.trim()) return;
     setIsSubmitting(true);
     try {
+      const driverEmail = email.trim() || `${name.trim().toLowerCase().replace(/\s+/g, ".")}@operator.et`;
+      const driverPassword = password.trim() || "Driver@123456";
+
+      console.log('Submitting driver data:', {
+        name: name.trim(),
+        phone: phone.trim(),
+        email: driverEmail,
+        password: driverPassword,
+      });
+
       await addDriver({
         name: name.trim(),
         phone: phone.trim(),
-        licenseNumber: licenseNumber.trim() || `DL-${Date.now().toString().slice(-6)}`,
-        licenseCategory,
-        licenseExpiry,
-        organizationId: selectedOrgId
+        email: driverEmail,
+        password: driverPassword,
       });
-      setName("");
-      setPhone("+251911000000");
-      setLicenseNumber("");
+      resetForm();
       setShowAddModal(false);
+    } catch (err) {
+      console.error('Driver submission error:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -120,13 +136,13 @@ export const ManagerDriversPage = () => {
             )}
           </div>
         ) : (
-          <table className="data-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "800px" }}>
             <thead>
               <tr>
                 <th>Driver Name</th>
                 <th>Phone Number</th>
-                <th>Commercial License #</th>
-                <th>Category</th>
+                <th>Email</th>
                 <th>Trips Completed</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -143,8 +159,7 @@ export const ManagerDriversPage = () => {
                       </strong>
                     </td>
                     <td>{d.phone || "—"}</td>
-                    <td><code>{d.licenseNumber || `DL-${d.id.slice(0, 6)}`}</code></td>
-                    <td>{d.licenseCategory || "Heavy Commercial"}</td>
+                    <td><code>{d.email || "—"}</code></td>
                     <td>
                       <span style={{ fontWeight: 700 }}>{d.totalTripsCompleted || 0} trips</span>
                     </td>
@@ -152,7 +167,7 @@ export const ManagerDriversPage = () => {
                     <td>
                       <button
                         className={`btn btn-sm ${isActive ? "btn-secondary" : "btn-success"}`}
-                        onClick={() => toggleStaffStatus(d.id, isActive)}
+                        onClick={() => toggleStaffStatus(d.id, !isActive)}
                         title={isActive ? "Deactivate driver" : "Activate driver"}
                       >
                         {isActive ? "Deactivate" : "Activate"}
@@ -163,6 +178,7 @@ export const ManagerDriversPage = () => {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -193,7 +209,7 @@ export const ManagerDriversPage = () => {
         <form onSubmit={handleAddDriver} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div>
             <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Full Driver Name
+              Full Driver Name *
             </label>
             <input
               type="text"
@@ -207,7 +223,7 @@ export const ManagerDriversPage = () => {
 
           <div>
             <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Phone Contact
+              Phone Contact *
             </label>
             <input
               type="text"
@@ -218,42 +234,36 @@ export const ManagerDriversPage = () => {
             />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            <div>
-              <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-                Commercial License Number
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. DL-ETH-88210-CAT-4"
-                value={licenseNumber}
-                onChange={(e) => setLicenseNumber(e.target.value)}
-                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
-              />
-            </div>
-            <div>
-              <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-                License Expiry Date
-              </label>
-              <input
-                type="date"
-                value={licenseExpiry}
-                onChange={(e) => setLicenseExpiry(e.target.value)}
-                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
-              />
+          <div>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+              Email Address (for login)
+            </label>
+            <input
+              type="email"
+              placeholder="e.g. a.tilahun@operator.et"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+            />
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+              Auto-generated if empty: name@operator.et
             </div>
           </div>
 
           <div>
             <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              License Grade / Category
+              Password (for first login)
             </label>
             <input
-              type="text"
-              value={licenseCategory}
-              onChange={(e) => setLicenseCategory(e.target.value)}
+              type="password"
+              placeholder="Default: Driver@123456"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
             />
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+              Default password: Driver@123456 (can be changed after first login)
+            </div>
           </div>
         </form>
       </Modal>

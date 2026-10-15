@@ -65,7 +65,7 @@ export class CoordinatorStaffController {
    */
   createStaff = asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
-    const { name, firstName, lastName, email, phone, password, role = 'TICKET_VERIFIER' } = req.body;
+    const { name, firstName, lastName, email, phone, password, role = 'TICKET_VERIFIER', assignedStation } = req.body;
 
     const splitFirst = firstName || (name ? name.split(' ')[0] : 'Staff');
     const splitLast = lastName || (name ? name.split(' ').slice(1).join(' ') : 'Member');
@@ -150,6 +150,7 @@ export class CoordinatorStaffController {
           phone: user.phone,
           role: targetRole.name,
           status: user.is_active ? 'ACTIVE' : 'INACTIVE',
+          assignedStation: assignedStation || null,
         },
         driver: role === 'DRIVER' ? {
           id: user.id,
@@ -493,6 +494,86 @@ export class CoordinatorStaffController {
           phone: updatedUser.phone,
           role: ROLES.DRIVER,
           status: updatedUser.is_active ? 'ACTIVE' : 'INACTIVE',
+        },
+      },
+    });
+  });
+
+  assignDriverToTrip = asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+    const tripId = req.params.tripId;
+    const { driverId } = req.body;
+
+    // Verify trip belongs to organization
+    const trip = await prisma.trips.findFirst({
+      where: {
+        id: tripId,
+        organization_id: orgId,
+      },
+    });
+
+    if (!trip) {
+      return res.status(404).json({
+        success: false,
+        message: 'Trip not found in your organization.',
+      });
+    }
+
+    // Verify driver belongs to organization
+    const driverAssignment = await prisma.user_roles.findFirst({
+      where: {
+        user_id: driverId,
+        organization_id: orgId,
+        roles: { name: ROLES.DRIVER },
+      },
+      include: { users: true },
+    });
+
+    if (!driverAssignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found in your organization.',
+      });
+    }
+
+    // Assign driver to trip
+    const updatedTrip = await prisma.trips.update({
+      where: { id: tripId },
+      data: {
+        driver_id: driverId,
+        updated_at: new Date(),
+      },
+      include: {
+        drivers: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      action: 'DRIVER_ASSIGNED_TO_TRIP',
+      details: { tripId, driverId, organizationId: orgId },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Driver assigned to trip successfully.',
+      data: {
+        trip: {
+          id: updatedTrip.id,
+          driverId: updatedTrip.driver_id,
+          driverName: updatedTrip.drivers
+            ? `${updatedTrip.drivers.first_name} ${updatedTrip.drivers.last_name}`.trim()
+            : null,
         },
       },
     });

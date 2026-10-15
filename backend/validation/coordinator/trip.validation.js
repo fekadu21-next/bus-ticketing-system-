@@ -30,5 +30,5 @@ export const updateTripSchema = z.object({
 });
 
 export const assignDriverSchema = z.object({
-  driverId: z.string().uuid('Invalid driver ID format'),
+  driverId: z.string().uuid('Invalid driver ID format').nullable(),
 });

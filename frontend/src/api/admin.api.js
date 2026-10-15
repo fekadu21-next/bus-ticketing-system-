@@ -163,8 +163,33 @@ export const getAdminReportsApi = async () => {
 /**
  * Admin Monitor: Platform Route Stations
  */
-export const getAdminStationsApi = async () => {
-  const { data } = await api.get('/admin/stations');
+export const getAdminStationsApi = async (params = {}) => {
+  const { data } = await api.get('/admin/stations', { params });
+  return data;
+};
+
+export const getActiveStationsApi = async () => {
+  const { data } = await api.get('/admin/stations/active');
+  return data;
+};
+
+export const getStationByIdApi = async (stationId) => {
+  const { data } = await api.get(`/admin/stations/${stationId}`);
+  return data;
+};
+
+export const createStationApi = async (stationData) => {
+  const { data } = await api.post('/admin/stations', stationData);
+  return data;
+};
+
+export const updateStationApi = async (stationId, stationData) => {
+  const { data } = await api.put(`/admin/stations/${stationId}`, stationData);
+  return data;
+};
+
+export const deleteStationApi = async (stationId) => {
+  const { data } = await api.delete(`/admin/stations/${stationId}`);
   return data;
 };
 
@@ -190,4 +215,9 @@ export default {
   getAdminAuditLogsApi,
   getAdminReportsApi,
   getAdminStationsApi,
+  getActiveStationsApi,
+  getStationByIdApi,
+  createStationApi,
+  updateStationApi,
+  deleteStationApi,
 };

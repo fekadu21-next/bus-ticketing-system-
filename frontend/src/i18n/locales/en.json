@@ -519,5 +519,11 @@
       "verifyFailed": "Email verification failed or link has expired.",
       "changeFailed": "Failed to change password. Please check your current password."
     }
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "subtitle": "Sorry, the page you are looking for does not exist or has been moved.",
+    "backBtn": "Back to Home"
   }
 }
+

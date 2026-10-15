@@ -123,7 +123,15 @@ export class AuthRepository {
           include: {
             user_roles: {
               include: {
-                roles: true,
+                roles: {
+                  include: {
+                    role_permissions: {
+                      include: {
+                        permissions: true,
+                      },
+                    },
+                  },
+                },
                 organizations: true,
               },
             },

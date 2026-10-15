@@ -11,5 +11,27 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        cookieDomainRewrite: 'localhost',
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            const cookies = proxyRes.headers['set-cookie'];
+            if (!cookies) return;
+            proxyRes.headers['set-cookie'] = cookies.map((cookie) =>
+              cookie
+                .split(';')
+                .map((part) => part.trim())
+                .filter((part) => !/^secure$/i.test(part) && !/^domain=/i.test(part))
+                .join('; ')
+            );
+          });
+        },
+      },
+    },
+  },
 });
 

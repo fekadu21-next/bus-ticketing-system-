@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ArrowRight,
   Loader2,
+  Calendar,
 } from 'lucide-react';
 import TripSearchBar from '@/components/TripSearchBar';
 import { searchTripsApi, getPublicOperatorsApi } from '@/api/trip.api';
@@ -74,10 +75,10 @@ const AmenityIcon = ({ id }) => {
 export const SearchTripsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [origin, setOrigin] = useState(searchParams.get('from') || 'Addis Ababa');
-  const [destination, setDestination] = useState(searchParams.get('to') || 'Bahir Dar');
-  const [departureDate, setDepartureDate] = useState(searchParams.get('date') || getTodayString());
+  const [destination, setDestination] = useState(searchParams.get('to') || '');
+  const [departureDate, setDepartureDate] = useState(searchParams.get('date') || '');
   const [periods, setPeriods] = useState([]);
-  const [priceRange, setPriceRange] = useState(2500);
+  const [priceRange, setPriceRange] = useState(3000);
   const [operatorSearch, setOperatorSearch] = useState('');
   const [selectedOperators, setSelectedOperators] = useState(
     searchParams.get('operator') ? [searchParams.get('operator')] : []
@@ -95,7 +96,9 @@ export const SearchTripsPage = () => {
     if (searchParams.get('from')) setOrigin(searchParams.get('from'));
     if (searchParams.get('to')) setDestination(searchParams.get('to'));
     if (searchParams.get('date')) setDepartureDate(searchParams.get('date'));
-    if (searchParams.get('operator')) setSelectedOperators([searchParams.get('operator')]);
+    if (searchParams.get('operator')) {
+      setSelectedOperators([searchParams.get('operator')]);
+    }
   }, [searchParams]);
 
   // Fetch real trips and operators from backend API
@@ -104,18 +107,18 @@ export const SearchTripsPage = () => {
     const fetchTripsAndOperators = async () => {
       setLoading(true);
       try {
-        const fromParam = searchParams.get('from') || origin;
-        const toParam = searchParams.get('to') || destination;
-        const dateParam = searchParams.get('date') || departureDate;
-        const opParam = searchParams.get('operator') || '';
+        const fromParam = searchParams.get('from') || undefined;
+        const toParam = searchParams.get('to') || undefined;
+        const dateParam = searchParams.get('date') || undefined;
+        const opParam = searchParams.get('operator') || undefined;
 
         const [tripsRes, opsRes] = await Promise.all([
           searchTripsApi({
-            from: fromParam || undefined,
-            to: toParam || undefined,
-            date: dateParam || undefined,
-            operator: opParam || undefined,
-            limit: 50,
+            from: fromParam,
+            to: toParam,
+            date: dateParam,
+            operator: opParam,
+            limit: 100,
           }),
           getPublicOperatorsApi(),
         ]);
@@ -123,24 +126,9 @@ export const SearchTripsPage = () => {
         if (isMounted) {
           let trips = tripsRes?.trips || [];
 
-          // If no trips found for exact date, broaden to any upcoming date for this route
-          if (trips.length === 0 && dateParam) {
-            const broaderRes = await searchTripsApi({
-              from: fromParam || undefined,
-              to: toParam || undefined,
-              operator: opParam || undefined,
-              limit: 50,
-            });
-            if (broaderRes?.trips?.length > 0) {
-              trips = broaderRes.trips;
-            }
-          }
-
-          // If still no trips found, fetch upcoming trips across available routes
-          if (trips.length === 0) {
-            const allRes = await searchTripsApi({
-              limit: 50,
-            });
+          // Only if no search criteria was specified at all and results are empty, load broader upcoming departures
+          if (trips.length === 0 && !fromParam && !toParam && !dateParam && !opParam) {
+            const allRes = await searchTripsApi({ limit: 100 });
             if (allRes?.trips?.length > 0) {
               trips = allRes.trips;
             }
@@ -162,16 +150,17 @@ export const SearchTripsPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [searchParams, origin, destination, departureDate]);
+  }, [searchParams]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setCurrentPage(1);
-    setSearchParams({
-      from: origin,
-      to: destination,
-      date: departureDate,
-    });
+    const newParams = {};
+    if (origin && origin.trim()) newParams.from = origin.trim();
+    if (destination && destination.trim()) newParams.to = destination.trim();
+    if (departureDate) newParams.date = departureDate;
+    if (selectedOperators.length === 1) newParams.operator = selectedOperators[0];
+    setSearchParams(newParams);
   };
 
   const toggleArrayValue = (list, value, setter) => {
@@ -179,15 +168,30 @@ export const SearchTripsPage = () => {
     setter(list.includes(value) ? list.filter((item) => item !== value) : [...list, value]);
   };
 
+  const toggleOperator = (opName) => {
+    setCurrentPage(1);
+    setSelectedOperators((prev) => {
+      const isSelected = prev.includes(opName);
+      const next = isSelected ? prev.filter((item) => item !== opName) : [...prev, opName];
+      if (searchParams.get('operator')) {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('operator');
+        setSearchParams(newParams, { replace: true });
+      }
+      return next;
+    });
+  };
+
   const clearAllFilters = () => {
     setPeriods([]);
-    setPriceRange(2500);
+    setPriceRange(3000);
     setOperatorSearch('');
     setSelectedOperators([]);
     setOrgTypes([]);
     setMinSeats('all');
     setSortBy('departure');
     setCurrentPage(1);
+    setSearchParams({});
   };
 
   const operatorOptions = useMemo(() => {
@@ -257,9 +261,9 @@ export const SearchTripsPage = () => {
   const page = Math.min(currentPage, totalPages);
   const pagedTrips = filteredTrips.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const routeFrom = searchParams.get('from') || origin || 'Addis Ababa';
-  const routeTo = searchParams.get('to') || destination || 'Bahir Dar';
-  const dateLabel = formatPrettyDate(searchParams.get('date') || departureDate);
+  const routeFrom = searchParams.get('from') || origin || 'All Cities';
+  const routeTo = searchParams.get('to') || destination || 'All Destinations';
+  const dateLabel = searchParams.get('date') ? formatPrettyDate(searchParams.get('date')) : 'Upcoming Dates';
 
   const orgCounts = useMemo(
     () => ({
@@ -270,29 +274,29 @@ export const SearchTripsPage = () => {
   );
 
   return (
-    <div className="bg-[#f4f7fb] min-h-screen text-slate-800">
-      <section className="relative overflow-hidden">
+    <div className="bg-[#f4f7fb] min-h-screen text-slate-800 w-full">
+      <section className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] w-full flex items-center">
         <div className="absolute inset-0">
           <img
-            src="/images/crops/search_banner.jpg"
-            alt=""
-            className="w-full h-full object-cover object-[70%_center]"
+            src="/busimage1.jpg"
+            alt="Bus"
+            className="w-full h-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#071833]/85 via-[#0b2a4a]/55 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-[1180px] mx-auto px-4 sm:px-6 pt-10 pb-16 sm:pt-14 sm:pb-20">
+        <div className="relative z-10 max-w-[1180px] w-full mx-auto px-4 sm:px-6 py-10">
           <p className="text-[11px] font-bold tracking-[0.22em] text-white/80 uppercase mb-3">
             Search Bus Trips
           </p>
-          <h1 className="text-[34px] sm:text-[44px] leading-[1.1] font-black text-white tracking-tight max-w-xl">
+          <h1 className="text-[28px] sm:text-[36px] leading-[1.1] font-black text-white tracking-tight max-w-xl">
             Find Your Perfect Trip
           </h1>
-          <p className="mt-3 text-[14px] sm:text-[15px] text-white/85 max-w-md">
+          <p className="mt-3 text-[13px] sm:text-[14px] text-white/85 max-w-md">
             Compare operators, check prices, choose your seat and travel with confidence.
           </p>
 
-          <div className="mt-8 max-w-[760px]">
+          <div className="mt-5 max-w-[760px]">
             <TripSearchBar
               origin={origin}
               destination={destination}
@@ -393,7 +397,7 @@ export const SearchTripsPage = () => {
                       <input
                         type="checkbox"
                         checked={selectedOperators.includes(op.name)}
-                        onChange={() => toggleArrayValue(selectedOperators, op.name, setSelectedOperators)}
+                        onChange={() => toggleOperator(op.name)}
                         className="w-3.5 h-3.5 rounded border-slate-300 text-[#2563eb] focus:ring-[#2563eb]"
                       />
                       {op.name}
@@ -406,7 +410,7 @@ export const SearchTripsPage = () => {
                     <input
                       type="checkbox"
                       checked={selectedOperators.includes('Others')}
-                      onChange={() => toggleArrayValue(selectedOperators, 'Others', setSelectedOperators)}
+                      onChange={() => toggleOperator('Others')}
                       className="w-3.5 h-3.5 rounded border-slate-300 text-[#2563eb] focus:ring-[#2563eb]"
                     />
                     Others
@@ -541,7 +545,14 @@ export const SearchTripsPage = () => {
                         </div>
                       </div>
 
-                      <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+                      <div className="mt-2.5 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold">
+                          <Calendar size={12} className="text-[#2563eb]" />
+                          {trip.date ? formatPrettyDate(trip.date) : "Scheduled Departure"}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2">
                         <div>
                           <p className="text-[14px] font-bold text-slate-900">{trip.departureTime}</p>
                           <p className="text-[11px] text-slate-500">{trip.from}</p>
@@ -551,7 +562,7 @@ export const SearchTripsPage = () => {
                           <p className="text-[14px] font-bold text-slate-900">{trip.arrivalTime}</p>
                           <p className="text-[11px] text-slate-500">{trip.to}</p>
                         </div>
-                        <span className="text-[11px] text-slate-400">{trip.duration}</span>
+                        <span className="text-[11px] text-slate-400 font-medium">({trip.duration})</span>
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-slate-500">

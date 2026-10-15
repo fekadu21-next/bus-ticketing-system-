@@ -98,14 +98,18 @@ export const AdminReportsPage = () => {
     verifications,
     showToast,
     adminReports,
+    settings,
     isLoadingData,
     fetchAdminData,
   } = useApp();
   const [activeTab, setActiveTab] = useState("operators");
 
+  const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
+  const commissionRate = commissionPercent / 100;
+
   const successPayments = payments.filter((p) => p.status === "SUCCESS" || p.status === "COMPLETED");
   const totalRev = adminReports?.financials?.totalRevenue ?? successPayments.reduce((acc, p) => acc + p.amount, 0);
-  const platformFees = adminReports?.financials?.platformCommission ?? (totalRev * 0.035).toFixed(2);
+  const platformFees = adminReports?.financials?.platformCommission ?? (totalRev * commissionRate).toFixed(2);
   const activeOrgs = adminReports?.organizations?.active ?? organizations.filter((o) => o.status === "APPROVED").length;
   const validScans = verifications.filter((v) => v.status === "VALID").length;
   const totalScans = verifications.length;
@@ -165,7 +169,7 @@ export const AdminReportsPage = () => {
         <MetricBlock
           label="Platform Commission"
           value={`${Number(platformFees).toLocaleString()} ETB`}
-          sub="3.5% fee on gross revenue"
+          sub={`${commissionPercent}% fee on gross revenue`}
         />
         <MetricBlock
           label="Active Operators"
@@ -248,8 +252,8 @@ export const AdminReportsPage = () => {
                   (b) =>
                     b.organizationId === org.id && b.status === "CONFIRMED"
                 );
-                const rev = orgBookings.reduce((acc, b) => acc + b.amount, 0);
-                const fee = (rev * 0.035).toFixed(0);
+                const rev = orgBookings.reduce((acc, b) => acc + (b.totalFare || b.amount || 0), 0);
+                const fee = (rev * commissionRate).toFixed(0);
                 const net = (rev - Number(fee)).toLocaleString();
                 return (
                   <tr key={org.id}>

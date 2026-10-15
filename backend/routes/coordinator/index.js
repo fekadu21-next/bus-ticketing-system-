@@ -5,6 +5,9 @@ import tripRoutes from './trip.route.js';
 import bookingRoutes from './booking.route.js';
 import paymentRoutes from './payment.route.js';
 import reportRoutes from './report.route.js';
+import staffRoutes from './staff.route.js';
+import stationsController from '../../controllers/admin/stations.controller.js';
+import { coordinatorStaffController } from '../../controllers/coordinator/staff.controller.js';
 
 const router = Router({ mergeParams: true });
 
@@ -14,5 +17,19 @@ router.use('/trips', tripRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/reports', reportRoutes);
+router.use('/staff', staffRoutes);
+
+// Driver endpoints (direct path for easier access)
+router.get('/drivers', coordinatorStaffController.getDrivers);
+router.get('/drivers/:driverId', coordinatorStaffController.getDriverById);
+router.post('/drivers', coordinatorStaffController.createDriver);
+router.patch('/drivers/:driverId', coordinatorStaffController.updateDriver);
+router.patch('/drivers/:driverId/status', coordinatorStaffController.toggleDriverStatus);
+
+// Assign driver to trip
+router.patch('/trips/:tripId/assign-driver', coordinatorStaffController.assignDriverToTrip);
+
+// Stations - read-only access for operators (for route creation)
+router.get('/stations/active', stationsController.getActiveStations);
 
 export default router;

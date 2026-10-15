@@ -49,16 +49,17 @@ export class PassengerTripRepository {
     }
 
     if (date) {
-      const startOfDay = new Date(date);
-      startOfDay.setUTCHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setUTCHours(23, 59, 59, 999);
+      const datePart = typeof date === 'string' ? date.split('T')[0] : new Date(date).toISOString().split('T')[0];
+      const startOfDay = new Date(`${datePart}T00:00:00.000Z`);
+      // Ethiopia timezone is UTC+3. Span window across local day to prevent timezone boundary clipping
+      const localDayStart = new Date(startOfDay.getTime() - 4 * 60 * 60 * 1000);
+      const localDayEnd = new Date(startOfDay.getTime() + 28 * 60 * 60 * 1000);
 
-      // Must be on the specified travel date and not in past
-      const minDate = startOfDay > new Date() ? startOfDay : new Date();
+      const now = new Date();
+      const minDate = localDayStart > now ? localDayStart : now;
       where.departure_time = {
         gte: minDate,
-        lte: endOfDay,
+        lte: localDayEnd,
       };
     }
 
@@ -98,14 +99,25 @@ export class PassengerTripRepository {
             },
           },
           seats: {
-            select: { id: true, status: true },
+            select: { id: true, status: true, seat_number: true },
+          },
+          bookings: {
+            where: { status: { in: ['CONFIRMED', 'PENDING'] } },
+            select: { seat_number: true, status: true },
           },
         },
       }),
     ]);
 
     const formattedTrips = trips.map((trip) => {
-      const availableSeats = trip.seats.filter((s) => s.status === 'AVAILABLE').length;
+      const activeBookedSeatNums = new Set(
+        (trip.bookings || []).map((b) => b.seat_number)
+      );
+
+      // Only seats with status AVAILABLE and without an active booking are available
+      const availableSeats = (trip.seats || []).filter(
+        (s) => s.status === 'AVAILABLE' && !activeBookedSeatNums.has(s.seat_number)
+      ).length;
       const departureDate = trip.departure_time.toISOString().split('T')[0];
 
       return {
@@ -123,6 +135,7 @@ export class PassengerTripRepository {
         status: trip.status,
         totalSeats: trip.buses?.capacity || trip.seats.length,
         availableSeats,
+        availableSeatsCount: availableSeats,
       };
     });
 
@@ -165,6 +178,15 @@ export class PassengerTripRepository {
             id: true,
             seat_number: true,
             status: true,
+          },
+        },
+        bookings: {
+          where: { status: { in: ['CONFIRMED', 'PENDING'] } },
+          select: {
+            id: true,
+            seat_number: true,
+            status: true,
+            updated_at: true,
           },
         },
       },

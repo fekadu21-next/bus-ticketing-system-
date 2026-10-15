@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, User, Mail, Phone, MapPin, CheckCircle } from 'lucide-react';
-import { formatEtb } from '@/data/dummyTrips';
+import { ArrowLeft, ArrowRight, User, Mail, Phone, MapPin, CheckCircle, Lock } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { registerApi, loginApi } from '@/api/auth.api';
+import { formatUserFullName } from '@/utils/userUtils';
+
+// Simple ETB formatter
+const formatEtb = (amount) => {
+  if (typeof amount !== 'number' || isNaN(amount)) return '0 ETB';
+  return `${amount.toLocaleString()} ETB`;
+};
 
 export const PassengerInfoPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isAuthenticated, register } = useAuth();
   const tripData = location.state?.tripData || {};
   const selectedSeats = location.state?.selectedSeats || [];
-  
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -16,9 +25,26 @@ export const PassengerInfoPage = () => {
     phone: '',
     pickupLocation: '',
     dropoffLocation: '',
+    password: '',
+    confirmPassword: '',
   });
 
   const [errors, setErrors] = useState({});
+  const [createAccount, setCreateAccount] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  // Auto-fill form if user is logged in
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setFormData((prev) => ({
+        ...prev,
+        firstName: user.firstName || user.first_name || '',
+        lastName: user.lastName || user.last_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      }));
+    }
+  }, [isAuthenticated, user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,18 +60,94 @@ export const PassengerInfoPage = () => {
     if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
     if (!formData.pickupLocation.trim()) newErrors.pickupLocation = 'Pickup location is required';
     if (!formData.dropoffLocation.trim()) newErrors.dropoffLocation = 'Dropoff location is required';
+
+    // Password validation if creating account
+    if (createAccount && !isAuthenticated) {
+      if (!formData.password) newErrors.password = 'Password is required';
+      else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+      if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      }
+    }
+
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
-    navigate('/payment', { state: { tripData, selectedSeats, passengerInfo: formData } });
+
+    const cleanFirstName = formData.firstName.trim();
+    const cleanLastName = formData.lastName.trim();
+    const cleanFullName = formatUserFullName({
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+    }, 'Passenger');
+
+    const cleanPassengerInfo = {
+      ...formData,
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      fullName: cleanFullName,
+      email: formData.email.trim().toLowerCase(),
+      phone: formData.phone.trim(),
+    };
+
+    // If user wants to create account, register and auto-login first
+    if (createAccount && !isAuthenticated) {
+      setIsRegistering(true);
+      try {
+        const registerData = {
+          firstName: cleanFirstName,
+          lastName: cleanLastName,
+          email: cleanPassengerInfo.email,
+          phone: cleanPassengerInfo.phone,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword || formData.password,
+        };
+
+        const result = await register(registerData);
+        if (result.success) {
+          // Successfully registered and auto-logged in via AuthContext!
+          navigate('/payment', {
+            state: {
+              tripData,
+              selectedSeats,
+              passengerInfo: cleanPassengerInfo,
+              newlyRegistered: true,
+            },
+          });
+        } else {
+          setErrors((prev) => ({
+            ...prev,
+            email: result.error || 'Registration failed. Please check your information.',
+          }));
+        }
+      } catch (err) {
+        setErrors((prev) => ({
+          ...prev,
+          email: err.response?.data?.message || err.message || 'Registration failed. Please try again.',
+        }));
+      } finally {
+        setIsRegistering(false);
+      }
+    } else {
+      // Either already logged in or continuing as guest
+      navigate('/payment', {
+        state: {
+          tripData,
+          selectedSeats,
+          passengerInfo: cleanPassengerInfo,
+          newlyRegistered: false,
+        },
+      });
+    }
   };
+
 
   const totalPrice = tripData.price * selectedSeats.length;
 
@@ -100,6 +202,29 @@ export const PassengerInfoPage = () => {
 
         <div className="bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_24px_rgba(15,23,42,0.06)] p-4 sm:p-5">
           <h2 className="text-[18px] font-extrabold text-slate-900 mb-5">Personal Information</h2>
+
+          {/* Login status indicator */}
+          {isAuthenticated ? (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2">
+              <CheckCircle size={16} className="text-green-600" />
+              <p className="text-[12px] text-green-800">
+                Logged in as <strong>{user?.email}</strong> ({formatUserFullName(user, 'Passenger')}). Your information has been auto-filled.
+              </p>
+            </div>
+          ) : (
+            <div className="mb-4 p-3.5 bg-blue-50/90 border border-blue-200 rounded-xl flex items-start gap-3">
+              <User size={18} className="text-[#2563eb] mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-[13px] font-bold text-blue-900">
+                  Booking as Guest Passenger
+                </p>
+                <p className="text-[12px] text-blue-700 mt-0.5 leading-relaxed">
+                  Fill in your travel details below. <strong>Tip:</strong> Click the <strong>"Create an account"</strong> checkbox below to track your booking recommendations, receive trip updates, and easily manage your digital boarding passes!
+                </p>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -200,13 +325,71 @@ export const PassengerInfoPage = () => {
               </div>
             </div>
 
+            {/* Create Account Section - Only for non-logged-in users */}
+            {!isAuthenticated && (
+              <div className="pt-4 border-t border-slate-100 bg-blue-50/40 p-4 rounded-xl border border-blue-100/80">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={createAccount}
+                    onChange={(e) => setCreateAccount(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 rounded border-slate-300 text-[#2563eb] focus:ring-[#2563eb]"
+                  />
+                  <div>
+                    <span className="text-[13px] font-bold text-slate-900 block">
+                      Click to create an account & track booking recommendations
+                    </span>
+                    <span className="text-[12px] text-slate-500 block mt-0.5">
+                      Check this box and choose a password to save your tickets, unlock personalized journey recommendations, and manage trips anytime.
+                    </span>
+                  </div>
+                </label>
+
+                {createAccount && (
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">Password *</label>
+                      <div className="relative">
+                        <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          placeholder="Create password (min 6 characters)"
+                          className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.password ? 'border-red-300' : 'border-slate-200'} text-[13px] focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]`}
+                        />
+                      </div>
+                      {errors.password && <p className="text-[11px] text-red-500 mt-1">{errors.password}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">Confirm Password *</label>
+                      <div className="relative">
+                        <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="password"
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          placeholder="Confirm password"
+                          className={`w-full pl-10 pr-4 py-2.5 rounded-lg border ${errors.confirmPassword ? 'border-red-300' : 'border-slate-200'} text-[13px] focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]`}
+                        />
+                      </div>
+                      {errors.confirmPassword && <p className="text-[11px] text-red-500 mt-1">{errors.confirmPassword}</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center gap-3 pt-4">
               <button
                 type="submit"
-                className="flex-1 h-11 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2"
+                disabled={isRegistering}
+                className="flex-1 h-11 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] disabled:bg-slate-400 text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2"
               >
-                Continue to Payment
-                <ArrowRight size={15} />
+                {isRegistering ? 'Creating Account...' : 'Continue to Payment'}
+                {!isRegistering && <ArrowRight size={15} />}
               </button>
               <Link
                 to={`/trips/${tripData.id}`}

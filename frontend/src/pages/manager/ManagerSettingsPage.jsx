@@ -1,93 +1,379 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
-import { Settings, Save, Lock, UserCheck } from "lucide-react";
+import { Badge } from "../../components/ui/Badge";
+import { Modal } from "../../components/ui/Modal";
+import { Building2, Edit2, RefreshCw, AlertCircle } from "lucide-react";
 
 export const ManagerSettingsPage = () => {
-  const { activeOrg, showToast } = useApp();
-  const [managerName, setManagerName] = useState("Dawit Haile");
-  const [managerPhone, setManagerPhone] = useState(activeOrg?.phone || "+251 11 551 2233");
-  const [managerEmail, setManagerEmail] = useState(activeOrg?.email || "ops@selambus.et");
+  const {
+    activeOrg,
+    selectedOrgId,
+    buses,
+    trips,
+    drivers,
+    verifiers,
+    updateOrganizationProfile,
+    fetchCoordinatorData,
+    isLoadingData
+  } = useApp();
 
-  const handleSaveProfile = (e) => {
-    e.preventDefault();
-    showToast("Manager profile preferences updated successfully!");
+  // Organization profile edit state
+  const [showOrgEditModal, setShowOrgEditModal] = useState(false);
+  const [orgFormData, setOrgFormData] = useState({
+    name: activeOrg?.name || "",
+    type: activeOrg?.type || "COMPANY",
+    contactName: activeOrg?.contactName || "",
+    contactPhone: activeOrg?.contactPhone || activeOrg?.phone || "",
+    contactEmail: activeOrg?.contactEmail || activeOrg?.email || "",
+    address: activeOrg?.address || "",
+  });
+  const [isOrgSubmitting, setIsOrgSubmitting] = useState(false);
+
+  const orgBuses = buses.filter((b) => b.organizationId === selectedOrgId);
+  const orgTrips = trips.filter((t) => t.organizationId === selectedOrgId);
+  const orgDrivers = drivers.filter((d) => d.organizationId === selectedOrgId);
+  const orgVerifiers = verifiers.filter((v) => v.organizationId === selectedOrgId);
+
+  const handleOpenOrgEdit = () => {
+    setOrgFormData({
+      name: activeOrg?.name || "",
+      type: activeOrg?.type || "COMPANY",
+      contactName: activeOrg?.contactName || "",
+      contactPhone: activeOrg?.contactPhone || activeOrg?.phone || "",
+      contactEmail: activeOrg?.contactEmail || activeOrg?.email || "",
+      address: activeOrg?.address || "",
+    });
+    setShowOrgEditModal(true);
   };
+
+  const handleSaveOrgProfile = async (e) => {
+    e.preventDefault();
+    if (!orgFormData.name.trim()) return;
+    setIsOrgSubmitting(true);
+    try {
+      await updateOrganizationProfile(orgFormData);
+      setShowOrgEditModal(false);
+    } finally {
+      setIsOrgSubmitting(false);
+    }
+  };
+
+  const status = activeOrg?.status || "APPROVED";
 
   return (
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Manager Account & Security Settings</h1>
-          <p>Update manager identity credentials, notification alerts, and security preferences.</p>
+          <h1>Organization Settings</h1>
+          <p>Manage organization profile and operational information.</p>
+        </div>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => fetchCoordinatorData(selectedOrgId)}
+            disabled={isLoadingData}
+          >
+            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
+          </button>
         </div>
       </div>
 
-      <div style={{ maxWidth: "680px" }}>
-        <form onSubmit={handleSaveProfile} className="card-table-wrapper" style={{ padding: "1.5rem" }}>
-          <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <UserCheck size={18} color="var(--primary)" /> Operational Manager Identity
-          </h3>
+      <div style={{ maxWidth: "900px" }}>
+        {/* Organization Profile Section */}
+        <div className="card-table-wrapper" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: "1.25rem",
+            }}
+          >
+            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+              <div
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  background: "var(--primary-light)",
+                  color: "var(--primary)",
+                  borderRadius: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Building2 size={30} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: "1.35rem", fontWeight: 700, margin: 0 }}>
+                  {activeOrg?.name || "Organization"}
+                </h2>
+                <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                  Operating Category: <strong>{activeOrg?.type || "COMPANY"}</strong>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <Badge status={status} />
+              <button className="btn btn-secondary btn-sm" onClick={handleOpenOrgEdit}>
+                <Edit2 size={14} /> Edit Profile
+              </button>
+            </div>
+          </div>
 
-          <div className="form-group">
-            <label>Full Manager Name</label>
+          {/* Approval Status Banner if not APPROVED */}
+          {status === "PENDING" && (
+            <div
+              style={{
+                borderLeft: "4px solid var(--warning)",
+                padding: "1rem 1.25rem",
+                marginBottom: "1.25rem",
+                background: "var(--warning-bg)",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+              }}
+            >
+              <AlertCircle size={20} color="var(--warning-text)" />
+              <div>
+                <strong style={{ color: "var(--warning-text)", display: "block" }}>
+                  Pending Platform Approval
+                </strong>
+                <span style={{ fontSize: "0.82rem", color: "var(--warning-text)" }}>
+                  Your organization account is undergoing administrative compliance review.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {status === "SUSPENDED" && (
+            <div
+              style={{
+                borderLeft: "4px solid var(--danger)",
+                padding: "1rem 1.25rem",
+                marginBottom: "1.25rem",
+                background: "var(--danger-bg)",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+              }}
+            >
+              <AlertCircle size={20} color="var(--danger-text)" />
+              <div>
+                <strong style={{ color: "var(--danger-text)", display: "block" }}>
+                  Organization Account Suspended
+                </strong>
+                <span style={{ fontSize: "0.82rem", color: "var(--danger-text)" }}>
+                  Ticket sales and schedule departures are currently suspended.
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="form-row" style={{ marginBottom: "1rem" }}>
+            <div
+              style={{
+                background: "#f8fafc",
+                padding: "0.85rem",
+                borderRadius: "6px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>
+                License / Registration ID
+              </span>
+              <strong style={{ fontSize: "0.9rem" }}>
+                <code>{activeOrg?.licenseNumber || activeOrg?.registrationNumber || `LIC-${activeOrg?.id?.slice(0, 8)}`}</code>
+              </strong>
+            </div>
+            <div
+              style={{
+                background: "#f8fafc",
+                padding: "0.85rem",
+                borderRadius: "6px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>
+                Platform Onboarding Date
+              </span>
+              <strong style={{ fontSize: "0.9rem" }}>{activeOrg?.createdAt || "2024-01-15"}</strong>
+            </div>
+          </div>
+
+          <div className="form-row" style={{ marginBottom: "1rem" }}>
+            <div
+              style={{
+                background: "#f8fafc",
+                padding: "0.85rem",
+                borderRadius: "6px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>
+                Primary Contact Information
+              </span>
+              <strong style={{ fontSize: "0.9rem" }}>{activeOrg?.contactName || "Operations Lead"}</strong>
+              <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+                {activeOrg?.contactPhone || activeOrg?.phone || "+251911000000"} | {activeOrg?.contactEmail || activeOrg?.email || "ops@busticket.et"}
+              </div>
+            </div>
+            <div
+              style={{
+                background: "#f8fafc",
+                padding: "0.85rem",
+                borderRadius: "6px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>
+                Headquarters Address
+              </span>
+              <strong style={{ fontSize: "0.9rem" }}>{activeOrg?.address || "Addis Ababa, Ethiopia"}</strong>
+            </div>
+          </div>
+
+          {/* Capacity Overview */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginTop: "1.5rem" }}>
+            <div style={{ background: "#ffffff", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
+              <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--primary)" }}>{orgBuses.length}</div>
+              <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Fleet Buses</div>
+            </div>
+            <div style={{ background: "#ffffff", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
+              <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--success-text)" }}>{orgDrivers.length}</div>
+              <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Active Drivers</div>
+            </div>
+            <div style={{ background: "#ffffff", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
+              <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#8b5cf6" }}>{orgVerifiers.length}</div>
+              <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Ticket Verifiers</div>
+            </div>
+            <div style={{ background: "#ffffff", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
+              <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--info-text)" }}>{orgTrips.length}</div>
+              <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Scheduled Trips</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Organization Modal */}
+      <Modal
+        isOpen={showOrgEditModal}
+        onClose={() => setShowOrgEditModal(false)}
+        title="Edit Organization Profile"
+        footer={
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", width: "100%" }}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowOrgEditModal(false)}
+              disabled={isOrgSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={handleSaveOrgProfile}
+              disabled={isOrgSubmitting || !orgFormData.name.trim()}
+            >
+              {isOrgSubmitting ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        }
+      >
+        <form onSubmit={handleSaveOrgProfile} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+              Organization Official Name
+            </label>
             <input
               type="text"
-              value={managerName}
-              onChange={(e) => setManagerName(e.target.value)}
+              className="form-control"
+              value={orgFormData.name}
+              onChange={(e) => setOrgFormData({ ...orgFormData, name: e.target.value })}
               required
+              placeholder="e.g. Selam Bus Transport Share Company"
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+            />
+          </div>
+
+          <div>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+              Organization Entity Type
+            </label>
+            <select
+              className="form-control"
+              value={orgFormData.type}
+              onChange={(e) => setOrgFormData({ ...orgFormData, type: e.target.value })}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+            >
+              <option value="COMPANY">Private Commercial Operator (Share Co / PLC)</option>
+              <option value="PUBLIC_ENTERPRISE">Public Enterprise / Regional Line</option>
+              <option value="COOPERATIVE">Transport Association / Cooperative</option>
+              <option value="GOVERNMENT">Municipal / State Transit Authority</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+              Primary Contact Name
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              value={orgFormData.contactName}
+              onChange={(e) => setOrgFormData({ ...orgFormData, contactName: e.target.value })}
+              placeholder="e.g. Operations Manager"
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
             />
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label>Official Contact Phone</label>
+            <div>
+              <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+                Contact Phone
+              </label>
               <input
                 type="text"
-                value={managerPhone}
-                onChange={(e) => setManagerPhone(e.target.value)}
-                required
+                className="form-control"
+                value={orgFormData.contactPhone}
+                onChange={(e) => setOrgFormData({ ...orgFormData, contactPhone: e.target.value })}
+                placeholder="+251 11 551 2233"
+                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
               />
             </div>
-            <div className="form-group">
-              <label>Work Email</label>
+            <div>
+              <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+                Contact Email
+              </label>
               <input
                 type="email"
-                value={managerEmail}
-                onChange={(e) => setManagerEmail(e.target.value)}
-                required
+                className="form-control"
+                value={orgFormData.contactEmail}
+                onChange={(e) => setOrgFormData({ ...orgFormData, contactEmail: e.target.value })}
+                placeholder="ops@company.et"
+                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
               />
             </div>
           </div>
 
-          <hr style={{ margin: "1.5rem 0", borderColor: "var(--border-color)" }} />
-
-          <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <Lock size={18} color="var(--warning-text)" /> Update Account Password
-          </h3>
-
-          <div className="form-group">
-            <label>Current Password</label>
-            <input type="password" placeholder="••••••••••••" />
+          <div>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+              Headquarters Address
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              value={orgFormData.address}
+              onChange={(e) => setOrgFormData({ ...orgFormData, address: e.target.value })}
+              placeholder="e.g. Addis Ababa, Ethiopia"
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+            />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>New Password</label>
-              <input type="password" placeholder="••••••••••••" />
-            </div>
-            <div className="form-group">
-              <label>Confirm New Password</label>
-              <input type="password" placeholder="••••••••••••" />
-            </div>
-          </div>
-
-          <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "flex-end" }}>
-            <button type="submit" className="btn btn-primary">
-              <Save size={16} /> Update Settings
-            </button>
+          <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+            Note: License number and accreditation status are platform-governed and can only be modified by Platform Administrators upon official regulatory review.
           </div>
         </form>
-      </div>
+      </Modal>
     </div>
   );
 };

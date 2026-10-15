@@ -100,8 +100,10 @@ export class TripService {
       busId: trip.bus_id,
       routeId: trip.route_id,
       driverId: trip.driver_id,
-      origin: route.origin,
-      destination: route.destination,
+      origin: route.origin_station?.name || 'Unknown',
+      destination: route.destination_station?.name || 'Unknown',
+      originStationId: route.origin_station_id,
+      destinationStationId: route.destination_station_id,
       departureTime: trip.departure_time,
       arrivalTime: trip.arrival_time,
       fare: Number(trip.fare),
@@ -115,8 +117,10 @@ export class TripService {
       },
       route: {
         id: route.id,
-        origin: route.origin,
-        destination: route.destination,
+        originStation: route.origin_station,
+        destinationStation: route.destination_station,
+        distanceKm: route.distance_km,
+        estimatedDurationHours: route.estimated_duration_hours,
       },
       driver: trip.driver || null,
       createdAt: trip.created_at,
@@ -222,9 +226,10 @@ export class TripService {
     }
 
     const payload = { ...updateData };
-    if (payload.price && !payload.fare) {
+    if (payload.price !== undefined && payload.fare === undefined) {
       payload.fare = payload.price;
     }
+    delete payload.price;
 
     return tripRepository.update(tripId, organizationId, payload);
   }

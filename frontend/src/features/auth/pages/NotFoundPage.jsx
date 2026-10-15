@@ -13,13 +13,13 @@ export const NotFoundPage = () => {
           <AlertCircle size={36} className="text-red-600 dark:text-red-400" />
         </div>
         <h1 className="text-5xl font-bold text-slate-900 dark:text-white mb-2 leading-none">
-          {t('notFound.title')}
+          {t('notFound.title', 'Page Not Found')}
         </h1>
         <p className="text-slate-600 dark:text-slate-400 text-lg mb-8">
-          {t('notFound.subtitle')}
+          {t('notFound.subtitle', "The page you're looking for doesn't exist or has been moved.")}
         </p>
-        <Link to="/dashboard" className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 inline-block flex items-center justify-center gap-2">
-          <ArrowLeft size={16} /> {t('notFound.backBtn')}
+        <Link to="/" className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 inline-block flex items-center justify-center gap-2">
+          <ArrowLeft size={16} /> {t('notFound.backBtn', 'Back to Home')}
         </Link>
       </div>
     </div>

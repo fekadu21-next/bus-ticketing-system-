@@ -5,10 +5,21 @@ import { useAuth } from '@/context/AuthContext';
 import Alert from '@/components/ui/Alert';
 import { Eye, EyeOff, ArrowLeft, KeyRound } from 'lucide-react';
 
-export const ChangePasswordPage = () => {
-  const { changePassword } = useAuth();
+export const ChangePasswordPage = ({ embedded = false }) => {
+  const { user, changePassword } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const isPlatformAdmin = user?.roles?.includes('ADMIN') || user?.roles?.includes('PLATFORM_ADMIN');
+  const isOperatorUser =
+    user?.roles?.includes('BOOKING_COORDINATOR') ||
+    user?.roles?.includes('OPERATIONAL_MANAGER') ||
+    user?.roles?.includes('OPERATOR') ||
+    Boolean(user?.organizationContext?.length);
+
+  const backToProfileLink = embedded
+    ? (isPlatformAdmin ? '/admin/profile' : '/operator/profile')
+    : (isPlatformAdmin ? '/admin/profile' : isOperatorUser ? '/operator/profile' : '/profile');
 
   const [formData, setFormData] = useState({
     currentPassword: '',
@@ -59,7 +70,7 @@ export const ChangePasswordPage = () => {
         confirmPassword: '',
       });
       setTimeout(() => {
-        navigate('/profile');
+        navigate(backToProfileLink);
       }, 1500);
     } else {
       setErrorMessage(result.error || t('auth.errors.changeFailed', 'Failed to change password. Please check your current password.'));
@@ -67,9 +78,9 @@ export const ChangePasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-      <div className="max-w-lg mx-auto">
-        <Link to="/profile" className="text-sm text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-300 flex items-center gap-2 mb-6">
+    <div className={embedded ? "w-full max-w-2xl mx-auto py-2" : "min-h-screen bg-slate-50 dark:bg-slate-900 p-6"}>
+      <div className={embedded ? "w-full" : "max-w-lg mx-auto"}>
+        <Link to={backToProfileLink} className="text-sm text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-300 flex items-center gap-2 mb-6">
           <ArrowLeft size={16} /> {t('auth.changePassword.backToProfile', 'Back to Profile')}
         </Link>
 

@@ -1,76 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, CreditCard, Smartphone, CheckCircle, Shield, Lock } from 'lucide-react';
-import { formatEtb } from '@/data/dummyTrips';
+import { ArrowLeft, ArrowRight, CreditCard, Smartphone, CheckCircle, Shield } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { initializePaymentApi } from '@/api/trip.api';
+import { formatUserFullName } from '@/utils/userUtils';
+
+// Simple ETB formatter
+const formatEtb = (amount) => {
+  if (typeof amount !== 'number' || isNaN(amount)) return '0 ETB';
+  return `${amount.toLocaleString()} ETB`;
+};
 
 export const PaymentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, checkAuth } = useAuth();
   const tripData = location.state?.tripData || {};
   const selectedSeats = location.state?.selectedSeats || [];
   const passengerInfo = location.state?.passengerInfo || {};
+  const newlyRegistered = location.state?.newlyRegistered || false;
 
-  const [paymentMethod, setPaymentMethod] = useState('card');
-  const [cardData, setCardData] = useState({
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: '',
-  });
-  const [mobileData, setMobileData] = useState({
-    phoneNumber: '',
-    provider: 'telebirr',
-  });
-  const [errors, setErrors] = useState({});
+  const [paymentMethod, setPaymentMethod] = useState('CHAPA');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleCardChange = (e) => {
-    const { name, value } = e.target;
-    setCardData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: '' }));
-  };
+  // Get price from various possible field names
+  const price = Number(tripData.price || tripData.fare || tripData.total_fare || 0);
+  const totalPrice = price * selectedSeats.length;
 
-  const handleMobileChange = (e) => {
-    const { name, value } = e.target;
-    setMobileData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: '' }));
-  };
-
-  const validatePayment = () => {
-    const newErrors = {};
-    if (paymentMethod === 'card') {
-      if (!cardData.cardNumber.trim()) newErrors.cardNumber = 'Card number is required';
-      if (!cardData.cardName.trim()) newErrors.cardName = 'Cardholder name is required';
-      if (!cardData.expiryDate.trim()) newErrors.expiryDate = 'Expiry date is required';
-      if (!cardData.cvv.trim()) newErrors.cvv = 'CVV is required';
-    } else {
-      if (!mobileData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+  // If user was just registered, refresh auth state
+  useEffect(() => {
+    if (newlyRegistered) {
+      checkAuth();
     }
-    return newErrors;
-  };
+  }, [newlyRegistered, checkAuth]);
 
-  const handleSubmit = (e) => {
+  const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validatePayment();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+    setError('');
     setIsProcessing(true);
-    setTimeout(() => {
-      navigate('/booking-confirmation', {
-        state: {
+
+    try {
+      const paymentData = {
+        tripId: tripData.id,
+        seatNumbers: selectedSeats,
+        amount: totalPrice,
+        paymentMethod,
+        passengerInfo,
+      };
+
+      // Persist pending booking state in session storage across redirects
+      try {
+        sessionStorage.setItem('pending_booking_state', JSON.stringify({
           tripData,
           selectedSeats,
           passengerInfo,
           paymentMethod,
-          paymentAmount: tripData.price * selectedSeats.length,
-        },
-      });
-    }, 2000);
+          totalPrice,
+        }));
+      } catch (err) {
+        console.warn('Could not save booking state to sessionStorage:', err);
+      }
+
+      const response = await initializePaymentApi(paymentData);
+
+      if (response.success && response.data?.checkoutUrl) {
+        const checkoutUrl = response.data.checkoutUrl;
+        
+        // Redirect to payment provider checkout
+        window.location.href = checkoutUrl;
+      } else {
+        setError('Failed to initialize payment. Please try again.');
+      }
+    } catch (err) {
+      console.error('Payment initialization error:', err);
+      setError(err.response?.data?.message || 'Failed to initialize payment. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const totalPrice = tripData.price * selectedSeats.length;
+
+  // If no trip data, redirect back
+  if (!tripData.id) {
+    return (
+      <div className="bg-[#f4f7fb] min-h-screen text-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">No trip data found. Please select a trip first.</p>
+          <Link to="/" className="text-blue-600 underline">Go to Home</Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Get trip display data
+  const from = tripData.from || tripData.origin || tripData.route?.origin || 'Unknown';
+  const to = tripData.to || tripData.destination || tripData.route?.destination || 'Unknown';
+  const date = tripData.date || tripData.departureDate || tripData.departureTime?.split('T')[0] || 'Unknown';
 
   return (
     <div className="bg-[#f4f7fb] min-h-screen text-slate-800 pb-12">
@@ -94,12 +120,24 @@ export const PaymentPage = () => {
           <h2 className="text-[18px] font-extrabold text-slate-900 mb-4">Booking Summary</h2>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
+              <span className="text-[13px] text-slate-600">Passenger</span>
+              <span className="text-[13px] font-semibold text-slate-900">
+                {formatUserFullName(passengerInfo, 'Valued Passenger')}
+              </span>
+            </div>
+            {passengerInfo?.phone && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-slate-600">Phone Number</span>
+                <span className="text-[13px] font-semibold text-slate-900">{passengerInfo.phone}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
               <span className="text-[13px] text-slate-600">Trip</span>
-              <span className="text-[13px] font-semibold text-slate-900">{tripData.from} → {tripData.to}</span>
+              <span className="text-[13px] font-semibold text-slate-900">{from} → {to}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[13px] text-slate-600">Date</span>
-              <span className="text-[13px] font-semibold text-slate-900">{tripData.date}</span>
+              <span className="text-[13px] font-semibold text-slate-900">{date}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[13px] text-slate-600">Seats</span>
@@ -107,7 +145,7 @@ export const PaymentPage = () => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[13px] text-slate-600">Price per seat</span>
-              <span className="text-[13px] font-semibold text-slate-900">{formatEtb(tripData.price)}</span>
+              <span className="text-[13px] font-semibold text-slate-900">{formatEtb(price)}</span>
             </div>
             <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
               <span className="text-[14px] font-bold text-slate-700">Total Amount</span>
@@ -118,164 +156,90 @@ export const PaymentPage = () => {
 
         <div className="bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_24px_rgba(15,23,42,0.06)] p-4 sm:p-5">
           <h2 className="text-[18px] font-extrabold text-slate-900 mb-5">Select Payment Method</h2>
-          
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-[12px] text-red-700">
+              {error}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <button
               type="button"
-              onClick={() => setPaymentMethod('card')}
-              className={`p-4 rounded-xl border-2 flex items-center gap-3 transition-all ${
-                paymentMethod === 'card'
+              onClick={() => setPaymentMethod('CHAPA')}
+              className={`p-4 rounded-xl border-2 flex items-center gap-3 transition-all text-left ${
+                paymentMethod === 'CHAPA'
                   ? 'border-[#2563eb] bg-[#eef4ff]'
                   : 'border-slate-200 hover:border-slate-300'
               }`}
             >
-              <CreditCard size={24} className={paymentMethod === 'card' ? 'text-[#2563eb]' : 'text-slate-400'} />
-              <div className="text-left">
-                <p className="text-[14px] font-bold text-slate-900">Credit/Debit Card</p>
-                <p className="text-[11px] text-slate-500">Visa, Mastercard, Amex</p>
+              <CreditCard size={24} className={paymentMethod === 'CHAPA' ? 'text-[#2563eb]' : 'text-slate-400'} />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[14px] font-bold text-slate-900">Chapa (Hosted Gateway)</p>
+                  <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Test Credentials</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">Redirects to Chapa checkout with test payment methods</p>
               </div>
-              {paymentMethod === 'card' && <CheckCircle size={20} className="ml-auto text-[#2563eb]" />}
+              {paymentMethod === 'CHAPA' && <CheckCircle size={20} className="ml-auto text-[#2563eb] flex-shrink-0" />}
             </button>
 
             <button
               type="button"
-              onClick={() => setPaymentMethod('mobile')}
-              className={`p-4 rounded-xl border-2 flex items-center gap-3 transition-all ${
-                paymentMethod === 'mobile'
+              onClick={() => setPaymentMethod('TELEBIRR')}
+              className={`p-4 rounded-xl border-2 flex items-center gap-3 transition-all text-left ${
+                paymentMethod === 'TELEBIRR'
                   ? 'border-[#2563eb] bg-[#eef4ff]'
                   : 'border-slate-200 hover:border-slate-300'
               }`}
             >
-              <Smartphone size={24} className={paymentMethod === 'mobile' ? 'text-[#2563eb]' : 'text-slate-400'} />
-              <div className="text-left">
-                <p className="text-[14px] font-bold text-slate-900">Mobile Money</p>
-                <p className="text-[11px] text-slate-500">Telebirr, M-Pesa</p>
+              <Smartphone size={24} className={paymentMethod === 'TELEBIRR' ? 'text-[#2563eb]' : 'text-slate-400'} />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[14px] font-bold text-slate-900">Telebirr (Mobile Money)</p>
+                  <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Real</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">Ethio Telecom Telebirr USSD & App PIN payment</p>
               </div>
-              {paymentMethod === 'mobile' && <CheckCircle size={20} className="ml-auto text-[#2563eb]" />}
+              {paymentMethod === 'TELEBIRR' && <CheckCircle size={20} className="ml-auto text-[#2563eb] flex-shrink-0" />}
             </button>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            {paymentMethod === 'card' ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">Card Number *</label>
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    value={cardData.cardNumber}
-                    onChange={handleCardChange}
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                    className={`w-full px-4 py-2.5 rounded-lg border ${errors.cardNumber ? 'border-red-300' : 'border-slate-200'} text-[13px] focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]`}
-                  />
-                  {errors.cardNumber && <p className="text-[11px] text-red-500 mt-1">{errors.cardNumber}</p>}
-                </div>
-                <div>
-                  <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">Cardholder Name *</label>
-                  <input
-                    type="text"
-                    name="cardName"
-                    value={cardData.cardName}
-                    onChange={handleCardChange}
-                    placeholder="Name on card"
-                    className={`w-full px-4 py-2.5 rounded-lg border ${errors.cardName ? 'border-red-300' : 'border-slate-200'} text-[13px] focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]`}
-                  />
-                  {errors.cardName && <p className="text-[11px] text-red-500 mt-1">{errors.cardName}</p>}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">Expiry Date *</label>
-                    <input
-                      type="text"
-                      name="expiryDate"
-                      value={cardData.expiryDate}
-                      onChange={handleCardChange}
-                      placeholder="MM/YY"
-                      maxLength={5}
-                      className={`w-full px-4 py-2.5 rounded-lg border ${errors.expiryDate ? 'border-red-300' : 'border-slate-200'} text-[13px] focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]`}
-                    />
-                    {errors.expiryDate && <p className="text-[11px] text-red-500 mt-1">{errors.expiryDate}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">CVV *</label>
-                    <input
-                      type="text"
-                      name="cvv"
-                      value={cardData.cvv}
-                      onChange={handleCardChange}
-                      placeholder="123"
-                      maxLength={4}
-                      className={`w-full px-4 py-2.5 rounded-lg border ${errors.cvv ? 'border-red-300' : 'border-slate-200'} text-[13px] focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]`}
-                    />
-                    {errors.cvv && <p className="text-[11px] text-red-500 mt-1">{errors.cvv}</p>}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">Mobile Number *</label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={mobileData.phoneNumber}
-                    onChange={handleMobileChange}
-                    placeholder="2519XXXXXXXX"
-                    className={`w-full px-4 py-2.5 rounded-lg border ${errors.phoneNumber ? 'border-red-300' : 'border-slate-200'} text-[13px] focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]`}
-                  />
-                  {errors.phoneNumber && <p className="text-[11px] text-red-500 mt-1">{errors.phoneNumber}</p>}
-                </div>
-                <div>
-                  <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">Payment Provider</label>
-                  <select
-                    name="provider"
-                    value={mobileData.provider}
-                    onChange={handleMobileChange}
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-[13px] focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]"
-                  >
-                    <option value="telebirr">Telebirr</option>
-                    <option value="mpesa">M-Pesa</option>
-                    <option value="cbebirr">CBE Birr</option>
-                  </select>
-                </div>
-              </div>
-            )}
 
-            <div className="flex items-center gap-2 mt-6 p-3 bg-[#f0fdf4] rounded-lg border border-green-200">
-              <Shield size={16} className="text-green-600" />
-              <p className="text-[12px] text-green-700">
-                Your payment is secured with 256-bit SSL encryption
-              </p>
-            </div>
+          <div className="flex items-center gap-2 mt-6 p-3 bg-[#f0fdf4] rounded-lg border border-green-200">
+            <Shield size={16} className="text-green-600" />
+            <p className="text-[12px] text-green-700">
+              Your payment is secured with 256-bit SSL encryption
+            </p>
+          </div>
 
-            <div className="flex items-center gap-3 pt-6">
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="flex-1 h-11 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? (
-                  <>
-                    <span className="animate-spin">⟳</span>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    Pay {formatEtb(totalPrice)}
-                    <ArrowRight size={15} />
-                  </>
-                )}
-              </button>
-              <Link
-                to="/passenger-info"
-                state={{ tripData, selectedSeats }}
-                className="h-11 px-6 rounded-full border border-slate-200 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center"
-              >
-                Cancel
-              </Link>
-            </div>
-          </form>
+          <div className="flex items-center gap-3 pt-6">
+            <button
+              type="button"
+              onClick={handlePaymentSubmit}
+              disabled={isProcessing}
+              className="flex-1 h-11 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] disabled:bg-slate-400 text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isProcessing ? (
+                <>
+                  <span className="animate-spin">⟳</span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Pay {formatEtb(totalPrice)} with {paymentMethod === 'CHAPA' ? 'Chapa' : 'Telebirr'}
+                  <ArrowRight size={15} />
+                </>
+              )}
+            </button>
+            <Link
+              to="/passenger-info"
+              state={{ tripData, selectedSeats }}
+              className="h-11 px-6 rounded-full border border-slate-200 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center"
+            >
+              Cancel
+            </Link>
+          </div>
         </div>
       </div>
     </div>

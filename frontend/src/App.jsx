@@ -10,7 +10,7 @@ import AppRoutes from '@/routes/AppRoutes';
 
 import '@/i18n';
 import '@/index.css';
-import '@/styles/landing.css';
+import './App.css';
 
 function MainLayout() {
   const location = useLocation();
@@ -18,16 +18,20 @@ function MainLayout() {
     location.pathname.startsWith('/dashboard') ||
     location.pathname.startsWith('/portal') ||
     location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/operator') ||
+    location.pathname.startsWith('/manager') ||
     location.pathname.startsWith('/management');
 
   if (isConsoleRoute) {
     return <AppRoutes />;
   }
 
+  const isHome = location.pathname === '/';
+
   return (
     <div className="app-container">
       <Navbar />
-      <main className="main-content">
+      <main className="main-content main-content--full">
         <AppRoutes />
       </main>
       <Footer />

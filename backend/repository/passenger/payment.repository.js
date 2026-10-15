@@ -93,8 +93,8 @@ export class PassengerPaymentRepository {
 
   async completePaymentAndIssueTicket(paymentId) {
     return prisma.$transaction(async (tx) => {
-      // 1. Get payment with full booking details
-      const payment = await tx.payments.findUnique({
+      // 1. Get primary payment with full booking details
+      const primaryPayment = await tx.payments.findUnique({
         where: { id: paymentId },
         include: {
           bookings: {
@@ -114,102 +114,143 @@ export class PassengerPaymentRepository {
         },
       });
 
-      if (!payment) {
+      if (!primaryPayment) {
         throw new ApiError(404, 'Payment record not found.');
       }
 
-      if (payment.status === 'COMPLETED' && payment.bookings?.tickets) {
-        return {
-          payment,
-          booking: payment.bookings,
-          ticket: payment.bookings.tickets,
-        };
-      }
+      const baseRef = primaryPayment.transaction_reference;
 
-      const booking = payment.bookings;
-      if (!booking) {
-        throw new ApiError(404, 'Associated booking not found.');
-      }
-
-      // 2. Mark payment COMPLETED
-      const updatedPayment = await tx.payments.update({
-        where: { id: payment.id },
-        data: {
-          status: 'COMPLETED',
-          updated_at: new Date(),
+      // Find all payments linked to this transaction (primary + any sibling seats)
+      const allPayments = await tx.payments.findMany({
+        where: {
+          OR: [
+            { id: primaryPayment.id },
+            ...(baseRef ? [{ transaction_reference: { startsWith: `${baseRef}__SEAT_` } }] : []),
+          ],
+        },
+        include: {
+          bookings: {
+            include: {
+              users: true,
+              trips: {
+                include: {
+                  routes: true,
+                  buses: true,
+                },
+              },
+              seats: true,
+              organizations: true,
+              tickets: true,
+            },
+          },
         },
       });
 
-      // 3. Mark booking CONFIRMED
-      const updatedBooking = await tx.bookings.update({
-        where: { id: booking.id },
-        data: {
-          status: 'CONFIRMED',
-          updated_at: new Date(),
-        },
-      });
+      const updatedPayments = [];
+      const updatedBookings = [];
+      const issuedTickets = [];
 
-      // 4. Mark seat BOOKED
-      if (booking.seat_id) {
-        await tx.seats.update({
-          where: { id: booking.seat_id },
-          data: {
-            status: 'BOOKED',
-            updated_at: new Date(),
-          },
+      for (const pay of allPayments) {
+        const booking = pay.bookings;
+        if (!booking) continue;
+
+        // 2. Mark payment COMPLETED
+        const updatedPayment = pay.status === 'COMPLETED'
+          ? pay
+          : await tx.payments.update({
+              where: { id: pay.id },
+              data: {
+                status: 'COMPLETED',
+                updated_at: new Date(),
+              },
+            });
+        updatedPayments.push(updatedPayment);
+
+        // 3. Mark booking CONFIRMED
+        const updatedBooking = booking.status === 'CONFIRMED'
+          ? booking
+          : await tx.bookings.update({
+              where: { id: booking.id },
+              data: {
+                status: 'CONFIRMED',
+                updated_at: new Date(),
+              },
+            });
+        updatedBookings.push(updatedBooking);
+
+        // 4. Mark seat BOOKED
+        if (booking.seat_id) {
+          await tx.seats.update({
+            where: { id: booking.seat_id },
+            data: {
+              status: 'BOOKED',
+              updated_at: new Date(),
+            },
+          });
+        }
+
+        // 5. Generate Digital Ticket if not already generated
+        let ticket = await tx.tickets.findUnique({
+          where: { booking_id: booking.id },
         });
+
+        if (!ticket) {
+          const timestamp = Date.now().toString(36).toUpperCase();
+          const rand = Math.floor(1000 + Math.random() * 9000);
+          const ticketNumber = `TKT-${timestamp}-${booking.seat_number}-${rand}`;
+
+          // Create initial ticket to obtain ID
+          const preTicket = await tx.tickets.create({
+            data: {
+              ticket_number: ticketNumber,
+              booking_id: booking.id,
+              passenger_id: booking.passenger_id,
+              trip_id: booking.trip_id,
+              seat_id: booking.seat_id,
+              seat_number: booking.seat_number,
+              organization_id: booking.organization_id,
+              status: 'UNUSED',
+              qr_token: 'PENDING_GENERATION',
+            },
+          });
+
+          // Sign secure cryptographic QR token
+          const qrPayload = {
+            ticketId: preTicket.id,
+            ticketNumber,
+            bookingId: booking.id,
+            tripId: booking.trip_id,
+            organizationId: booking.organization_id,
+            seatNumber: booking.seat_number,
+            passengerId: booking.passenger_id,
+            type: 'TICKET_BOARDING_PASS',
+          };
+
+          const signedQrToken = jwt.sign(qrPayload, env.jwt.accessSecret);
+
+          ticket = await tx.tickets.update({
+            where: { id: preTicket.id },
+            data: {
+              qr_token: signedQrToken,
+              updated_at: new Date(),
+            },
+          });
+        }
+
+        issuedTickets.push(ticket);
       }
 
-      // 5. Generate Digital Ticket if not already generated
-      let ticket = await tx.tickets.findUnique({
-        where: { booking_id: booking.id },
-      });
-
-      if (!ticket) {
-        const timestamp = Date.now().toString(36).toUpperCase();
-        const rand = Math.floor(1000 + Math.random() * 9000);
-        const ticketNumber = `TKT-${timestamp}-${rand}`;
-
-        // Create initial ticket to obtain ID
-        const preTicket = await tx.tickets.create({
-          data: {
-            ticket_number: ticketNumber,
-            booking_id: booking.id,
-            passenger_id: booking.passenger_id,
-            trip_id: booking.trip_id,
-            seat_id: booking.seat_id,
-            seat_number: booking.seat_number,
-            organization_id: booking.organization_id,
-            status: 'UNUSED',
-            qr_token: 'PENDING_GENERATION',
-          },
-        });
-
-        // Sign secure cryptographic QR token
-        const qrPayload = {
-          ticketId: preTicket.id,
-          bookingId: booking.id,
-          tripId: booking.trip_id,
-          organizationId: booking.organization_id,
-          seatNumber: booking.seat_number,
-          type: 'TICKET_BOARDING_PASS',
-        };
-
-        const signedQrToken = jwt.sign(qrPayload, env.jwt.accessSecret);
-
-        ticket = await tx.tickets.update({
-          where: { id: preTicket.id },
-          data: {
-            qr_token: signedQrToken,
-            updated_at: new Date(),
-          },
-        });
-      }
+      const primaryUpdatedPayment = updatedPayments.find((p) => p.id === primaryPayment.id) || updatedPayments[0];
+      const primaryUpdatedBooking = updatedBookings.find((b) => b.id === primaryPayment.booking_id) || updatedBookings[0];
+      const primaryTicket = issuedTickets.find((t) => t.booking_id === primaryPayment.booking_id) || issuedTickets[0];
 
       return {
-        payment: updatedPayment,
-        booking: updatedBooking,
-        ticket,
+        payment: primaryUpdatedPayment,
+        booking: primaryUpdatedBooking,
+        ticket: primaryTicket,
+        payments: updatedPayments,
+        bookings: updatedBookings,
+        tickets: issuedTickets,
       };
     }, { maxWait: 10000, timeout: 25000 });
   }

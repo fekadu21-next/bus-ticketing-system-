@@ -52,6 +52,22 @@ export class PassengerBookingRepository {
         throw new ApiError(404, 'Selected seat does not exist on this trip.');
       }
 
+      if (['BOOKED', 'BLOCKED', 'HELD'].includes(targetSeat.status)) {
+        throw new ApiError(409, `Seat ${targetSeat.seat_number} is unavailable (${targetSeat.status.toLowerCase()}).`);
+      }
+
+      const existingBooking = await tx.bookings.findFirst({
+        where: {
+          trip_id: tripId,
+          seat_number: targetSeat.seat_number,
+          status: { in: ['CONFIRMED', 'PENDING'] },
+          NOT: { passenger_id: passengerId },
+        },
+      });
+      if (existingBooking) {
+        throw new ApiError(409, `Seat ${targetSeat.seat_number} has already been reserved or booked by another passenger.`);
+      }
+
       // 3. Atomically reserve seat to prevent double-booking
       const updateResult = await tx.seats.updateMany({
         where: {
@@ -70,29 +86,37 @@ export class PassengerBookingRepository {
       }
 
       // 4. Create booking
-      const booking = await tx.bookings.create({
-        data: {
-          organization_id: trip.organization_id,
-          trip_id: trip.id,
-          passenger_id: passengerId,
-          seat_id: targetSeat.id,
-          seat_number: targetSeat.seat_number,
-          total_fare: trip.fare,
-          status: 'PENDING',
-        },
-        include: {
-          trips: {
-            include: {
-              routes: true,
-              buses: true,
+      let booking;
+      try {
+        booking = await tx.bookings.create({
+          data: {
+            organization_id: trip.organization_id,
+            trip_id: trip.id,
+            passenger_id: passengerId,
+            seat_id: targetSeat.id,
+            seat_number: targetSeat.seat_number,
+            total_fare: trip.fare,
+            status: 'PENDING',
+          },
+          include: {
+            trips: {
+              include: {
+                routes: true,
+                buses: true,
+              },
+            },
+            seats: true,
+            organizations: {
+              select: { id: true, name: true },
             },
           },
-          seats: true,
-          organizations: {
-            select: { id: true, name: true },
-          },
-        },
-      });
+        });
+      } catch (err) {
+        if (err.code === 'P2002' || err.message?.includes('uq_trip_seat_active_booking')) {
+          throw new ApiError(409, `Seat ${targetSeat.seat_number} is already booked or reserved by another passenger.`);
+        }
+        throw err;
+      }
 
       return booking;
     }, { maxWait: 10000, timeout: 25000 });
@@ -102,8 +126,17 @@ export class PassengerBookingRepository {
     const skip = (page - 1) * limit;
     const where = { passenger_id: passengerId };
 
-    if (status) {
-      where.status = status;
+    if (status && status !== 'all') {
+      const s = status.toLowerCase();
+      if (s === 'upcoming') {
+        where.status = { in: ['CONFIRMED', 'PENDING'] };
+      } else if (s === 'completed') {
+        where.status = 'COMPLETED';
+      } else if (s === 'cancelled') {
+        where.status = 'CANCELLED';
+      } else {
+        where.status = status.toUpperCase();
+      }
     }
 
     const [total, bookings] = await Promise.all([
@@ -114,6 +147,7 @@ export class PassengerBookingRepository {
         take: limit,
         orderBy: { created_at: 'desc' },
         include: {
+          users: { select: { id: true, first_name: true, last_name: true, email: true, phone: true } },
           trips: {
             include: {
               routes: { select: { origin: true, destination: true } },
@@ -136,6 +170,7 @@ export class PassengerBookingRepository {
       bookings,
     };
   }
+
 
   async findPassengerBookingById(bookingId, passengerId) {
     const booking = await prisma.bookings.findFirst({

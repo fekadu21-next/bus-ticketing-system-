@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import authController from '../controllers/auth.controller.js';
 import validate from '../middleware/validate.middleware.js';
-import authenticate from '../middleware/authenticate.middleware.js';
+import { authenticate, optionalAuthenticate } from '../middleware/authenticate.middleware.js';
 import { authLimiter, resendLimiter } from '../middleware/rateLimit.middleware.js';
 import {
   registerSchema,
+  registerPartnerSchema,
   loginSchema,
   refreshTokenSchema,
   verifyEmailSchema,
@@ -18,9 +19,10 @@ const router = Router();
 
 // Public Authentication Endpoints
 router.post('/register', authLimiter, validate(registerSchema), authController.register);
+router.post('/register-partner', authLimiter, validate(registerPartnerSchema), authController.registerPartner);
 router.post('/login', authLimiter, validate(loginSchema), authController.login);
 router.post('/refresh', validate(refreshTokenSchema), authController.refresh);
-router.post('/logout', authenticate, authController.logout);
+router.post('/logout', optionalAuthenticate, authController.logout);
 
 // Email Verification
 router.post('/verify-email', validate(verifyEmailSchema), authController.verifyEmail);

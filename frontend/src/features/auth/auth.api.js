@@ -1,4 +1,4 @@
-import api from '@/services/api';
+import api, { refreshSession } from '@/services/api';
 
 /**
  * Register a new passenger account.
@@ -6,6 +6,14 @@ import api from '@/services/api';
  */
 export const registerApi = async (payload) => {
   const { data } = await api.post('/auth/register', payload);
+  return data;
+};
+
+/**
+ * Register a new partner organization & operator account.
+ */
+export const registerPartnerApi = async (payload) => {
+  const { data } = await api.post('/auth/register-partner', payload);
   return data;
 };
 
@@ -33,8 +41,7 @@ export const logoutApi = async () => {
  * Called on app load to restore an existing session.
  */
 export const refreshApi = async () => {
-  const { data } = await api.post('/auth/refresh', {});
-  return data;
+  return refreshSession();
 };
 
 /**

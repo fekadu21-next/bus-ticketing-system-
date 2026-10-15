@@ -77,6 +77,13 @@ router.get('/:orgId/drivers/:driverId', requireCoordinator, coordinatorStaffCont
 router.patch('/:orgId/drivers/:driverId', requireCoordinator, coordinatorStaffController.updateDriver);
 router.patch('/:orgId/drivers/:driverId/status', requireCoordinator, coordinatorStaffController.toggleDriverStatus);
 
+// Also support /staff/drivers alias routes
+router.get('/:orgId/staff/drivers', requireCoordinator, coordinatorStaffController.getDrivers);
+router.post('/:orgId/staff/drivers', requireCoordinator, coordinatorStaffController.createDriver);
+router.get('/:orgId/staff/drivers/:driverId', requireCoordinator, coordinatorStaffController.getDriverById);
+router.patch('/:orgId/staff/drivers/:driverId', requireCoordinator, coordinatorStaffController.updateDriver);
+router.patch('/:orgId/staff/drivers/:driverId/status', requireCoordinator, coordinatorStaffController.toggleDriverStatus);
+
 // Organization Problem Reports
 router.get('/:orgId/problems', requireCoordinator, driverController.getOrganizationProblems);
 router.patch('/:orgId/problems/:problemId/resolve', requireCoordinator, driverController.resolveProblem);

@@ -23,6 +23,7 @@ export const ManagerVerifiersPage = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+251911000000");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("Verifier@123456");
   const [assignedStation, setAssignedStation] = useState(stations[0]?.name || "Addis Ababa Autobus Terra");
 
   const orgVerifiers = verifiers.filter((v) => v.organizationId === selectedOrgId);
@@ -40,16 +41,21 @@ export const ManagerVerifiersPage = () => {
     if (!name.trim()) return;
     setIsSubmitting(true);
     try {
+      const verifierEmail = email.trim() || `${name.trim().toLowerCase().replace(/\s+/g, ".")}@operator.et`;
+      const verifierPassword = password.trim() || "Verifier@123456";
+      
       await addVerifier({
         name: name.trim(),
         phone: phone.trim(),
-        email: email.trim() || `${name.trim().toLowerCase().replace(/\s+/g, ".")}@operator.et`,
+        email: verifierEmail,
+        password: verifierPassword,
         assignedStation,
         organizationId: selectedOrgId
       });
       setName("");
       setPhone("+251911000000");
       setEmail("");
+      setPassword("Verifier@123456");
       setShowAddModal(false);
     } finally {
       setIsSubmitting(false);
@@ -119,7 +125,8 @@ export const ManagerVerifiersPage = () => {
             )}
           </div>
         ) : (
-          <table className="data-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "800px" }}>
             <thead>
               <tr>
                 <th>Verifier Name</th>
@@ -147,7 +154,7 @@ export const ManagerVerifiersPage = () => {
                     <td>
                       <button
                         className={`btn btn-sm ${isActive ? "btn-secondary" : "btn-success"}`}
-                        onClick={() => toggleStaffStatus(v.id, isActive)}
+                        onClick={() => toggleStaffStatus(v.id, !isActive)}
                         title={isActive ? "Deactivate verifier" : "Activate verifier"}
                       >
                         {isActive ? "Deactivate" : "Activate"}
@@ -158,6 +165,7 @@ export const ManagerVerifiersPage = () => {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -224,6 +232,25 @@ export const ManagerVerifiersPage = () => {
               onChange={(e) => setEmail(e.target.value)}
               style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
             />
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+              Auto-generated if empty: name@operator.et
+            </div>
+          </div>
+
+          <div>
+            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+              Password (for first login)
+            </label>
+            <input
+              type="password"
+              placeholder="Default: Verifier@123456"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+            />
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+              Default password: Verifier@123456 (can be changed after first login)
+            </div>
           </div>
 
           <div>

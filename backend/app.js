@@ -12,12 +12,24 @@ const app = express();
 
 // 1. Security Middlewares
 app.use(helmet());
+const allowedOrigins = new Set(
+  [env.clientUrl, process.env.FRONTEND_URL, process.env.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173']
+    .filter(Boolean)
+    .map((url) => url.replace(/\/$/, ''))
+);
+
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
   })
 );
 

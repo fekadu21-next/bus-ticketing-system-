@@ -377,10 +377,12 @@
 
 .table-responsive {
   overflow-x: auto;
+  overflow-y: auto;
 }
 
 .app-data-table {
   width: 100%;
+  min-width: 800px;
   border-collapse: collapse;
   text-align: left;
 }

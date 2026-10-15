@@ -78,7 +78,8 @@ export const AdminTripsPage = () => {
           </div>
         </div>
 
-        <table className="data-table">
+        <div style={{ overflowX: "auto" }}>
+          <table className="data-table" style={{ minWidth: "1100px" }}>
           <thead>
             <tr>
               <th>Trip Code</th>
@@ -114,8 +115,8 @@ export const AdminTripsPage = () => {
                   <td><code>{t.busPlateNumber}</code></td>
                   <td>{t.driverName}</td>
                   <td>
-                    <div>{t.departureDate}</div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{t.departureTime}</div>
+                    <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{t.departureDate}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--primary)", fontWeight: 700 }}>{t.departureTime}</div>
                   </td>
                   <td><strong>{t.fareAmount} ETB</strong></td>
                   <td>
@@ -129,6 +130,7 @@ export const AdminTripsPage = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

@@ -8,52 +8,35 @@
   flex: 1;
 }
 
+.main-content--home {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 .home-page {
   font-family: Inter, system-ui, sans-serif;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .home-hero {
-  background: #fff;
-}
-
-.home-hero-visual {
   position: relative;
-  isolation: isolate;
-}
-
-.home-hero-art {
-  display: block;
   width: 100%;
-  height: auto;
+  background: #071833;
 }
 
 .home-hero-search {
-  position: absolute;
-  left: 2.6%;
-  top: 64.2%;
-  width: 53.4%;
-  z-index: 2;
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  z-index: 10;
 }
 
 .home-hero-search form {
   width: 100%;
-  min-height: 58px;
-}
-
-@media (max-width: 767px) {
-  .home-hero-art {
-    height: 220px;
-    object-fit: cover;
-    object-position: 78% center;
-  }
-
-  .home-hero-search {
-    left: 16px;
-    right: 16px;
-    top: auto;
-    bottom: 12px;
-    width: auto;
-  }
 }
 
 .home-script {

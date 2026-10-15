@@ -8,8 +8,18 @@ import {
 
 const router = Router();
 
-router.post('/initialize', validate(initializePaymentSchema), passengerPaymentController.initializePayment);
-router.post('/verify', validate(verifyPaymentSchema), passengerPaymentController.verifyPayment);
-router.get('/booking/:bookingId', passengerPaymentController.getPaymentStatus);
+import authenticate, { optionalAuthenticate } from '../../middleware/authenticate.middleware.js';
+import { authorizeRole } from '../../middleware/authorize.middleware.js';
+import { ROLES } from '../../constants/index.js';
+
+// Payment initialization (optional auth: uses logged in user or creates/matches guest info)
+router.post('/initialize', optionalAuthenticate, validate(initializePaymentSchema), passengerPaymentController.initializePayment);
+
+// Payment verification (optional auth: supports user direct verification or callback from payment providers)
+router.post('/verify', optionalAuthenticate, validate(verifyPaymentSchema), passengerPaymentController.verifyPayment);
+
+// Authenticated payment status check (requires auth)
+router.get('/booking/:bookingId', authenticate, authorizeRole(ROLES.PASSENGER), passengerPaymentController.getPaymentStatus);
+
 
 export default router;

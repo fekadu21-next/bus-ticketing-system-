@@ -2,32 +2,79 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { Ticket, Search, ExternalLink, RefreshCw } from "lucide-react";
+import { Ticket, Search, ExternalLink, RefreshCw, DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { StatCard } from "../../components/ui/StatCard";
 
 export const AdminBookingsPage = () => {
-  const { bookings, organizations, setActivePage, isLoadingData, fetchAdminData } = useApp();
+  const { bookings, organizations, settings, setActivePage, isLoadingData, fetchAdminData } = useApp();
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState("ALL"); // ALL, TODAY, CUSTOM
+  const [customDate, setCustomDate] = useState("");
 
-  const filteredBookings = bookings.filter((b) => {
-    const matchesOrg = filterOrg === "ALL" || b.organizationId === filterOrg;
+  const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
+  const commissionRate = commissionPercent / 100;
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const isTodayDate = (dateVal) => {
+    if (!dateVal) return false;
+    if (typeof dateVal === "string" && dateVal.includes(todayStr)) return true;
+    const d = new Date(dateVal);
+    return !isNaN(d.getTime()) && d.toISOString().split("T")[0] === todayStr;
+  };
+
+  const matchesDateFilter = (dateVal) => {
+    if (dateFilter === "ALL") return true;
+    if (dateFilter === "TODAY") return isTodayDate(dateVal);
+    if (dateFilter === "CUSTOM" && customDate) {
+      if (typeof dateVal === "string" && dateVal.includes(customDate)) return true;
+      const d = new Date(dateVal);
+      return !isNaN(d.getTime()) && d.toISOString().split("T")[0] === customDate;
+    }
+    return true;
+  };
+
+  // Scope bookings by organization
+  const orgScopedBookings = bookings.filter((b) => {
+    if (filterOrg === "ALL") return true;
+    return (
+      b.organizationId === filterOrg ||
+      b.organization_id === filterOrg ||
+      (organizations.find((o) => o.id === filterOrg)?.name &&
+        b.organizationName?.toLowerCase() === organizations.find((o) => o.id === filterOrg)?.name?.toLowerCase())
+    );
+  });
+
+  // Financial & Bookings Calculations
+  const allBookingsGross = orgScopedBookings.reduce((acc, b) => acc + (Number(b.totalFare || b.amount) || 0), 0);
+  const allBookingsCommission = allBookingsGross * commissionRate;
+
+  const todayBookings = orgScopedBookings.filter((b) => isTodayDate(b.bookingDate || b.created_at));
+  const todayBookingsGross = todayBookings.reduce((acc, b) => acc + (Number(b.totalFare || b.amount) || 0), 0);
+  const todayBookingsCommission = todayBookingsGross * commissionRate;
+
+  const filteredBookings = orgScopedBookings.filter((b) => {
     const matchesStatus = filterStatus === "ALL" || b.status === filterStatus;
+    const matchesDate = matchesDateFilter(b.bookingDate || b.created_at);
     const q = searchQuery.toLowerCase();
     const matchesSearch =
       (b.bookingReference || "").toLowerCase().includes(q) ||
       (b.passengerName || "").toLowerCase().includes(q) ||
       (b.tripCode || "").toLowerCase().includes(q) ||
       (b.routeName || "").toLowerCase().includes(q);
-    return matchesOrg && matchesStatus && matchesSearch;
+    return matchesStatus && matchesSearch && matchesDate;
   });
+
+  const filteredGross = filteredBookings.reduce((acc, b) => acc + (Number(b.totalFare || b.amount) || 0), 0);
+  const filteredCommission = filteredGross * commissionRate;
 
   return (
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Platform Bookings Monitor</h1>
-          <p>Supervise passenger reservations, assigned seat allocations, and payment link associations.</p>
+          <h1>Platform Bookings & Revenue Monitor</h1>
+          <p>Supervise passenger reservations, booking revenue, and platform commissions ({commissionPercent}%).</p>
         </div>
         <button
           className="btn btn-secondary"
@@ -38,18 +85,78 @@ export const AdminBookingsPage = () => {
         </button>
       </div>
 
+      {/* Booking Financial Cards */}
+      <div className="stats-grid" style={{ marginBottom: "1.5rem" }}>
+        <StatCard
+          title="Total Bookings Value"
+          value={`${Math.round(allBookingsGross).toLocaleString()} ETB`}
+          icon={Ticket}
+          subtitle={filterOrg === "ALL" ? `${bookings.length} reservations platform-wide` : `${orgScopedBookings.length} reservations for operator`}
+        />
+        <StatCard
+          title="Platform Commission"
+          value={`${Math.round(allBookingsCommission).toLocaleString()} ETB`}
+          icon={DollarSign}
+          trend={`${commissionPercent}% Fee`}
+          subtitle={`Platform commission from bookings`}
+        />
+        <StatCard
+          title="Today's Bookings Value"
+          value={`${Math.round(todayBookingsGross).toLocaleString()} ETB`}
+          icon={Calendar}
+          subtitle={`${todayBookings.length} bookings created today`}
+        />
+        <StatCard
+          title="Today's Commission"
+          value={`${Math.round(todayBookingsCommission).toLocaleString()} ETB`}
+          icon={TrendingUp}
+          trend={`Daily ${commissionPercent}%`}
+          subtitle={`Platform share from today's bookings`}
+        />
+      </div>
+
       <div className="card-table-wrapper">
         <div className="card-header-toolbar">
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <div className="header-search" style={{ width: "260px" }}>
+          <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
+            <div className="header-search" style={{ width: "220px" }}>
               <Search className="search-icon" size={15} />
               <input
                 type="text"
-                placeholder="Search ref #, passenger name..."
+                placeholder="Search ref #, passenger..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+
+            {/* Quick Date Filters */}
+            <div style={{ display: "flex", alignItems: "center", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "2px 4px" }}>
+              <button
+                type="button"
+                className={`btn btn-sm ${dateFilter === "ALL" ? "btn-primary" : "btn-secondary"}`}
+                style={{ border: "none", fontSize: "0.75rem", padding: "3px 8px" }}
+                onClick={() => { setDateFilter("ALL"); setCustomDate(""); }}
+              >
+                All Dates
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${dateFilter === "TODAY" ? "btn-primary" : "btn-secondary"}`}
+                style={{ border: "none", fontSize: "0.75rem", padding: "3px 8px" }}
+                onClick={() => { setDateFilter("TODAY"); setCustomDate(todayStr); }}
+              >
+                Today
+              </button>
+              <input
+                type="date"
+                value={customDate}
+                onChange={(e) => {
+                  setCustomDate(e.target.value);
+                  setDateFilter(e.target.value ? "CUSTOM" : "ALL");
+                }}
+                style={{ fontSize: "0.75rem", padding: "2px 6px", border: "1px solid #cbd5e1", borderRadius: "4px" }}
+              />
+            </div>
+
             <select
               className="org-selector-select"
               value={filterOrg}
@@ -69,15 +176,15 @@ export const AdminBookingsPage = () => {
               <option value="CONFIRMED">CONFIRMED</option>
               <option value="PENDING">PENDING</option>
               <option value="CANCELLED">CANCELLED</option>
-              <option value="EXPIRED">EXPIRED</option>
             </select>
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-            Showing <strong>{filteredBookings.length}</strong> of <strong>{bookings.length}</strong> reservations
+            Showing <strong>{filteredBookings.length}</strong> bookings | Value: <strong style={{ color: "var(--primary)" }}>{Math.round(filteredGross).toLocaleString()} ETB</strong> (Comm: {Math.round(filteredCommission).toLocaleString()} ETB)
           </div>
         </div>
 
-        <table className="data-table">
+        <div style={{ overflowX: "auto" }}>
+          <table className="data-table" style={{ minWidth: "1000px" }}>
           <thead>
             <tr>
               <th>Booking Ref</th>
@@ -144,6 +251,7 @@ export const AdminBookingsPage = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

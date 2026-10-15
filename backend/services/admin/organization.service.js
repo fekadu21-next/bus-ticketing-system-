@@ -24,10 +24,26 @@ export class AdminOrganizationService {
         isActive: org.is_active,
         email: representative?.users?.email || null,
         phone: representative?.users?.phone || null,
+        contactName: representative?.users
+          ? `${representative.users.first_name || ''} ${representative.users.last_name || ''}`.trim()
+          : null,
+        representative: representative?.users
+          ? {
+              firstName: representative.users.first_name,
+              lastName: representative.users.last_name,
+              email: representative.users.email,
+              phone: representative.users.phone,
+            }
+          : null,
         city: null, // Unsupported by current DB schema
         address: null, // Unsupported by current DB schema
         registrationNumber: null, // Unsupported by current DB schema
         memberCount: org._count?.user_roles || 0,
+        totalBuses: org._count?.buses ?? org.buses?.length ?? 0,
+        activeTrips: org._count?.trips ?? org.trips?.length ?? 0,
+        _count: org._count,
+        buses: org.buses,
+        trips: org.trips,
         createdAt: org.created_at,
         updatedAt: org.updated_at,
       };
@@ -79,6 +95,11 @@ export class AdminOrganizationService {
       address: null,
       registrationNumber: null,
       memberCount: org._count?.user_roles || 0,
+      totalBuses: org._count?.buses ?? org.buses?.length ?? 0,
+      activeTrips: org._count?.trips ?? org.trips?.length ?? 0,
+      _count: org._count,
+      buses: org.buses,
+      trips: org.trips,
       createdAt: org.created_at,
       updatedAt: org.updated_at,
       representative: representative

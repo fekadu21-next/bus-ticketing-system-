@@ -12,7 +12,10 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({
+    email: location.state?.email || '',
+    password: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,8 +33,36 @@ const LoginPage = () => {
     setIsSubmitting(false);
 
     if (result.success) {
-      // Direct user to requested protected page OR their specific role dashboard
-      const targetPath = location.state?.from?.pathname || result.redirectPath || '/dashboard';
+      const targetUser = result.user;
+      const roles = Array.isArray(targetUser?.roles) ? targetUser.roles : [];
+      const isAdminUser = roles.includes('ADMIN') || roles.includes('PLATFORM_ADMIN');
+      const isOperatorUser =
+        roles.includes('BOOKING_COORDINATOR') ||
+        roles.includes('OPERATIONAL_MANAGER') ||
+        roles.includes('OPERATOR') ||
+        Boolean(targetUser?.organizationContext?.length);
+
+      let defaultPath = '/my-bookings';
+      if (isAdminUser) {
+        defaultPath = '/admin';
+      } else if (isOperatorUser) {
+        defaultPath = '/operator';
+      }
+
+      const requestedFrom = location.state?.from?.pathname;
+      let targetPath;
+      if (location.state?.isPartner && isOperatorUser) {
+        targetPath = '/operator';
+      } else if (requestedFrom && requestedFrom !== '/login' && requestedFrom !== '/register') {
+        if (!isAdminUser && !isOperatorUser && (requestedFrom.startsWith('/admin') || requestedFrom.startsWith('/operator') || requestedFrom.startsWith('/dashboard'))) {
+          targetPath = '/my-bookings';
+        } else {
+          targetPath = requestedFrom;
+        }
+      } else {
+        targetPath = result.redirectPath || defaultPath;
+      }
+
       navigate(targetPath, { replace: true });
     } else {
       setErrorMessage(result.error);
