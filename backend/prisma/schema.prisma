@@ -104,6 +104,7 @@ model users {
   driven_trips              trips[]                 @relation("DriverTrips")
   driver_problems           trip_problem_reports[]  @relation("DriverProblems")
   resolved_problems         trip_problem_reports[]  @relation("ResolvedProblems")
+  notifications             notifications[]
 }
 
 model refresh_tokens {
@@ -408,3 +409,22 @@ model trip_problem_reports {
   @@index([status])
   @@index([created_at])
 }
+
+model notifications {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  type       String    @db.VarChar(50)
+  priority   String    @default("NORMAL") @db.VarChar(20)
+  title      String    @db.VarChar(200)
+  message    String    @db.Text
+  metadata   Json?
+  read_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([user_id, read_at])
+  @@index([user_id, created_at])
+  @@index([type])
+}
+
