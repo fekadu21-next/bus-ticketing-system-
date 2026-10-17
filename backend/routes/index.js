@@ -9,6 +9,7 @@ import passengerRoutes from './passenger/index.js';
 import passengerTripRoutes from './passenger/trip.route.js';
 import verifierRoutes from './verifier/index.js';
 import driverRoutes from './driver/index.js';
+import notificationRoutes from './notification.route.js';
 import authenticate from '../middleware/authenticate.middleware.js';
 import { authorizeRole, authorizePermission } from '../middleware/authorize.middleware.js';
 import { authorizeOrgRole } from '../middleware/organization.middleware.js';
@@ -59,6 +60,7 @@ router.use('/users', userRoutes);
 router.use('/rbac', rbacRoutes);
 router.use('/organizations', organizationRoutes);
 router.use('/admin', adminRoutes);
+router.use('/notifications', notificationRoutes);
 
 // Shared Stations Catalog (Accessible to authenticated users for routing & discovery)
 router.get('/stations', authenticate, stationsController.getStations);
