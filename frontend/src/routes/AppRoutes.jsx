@@ -19,6 +19,7 @@ import MyBookingsPage from '@/pages/MyBookingsPage';
 import AboutPage from '@/pages/AboutPage';
 import ContactPage from '@/pages/ContactPage';
 import PartnerRegisterPage from '@/pages/PartnerRegisterPage';
+import NotificationsPage from '@/pages/NotificationsPage';
 
 
 // Auth Pages
@@ -326,6 +327,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MyBookingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />

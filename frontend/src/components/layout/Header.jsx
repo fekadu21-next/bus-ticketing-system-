@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { formatUserFullName } from "../../utils/userUtils";
+import NotificationBell from "../ui/NotificationBell";
 import {
   Search,
   Bell,
@@ -203,56 +204,7 @@ export const Header = () => {
         )}
 
         {/* Bell / Notifications */}
-        <div style={{ position: "relative" }}>
-          <button
-            className="header-icon-btn"
-            onClick={() => {
-              setShowNotifications(!showNotifications);
-              setShowUserMenu(false);
-            }}
-          >
-            <Bell size={17} />
-            {pendingApprovalsCount > 0 && (
-              <span className="header-badge">{pendingApprovalsCount}</span>
-            )}
-          </button>
-
-          {showNotifications && (
-            <div className="dropdown-panel notif-panel">
-              <div className="dropdown-header">
-                <h4>Notifications</h4>
-                <span
-                  style={{ fontSize: "0.7rem", color: "var(--primary)", fontWeight: 600, cursor: "pointer" }}
-                  onClick={() => setShowNotifications(false)}
-                >
-                  Clear all
-                </span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", padding: "0.75rem" }}>
-                {pendingApprovalsCount > 0 ? (
-                  <div className="notif-item notif-warning">
-                    <div style={{ fontSize: "0.78rem", fontWeight: 700 }}>
-                      Pending Approvals ({pendingApprovalsCount})
-                    </div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                      Operators awaiting registration review.
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", padding: "0.5rem 0" }}>
-                    No unread platform alerts.
-                  </div>
-                )}
-                <div className="notif-item">
-                  <strong style={{ display: "block", fontSize: "0.78rem" }}>Payment Log</strong>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>
-                    Telebirr TEL-98231999 pending.
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <NotificationBell variant="header" />
 
         {/* User profile */}
         <div style={{ position: "relative" }}>

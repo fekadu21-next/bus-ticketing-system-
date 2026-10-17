@@ -20,7 +20,9 @@ import {
   Bus,
   ChevronDown,
   Ticket,
+  Bell,
 } from 'lucide-react';
+import NotificationBell from './ui/NotificationBell';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout, isAdmin, isOperator, isPassenger } = useAuth();
@@ -238,6 +240,8 @@ export const Navbar = () => {
 
           {isAuthenticated ? (
             <div className="hidden lg:flex items-center gap-2.5">
+              <NotificationBell />
+
               {/* Quick Action Pill for Current Role */}
               {userIsPassenger && (
                 <Link
@@ -353,6 +357,15 @@ export const Navbar = () => {
                     )}
 
                     <Link
+                      to="/notifications"
+                      className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      <Bell size={16} />
+                      Notifications
+                    </Link>
+
+                    <Link
                       to={userIsAdmin ? "/admin/profile" : userIsOperator ? "/operator/profile" : "/profile"}
                       className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
                       onClick={() => setUserDropdownOpen(false)}
@@ -443,6 +456,12 @@ export const Navbar = () => {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {isAuthenticated && (
+            <div className="lg:hidden flex items-center">
+              <NotificationBell />
             </div>
           )}
 
@@ -605,6 +624,13 @@ export const Navbar = () => {
                         Operator Dashboard
                       </Link>
                     )}
+                    <Link
+                      to="/notifications"
+                      className="block w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Notifications
+                    </Link>
                     <Link
                       to={userIsAdmin ? "/admin/profile" : userIsOperator ? "/operator/profile" : "/profile"}
                       className="block w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
