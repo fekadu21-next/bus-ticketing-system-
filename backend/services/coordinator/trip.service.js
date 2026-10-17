@@ -5,6 +5,8 @@ import prisma from '../../Config/db.js';
 import ApiError from '../../utils/apiError.js';
 import { ROLES } from '../../constants/index.js';
 import { logAuditEvent } from '../../utils/auditLogger.js';
+import notificationService from '../notification.service.js';
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 export class TripService {
   async createTrip(organizationId, tripData) {
@@ -231,8 +233,23 @@ export class TripService {
     }
     delete payload.price;
 
-    return tripRepository.update(tripId, organizationId, payload);
+    const updated = await tripRepository.update(tripId, organizationId, payload);
+
+    if (updateData.departureTime && new Date(updateData.departureTime).getTime() !== new Date(trip.departure_time).getTime()) {
+      const routeName = trip.routes ? `${trip.routes.origin} to ${trip.routes.destination}` : 'your route';
+      const newFormatted = new Date(updateData.departureTime).toLocaleString();
+      notificationService.notifyTripPassengers(tripId, {
+        type: NOTIFICATION_TYPES.TRIP_DELAYED,
+        priority: NOTIFICATION_PRIORITIES.HIGH,
+        title: 'Trip Schedule Updated',
+        message: `The departure time for trip ${routeName} has been rescheduled to ${newFormatted}.`,
+        metadata: { tripId, organizationId, newDepartureTime: updateData.departureTime },
+      }).catch((err) => console.warn('Failed to notify passengers of trip delay:', err.message));
+    }
+
+    return updated;
   }
+
 
   async assignDriver(tripId, organizationId, driverId, managerUser = null, reqMeta = {}) {
     const trip = await this.getTripById(tripId, organizationId);
@@ -256,6 +273,19 @@ export class TripService {
       });
     }
 
+    if (driverId && driverId !== trip.driver_id) {
+      const routeName = trip.routes ? `${trip.routes.origin} to ${trip.routes.destination}` : 'trip';
+      const depDate = trip.departure_time ? new Date(trip.departure_time).toLocaleDateString() : '';
+      await notificationService.safeCreateNotification({
+        userId: driverId,
+        type: NOTIFICATION_TYPES.TRIP_UPDATED,
+        priority: NOTIFICATION_PRIORITIES.NORMAL,
+        title: 'New Trip Assignment',
+        message: `You have been assigned to drive trip ${routeName} departing on ${depDate}.`,
+        metadata: { tripId, organizationId },
+      });
+    }
+
     return updated;
   }
 
@@ -269,7 +299,33 @@ export class TripService {
       throw new ApiError(400, 'Cannot cancel an already completed trip.');
     }
 
-    return tripRepository.cancel(tripId, organizationId);
+    const cancelledTrip = await tripRepository.cancel(tripId, organizationId);
+
+    // Notify affected passengers
+    const routeName = trip.routes ? `${trip.routes.origin} to ${trip.routes.destination}` : 'your scheduled route';
+    const depFormatted = trip.departure_time ? new Date(trip.departure_time).toLocaleDateString() : '';
+
+    await notificationService.notifyTripPassengers(tripId, {
+      type: NOTIFICATION_TYPES.TRIP_CANCELLED,
+      priority: NOTIFICATION_PRIORITIES.URGENT,
+      title: 'Trip Cancelled',
+      message: `Your trip for ${routeName} scheduled for ${depFormatted} has been cancelled by the operator.`,
+      metadata: { tripId, organizationId },
+    }).catch((err) => console.warn('Failed to notify passengers of trip cancellation:', err.message));
+
+    // Notify assigned driver if any
+    if (trip.driver_id) {
+      await notificationService.safeCreateNotification({
+        userId: trip.driver_id,
+        type: NOTIFICATION_TYPES.TRIP_CANCELLED,
+        priority: NOTIFICATION_PRIORITIES.HIGH,
+        title: 'Assigned Trip Cancelled',
+        message: `Your assigned trip for ${routeName} on ${depFormatted} has been cancelled.`,
+        metadata: { tripId, organizationId },
+      });
+    }
+
+    return cancelledTrip;
   }
 
   async publishTrip(tripId, organizationId) {

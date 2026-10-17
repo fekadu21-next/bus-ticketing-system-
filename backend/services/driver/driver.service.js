@@ -2,6 +2,8 @@ import driverRepository from '../../repository/driver/driver.repository.js';
 import userRepository from '../../repository/user.repository.js';
 import ApiError from '../../utils/apiError.js';
 import { logAuditEvent } from '../../utils/auditLogger.js';
+import notificationService from '../notification.service.js';
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES, ROLES } from '../../constants/index.js';
 
 export class DriverService {
   /**
@@ -203,8 +205,22 @@ export class DriverService {
       userAgent: reqMeta.userAgent,
     });
 
+    // Notify organization coordinators and operational managers
+    await notificationService.notifyOrganizationStaff(
+      organizationId,
+      [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER],
+      {
+        type: NOTIFICATION_TYPES.TRIP_PROBLEM_REPORTED,
+        priority: NOTIFICATION_PRIORITIES.HIGH,
+        title: `Trip Problem Reported: ${type}`,
+        message: `Driver reported an issue (${type}): "${description.substring(0, 100)}" for trip.`,
+        metadata: { reportId: report.id, tripId, organizationId, type },
+      }
+    ).catch((err) => console.warn('Failed to notify staff of problem report:', err.message));
+
     return report;
   }
+
 
   /**
    * Get problem reports for a specific trip
@@ -276,8 +292,20 @@ export class DriverService {
       userAgent: reqMeta.userAgent,
     });
 
+    if (report.driver_id) {
+      await notificationService.safeCreateNotification({
+        userId: report.driver_id,
+        type: NOTIFICATION_TYPES.TRIP_PROBLEM_REPORTED,
+        priority: NOTIFICATION_PRIORITIES.NORMAL,
+        title: 'Trip Problem Report Resolved',
+        message: `Your reported problem for trip has been resolved with status: ${data.status || 'RESOLVED'}.`,
+        metadata: { problemId, organizationId, status: data.status || 'RESOLVED' },
+      });
+    }
+
     return updated;
   }
+
 }
 
 export const driverService = new DriverService();

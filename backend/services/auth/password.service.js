@@ -5,6 +5,8 @@ import { generateSecureToken, hashToken } from '../../utils/crypto.js';
 import { sendPasswordResetEmail } from '../../utils/email.js';
 import { logAuditEvent, AuditAction } from '../../utils/auditLogger.js';
 import ApiError from '../../utils/apiError.js';
+import notificationService from '../notification.service.js';
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 export class PasswordService {
   /**
@@ -72,6 +74,15 @@ export class PasswordService {
       userAgent,
     });
 
+    await notificationService.safeCreateNotification({
+      userId: tokenRecord.user_id,
+      type: NOTIFICATION_TYPES.ACCOUNT_SECURITY,
+      priority: NOTIFICATION_PRIORITIES.HIGH,
+      title: 'Security Alert: Password Reset',
+      message: 'Your account password was successfully reset. If you did not make this change, please contact support immediately.',
+      metadata: { event: 'PASSWORD_RESET' },
+    });
+
     return {
       message: 'Password has been reset successfully. Please log in with your new password.',
     };
@@ -119,6 +130,15 @@ export class PasswordService {
       action: AuditAction.PASSWORD_CHANGED,
       ipAddress: clientIp,
       userAgent,
+    });
+
+    await notificationService.safeCreateNotification({
+      userId,
+      type: NOTIFICATION_TYPES.ACCOUNT_SECURITY,
+      priority: NOTIFICATION_PRIORITIES.HIGH,
+      title: 'Security Alert: Password Changed',
+      message: 'Your account password was successfully updated. If you did not make this change, please contact support immediately.',
+      metadata: { event: 'PASSWORD_CHANGED' },
     });
 
     return {

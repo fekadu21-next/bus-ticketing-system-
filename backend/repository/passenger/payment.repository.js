@@ -244,6 +244,74 @@ export class PassengerPaymentRepository {
       const primaryUpdatedBooking = updatedBookings.find((b) => b.id === primaryPayment.booking_id) || updatedBookings[0];
       const primaryTicket = issuedTickets.find((t) => t.booking_id === primaryPayment.booking_id) || issuedTickets[0];
 
+      // 6. Create idempotent notifications for passenger
+      if (primaryUpdatedBooking && primaryUpdatedBooking.passenger_id) {
+        const passengerId = primaryUpdatedBooking.passenger_id;
+        const seatNumbers = updatedBookings.map((b) => b.seat_number).join(', ');
+
+        // Payment Confirmed Notification (Idempotent)
+        const existingPaymentNotif = await tx.notifications.findFirst({
+          where: {
+            user_id: passengerId,
+            type: 'PAYMENT_CONFIRMED',
+            metadata: {
+              path: ['paymentId'],
+              equals: primaryUpdatedPayment.id,
+            },
+          },
+        });
+
+        if (!existingPaymentNotif) {
+          await tx.notifications.create({
+            data: {
+              user_id: passengerId,
+              type: 'PAYMENT_CONFIRMED',
+              priority: 'HIGH',
+              title: 'Payment Confirmed',
+              message: `Your payment of ${primaryUpdatedPayment.amount} ETB via ${primaryUpdatedPayment.payment_method} has been successfully completed.`,
+              metadata: {
+                paymentId: primaryUpdatedPayment.id,
+                bookingId: primaryUpdatedBooking.id,
+                transactionReference: primaryUpdatedPayment.transaction_reference,
+                amount: Number(primaryUpdatedPayment.amount),
+                currency: primaryUpdatedPayment.currency,
+              },
+            },
+          });
+        }
+
+        // Booking Confirmed Notification (Idempotent)
+        const existingBookingNotif = await tx.notifications.findFirst({
+          where: {
+            user_id: passengerId,
+            type: 'BOOKING_CONFIRMED',
+            metadata: {
+              path: ['bookingId'],
+              equals: primaryUpdatedBooking.id,
+            },
+          },
+        });
+
+        if (!existingBookingNotif) {
+          await tx.notifications.create({
+            data: {
+              user_id: passengerId,
+              type: 'BOOKING_CONFIRMED',
+              priority: 'NORMAL',
+              title: 'Booking Confirmed',
+              message: `Your booking for Seat(s) ${seatNumbers} has been confirmed. Your digital ticket is ready!`,
+              metadata: {
+                bookingId: primaryUpdatedBooking.id,
+                tripId: primaryUpdatedBooking.trip_id,
+                ticketId: primaryTicket?.id,
+                ticketNumber: primaryTicket?.ticket_number,
+                seats: updatedBookings.map((b) => b.seat_number),
+              },
+            },
+          });
+        }
+      }
+
       return {
         payment: primaryUpdatedPayment,
         booking: primaryUpdatedBooking,
@@ -254,6 +322,7 @@ export class PassengerPaymentRepository {
       };
     }, { maxWait: 10000, timeout: 25000 });
   }
+
 }
 
 export const passengerPaymentRepository = new PassengerPaymentRepository();

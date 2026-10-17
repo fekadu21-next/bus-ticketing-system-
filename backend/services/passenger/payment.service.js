@@ -5,6 +5,8 @@ import ApiError from '../../utils/apiError.js';
 import env from '../../Config/env.js';
 import axios from 'axios';
 import prisma from '../../Config/db.js';
+import notificationService from '../notification.service.js';
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 export class PassengerPaymentService {
   async initializePayment(passengerId, { tripId, seatNumbers, amount, paymentMethod, passengerInfo }) {
@@ -422,6 +424,20 @@ export class PassengerPaymentService {
     }
 
     if (!isVerified) {
+      if (payment.bookings?.passenger_id) {
+        await notificationService.safeCreateNotification({
+          userId: payment.bookings.passenger_id,
+          type: NOTIFICATION_TYPES.PAYMENT_FAILED,
+          priority: NOTIFICATION_PRIORITIES.HIGH,
+          title: 'Payment Verification Failed',
+          message: `Payment verification for transaction ${payment.transaction_reference || ''} failed. Please try again.`,
+          metadata: {
+            bookingId: payment.booking_id,
+            transactionReference: payment.transaction_reference,
+            amount: Number(payment.amount),
+          },
+        });
+      }
       throw new ApiError(400, 'Payment verification failed. Transaction not completed.');
     }
 
