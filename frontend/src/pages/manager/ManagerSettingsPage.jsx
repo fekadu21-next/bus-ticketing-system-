@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useTranslation } from "react-i18next";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
-import { Building2, Edit2, RefreshCw, AlertCircle } from "lucide-react";
+import { Building2, Edit2, RefreshCw, AlertCircle, Palette, Sun, Moon, Globe, Check } from "lucide-react";
 
 export const ManagerSettingsPage = () => {
   const {
@@ -16,6 +18,10 @@ export const ManagerSettingsPage = () => {
     fetchCoordinatorData,
     isLoadingData
   } = useApp();
+
+  const { theme, isDark, setTheme } = useTheme();
+  const { t, i18n } = useTranslation();
+  const isAmharic = i18n.language === "am" || i18n.language?.startsWith("am");
 
   // Organization profile edit state
   const [showOrgEditModal, setShowOrgEditModal] = useState(false);
@@ -79,6 +85,96 @@ export const ManagerSettingsPage = () => {
       </div>
 
       <div style={{ maxWidth: "900px" }}>
+        {/* Appearance & Language Preferences Card */}
+        <div className="card-table-wrapper" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
+          <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Palette size={18} color="var(--primary)" /> {t("dashboardSettings.appearanceTitle", "Appearance & Display")}
+          </h3>
+          <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
+            {t("dashboardSettings.appearanceSubtitle", "Customize dashboard visual theme and interface language")}
+          </p>
+
+          {/* Theme Mode Selection */}
+          <div style={{ marginBottom: "1.25rem" }}>
+            <label style={{ fontSize: "0.82rem", fontWeight: 600, display: "block", marginBottom: "0.5rem" }}>
+              {t("dashboardSettings.themeMode", "Theme Mode")}
+            </label>
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <div
+                className={`preference-option-card ${!isDark ? "active" : ""}`}
+                onClick={() => setTheme("light")}
+                role="button"
+                tabIndex={0}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <Sun size={20} style={{ color: "#f59e0b" }} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>{t("dashboardSettings.light", "Light Mode")}</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Crisp white clean interface</div>
+                  </div>
+                </div>
+                {!isDark && <Check size={18} color="var(--primary)" />}
+              </div>
+
+              <div
+                className={`preference-option-card ${isDark ? "active" : ""}`}
+                onClick={() => setTheme("dark")}
+                role="button"
+                tabIndex={0}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <Moon size={20} style={{ color: "#38bdf8" }} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>{t("dashboardSettings.dark", "Dark Mode")}</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Reduced eye strain in low-light</div>
+                  </div>
+                </div>
+                {isDark && <Check size={18} color="var(--primary)" />}
+              </div>
+            </div>
+          </div>
+
+          {/* Language Selection */}
+          <div>
+            <label style={{ fontSize: "0.82rem", fontWeight: 600, display: "block", marginBottom: "0.5rem" }}>
+              {t("dashboardSettings.language", "Interface Language")}
+            </label>
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <div
+                className={`preference-option-card ${!isAmharic ? "active" : ""}`}
+                onClick={() => i18n.changeLanguage("en")}
+                role="button"
+                tabIndex={0}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <Globe size={20} style={{ color: "var(--primary)" }} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>English</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Default English (US)</div>
+                  </div>
+                </div>
+                {!isAmharic && <Check size={18} color="var(--primary)" />}
+              </div>
+
+              <div
+                className={`preference-option-card ${isAmharic ? "active" : ""}`}
+                onClick={() => i18n.changeLanguage("am")}
+                role="button"
+                tabIndex={0}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <Globe size={20} style={{ color: "#10b981" }} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>አማርኛ (Amharic)</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>የአማርኛ ቋንቋ በይነገጽ</div>
+                  </div>
+                </div>
+                {isAmharic && <Check size={18} color="var(--primary)" />}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Organization Profile Section */}
         <div className="card-table-wrapper" style={{ padding: "1.5rem", marginBottom: "1.5rem" }}>
           <div
@@ -369,7 +465,7 @@ export const ManagerSettingsPage = () => {
             />
           </div>
 
-          <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+          <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", background: "var(--bg-main, #ffffff)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
             Note: License number and accreditation status are platform-governed and can only be modified by Platform Administrators upon official regulatory review.
           </div>
         </form>

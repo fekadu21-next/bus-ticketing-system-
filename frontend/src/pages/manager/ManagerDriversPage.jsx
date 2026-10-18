@@ -239,11 +239,12 @@ export const ManagerDriversPage = () => {
             </label>
             <input
               type="text"
+              className="form-control"
               placeholder="e.g. Alemayehu Tilahun"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
           </div>
 
@@ -253,10 +254,11 @@ export const ManagerDriversPage = () => {
             </label>
             <input
               type="text"
+              className="form-control"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
           </div>
 
@@ -266,10 +268,11 @@ export const ManagerDriversPage = () => {
             </label>
             <input
               type="email"
+              className="form-control"
               placeholder="e.g. a.tilahun@operator.et"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
               Auto-generated if empty: name@operator.et
@@ -282,10 +285,11 @@ export const ManagerDriversPage = () => {
             </label>
             <input
               type="password"
+              className="form-control"
               placeholder="Default: Driver@123456"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
               Default password: Driver@123456 (can be changed after first login)

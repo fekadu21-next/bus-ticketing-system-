@@ -226,11 +226,12 @@ export const ManagerVerifiersPage = () => {
             </label>
             <input
               type="text"
+              className="form-control"
               placeholder="e.g. Bethlehem Yohannes"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
           </div>
 
@@ -240,10 +241,11 @@ export const ManagerVerifiersPage = () => {
             </label>
             <input
               type="text"
+              className="form-control"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
           </div>
 
@@ -253,10 +255,11 @@ export const ManagerVerifiersPage = () => {
             </label>
             <input
               type="email"
+              className="form-control"
               placeholder="e.g. b.yohannes@selambus.et"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
               Auto-generated if empty: name@operator.et
@@ -269,10 +272,11 @@ export const ManagerVerifiersPage = () => {
             </label>
             <input
               type="password"
+              className="form-control"
               placeholder="Default: Verifier@123456"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
               Default password: Verifier@123456 (can be changed after first login)
@@ -284,9 +288,10 @@ export const ManagerVerifiersPage = () => {
               Assigned Terminal Station
             </label>
             <select
+              className="form-control"
               value={assignedStation}
               onChange={(e) => setAssignedStation(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             >
               {stations.map((s) => (
                 <option key={s.id} value={s.name}>

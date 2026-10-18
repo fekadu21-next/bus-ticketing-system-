@@ -375,7 +375,7 @@ export const ManagerTripsPage = () => {
           {wizardStep === 3 && (
             <div>
               <h3>Step 3: Departure Terminal</h3>
-              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1rem", borderRadius: "8px" }}>
                 <strong>Origin Terminal:</strong> {selectedRouteObj?.originStationName}
               </div>
             </div>
@@ -384,7 +384,7 @@ export const ManagerTripsPage = () => {
           {wizardStep === 4 && (
             <div>
               <h3>Step 4: Arrival Terminal</h3>
-              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1rem", borderRadius: "8px" }}>
                 <strong>Destination Terminal:</strong> {selectedRouteObj?.destinationStationName}
               </div>
             </div>
@@ -428,7 +428,7 @@ export const ManagerTripsPage = () => {
           {wizardStep === 7 && (
             <div>
               <h3>Step 7: Configure Seat Inventory</h3>
-              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1rem", borderRadius: "8px" }}>
                 <div>Total Seat Grid: <strong>{selectedBusObj?.capacity || 45} Seats</strong></div>
                 <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.3rem" }}>
                   Seats 1 through {selectedBusObj?.capacity || 45} will be initialized as AVAILABLE.
@@ -454,7 +454,7 @@ export const ManagerTripsPage = () => {
           {wizardStep === 9 && (
             <div>
               <h3>Step 9: Review Complete Summary</h3>
-              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "6px", fontSize: "0.85rem" }}>
+              <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1rem", borderRadius: "8px", fontSize: "0.85rem" }}>
                 <div><strong>Route:</strong> {selectedRouteObj?.name}</div>
                 <div><strong>Bus:</strong> {selectedBusObj?.busNumber} ({selectedBusObj?.plateNumber})</div>
                 <div><strong>Schedule:</strong> {departureDate} at {departureTime}</div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useApp } from "../../context/AppContext";
 import {
   LayoutDashboard,
@@ -51,7 +52,7 @@ export const Sidebar = () => {
     toggleSidebar,
   } = useApp();
 
-
+  const { t } = useTranslation();
 
   // Notification seen state persisted per role in localStorage
   const storageKey = `dashboard_seen_badges_${currentRole || "CONSOLE"}`;
@@ -120,19 +121,19 @@ export const Sidebar = () => {
 
   const adminNavGroups = [
     {
-      group: "Overview & Access",
+      group: t("sidebar.overview", "Overview & Access"),
       items: [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { id: "dashboard", label: t("sidebar.dashboard", "Dashboard"), icon: LayoutDashboard },
         {
           id: "organizations",
-          label: "Organizations",
+          label: t("sidebar.organizations", "Organizations"),
           icon: Building2,
           badge: !seenBadges.organizations && pendingApprovalsCount > 0 ? pendingApprovalsCount : null,
           badgeType: "warning",
         },
         {
           id: "users",
-          label: "Users & Roles",
+          label: t("sidebar.users", "Users & Roles"),
           icon: Users,
           badge: !seenBadges.users && users.filter((u) => !u.isActive).length > 0 ? users.filter((u) => !u.isActive).length : null,
           badgeType: "primary",
@@ -140,14 +141,14 @@ export const Sidebar = () => {
       ],
     },
     {
-      group: "Transit Infrastructure",
+      group: t("sidebar.transit", "Transit Infrastructure"),
       items: [
-        { id: "stations", label: "Stations", icon: MapPin },
-        { id: "buses", label: "Fleet Buses", icon: Bus },
-        { id: "routes", label: "Routes", icon: RouteIcon },
+        { id: "stations", label: t("sidebar.stations", "Stations"), icon: MapPin },
+        { id: "buses", label: t("sidebar.buses", "Fleet Buses"), icon: Bus },
+        { id: "routes", label: t("sidebar.routes", "Routes & Corridors"), icon: RouteIcon },
         {
           id: "trips",
-          label: "Trips & Schedules",
+          label: t("sidebar.trips", "Trips & Schedules"),
           icon: CalendarDays,
           badge: !seenBadges.trips && newTripsCount > 0 ? newTripsCount : null,
           badgeType: "primary",
@@ -155,76 +156,76 @@ export const Sidebar = () => {
       ],
     },
     {
-      group: "Ticketing & Finance",
+      group: t("sidebar.ticketing", "Ticketing & Finance"),
       items: [
         {
           id: "bookings",
-          label: "Bookings",
+          label: t("sidebar.bookings", "Bookings"),
           icon: Ticket,
           badge: !seenBadges.bookings && pendingBookingsCount > 0 ? pendingBookingsCount : null,
           badgeType: "warning",
         },
         {
           id: "payments",
-          label: "Payments",
+          label: t("sidebar.payments", "Payments & Revenue"),
           icon: CreditCard,
           badge: !seenBadges.payments && pendingPaymentsCount > 0 ? pendingPaymentsCount : null,
           badgeType: "primary",
         },
-        { id: "tickets", label: "Tickets & QR", icon: QrCode },
+        { id: "tickets", label: t("sidebar.tickets", "Tickets & QR"), icon: QrCode },
       ],
     },
     {
-      group: "Governance & System",
+      group: t("sidebar.governance", "Governance & System"),
       items: [
-        { id: "reports", label: "Reports", icon: BarChart3 },
+        { id: "reports", label: t("sidebar.reports", "Reports & KPIs"), icon: BarChart3 },
         {
           id: "audit",
-          label: "Audit Logs",
+          label: t("sidebar.audit", "Audit Logs"),
           icon: FileSpreadsheet,
           badge: !seenBadges.audit && auditLogs.length > 0 ? Math.min(auditLogs.length, 5) : null,
           badgeType: "primary",
         },
-        { id: "settings", label: "Settings", icon: Settings },
+        { id: "settings", label: t("sidebar.settings", "Settings"), icon: Settings },
       ],
     },
   ];
 
   const managerNavGroups = [
     {
-      group: "Core Operations",
+      group: t("sidebar.coreOperations", "Core Operations"),
       items: [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { id: "dashboard", label: t("sidebar.dashboard", "Dashboard"), icon: LayoutDashboard },
       ],
     },
     {
-      group: "Fleet & Scheduling",
+      group: t("sidebar.fleetScheduling", "Fleet & Scheduling"),
       items: [
-        { id: "buses", label: "Fleet & Buses", icon: Bus },
-        { id: "routes", label: "Routes & Corridors", icon: RouteIcon },
+        { id: "buses", label: t("sidebar.buses", "Fleet & Buses"), icon: Bus },
+        { id: "routes", label: t("sidebar.routes", "Routes & Corridors"), icon: RouteIcon },
         {
           id: "trips",
-          label: "Trips & Schedules",
+          label: t("sidebar.trips", "Trips & Schedules"),
           icon: CalendarDays,
           badge: !seenBadges.trips && newTripsCount > 0 ? newTripsCount : null,
           badgeType: "primary",
         },
-        { id: "seats", label: "Seat Allocations", icon: Grid3X3 },
+        { id: "seats", label: t("sidebar.seats", "Seat Allocations"), icon: Grid3X3 },
       ],
     },
     {
-      group: "Bookings & Revenue",
+      group: t("sidebar.bookingsRevenue", "Bookings & Revenue"),
       items: [
         {
           id: "bookings",
-          label: "Bookings",
+          label: t("sidebar.bookings", "Bookings"),
           icon: Ticket,
           badge: !seenBadges.bookings && pendingBookingsCount > 0 ? pendingBookingsCount : null,
           badgeType: "warning",
         },
         {
           id: "payments",
-          label: "Payments & Revenue",
+          label: t("sidebar.payments", "Payments & Revenue"),
           icon: CreditCard,
           badge: !seenBadges.payments && pendingPaymentsCount > 0 ? pendingPaymentsCount : null,
           badgeType: "primary",
@@ -232,17 +233,17 @@ export const Sidebar = () => {
       ],
     },
     {
-      group: "Personnel & Verification",
+      group: t("sidebar.personnel", "Personnel & Verification"),
       items: [
-        { id: "drivers", label: "Drivers", icon: UserCheck },
-        { id: "verifiers", label: "Ticket Verifiers", icon: QrCode },
+        { id: "drivers", label: t("sidebar.drivers", "Drivers"), icon: UserCheck },
+        { id: "verifiers", label: t("sidebar.verifiers", "Ticket Verifiers"), icon: QrCode },
       ],
     },
     {
-      group: "Analytics & Settings",
+      group: t("sidebar.analytics", "Analytics & Settings"),
       items: [
-        { id: "reports", label: "Reports & KPIs", icon: BarChart3 },
-        { id: "settings", label: "Settings", icon: Settings },
+        { id: "reports", label: t("sidebar.reports", "Reports & KPIs"), icon: BarChart3 },
+        { id: "settings", label: t("sidebar.settings", "Settings"), icon: Settings },
       ],
     },
   ];

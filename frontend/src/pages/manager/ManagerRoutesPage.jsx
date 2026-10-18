@@ -249,7 +249,7 @@ export const ManagerRoutesPage = () => {
               value={originStationId}
               onChange={(e) => setOriginStationId(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             >
               {stations.map((s) => (
                 <option key={s.id} value={s.id}>{s.name} ({s.city})</option>
@@ -264,7 +264,7 @@ export const ManagerRoutesPage = () => {
               value={destinationStationId}
               onChange={(e) => setDestinationStationId(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             >
               {stations.map((s) => (
                 <option key={s.id} value={s.id}>{s.name} ({s.city})</option>
@@ -281,7 +281,7 @@ export const ManagerRoutesPage = () => {
                 value={distanceKm}
                 onChange={(e) => setDistanceKm(e.target.value)}
                 required
-                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
               />
             </div>
             <div>
@@ -294,7 +294,7 @@ export const ManagerRoutesPage = () => {
                 value={estimatedDuration}
                 onChange={(e) => setEstimatedDuration(e.target.value)}
                 required
-                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+                style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
               />
             </div>
           </div>

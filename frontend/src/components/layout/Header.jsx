@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useTranslation } from "react-i18next";
 import { formatUserFullName } from "../../utils/userUtils";
 import NotificationBell from "../ui/NotificationBell";
 import {
@@ -17,6 +19,8 @@ import {
   X,
   Lock,
   Globe,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 export const Header = () => {
@@ -39,6 +43,15 @@ export const Header = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+
+  const { theme, isDark, toggleTheme } = useTheme();
+  const { t, i18n } = useTranslation();
+  const isAmharic = i18n.language === "am" || i18n.language?.startsWith("am");
+
+  const toggleLanguage = () => {
+    const nextLang = isAmharic ? "en" : "am";
+    i18n.changeLanguage(nextLang);
+  };
 
   const pendingApprovalsCount = organizations.filter(
     (o) => o.status === "PENDING"
@@ -203,6 +216,28 @@ export const Header = () => {
           </div>
         )}
 
+        {/* Language Switcher */}
+        <button
+          className="header-icon-btn"
+          onClick={toggleLanguage}
+          title={isAmharic ? "Switch to English" : "ወደ አማርኛ ቀይር"}
+          aria-label="Toggle language"
+        >
+          <Globe size={15} />
+          <span>{isAmharic ? "አማ" : "EN"}</span>
+        </button>
+
+        {/* Theme Toggle (Dark / Light) */}
+        <button
+          className="header-icon-btn"
+          onClick={toggleTheme}
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          aria-label="Toggle theme mode"
+        >
+          {isDark ? <Sun size={15} style={{ color: "#fbbf24" }} /> : <Moon size={15} />}
+          <span className="desktop-only">{isDark ? "Light" : "Dark"}</span>
+        </button>
+
         {/* Bell / Notifications */}
         <NotificationBell variant="header" />
 
@@ -233,6 +268,53 @@ export const Header = () => {
                 <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>{displayName}</div>
                 <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{userEmail}</div>
               </div>
+
+              {/* Theme Preference Quick Switch */}
+              <div style={{ padding: "0.55rem 1rem", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  {isDark ? <Sun size={14} style={{ color: "#fbbf24" }} /> : <Moon size={14} />} Theme
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  style={{
+                    padding: "3px 8px",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    borderRadius: "4px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-main)",
+                    color: "var(--text-main)",
+                    cursor: "pointer"
+                  }}
+                >
+                  {isDark ? "Light Mode" : "Dark Mode"}
+                </button>
+              </div>
+
+              {/* Language Preference Quick Switch */}
+              <div style={{ padding: "0.55rem 1rem", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Globe size={14} /> Language
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  style={{
+                    padding: "3px 8px",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    borderRadius: "4px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-main)",
+                    color: "var(--text-main)",
+                    cursor: "pointer"
+                  }}
+                >
+                  {isAmharic ? "English" : "አማርኛ"}
+                </button>
+              </div>
+
               <button className="dropdown-btn" onClick={handleProfileClick}>
                 <User size={14} /> Profile & Account
               </button>

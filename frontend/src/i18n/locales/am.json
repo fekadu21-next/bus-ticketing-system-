@@ -524,6 +524,44 @@
     "title": "ገጹ አልተገኘም",
     "subtitle": "ይቅርታ፣ የፈለጉት ገጽ የለም ወይም ተዛውሯል።",
     "backBtn": "ወደ ዋናው ገጽ ተመለስ"
+  },
+  "sidebar": {
+    "overview": "አጠቃላይ እይታ እና መዳረሻ",
+    "dashboard": "ዳሽቦርድ",
+    "organizations": "ድርጅቶች",
+    "users": "ተጠቃሚዎች እና ሚናዎች",
+    "transit": "የትራንዚት መሰረተ-ልማት",
+    "stations": "ጣቢያዎች",
+    "buses": "የአውቶቡስ መርከብ",
+    "routes": "የጉዞ መስመሮች",
+    "trips": "ጉዞዎች እና መርሃ-ግብር",
+    "seats": "የመቀመጫ ድልድል",
+    "ticketing": "ቲኬት እና ፋይናንስ",
+    "bookings": "የተያዙ ቲኬቶች",
+    "payments": "ክፍያዎች እና ገቢ",
+    "tickets": "ቲኬቶች እና QR",
+    "governance": "አስተዳደር እና ስርዓት",
+    "personnel": "ሰራተኞች እና ማረጋገጫ",
+    "drivers": "አሽከርካሪዎች",
+    "verifiers": "ቲኬት አረጋጋጮች",
+    "analytics": "ትንታኔ እና ቅንብሮች",
+    "reports": "ሪፖርቶች እና ስታቲስቲክስ",
+    "audit": "የኦዲት መዝገቦች",
+    "settings": "ቅንብሮች",
+    "coreOperations": "ዋና ስራዎች",
+    "fleetScheduling": "የአውቶቡሶች እና የጉዞ መርሃ-ግብር",
+    "bookingsRevenue": "ቦታ ማስያዣ እና ገቢ"
+  },
+  "dashboardSettings": {
+    "appearanceTitle": "የገጽታ እና የእይታ ቅንብሮች",
+    "appearanceSubtitle": "የዳሽቦርድ ገጽታ ቀለሞችን እና የስርዓት ቋንቋን ያብጁ",
+    "themeMode": "የገጽታ ቀለም ምርጫ",
+    "light": "ብሩህ ገጽታ (Light)",
+    "dark": "ጨለማ ገጽታ (Dark)",
+    "language": "የስርዓት ቋንቋ",
+    "english": "English",
+    "amharic": "አማርኛ (Amharic)",
+    "saved": "ምርጫዎችዎ በተሳካ ሁኔታ ተቀምጠዋል"
   }
 }
 
