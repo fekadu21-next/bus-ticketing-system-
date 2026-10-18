@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { QrCode, Search, Eye, ShieldCheck, RefreshCw, Building2 } from "lucide-react";
 
@@ -11,6 +12,15 @@ export const AdminTicketsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [activeTab, setActiveTab] = useState("TICKETS");
+  const [currentPageTickets, setCurrentPageTickets] = useState(1);
+  const [pageSizeTickets, setPageSizeTickets] = useState(10);
+  const [currentPageVerif, setCurrentPageVerif] = useState(1);
+  const [pageSizeVerif, setPageSizeVerif] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPageTickets(1);
+    setCurrentPageVerif(1);
+  }, [filterOrg, searchQuery, activeTab]);
 
   const filteredTickets = tickets.filter((t) => {
     const matchesOrg =
@@ -45,6 +55,18 @@ export const AdminTicketsPage = () => {
 
     return matchesOrg && matchesSearch;
   });
+
+  const totalPagesTickets = Math.ceil(filteredTickets.length / pageSizeTickets) || 1;
+  const paginatedTickets = filteredTickets.slice(
+    (currentPageTickets - 1) * pageSizeTickets,
+    currentPageTickets * pageSizeTickets
+  );
+
+  const totalPagesVerif = Math.ceil(filteredVerifications.length / pageSizeVerif) || 1;
+  const paginatedVerifications = filteredVerifications.slice(
+    (currentPageVerif - 1) * pageSizeVerif,
+    currentPageVerif * pageSizeVerif
+  );
 
   return (
     <div>
@@ -140,7 +162,7 @@ export const AdminTicketsPage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredTickets.map((t) => (
+                paginatedTickets.map((t) => (
                   <tr key={t.id}>
                     <td><code>{t.ticketNumber}</code></td>
                     <td><strong>{t.passengerName}</strong></td>
@@ -169,6 +191,16 @@ export const AdminTicketsPage = () => {
               )}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPageTickets}
+            totalPages={totalPagesTickets}
+            totalItems={filteredTickets.length}
+            pageSize={pageSizeTickets}
+            onPageChange={setCurrentPageTickets}
+            onPageSizeChange={setPageSizeTickets}
+            itemLabel="tickets"
+          />
         </div>
       ) : (
         <div className="card-table-wrapper">
@@ -225,7 +257,7 @@ export const AdminTicketsPage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredVerifications.map((v) => (
+                paginatedVerifications.map((v) => (
                   <tr key={v.id}>
                     <td><code>{v.id}</code></td>
                     <td><code>{v.ticketNumber}</code></td>
@@ -240,6 +272,16 @@ export const AdminTicketsPage = () => {
               )}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPageVerif}
+            totalPages={totalPagesVerif}
+            totalItems={filteredVerifications.length}
+            pageSize={pageSizeVerif}
+            onPageChange={setCurrentPageVerif}
+            onPageSizeChange={setPageSizeVerif}
+            itemLabel="scan events"
+          />
         </div>
       )}
 

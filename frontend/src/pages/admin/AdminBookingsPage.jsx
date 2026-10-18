@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
+import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { Ticket, Search, ExternalLink, RefreshCw, DollarSign, Calendar, TrendingUp } from "lucide-react";
 import { StatCard } from "../../components/ui/StatCard";
@@ -12,6 +13,12 @@ export const AdminBookingsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("ALL"); // ALL, TODAY, CUSTOM
   const [customDate, setCustomDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterOrg, filterStatus, searchQuery, dateFilter, customDate]);
 
   const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
   const commissionRate = commissionPercent / 100;
@@ -68,6 +75,9 @@ export const AdminBookingsPage = () => {
 
   const filteredGross = filteredBookings.reduce((acc, b) => acc + (Number(b.totalFare || b.amount) || 0), 0);
   const filteredCommission = filteredGross * commissionRate;
+
+  const totalPages = Math.ceil(filteredBookings.length / pageSize) || 1;
+  const paginatedBookings = filteredBookings.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div>
@@ -212,7 +222,7 @@ export const AdminBookingsPage = () => {
                 </td>
               </tr>
             ) : (
-              filteredBookings.map((b) => (
+              paginatedBookings.map((b) => (
                 <tr key={b.id}>
                   <td><code>{b.bookingReference}</code></td>
                   <td>
@@ -252,6 +262,16 @@ export const AdminBookingsPage = () => {
           </tbody>
         </table>
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredBookings.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="bookings"
+        />
       </div>
     </div>
   );

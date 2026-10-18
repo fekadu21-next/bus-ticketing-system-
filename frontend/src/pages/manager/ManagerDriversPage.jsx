@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import { UserCheck, Plus, Search, Award, RefreshCw, UserX } from "lucide-react";
 
 export const ManagerDriversPage = () => {
@@ -16,8 +17,14 @@ export const ManagerDriversPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+251911000000");
@@ -42,6 +49,12 @@ export const ManagerDriversPage = () => {
       (d.licenseNumber && d.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredDrivers.length / pageSize) || 1;
+  const paginatedDrivers = filteredDrivers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const handleAddDriver = async (e) => {
     e.preventDefault();
@@ -149,7 +162,7 @@ export const ManagerDriversPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredDrivers.map((d) => {
+              {paginatedDrivers.map((d) => {
                 const isActive = d.status === "ACTIVE";
                 return (
                   <tr key={d.id}>
@@ -180,6 +193,19 @@ export const ManagerDriversPage = () => {
           </table>
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredDrivers.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(sz) => {
+            setPageSize(sz);
+            setCurrentPage(1);
+          }}
+          itemLabel="drivers"
+        />
       </div>
 
       {/* Add Driver Modal */}

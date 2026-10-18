@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import { Route as RouteIcon, Plus, Search, RefreshCw, AlertCircle } from "lucide-react";
 
 export const ManagerRoutesPage = () => {
@@ -16,6 +17,8 @@ export const ManagerRoutesPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -24,6 +27,10 @@ export const ManagerRoutesPage = () => {
   const [destinationStationId, setDestinationStationId] = useState("");
   const [distanceKm, setDistanceKm] = useState(400);
   const [estimatedDuration, setEstimatedDuration] = useState("6h 00m");
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus]);
 
   const openAddModal = () => {
     setFormError("");
@@ -43,6 +50,12 @@ export const ManagerRoutesPage = () => {
       (r.destinationStationName && r.destinationStationName.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredRoutes.length / pageSize) || 1;
+  const paginatedRoutes = filteredRoutes.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const handleAddRoute = async (e) => {
     if (e) e.preventDefault();
@@ -153,7 +166,7 @@ export const ManagerRoutesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredRoutes.map((r) => (
+              {paginatedRoutes.map((r) => (
                 <tr key={r.id}>
                   <td>
                     <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
@@ -171,6 +184,19 @@ export const ManagerRoutesPage = () => {
           </table>
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredRoutes.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(sz) => {
+            setPageSize(sz);
+            setCurrentPage(1);
+          }}
+          itemLabel="routes"
+        />
       </div>
 
       {/* Add Route Modal */}

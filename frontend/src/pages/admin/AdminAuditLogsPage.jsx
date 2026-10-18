@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
+import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { Search, ShieldCheck, RefreshCw, Building2 } from "lucide-react";
 
@@ -7,6 +8,12 @@ export const AdminAuditLogsPage = () => {
   const { auditLogs = [], organizations = [], isLoadingData, fetchAdminData } = useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOrg, setFilterOrg] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterOrg, searchQuery]);
 
   const filteredLogs = auditLogs.filter((log) => {
     const matchesOrg =
@@ -25,6 +32,9 @@ export const AdminAuditLogsPage = () => {
 
     return matchesOrg && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredLogs.length / pageSize) || 1;
+  const paginatedLogs = filteredLogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div>
@@ -104,7 +114,7 @@ export const AdminAuditLogsPage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map((log) => (
+                paginatedLogs.map((log) => (
                   <tr key={log.id}>
                     <td><span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{log.timestamp}</span></td>
                     <td><strong>{log.actorName}</strong></td>
@@ -130,6 +140,16 @@ export const AdminAuditLogsPage = () => {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredLogs.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="audit records"
+        />
       </div>
     </div>
   );

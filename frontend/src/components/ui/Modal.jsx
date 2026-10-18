@@ -27,9 +27,9 @@ export const Modal = ({
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm animate-in fade-in duration-250" />
+      <div className="absolute inset-0 bg-slate-900/60 transition-opacity duration-200" />
       <div
-        className={`relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-250`}
+        className="relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-h-[90vh] overflow-hidden flex flex-col z-10"
         style={{ maxWidth }}
         onClick={(e) => e.stopPropagation()}
       >

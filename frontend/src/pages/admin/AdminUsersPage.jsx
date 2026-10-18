@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { Search, Shield, RefreshCw, Eye, CheckCircle2, AlertTriangle, Building2, User, KeyRound, Clock } from "lucide-react";
 
@@ -11,6 +12,12 @@ export const AdminUsersPage = () => {
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUserModal, setSelectedUserModal] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterRole, filterOrg, searchQuery]);
 
   const filteredUsers = users.filter((u) => {
     const roleUpper = (u.role || "").toUpperCase();
@@ -40,6 +47,9 @@ export const AdminUsersPage = () => {
 
     return matchesRole && matchesOrg && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1;
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div>
@@ -134,7 +144,7 @@ export const AdminUsersPage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => (
+                paginatedUsers.map((u) => (
                   <tr key={u.id}>
                     <td>
                       <strong>{u.name}</strong>
@@ -222,6 +232,16 @@ export const AdminUsersPage = () => {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredUsers.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="users"
+        />
       </div>
 
       {/* Sensitive Profile Details Modal */}

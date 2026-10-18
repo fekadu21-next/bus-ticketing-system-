@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
+import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { CalendarDays, Search, RefreshCw } from "lucide-react";
 
@@ -9,6 +10,12 @@ export const AdminTripsPage = () => {
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterOrg, filterStatus, searchQuery]);
 
   const filteredTrips = trips.filter((t) => {
     const matchesOrg = filterOrg === "ALL" || t.organizationId === filterOrg;
@@ -21,6 +28,9 @@ export const AdminTripsPage = () => {
       (t.busPlateNumber || "").toLowerCase().includes(q);
     return matchesOrg && matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredTrips.length / pageSize) || 1;
+  const paginatedTrips = filteredTrips.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div>
@@ -107,7 +117,7 @@ export const AdminTripsPage = () => {
                 </td>
               </tr>
             ) : (
-              filteredTrips.map((t) => (
+              paginatedTrips.map((t) => (
                 <tr key={t.id}>
                   <td><code>{t.tripCode}</code></td>
                   <td><strong>{t.organizationName}</strong></td>
@@ -131,6 +141,16 @@ export const AdminTripsPage = () => {
           </tbody>
         </table>
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTrips.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="scheduled departures"
+        />
       </div>
     </div>
   );

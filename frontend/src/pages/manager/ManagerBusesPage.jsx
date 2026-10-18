@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import { Bus, Plus, Search, AlertCircle, RefreshCw } from "lucide-react";
 
 export const ManagerBusesPage = () => {
@@ -19,6 +20,12 @@ export const ManagerBusesPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchQuery]);
 
   const [busNumber, setBusNumber] = useState("");
   const [plateNumber, setPlateNumber] = useState("");
@@ -35,6 +42,9 @@ export const ManagerBusesPage = () => {
       (b.model && b.model.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredBuses.length / pageSize) || 1;
+  const paginatedBuses = filteredBuses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleAddBus = async (e) => {
     if (e) e.preventDefault();
@@ -163,7 +173,7 @@ export const ManagerBusesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredBuses.map((b) => (
+              {paginatedBuses.map((b) => (
                 <tr key={b.id}>
                   <td>
                     <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
@@ -194,6 +204,16 @@ export const ManagerBusesPage = () => {
           </table>
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredBuses.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="fleet buses"
+        />
       </div>
 
       {/* Add Bus Modal */}

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
+import { Pagination } from "../../components/ui/Pagination";
 import {
   BarChart3,
   TrendingUp,
@@ -88,8 +89,15 @@ export const ManagerReportsPage = () => {
     showToast
   } = useApp();
   const [activeTab, setActiveTab] = useState("routes");
+  const [currentPageRoutes, setCurrentPageRoutes] = useState(1);
+  const [pageSizeRoutes, setPageSizeRoutes] = useState(10);
 
   const orgTrips = trips.filter((t) => t.organizationId === selectedOrgId);
+  const totalPagesRoutes = Math.ceil(orgTrips.length / pageSizeRoutes) || 1;
+  const paginatedOrgTrips = orgTrips.slice(
+    (currentPageRoutes - 1) * pageSizeRoutes,
+    currentPageRoutes * pageSizeRoutes
+  );
   const orgBookings = bookings.filter(
     (b) => b.organizationId === selectedOrgId && (b.status === "CONFIRMED" || b.status === "SUCCESS")
   );
@@ -245,7 +253,7 @@ export const ManagerReportsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {orgTrips.map((t) => {
+              {paginatedOrgTrips.map((t) => {
                 const occupancy =
                   t.totalSeats > 0
                     ? ((t.bookedSeatsCount / t.totalSeats) * 100).toFixed(1)
@@ -279,6 +287,19 @@ export const ManagerReportsPage = () => {
               })}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPageRoutes}
+            totalPages={totalPagesRoutes}
+            totalItems={orgTrips.length}
+            pageSize={pageSizeRoutes}
+            onPageChange={setCurrentPageRoutes}
+            onPageSizeChange={(sz) => {
+              setPageSizeRoutes(sz);
+              setCurrentPageRoutes(1);
+            }}
+            itemLabel="routes"
+          />
         </div>
       )}
 

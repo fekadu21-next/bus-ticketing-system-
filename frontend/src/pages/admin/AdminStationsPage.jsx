@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { MapPin, Plus, Search, Edit2, RefreshCw, Trash2, Power } from "lucide-react";
 
@@ -22,6 +23,12 @@ export const AdminStationsPage = () => {
   const [editingStation, setEditingStation] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Add Station Form State
   const [name, setName] = useState("");
@@ -49,6 +56,9 @@ export const AdminStationsPage = () => {
       (s.address || "").toLowerCase().includes(q)
     );
   });
+
+  const totalPages = Math.ceil(filteredStations.length / pageSize) || 1;
+  const paginatedStations = filteredStations.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleCreateStation = async (e) => {
     if (e) e.preventDefault();
@@ -228,7 +238,7 @@ export const AdminStationsPage = () => {
                 </td>
               </tr>
             ) : (
-              filteredStations.map((s) => {
+              paginatedStations.map((s) => {
                 const totalRoutes = (s._count?.origin_routes || 0) + (s._count?.destination_routes || 0);
                 const isActive = s.is_active ?? true;
                 return (
@@ -279,6 +289,16 @@ export const AdminStationsPage = () => {
             )}
           </tbody>
         </table>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredStations.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="stations"
+        />
       </div>
 
       {/* Add Station Modal */}

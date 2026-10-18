@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { Building2, CheckCircle2, XCircle, AlertTriangle, ShieldCheck, Eye, Search, RefreshCw } from "lucide-react";
 
@@ -26,6 +27,12 @@ export const AdminOrganizationsPage = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [targetOrgId, setTargetOrgId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, filterType, searchQuery]);
 
   const categories = Array.from(new Set(organizations.map((o) => o.type).filter(Boolean)));
 
@@ -46,6 +53,9 @@ export const AdminOrganizationsPage = () => {
       (org.address || "").toLowerCase().includes(q);
     return matchesStatus && matchesType && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredOrgs.length / pageSize) || 1;
+  const paginatedOrgs = filteredOrgs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   React.useEffect(() => {
     if (fetchAdminData) {
@@ -169,7 +179,7 @@ export const AdminOrganizationsPage = () => {
                 </td>
               </tr>
             ) : (
-              filteredOrgs.map((org) => (
+              paginatedOrgs.map((org) => (
                 <tr key={org.id}>
                   <td>
                     <strong>{org.name}</strong>
@@ -243,6 +253,16 @@ export const AdminOrganizationsPage = () => {
           </tbody>
         </table>
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredOrgs.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="organizations"
+        />
       </div>
 
       {/* Detail View Modal */}

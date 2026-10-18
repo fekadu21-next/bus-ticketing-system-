@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { Pagination } from "../../components/ui/Pagination";
 import {
   BarChart3,
   TrendingUp,
@@ -103,9 +104,25 @@ export const AdminReportsPage = () => {
     fetchAdminData,
   } = useApp();
   const [activeTab, setActiveTab] = useState("operators");
+  const [currentPageOrgs, setCurrentPageOrgs] = useState(1);
+  const [pageSizeOrgs, setPageSizeOrgs] = useState(10);
+  const [currentPageTrips, setCurrentPageTrips] = useState(1);
+  const [pageSizeTrips, setPageSizeTrips] = useState(10);
 
   const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
   const commissionRate = commissionPercent / 100;
+
+  const totalPagesOrgs = Math.ceil(organizations.length / pageSizeOrgs) || 1;
+  const paginatedOrgs = organizations.slice(
+    (currentPageOrgs - 1) * pageSizeOrgs,
+    currentPageOrgs * pageSizeOrgs
+  );
+
+  const totalPagesTrips = Math.ceil(trips.length / pageSizeTrips) || 1;
+  const paginatedTrips = trips.slice(
+    (currentPageTrips - 1) * pageSizeTrips,
+    currentPageTrips * pageSizeTrips
+  );
 
   const successPayments = payments.filter((p) => p.status === "SUCCESS" || p.status === "COMPLETED");
   const totalRev = adminReports?.financials?.totalRevenue ?? successPayments.reduce((acc, p) => acc + p.amount, 0);
@@ -247,7 +264,7 @@ export const AdminReportsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {organizations.map((org) => {
+              {paginatedOrgs.map((org) => {
                 const orgBookings = bookings.filter(
                   (b) =>
                     b.organizationId === org.id && b.status === "CONFIRMED"
@@ -295,6 +312,19 @@ export const AdminReportsPage = () => {
               })}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPageOrgs}
+            totalPages={totalPagesOrgs}
+            totalItems={organizations.length}
+            pageSize={pageSizeOrgs}
+            onPageChange={setCurrentPageOrgs}
+            onPageSizeChange={(sz) => {
+              setPageSizeOrgs(sz);
+              setCurrentPageOrgs(1);
+            }}
+            itemLabel="operators"
+          />
         </div>
       )}
 
@@ -420,7 +450,7 @@ export const AdminReportsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {trips.map((t) => (
+              {paginatedTrips.map((t) => (
                 <tr key={t.id}>
                   <td>
                     <code>{t.tripCode}</code>
@@ -457,6 +487,19 @@ export const AdminReportsPage = () => {
               ))}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPageTrips}
+            totalPages={totalPagesTrips}
+            totalItems={trips.length}
+            pageSize={pageSizeTrips}
+            onPageChange={setCurrentPageTrips}
+            onPageSizeChange={(sz) => {
+              setPageSizeTrips(sz);
+              setCurrentPageTrips(1);
+            }}
+            itemLabel="trips"
+          />
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import { Ticket, Search, RefreshCw, Eye, User, Calendar, CreditCard, DollarSign, TrendingUp } from "lucide-react";
 import { StatCard } from "../../components/ui/StatCard";
 
@@ -16,9 +17,15 @@ export const ManagerBookingsPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [dateFilter, setDateFilter] = useState("ALL"); // ALL, TODAY, CUSTOM
   const [customDate, setCustomDate] = useState("");
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus, dateFilter, customDate]);
 
   const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
   const commissionRate = commissionPercent / 100;
@@ -65,6 +72,12 @@ export const ManagerBookingsPage = () => {
       (b.tripCode && b.tripCode.toLowerCase().includes(q));
     return matchesStatus && matchesSearch && matchesDate;
   });
+
+  const totalPages = Math.ceil(filteredBookings.length / pageSize) || 1;
+  const paginatedBookings = filteredBookings.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const filteredGross = filteredBookings.reduce((acc, b) => acc + (Number(b.totalFare || b.amount) || 0), 0);
   const filteredNet = filteredGross * (1 - commissionRate);
@@ -195,7 +208,7 @@ export const ManagerBookingsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredBookings.map((b) => (
+              {paginatedBookings.map((b) => (
                 <tr key={b.id}>
                   <td><code>{b.bookingReference}</code></td>
                   <td>
@@ -225,6 +238,19 @@ export const ManagerBookingsPage = () => {
           </table>
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredBookings.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(sz) => {
+            setPageSize(sz);
+            setCurrentPage(1);
+          }}
+          itemLabel="bookings"
+        />
       </div>
 
       {/* Booking Details Modal */}

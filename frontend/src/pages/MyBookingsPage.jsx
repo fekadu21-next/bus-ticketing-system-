@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Calendar, Clock, Ticket, CheckCircle, XCircle, ArrowRight, Download, X, User, Phone, Mail, Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getMyBookingsApi } from '@/api/trip.api';
+import { Pagination } from '@/components/ui/Pagination';
 import QRCode from 'qrcode';
 
 // Simple ETB formatter
@@ -26,11 +27,17 @@ const formatPrettyDate = (dateStr) => {
 export const MyBookingsPage = () => {
   const { isAuthenticated, user } = useAuth();
   const [filter, setFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [modalQrUrl, setModalQrUrl] = useState('');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
 
   // Fetch bookings from backend
   useEffect(() => {
@@ -120,6 +127,12 @@ export const MyBookingsPage = () => {
     if (filter === 'cancelled') return isCancelled(booking);
     return true;
   });
+
+  const totalPages = Math.ceil(filteredBookings.length / pageSize) || 1;
+  const paginatedBookings = filteredBookings.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const getStatusBadge = (status, rawStatus) => {
     const s = (status || rawStatus || '').toLowerCase();
@@ -399,7 +412,7 @@ export const MyBookingsPage = () => {
             </div>
           ) : (
             <div className="space-y-3.5">
-              {filteredBookings.map((b) => {
+              {paginatedBookings.map((b) => {
                 const origin = b.from || b.origin || b.trips?.routes?.origin || 'Addis Ababa';
                 const destination = b.to || b.destination || b.trips?.routes?.destination || 'Destination';
                 const depDate = b.date || b.departureDate || b.trips?.departure_time;
@@ -480,6 +493,21 @@ export const MyBookingsPage = () => {
                   </div>
                 );
               })}
+
+              <div className="pt-2">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredBookings.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(sz) => {
+                    setPageSize(sz);
+                    setCurrentPage(1);
+                  }}
+                  itemLabel="bookings"
+                />
+              </div>
             </div>
           )}
         </div>
@@ -487,7 +515,7 @@ export const MyBookingsPage = () => {
 
       {/* Booking Details & QR Modal */}
       {selectedBooking && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
             <div className="sticky top-0 bg-white border-b border-slate-200 p-4 sm:p-5 flex items-center justify-between z-10">
               <div className="flex items-center gap-2">

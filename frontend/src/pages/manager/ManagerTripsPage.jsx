@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import { CalendarDays, Plus, Search, UserCheck, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Clock } from "lucide-react";
 
 export const ManagerTripsPage = () => {
@@ -22,8 +23,14 @@ export const ManagerTripsPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [showWizardModal, setShowWizardModal] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus]);
 
   // Wizard form state
   const orgBuses = buses.filter((b) => b.organizationId === selectedOrgId && b.status === "ACTIVE");
@@ -52,6 +59,12 @@ export const ManagerTripsPage = () => {
       (t.driverName && t.driverName.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredTrips.length / pageSize) || 1;
+  const paginatedTrips = filteredTrips.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const [tripError, setTripError] = useState("");
   const [isSubmittingTrip, setIsSubmittingTrip] = useState(false);
@@ -189,7 +202,7 @@ export const ManagerTripsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredTrips.map((t) => (
+              {paginatedTrips.map((t) => (
                 <tr key={t.id}>
                   <td><code>{t.tripCode}</code></td>
                   <td><strong>{t.routeName}</strong></td>
@@ -251,6 +264,19 @@ export const ManagerTripsPage = () => {
           </table>
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTrips.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(sz) => {
+            setPageSize(sz);
+            setCurrentPage(1);
+          }}
+          itemLabel="trips"
+        />
       </div>
 
       {/* 10-Step Wizard Modal */}

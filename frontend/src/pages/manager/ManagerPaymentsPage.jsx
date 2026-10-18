@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
+import { Pagination } from "../../components/ui/Pagination";
 import { CreditCard, ShieldCheck, Search, RefreshCw, DollarSign, Calendar, TrendingUp } from "lucide-react";
 import { StatCard } from "../../components/ui/StatCard";
 
@@ -16,8 +17,14 @@ export const ManagerPaymentsPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [dateFilter, setDateFilter] = useState("ALL"); // ALL, TODAY, CUSTOM
   const [customDate, setCustomDate] = useState("");
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus, dateFilter, customDate]);
 
   const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
   const commissionRate = commissionPercent / 100;
@@ -66,6 +73,12 @@ export const ManagerPaymentsPage = () => {
       (p.paymentReference && p.paymentReference.toLowerCase().includes(q));
     return matchesStatus && matchesSearch && matchesDate;
   });
+
+  const totalPages = Math.ceil(filteredPayments.length / pageSize) || 1;
+  const paginatedPayments = filteredPayments.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const filteredCompleted = filteredPayments.filter((p) => p.status === "SUCCESS" || p.status === "COMPLETED");
   const filteredGross = filteredCompleted.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
@@ -200,7 +213,7 @@ export const ManagerPaymentsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredPayments.map((p) => {
+              {paginatedPayments.map((p) => {
                 const method = p.paymentMethod || p.provider || "Telebirr";
                 return (
                   <tr key={p.id}>
@@ -222,6 +235,19 @@ export const ManagerPaymentsPage = () => {
           </table>
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredPayments.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(sz) => {
+            setPageSize(sz);
+            setCurrentPage(1);
+          }}
+          itemLabel="payments"
+        />
       </div>
     </div>
   );

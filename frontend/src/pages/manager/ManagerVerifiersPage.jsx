@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import { QrCode, Plus, Search, ShieldCheck, RefreshCw } from "lucide-react";
 
 export const ManagerVerifiersPage = () => {
@@ -17,8 +18,14 @@ export const ManagerVerifiersPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+251911000000");
@@ -35,6 +42,12 @@ export const ManagerVerifiersPage = () => {
       (v.assignedStation && v.assignedStation.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredVerifiers.length / pageSize) || 1;
+  const paginatedVerifiers = filteredVerifiers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const handleAddVerifier = async (e) => {
     e.preventDefault();
@@ -138,7 +151,7 @@ export const ManagerVerifiersPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredVerifiers.map((v) => {
+              {paginatedVerifiers.map((v) => {
                 const isActive = v.status === "ACTIVE";
                 return (
                   <tr key={v.id}>
@@ -167,6 +180,19 @@ export const ManagerVerifiersPage = () => {
           </table>
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredVerifiers.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(sz) => {
+            setPageSize(sz);
+            setCurrentPage(1);
+          }}
+          itemLabel="verifiers"
+        />
       </div>
 
       {/* Add Verifier Modal */}

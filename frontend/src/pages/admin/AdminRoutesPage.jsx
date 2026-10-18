@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
+import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { Route as RouteIcon, Search, RefreshCw, Building2 } from "lucide-react";
 
@@ -9,6 +10,12 @@ export const AdminRoutesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterOrg, filterStatus, searchQuery]);
 
   const filteredRoutes = routes.filter((r) => {
     const matchesOrg =
@@ -28,6 +35,9 @@ export const AdminRoutesPage = () => {
 
     return matchesOrg && matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredRoutes.length / pageSize) || 1;
+  const paginatedRoutes = filteredRoutes.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div>
@@ -115,7 +125,7 @@ export const AdminRoutesPage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredRoutes.map((r) => (
+                paginatedRoutes.map((r) => (
                   <tr key={r.id}>
                     <td>
                       <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
@@ -139,6 +149,16 @@ export const AdminRoutesPage = () => {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredRoutes.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="routes"
+        />
       </div>
     </div>
   );

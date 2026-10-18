@@ -164,7 +164,10 @@ export const ManagerDashboardPage = () => {
             <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
           </button>
           <button className="btn btn-secondary" onClick={() => setActivePage("buses")}>
-            <Bus size={15} /> Fleet
+            <Bus size={15} /> Fleet & Buses
+          </button>
+          <button className="btn btn-secondary" onClick={() => setActivePage("routes")}>
+            <MapPin size={15} /> Routes & Corridors
           </button>
           <button className="btn btn-primary" onClick={() => setActivePage("trips")}>
             <Plus size={15} /> Schedule Trip

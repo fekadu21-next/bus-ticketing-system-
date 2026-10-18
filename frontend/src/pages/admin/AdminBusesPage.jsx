@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
+import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { Bus, Search, RefreshCw } from "lucide-react";
 
@@ -9,6 +10,12 @@ export const AdminBusesPage = () => {
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterOrg, filterStatus, searchQuery]);
 
   const filteredBuses = buses.filter((b) => {
     const matchesOrg = filterOrg === "ALL" || b.organizationId === filterOrg;
@@ -21,6 +28,9 @@ export const AdminBusesPage = () => {
       (b.organizationName || "").toLowerCase().includes(q);
     return matchesOrg && matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredBuses.length / pageSize) || 1;
+  const paginatedBuses = filteredBuses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div>
@@ -103,7 +113,7 @@ export const AdminBusesPage = () => {
                 </td>
               </tr>
             ) : (
-              filteredBuses.map((b) => (
+              paginatedBuses.map((b) => (
                 <tr key={b.id}>
                   <td>
                     <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
@@ -122,6 +132,16 @@ export const AdminBusesPage = () => {
           </tbody>
         </table>
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredBuses.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="buses"
+        />
       </div>
     </div>
   );
