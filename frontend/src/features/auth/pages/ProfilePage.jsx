@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { ROLES } from '@/constants/roles';
 import {
   User,
@@ -17,10 +19,15 @@ import {
   Camera,
   Upload,
   Trash2,
+  Sun,
+  Moon,
+  Globe,
+  Palette,
 } from 'lucide-react';
 
 export const ProfilePage = ({ embedded = false }) => {
   const { user, logout, updateUserAvatar, updateUser } = useAuth();
+  const { theme, isDark, setTheme, toggleTheme } = useTheme();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -478,6 +485,87 @@ export const ProfilePage = ({ embedded = false }) => {
               )}
             </div>
           )}
+        </div>
+
+        {/* Appearance & Display Preferences Card */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Palette size={18} className="text-blue-600 dark:text-blue-400" />
+              {t('profile.preferences', 'Appearance & Display Preferences')}
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            {/* Theme Mode Selection */}
+            <div>
+              <span className="text-sm text-slate-500 dark:text-slate-400 block mb-2 font-medium">
+                {t('profile.themeMode', 'Theme Mode')}
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTheme('light')}
+                  className={`p-3.5 rounded-xl border flex items-center gap-3 transition-all cursor-pointer text-left ${
+                    !isDark
+                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 ring-2 ring-blue-500/20'
+                      : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 flex-shrink-0">
+                    <Sun size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                      <span>{t('profile.lightMode', 'Light Mode')}</span>
+                      {!isDark && <CheckCircle size={15} className="text-blue-600 dark:text-blue-400" />}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Crisp white daylight interface
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTheme('dark')}
+                  className={`p-3.5 rounded-xl border flex items-center gap-3 transition-all cursor-pointer text-left ${
+                    isDark
+                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 ring-2 ring-blue-500/20'
+                      : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-400 flex-shrink-0">
+                    <Moon size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                      <span>{t('profile.darkMode', 'Dark Mode')}</span>
+                      {isDark && <CheckCircle size={15} className="text-blue-600 dark:text-blue-400" />}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Reduced eye strain in low-light
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Language Preference */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  {t('profile.language', 'Language Preference')}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  English / አማርኛ (Amharic)
+                </p>
+              </div>
+              <div>
+                <LanguageSwitcher />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

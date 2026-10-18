@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bus } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
+import { Bus, Sun, Moon } from 'lucide-react';
 
 const SocialIcon = ({ children, label, href = '#' }) => (
   <a
@@ -15,6 +16,7 @@ const SocialIcon = ({ children, label, href = '#' }) => (
 
 export const Footer = () => {
   const { t } = useTranslation();
+  const { isDark, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -124,9 +126,20 @@ export const Footer = () => {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[12px] text-[#8aa0bb]">
+        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[#8aa0bb]">
           <p>&copy; {new Date().getFullYear()} BusTicket. {t('footer.rights')}</p>
-          <p>Travel Together &nbsp;|&nbsp; A Smarter Way to Travel</p>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 transition-colors cursor-pointer border border-white/10"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} />}
+              <span>{isDark ? "Light Mode" : "Dark Mode"}</span>
+            </button>
+            <p>Travel Together &nbsp;|&nbsp; A Smarter Way to Travel</p>
+          </div>
         </div>
       </div>
     </footer>

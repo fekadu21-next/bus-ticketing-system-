@@ -374,6 +374,23 @@ export const Navbar = () => {
                       My Profile
                     </Link>
 
+                    {/* Theme Preference Toggle with Sun/Moon */}
+                    <div className="flex items-center justify-between px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800">
+                      <span className="flex items-center gap-2">
+                        {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} />}
+                        Appearance
+                      </span>
+                      <button
+                        type="button"
+                        onClick={toggleTheme}
+                        className="px-2.5 py-1 text-xs rounded-lg font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+                        title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                      >
+                        {isDark ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} />}
+                        {isDark ? 'Light' : 'Dark'}
+                      </button>
+                    </div>
+
                     <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
                     <button
                       type="button"

@@ -75,7 +75,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: #ffffff;
+  background: var(--bg-card, #ffffff);
 }
 
 .card-title h3 {
@@ -102,7 +102,7 @@
   font-size: 0.83rem;
 
   th {
-    background: #f8fafc;
+    background: var(--bg-main, #f8fafc);
     color: var(--text-muted);
     font-weight: 600;
     padding: 0.75rem 1rem;
@@ -124,7 +124,7 @@
   }
 
   tr:hover td {
-    background: #f8fafc;
+    background: var(--color-surface-hover, #f8fafc);
   }
 }
 

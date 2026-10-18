@@ -232,21 +232,261 @@
   --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
 }
 
-/* Dashboard Dark Mode Styles */
-[data-theme="dark"] .app-shell,
-[data-theme="dark"] .main-wrapper,
-[data-theme="dark"] .page-container {
-  background-color: var(--color-bg);
-  color: var(--text-main);
+/* ============================================================
+   UNIVERSAL DARK MODE OVERRIDES ACROSS ALL PAGES
+   ============================================================ */
+html[data-theme="dark"],
+html.dark,
+[data-theme="dark"] body,
+.dark body {
+  background-color: #090e1a !important;
+  color: #f8fafc !important;
+  color-scheme: dark;
 }
 
-[data-theme="dark"] .top-header {
+[data-theme="dark"] #root,
+.dark #root {
+  background-color: #090e1a;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .app-shell,
+.dark .app-shell,
+[data-theme="dark"] .main-wrapper,
+.dark .main-wrapper,
+[data-theme="dark"] .page-container,
+.dark .page-container,
+[data-theme="dark"] .app-container,
+.dark .app-container,
+[data-theme="dark"] .main-content,
+.dark .main-content,
+[data-theme="dark"] .search-trips-page,
+.dark .search-trips-page,
+[data-theme="dark"] .about-page,
+.dark .about-page,
+[data-theme="dark"] .contact-page,
+.dark .contact-page,
+[data-theme="dark"] .partner-register-page,
+.dark .partner-register-page {
+  background-color: #090e1a !important;
+  color: #f8fafc !important;
+}
+
+/* Light background utility classes override */
+[data-theme="dark"] .bg-\[\#f4f7fb\],
+.dark .bg-\[\#f4f7fb\],
+[data-theme="dark"] .bg-\[\#f8fafc\],
+.dark .bg-\[\#f8fafc\],
+[data-theme="dark"] .bg-\[\#f1f5f9\],
+.dark .bg-\[\#f1f5f9\],
+[data-theme="dark"] .bg-slate-50,
+.dark .bg-slate-50,
+[data-theme="dark"] .bg-slate-100,
+.dark .bg-slate-100,
+[data-theme="dark"] .bg-gray-50,
+.dark .bg-gray-50,
+[data-theme="dark"] .bg-gray-100,
+.dark .bg-gray-100,
+[data-theme="dark"] .bg-zinc-50,
+.dark .bg-zinc-50,
+[data-theme="dark"] .bg-zinc-100,
+.dark .bg-zinc-100 {
+  background-color: #090e1a !important;
+}
+
+/* White card surfaces in public & user pages */
+[data-theme="dark"] .bg-white,
+.dark .bg-white,
+[data-theme="dark"] .bg-white\/95,
+.dark .bg-white\/95,
+[data-theme="dark"] .bg-white\/90,
+.dark .bg-white\/90,
+[data-theme="dark"] .bg-white\/80,
+.dark .bg-white\/80 {
+  background-color: #0f172a !important;
+}
+
+/* Card borders */
+[data-theme="dark"] .border-slate-100,
+.dark .border-slate-100,
+[data-theme="dark"] .border-slate-200,
+.dark .border-slate-200,
+[data-theme="dark"] .border-slate-200\/80,
+.dark .border-slate-200\/80,
+[data-theme="dark"] .border-slate-200\/90,
+.dark .border-slate-200\/90,
+[data-theme="dark"] .border-slate-300,
+.dark .border-slate-300,
+[data-theme="dark"] .border-gray-100,
+.dark .border-gray-100,
+[data-theme="dark"] .border-gray-200,
+.dark .border-gray-200,
+[data-theme="dark"] .border-gray-300,
+.dark .border-gray-300 {
+  border-color: #1e293b !important;
+}
+
+/* Text headings & high contrast */
+[data-theme="dark"] .text-slate-900,
+.dark .text-slate-900,
+[data-theme="dark"] .text-slate-800,
+.dark .text-slate-800,
+[data-theme="dark"] .text-gray-900,
+.dark .text-gray-900,
+[data-theme="dark"] .text-gray-800,
+.dark .text-gray-800,
+[data-theme="dark"] .text-zinc-900,
+.dark .text-zinc-900,
+[data-theme="dark"] .text-zinc-800,
+.dark .text-zinc-800,
+[data-theme="dark"] .text-\[\#0f172a\],
+.dark .text-\[\#0f172a\],
+[data-theme="dark"] .text-\[\#0b1b3a\],
+.dark .text-\[\#0b1b3a\] {
+  color: #f8fafc !important;
+}
+
+/* Secondary & muted text */
+[data-theme="dark"] .text-slate-700,
+.dark .text-slate-700,
+[data-theme="dark"] .text-slate-600,
+.dark .text-slate-600,
+[data-theme="dark"] .text-gray-700,
+.dark .text-gray-700,
+[data-theme="dark"] .text-gray-600,
+.dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .text-slate-500,
+.dark .text-slate-500,
+[data-theme="dark"] .text-slate-400,
+.dark .text-slate-400,
+[data-theme="dark"] .text-gray-500,
+.dark .text-gray-500,
+[data-theme="dark"] .text-gray-400,
+.dark .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+/* Universal Inputs, selects, and textareas in dark mode */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]),
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]),
+[data-theme="dark"] select,
+.dark select,
+[data-theme="dark"] textarea,
+.dark textarea,
+[data-theme="dark"] .form-control,
+.dark .form-control {
+  background-color: #111a2e !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+[data-theme="dark"] select:focus,
+.dark select:focus,
+[data-theme="dark"] textarea:focus,
+.dark textarea:focus,
+[data-theme="dark"] .form-control:focus,
+.dark .form-control:focus {
+  border-color: #3b82f6 !important;
+  background-color: #17233d !important;
+}
+
+/* Inner subcards (ticket items, seat container) */
+[data-theme="dark"] .rounded-2xl.bg-\[\#f8fafc\],
+.dark .rounded-2xl.bg-\[\#f8fafc\],
+[data-theme="dark"] .rounded-\[22px\].bg-\[\#f8fafc\],
+.dark .rounded-\[22px\].bg-\[\#f8fafc\],
+[data-theme="dark"] .rounded-\[14px\].bg-\[\#f8fafc\],
+.dark .rounded-\[14px\].bg-\[\#f8fafc\] {
+  background-color: #111a2e !important;
+  border-color: #1e293b !important;
+}
+
+/* Seat selection map in dark mode */
+[data-theme="dark"] .seat-grid-container,
+.dark .seat-grid-container {
+  background-color: #111a2e !important;
+  border-color: #1e293b !important;
+}
+
+[data-theme="dark"] .seat-item.seat-available,
+.dark .seat-item.seat-available {
+  background-color: #064e3b !important;
+  color: #6ee7b7 !important;
+  border-color: #059669 !important;
+}
+
+[data-theme="dark"] .seat-item.seat-booked,
+.dark .seat-item.seat-booked {
+  background-color: #1e293b !important;
+  color: #64748b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .seat-item.seat-held,
+.dark .seat-item.seat-held {
+  background-color: #78350f !important;
+  color: #fde68a !important;
+  border-color: #d97706 !important;
+}
+
+/* Tinted notice boxes in dark mode */
+[data-theme="dark"] .bg-teal-50,
+.dark .bg-teal-50 {
+  background-color: rgba(13, 148, 136, 0.2) !important;
+  border-color: rgba(13, 148, 136, 0.35) !important;
+}
+
+[data-theme="dark"] .bg-indigo-50,
+.dark .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.2) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+}
+
+[data-theme="dark"] .bg-blue-50,
+.dark .bg-blue-50,
+[data-theme="dark"] .bg-blue-50\/90,
+.dark .bg-blue-50\/90 {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+[data-theme="dark"] .bg-green-50,
+.dark .bg-green-50 {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+[data-theme="dark"] .bg-amber-50,
+.dark .bg-amber-50,
+[data-theme="dark"] .bg-yellow-50,
+.dark .bg-yellow-50 {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+[data-theme="dark"] .bg-rose-50,
+.dark .bg-rose-50,
+[data-theme="dark"] .bg-red-50,
+.dark .bg-red-50 {
+  background-color: rgba(244, 63, 94, 0.2) !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+}
+
+/* Dashboard Dark Mode Styles */
+[data-theme="dark"] .top-header,
+.dark .top-header {
   background: var(--bg-card);
   border-bottom-color: var(--border-color);
   color: var(--text-main);
 }
 
-[data-theme="dark"] .header-search input {
+[data-theme="dark"] .header-search input,
+.dark .header-search input {
   background: #111a2e;
   border-color: #1e293b;
   color: #f8fafc;

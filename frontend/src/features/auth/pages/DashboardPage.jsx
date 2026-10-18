@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { ROLES } from '@/constants/roles';
 import {
   User,
@@ -15,6 +16,8 @@ import {
   Info,
   LogOut,
   Ticket,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 const ROLE_BADGE_CONFIG = {
@@ -28,6 +31,7 @@ const ROLE_BADGE_CONFIG = {
 
 export const DashboardPage = () => {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -46,13 +50,35 @@ export const DashboardPage = () => {
   return (
     <main className="max-w-6xl mx-auto px-5 py-9">
       {/* Welcome Header */}
-      <div className="mb-7">
-        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">
-          {t('dashboard.title', { name: displayName })}
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400 text-base">
-          {t('dashboard.subtitle', 'Your centralized authenticated portal for BusTicket system.')}
-        </p>
+      <div className="mb-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">
+            {t('dashboard.title', { name: displayName })}
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 text-base">
+            {t('dashboard.subtitle', 'Your centralized authenticated portal for BusTicket system.')}
+          </p>
+        </div>
+
+        {/* Theme Preference Quick Switcher */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="self-start sm:self-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-xs cursor-pointer"
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {isDark ? (
+            <>
+              <Sun size={16} className="text-amber-400" />
+              <span>Light Mode</span>
+            </>
+          ) : (
+            <>
+              <Moon size={16} className="text-indigo-600 dark:text-indigo-400" />
+              <span>Dark Mode</span>
+            </>
+          )}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-7">
