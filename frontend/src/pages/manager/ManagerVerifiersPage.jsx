@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
@@ -6,6 +7,7 @@ import { Pagination } from "../../components/ui/Pagination";
 import { QrCode, Plus, Search, ShieldCheck, RefreshCw } from "lucide-react";
 
 export const ManagerVerifiersPage = () => {
+  const { t } = useTranslation();
   const {
     verifiers,
     stations,
@@ -79,8 +81,8 @@ export const ManagerVerifiersPage = () => {
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Ticket Verifiers Account Management</h1>
-          <p>Provision verifier accounts for internal terminal staff tasked with scanning passenger QR digital tickets.</p>
+          <h1>{t("managerVerifiers.title")}</h1>
+          <p>{t("managerVerifiers.subtitle")}</p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
@@ -88,10 +90,10 @@ export const ManagerVerifiersPage = () => {
             onClick={() => fetchCoordinatorData(selectedOrgId)}
             disabled={isLoadingData}
           >
-            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
+            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> {t("common.refresh", "Refresh")}
           </button>
           <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-            <Plus size={16} /> Create Verifier Staff Account
+            <Plus size={16} /> {t("managerVerifiers.registerBtn")}
           </button>
         </div>
       </div>
@@ -103,7 +105,8 @@ export const ManagerVerifiersPage = () => {
               <Search className="search-icon" size={15} />
               <input
                 type="text"
-                placeholder="Search verifier name or email..."
+                className="form-control"
+                placeholder={t("managerVerifiers.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -113,27 +116,27 @@ export const ManagerVerifiersPage = () => {
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="ALL">All Statuses</option>
+              <option value="ALL">{t("managerVerifiers.allStatuses")}</option>
               <option value="ACTIVE">ACTIVE</option>
               <option value="INACTIVE">INACTIVE</option>
             </select>
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-            Total Ticket Verifiers: <strong>{orgVerifiers.length}</strong>
+            {t("managerVerifiers.totalVerifiers")}: <strong>{orgVerifiers.length}</strong>
           </div>
         </div>
 
         {filteredVerifiers.length === 0 ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
             <QrCode size={36} style={{ opacity: 0.4, marginBottom: "0.5rem" }} />
-            <div>No ticket verifier accounts matching your filter.</div>
+            <div>{t("managerVerifiers.noVerifiers")}</div>
             {orgVerifiers.length === 0 && (
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "1rem" }}
                 onClick={() => setShowAddModal(true)}
               >
-                <Plus size={14} /> Create First Verifier Account
+                <Plus size={14} /> {t("managerVerifiers.registerFirst")}
               </button>
             )}
           </div>
@@ -142,12 +145,12 @@ export const ManagerVerifiersPage = () => {
             <table className="data-table" style={{ minWidth: "800px" }}>
             <thead>
               <tr>
-                <th>Verifier Name</th>
-                <th>Phone Contact</th>
-                <th>Login Email</th>
-                <th>Terminal Station</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t("managerVerifiers.tableName")}</th>
+                <th>{t("managerVerifiers.tablePhone")}</th>
+                <th>{t("managerVerifiers.tableEmail")}</th>
+                <th>{t("managerVerifiers.tableStation")}</th>
+                <th>{t("managerVerifiers.tableStatus")}</th>
+                <th>{t("managerVerifiers.tableAction")}</th>
               </tr>
             </thead>
             <tbody>
@@ -168,9 +171,9 @@ export const ManagerVerifiersPage = () => {
                       <button
                         className={`btn btn-sm ${isActive ? "btn-secondary" : "btn-success"}`}
                         onClick={() => toggleStaffStatus(v.id, !isActive)}
-                        title={isActive ? "Deactivate verifier" : "Activate verifier"}
+                        title={isActive ? t("managerVerifiers.deactivate") : t("managerVerifiers.activate")}
                       >
-                        {isActive ? "Deactivate" : "Activate"}
+                        {isActive ? t("managerVerifiers.deactivate") : t("managerVerifiers.activate")}
                       </button>
                     </td>
                   </tr>
@@ -199,7 +202,7 @@ export const ManagerVerifiersPage = () => {
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title="Create Ticket Verifier Staff Account"
+        title={t("managerVerifiers.modalRegisterTitle")}
         footer={
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", width: "100%" }}>
             <button
@@ -207,91 +210,91 @@ export const ManagerVerifiersPage = () => {
               onClick={() => setShowAddModal(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("common.cancel", "Cancel")}
             </button>
             <button
               className="btn btn-primary"
               onClick={handleAddVerifier}
               disabled={isSubmitting || !name.trim()}
             >
-              {isSubmitting ? "Creating..." : "Create Account"}
+              {isSubmitting ? t("managerVerifiers.saving") : t("managerVerifiers.saveBtn")}
             </button>
           </div>
         }
       >
-        <form onSubmit={handleAddVerifier} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Full Staff Name
+        <form onSubmit={handleAddVerifier} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div className="form-group">
+            <label className="form-label">
+              {t("managerVerifiers.nameLabel")}
             </label>
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. Bethlehem Yohannes"
+              placeholder={t("managerVerifiers.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
           </div>
 
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Phone Contact
+          <div className="form-group">
+            <label className="form-label">
+              {t("managerVerifiers.phoneLabel")}
             </label>
             <input
               type="text"
               className="form-control"
+              placeholder={t("managerVerifiers.phonePlaceholder")}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
           </div>
 
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Corporate Login Email
+          <div className="form-divider" />
+
+          <div className="form-group">
+            <label className="form-label">
+              {t("managerVerifiers.emailLabel")}
             </label>
             <input
               type="email"
               className="form-control"
-              placeholder="e.g. b.yohannes@selambus.et"
+              placeholder={t("managerVerifiers.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-              Auto-generated if empty: name@operator.et
+              {t("managerVerifiers.emailHelp")}
             </div>
           </div>
 
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Password (for first login)
+          <div className="form-group">
+            <label className="form-label">
+              {t("managerVerifiers.passwordLabel")}
             </label>
             <input
               type="password"
               className="form-control"
-              placeholder="Default: Verifier@123456"
+              placeholder={t("managerVerifiers.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-              Default password: Verifier@123456 (can be changed after first login)
+              {t("managerVerifiers.passwordHelp")}
             </div>
           </div>
 
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Assigned Terminal Station
+          <div className="form-divider" />
+
+          <div className="form-group">
+            <label className="form-label">
+              {t("managerVerifiers.stationLabel")}
             </label>
             <select
               className="form-control"
               value={assignedStation}
               onChange={(e) => setAssignedStation(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             >
               {stations.map((s) => (
                 <option key={s.id} value={s.name}>

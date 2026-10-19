@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
@@ -6,6 +7,7 @@ import { Pagination } from "../../components/ui/Pagination";
 import { UserCheck, Plus, Search, Award, RefreshCw, UserX } from "lucide-react";
 
 export const ManagerDriversPage = () => {
+  const { t } = useTranslation();
   const {
     drivers,
     selectedOrgId,
@@ -90,8 +92,8 @@ export const ManagerDriversPage = () => {
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Company Drivers Staff Management</h1>
-          <p>Register eligible drivers, manage commercial license compliance, and toggle operational status.</p>
+          <h1>{t("managerDrivers.title")}</h1>
+          <p>{t("managerDrivers.subtitle")}</p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
@@ -99,10 +101,10 @@ export const ManagerDriversPage = () => {
             onClick={() => fetchCoordinatorData(selectedOrgId)}
             disabled={isLoadingData}
           >
-            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
+            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> {t("common.refresh", "Refresh")}
           </button>
           <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-            <Plus size={16} /> Register New Driver
+            <Plus size={16} /> {t("managerDrivers.registerBtn")}
           </button>
         </div>
       </div>
@@ -114,7 +116,8 @@ export const ManagerDriversPage = () => {
               <Search className="search-icon" size={15} />
               <input
                 type="text"
-                placeholder="Search driver name or phone..."
+                className="form-control"
+                placeholder={t("managerDrivers.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -124,27 +127,27 @@ export const ManagerDriversPage = () => {
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="ALL">All Statuses</option>
+              <option value="ALL">{t("managerDrivers.allStatuses")}</option>
               <option value="ACTIVE">ACTIVE</option>
               <option value="INACTIVE">INACTIVE</option>
             </select>
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-            Total Registered Drivers: <strong>{orgDrivers.length}</strong>
+            {t("managerDrivers.totalDrivers")}: <strong>{orgDrivers.length}</strong>
           </div>
         </div>
 
         {filteredDrivers.length === 0 ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
             <UserCheck size={36} style={{ opacity: 0.4, marginBottom: "0.5rem" }} />
-            <div>No driver accounts matching your filter.</div>
+            <div>{t("managerDrivers.noDrivers")}</div>
             {orgDrivers.length === 0 && (
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "1rem" }}
                 onClick={() => setShowAddModal(true)}
               >
-                <Plus size={14} /> Register First Driver
+                <Plus size={14} /> {t("managerDrivers.registerFirst")}
               </button>
             )}
           </div>
@@ -153,12 +156,12 @@ export const ManagerDriversPage = () => {
             <table className="data-table" style={{ minWidth: "800px" }}>
             <thead>
               <tr>
-                <th>Driver Name</th>
-                <th>Phone Number</th>
-                <th>Email</th>
-                <th>Trips Completed</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t("managerDrivers.tableName")}</th>
+                <th>{t("managerDrivers.tablePhone")}</th>
+                <th>{t("managerDrivers.tableEmail")}</th>
+                <th>{t("managerDrivers.tableTrips")}</th>
+                <th>{t("managerDrivers.tableStatus")}</th>
+                <th>{t("managerDrivers.tableAction")}</th>
               </tr>
             </thead>
             <tbody>
@@ -174,16 +177,16 @@ export const ManagerDriversPage = () => {
                     <td>{d.phone || "—"}</td>
                     <td><code>{d.email || "—"}</code></td>
                     <td>
-                      <span style={{ fontWeight: 700 }}>{d.totalTripsCompleted || 0} trips</span>
+                      <span style={{ fontWeight: 700 }}>{d.totalTripsCompleted || 0}</span>
                     </td>
                     <td><Badge status={d.status} /></td>
                     <td>
                       <button
                         className={`btn btn-sm ${isActive ? "btn-secondary" : "btn-success"}`}
                         onClick={() => toggleStaffStatus(d.id, !isActive)}
-                        title={isActive ? "Deactivate driver" : "Activate driver"}
+                        title={isActive ? t("managerDrivers.deactivate") : t("managerDrivers.activate")}
                       >
-                        {isActive ? "Deactivate" : "Activate"}
+                        {isActive ? t("managerDrivers.deactivate") : t("managerDrivers.activate")}
                       </button>
                     </td>
                   </tr>
@@ -212,7 +215,7 @@ export const ManagerDriversPage = () => {
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title="Register New Driver Account"
+        title={t("managerDrivers.modalRegisterTitle")}
         footer={
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", width: "100%" }}>
             <button
@@ -220,79 +223,78 @@ export const ManagerDriversPage = () => {
               onClick={() => setShowAddModal(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("common.cancel", "Cancel")}
             </button>
             <button
               className="btn btn-primary"
               onClick={handleAddDriver}
               disabled={isSubmitting || !name.trim()}
             >
-              {isSubmitting ? "Creating..." : "Create Driver Account"}
+              {isSubmitting ? t("managerDrivers.saving") : t("managerDrivers.saveBtn")}
             </button>
           </div>
         }
       >
-        <form onSubmit={handleAddDriver} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Full Driver Name *
+        <form onSubmit={handleAddDriver} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div className="form-group">
+            <label className="form-label">
+              {t("managerDrivers.nameLabel")}
             </label>
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. Alemayehu Tilahun"
+              placeholder={t("managerDrivers.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
           </div>
 
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Phone Contact *
+          <div className="form-group">
+            <label className="form-label">
+              {t("managerDrivers.phoneLabel")}
             </label>
             <input
               type="text"
               className="form-control"
+              placeholder={t("managerDrivers.phonePlaceholder")}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
           </div>
 
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Email Address (for login)
+          <div className="form-divider" />
+
+          <div className="form-group">
+            <label className="form-label">
+              {t("managerDrivers.emailLabel")}
             </label>
             <input
               type="email"
               className="form-control"
-              placeholder="e.g. a.tilahun@operator.et"
+              placeholder={t("managerDrivers.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-              Auto-generated if empty: name@operator.et
+              {t("managerDrivers.emailHelp")}
             </div>
           </div>
 
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
-              Password (for first login)
+          <div className="form-group">
+            <label className="form-label">
+              {t("managerDrivers.passwordLabel")}
             </label>
             <input
               type="password"
               className="form-control"
-              placeholder="Default: Driver@123456"
+              placeholder={t("managerDrivers.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-card, #ffffff)", color: "var(--text-main)" }}
             />
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-              Default password: Driver@123456 (can be changed after first login)
+              {t("managerDrivers.passwordHelp")}
             </div>
           </div>
         </form>
