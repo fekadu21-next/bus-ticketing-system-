@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useApp } from "../../context/AppContext";
 import { getTripSeatsApi, updateSeatStatusApi } from "../../api/coordinator.api";
 
 export const ManagerSeatsPage = () => {
+  const { t } = useTranslation();
   const { trips, selectedOrgId, showToast, refreshData } = useApp();
 
   const orgTrips = trips.filter((t) => t.organizationId === selectedOrgId);
@@ -126,57 +128,57 @@ export const ManagerSeatsPage = () => {
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Seat Inventory</h1>
-          <p>Visual seat layout matrix and real-time inventory management connected to backend.</p>
+          <h1>{t("managerSeats.title")}</h1>
+          <p>{t("managerSeats.subtitle")}</p>
         </div>
       </div>
 
       <div className="card-table-wrapper" style={{ padding: "1.25rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
           <div>
-            <label style={{ fontSize: "0.8rem", fontWeight: 700, marginRight: "0.5rem" }}>Select Trip:</label>
+            <label style={{ fontSize: "0.8rem", fontWeight: 700, marginRight: "0.5rem" }}>{t("managerSeats.tripSelectorLabel")}</label>
             <select
               className="org-selector-select"
               value={selectedTripId}
               onChange={(e) => setSelectedTripId(e.target.value)}
             >
-              {orgTrips.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.tripCode} ({t.routeName} - {t.departureDate})
+              {orgTrips.map((tItem) => (
+                <option key={tItem.id} value={tItem.id}>
+                  {tItem.tripCode} ({tItem.routeName} - {tItem.departureDate})
                 </option>
               ))}
             </select>
           </div>
           {activeTrip && (
             <div style={{ display: "flex", gap: "1rem", fontSize: "0.8rem" }}>
-              <div>Total: <strong>{activeTrip.totalSeats}</strong></div>
-              <div style={{ color: "var(--success-text)" }}>Available: <strong>{liveAvailableCount}</strong></div>
-              <div style={{ color: "var(--primary)" }}>Booked: <strong>{liveBookedCount}</strong></div>
-              {liveHeldCount > 0 && <div style={{ color: "#d97706" }}>Held: <strong>{liveHeldCount}</strong></div>}
-              {liveBlockedCount > 0 && <div style={{ color: "#64748b" }}>Blocked: <strong>{liveBlockedCount}</strong></div>}
+              <div>{t("managerSeats.total")}: <strong>{activeTrip.totalSeats}</strong></div>
+              <div style={{ color: "var(--success-text)" }}>{t("managerSeats.available")}: <strong>{liveAvailableCount}</strong></div>
+              <div style={{ color: "var(--primary)" }}>{t("managerSeats.booked")}: <strong>{liveBookedCount}</strong></div>
+              {liveHeldCount > 0 && <div style={{ color: "#d97706" }}>{t("managerSeats.held")}: <strong>{liveHeldCount}</strong></div>}
+              {liveBlockedCount > 0 && <div style={{ color: "#64748b" }}>{t("managerSeats.blocked")}: <strong>{liveBlockedCount}</strong></div>}
             </div>
           )}
         </div>
 
         {/* Legend */}
-        <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", marginBottom: "1.5rem", fontSize: "0.8rem" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", marginBottom: "1.5rem", fontSize: "0.8rem", flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ width: "14px", height: "14px", background: "#d1fae5", border: "1px solid #34d399", borderRadius: "3px" }} /> AVAILABLE
+            <span className="seat-legend-dot seat-legend-available" /> {t("managerSeats.available")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ width: "14px", height: "14px", background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: "3px" }} /> HELD (15m Timer)
+            <span className="seat-legend-dot seat-legend-held" /> {t("managerSeats.held")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ width: "14px", height: "14px", background: "#dbeafe", border: "1px solid #60a5fa", borderRadius: "3px" }} /> BOOKED
+            <span className="seat-legend-dot seat-legend-booked" /> {t("managerSeats.booked")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ width: "14px", height: "14px", background: "#e2e8f0", border: "1px solid #94a3b8", borderRadius: "3px" }} /> BLOCKED
+            <span className="seat-legend-dot seat-legend-blocked" /> {t("managerSeats.blocked")}
           </div>
         </div>
 
         {loadingSeats && (
           <div style={{ textAlign: "center", padding: "1rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
-            Loading seat layout from backend...
+            {t("managerSeats.loadingSeats")}
           </div>
         )}
 
