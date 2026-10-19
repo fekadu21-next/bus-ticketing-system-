@@ -27,13 +27,13 @@ export const Modal = ({
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2.5 sm:p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-xs transition-opacity duration-200" />
+      <div className="absolute inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-[2px] transition-opacity duration-200" />
       <div
-        className="relative bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-[#1e293b] rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] w-full max-h-[94vh] sm:max-h-[90vh] overflow-hidden flex flex-col z-10 transition-colors"
+        className="modal-content relative bg-white dark:bg-[#131d33] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] w-full max-h-[94vh] sm:max-h-[90vh] overflow-hidden flex flex-col z-10 transition-colors"
         style={{ maxWidth: `min(100%, ${maxWidth})` }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-200 dark:border-[#1e293b] bg-white dark:bg-[#0f172a]">
+        <div className="modal-header flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#131d33]">
           {title && <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate pr-2">{title}</h3>}
           <button
             type="button"
@@ -44,8 +44,8 @@ export const Modal = ({
             <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-[#f8fafc]">{children}</div>
-        {footer && <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-200 dark:border-[#1e293b] bg-slate-50 dark:bg-[#090e1a] flex items-center justify-end gap-2 flex-wrap">{footer}</div>}
+        <div className="modal-body flex-1 overflow-y-auto px-5 py-5 bg-white dark:bg-[#131d33] text-slate-900 dark:text-[#f8fafc]">{children}</div>
+        {footer && <div className="modal-footer px-5 py-4 border-t border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-[#0c1424] flex items-center justify-end gap-2.5 flex-wrap">{footer}</div>}
       </div>
     </div>
   );

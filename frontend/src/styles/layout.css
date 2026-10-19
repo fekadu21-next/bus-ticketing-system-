@@ -19,12 +19,12 @@
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--border-sidebar-btn, #cbd5e1);
   border-radius: 3px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--border-sidebar, #94a3b8);
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -37,26 +37,26 @@
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--border-sidebar-btn, #cbd5e1);
   border-radius: 3px;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--border-sidebar, #94a3b8);
 }
 
 .sidebar {
   width: 270px;
   background-color: var(--bg-sidebar);
-  color: #f8fafc;
+  color: var(--text-sidebar);
   display: flex;
   flex-direction: column;
   height: 100vh;
   max-height: 100vh;
   overflow: hidden;
-  border-right: 1px solid var(--border-dark);
+  border-right: 1px solid var(--border-sidebar, var(--border-color));
   flex-shrink: 0;
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .sidebar.collapsed {
@@ -92,19 +92,21 @@
 
 .sidebar-header {
   padding: 1.25rem;
-  border-bottom: 1px solid var(--border-dark);
+  border-bottom: 1px solid var(--border-sidebar, var(--border-color));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   flex-shrink: 0;
+  background: var(--bg-sidebar);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .sidebar-toggle-btn,
 .header-toggle-btn {
-  background: #1e293b;
-  border: 1px solid #334155;
-  color: #94a3b8;
+  background: var(--bg-sidebar-btn, #f1f5f9);
+  border: 1px solid var(--border-sidebar-btn, var(--border-color));
+  color: var(--text-sidebar-muted, var(--text-muted));
   border-radius: 6px;
   width: 32px;
   height: 32px;
@@ -122,7 +124,7 @@
 }
 
 .header-toggle-btn {
-  background: #ffffff;
+  background: var(--bg-card, #ffffff);
   border-color: var(--border-color);
   color: var(--text-main);
   width: 36px;
@@ -130,9 +132,9 @@
   padding: 0;
 
   &:hover {
-    background: #f1f5f9;
+    background: var(--color-surface-hover, #f1f5f9);
     color: var(--primary);
-    border-color: #cbd5e1;
+    border-color: var(--border-color);
   }
 }
 
@@ -145,36 +147,52 @@
 }
 
 .brand-logo-img {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--bg-card, #ffffff);
   padding: 3px;
   flex-shrink: 0;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e2e8f0);
   transition: all 0.2s ease;
 }
 
 .brand-text h2 {
   font-size: 0.98rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-sidebar-brand, var(--text-main));
   letter-spacing: -0.01em;
   line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.15s ease;
 }
 
 .brand-text span {
   font-size: 0.68rem;
-  color: #94a3b8;
+  color: var(--text-sidebar-muted, var(--text-muted));
   display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.15s ease;
+}
+
+.sidebar-alert-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  background: var(--color-primary-light, #eff6ff);
+  border: 1px solid var(--color-primary-border, #bfdbfe);
+  color: var(--primary, #2563eb);
+  transition: all 0.15s ease;
 }
 
 .sidebar-nav {
@@ -189,10 +207,11 @@
     font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
-    color: #64748b;
+    color: var(--text-sidebar-group, var(--text-muted));
     padding: 0.75rem 0.75rem 0.25rem;
     letter-spacing: 0.05em;
     white-space: nowrap;
+    transition: color 0.15s ease;
   }
 
   .nav-item {
@@ -200,7 +219,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.65rem 0.85rem;
-    color: #94a3b8;
+    color: var(--text-sidebar-link, var(--text-muted));
     text-decoration: none;
     border-radius: 6px;
     font-weight: 500;
@@ -213,12 +232,12 @@
 
     &:hover {
       background-color: var(--bg-sidebar-hover);
-      color: #ffffff;
+      color: var(--text-sidebar-link-hover, var(--text-main));
     }
 
     &.active {
       background-color: var(--bg-sidebar-active);
-      color: #ffffff;
+      color: var(--text-sidebar-active, #ffffff);
       font-weight: 600;
     }
 
@@ -237,8 +256,8 @@
     }
 
     .badge-count {
-      background: rgba(255, 255, 255, 0.15);
-      color: #ffffff;
+      background: rgba(0, 0, 0, 0.08);
+      color: var(--text-sidebar-link, var(--text-muted));
       font-size: 0.7rem;
       padding: 0.15rem 0.45rem;
       border-radius: 10px;
@@ -247,7 +266,7 @@
 
       &.badge-warning {
         background: #f59e0b;
-        color: #0f172a;
+        color: #ffffff;
         font-weight: 700;
       }
 
@@ -261,21 +280,23 @@
 
 .sidebar-footer {
   padding: 1rem;
-  border-top: 1px solid var(--border-dark);
-  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid var(--border-sidebar, var(--border-color));
+  background: var(--bg-sidebar-footer, rgba(0, 0, 0, 0.03));
   flex-shrink: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .role-scope-badge {
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: var(--bg-sidebar-badge, #f1f5f9);
+  border: 1px solid var(--border-sidebar-badge, var(--border-color));
   border-radius: 6px;
   padding: 0.6rem;
   font-size: 0.75rem;
+  transition: all 0.15s ease;
 }
 
 .role-scope-badge .role-title {
-  color: #38bdf8;
+  color: var(--text-sidebar-badge-role, var(--primary));
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -283,7 +304,7 @@
 }
 
 .role-scope-badge .scope-name {
-  color: #94a3b8;
+  color: var(--text-sidebar-badge-scope, var(--text-muted));
   margin-top: 0.2rem;
   font-size: 0.72rem;
 }
@@ -322,12 +343,19 @@
     border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 0.85rem;
-    background: #f8fafc;
+    background: var(--input-bg, #f8fafc);
+    color: var(--input-text, var(--text-main));
     outline: none;
+    transition: all 0.15s ease;
+
+    &::placeholder {
+      color: var(--input-placeholder, var(--text-muted));
+    }
 
     &:focus {
       border-color: var(--primary);
-      background: #ffffff;
+      background: var(--input-bg-focus, var(--bg-card));
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     }
   }
 
@@ -350,7 +378,7 @@
 .mode-switcher {
   display: flex;
   align-items: center;
-  background: #f1f5f9;
+  background: var(--color-surface-hover, #f1f5f9);
   padding: 3px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
@@ -370,7 +398,7 @@
     transition: all 0.15s ease;
 
     &.active {
-      background: #ffffff;
+      background: var(--bg-card, #ffffff);
       color: var(--primary);
       box-shadow: var(--shadow-sm);
     }
@@ -383,10 +411,36 @@
   border: 1px solid var(--border-color);
   font-size: 0.8rem;
   font-weight: 600;
-  background: #ffffff;
-  color: var(--text-main);
+  background: var(--input-bg, var(--bg-card));
+  color: var(--input-text, var(--text-main));
   outline: none;
   cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:focus {
+    border-color: var(--primary);
+  }
+}
+
+.dashboard-lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card, #ffffff);
+  color: var(--text-main);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--color-surface-hover, #f8fafc);
+  }
 }
 
 .user-profile-btn {
@@ -398,7 +452,7 @@
   .avatar {
     width: 34px;
     height: 34px;
-    background: #e2e8f0;
+    background: var(--color-surface-hover, #e2e8f0);
     color: var(--text-main);
     border-radius: 50%;
     display: flex;
@@ -414,6 +468,7 @@
       font-size: 0.82rem;
       font-weight: 600;
       line-height: 1.1;
+      color: var(--text-main);
     }
     span {
       font-size: 0.72rem;
