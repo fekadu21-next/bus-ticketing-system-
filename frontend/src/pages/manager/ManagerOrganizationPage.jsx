@@ -176,7 +176,7 @@ export const ManagerOrganizationPage = () => {
           <div className="form-row" style={{ marginBottom: "1rem" }}>
             <div
               style={{
-                background: "#f8fafc",
+                background: "var(--bg-main, #f8fafc)",
                 padding: "0.85rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border-color)",
@@ -191,7 +191,7 @@ export const ManagerOrganizationPage = () => {
             </div>
             <div
               style={{
-                background: "#f8fafc",
+                background: "var(--bg-main, #f8fafc)",
                 padding: "0.85rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border-color)",
@@ -207,7 +207,7 @@ export const ManagerOrganizationPage = () => {
           <div className="form-row" style={{ marginBottom: "1rem" }}>
             <div
               style={{
-                background: "#f8fafc",
+                background: "var(--bg-main, #f8fafc)",
                 padding: "0.85rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border-color)",
@@ -223,7 +223,7 @@ export const ManagerOrganizationPage = () => {
             </div>
             <div
               style={{
-                background: "#f8fafc",
+                background: "var(--bg-main, #f8fafc)",
                 padding: "0.85rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border-color)",
@@ -238,7 +238,7 @@ export const ManagerOrganizationPage = () => {
 
           <div
             style={{
-              background: "#f8fafc",
+              background: "var(--bg-main, #f8fafc)",
               padding: "0.85rem",
               borderRadius: "6px",
               border: "1px solid var(--border-color)",
@@ -365,7 +365,7 @@ export const ManagerOrganizationPage = () => {
             </select>
           </div>
 
-          <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+          <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
             Note: License number and accreditation status are platform-governed and can only be modified by Platform Administrators upon official regulatory review.
           </div>
         </form>

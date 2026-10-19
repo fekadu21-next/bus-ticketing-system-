@@ -269,7 +269,7 @@ export const ManagerSettingsPage = () => {
           <div className="form-row" style={{ marginBottom: "1rem" }}>
             <div
               style={{
-                background: "#f8fafc",
+                background: "var(--bg-main, #f8fafc)",
                 padding: "0.85rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border-color)",
@@ -284,7 +284,7 @@ export const ManagerSettingsPage = () => {
             </div>
             <div
               style={{
-                background: "#f8fafc",
+                background: "var(--bg-main, #f8fafc)",
                 padding: "0.85rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border-color)",
@@ -300,7 +300,7 @@ export const ManagerSettingsPage = () => {
           <div className="form-row" style={{ marginBottom: "1rem" }}>
             <div
               style={{
-                background: "#f8fafc",
+                background: "var(--bg-main, #f8fafc)",
                 padding: "0.85rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border-color)",
@@ -316,7 +316,7 @@ export const ManagerSettingsPage = () => {
             </div>
             <div
               style={{
-                background: "#f8fafc",
+                background: "var(--bg-main, #f8fafc)",
                 padding: "0.85rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border-color)",

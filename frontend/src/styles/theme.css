@@ -867,8 +867,190 @@ html.dark,
   color: #ffffff;
 }
 
-[data-theme="dark"] .modal-container {
-  background: #111a2e;
-  color: #f8fafc;
-  border: 1px solid #1e2c48;
+[data-theme="dark"] .modal-container,
+.dark .modal-container {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #1e293b !important;
 }
+
+/* ============================================================
+   COMPREHENSIVE MODALS & DIALOGS DARK MODE PALETTE
+   ============================================================ */
+[data-theme="dark"] .modal-backdrop,
+.dark .modal-backdrop,
+[data-theme="dark"] .modal-overlay,
+.dark .modal-overlay {
+  background-color: rgba(3, 7, 18, 0.75) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+[data-theme="dark"] .modal-dialog,
+.dark .modal-dialog,
+[data-theme="dark"] .modal-box,
+.dark .modal-box,
+[data-theme="dark"] .modal-content,
+.dark .modal-content {
+  background-color: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  color: #f8fafc !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7) !important;
+}
+
+[data-theme="dark"] .modal-header,
+.dark .modal-header {
+  background-color: #0f172a !important;
+  border-bottom: 1px solid #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .modal-header h1,
+.dark .modal-header h1,
+[data-theme="dark"] .modal-header h2,
+.dark .modal-header h2,
+[data-theme="dark"] .modal-header h3,
+.dark .modal-header h3,
+[data-theme="dark"] .modal-header h4,
+.dark .modal-header h4,
+[data-theme="dark"] .modal-title,
+.dark .modal-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .modal-body,
+.dark .modal-body {
+  background-color: #0f172a !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .modal-footer,
+.dark .modal-footer {
+  background-color: #0b1329 !important;
+  border-top: 1px solid #1e293b !important;
+}
+
+[data-theme="dark"] .modal-close-btn,
+.dark .modal-close-btn {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .modal-close-btn:hover,
+.dark .modal-close-btn:hover {
+  color: #ffffff !important;
+  background-color: #1e293b !important;
+}
+
+/* ============================================================
+   COMPREHENSIVE ALL CARDS & SURFACES DARK MODE
+   ============================================================ */
+[data-theme="dark"] .dashboard-card,
+.dark .dashboard-card,
+[data-theme="dark"] .trip-card,
+.dark .trip-card,
+[data-theme="dark"] .ticket-card,
+.dark .ticket-card,
+[data-theme="dark"] .boarding-pass-card,
+.dark .boarding-pass-card,
+[data-theme="dark"] .filter-card,
+.dark .filter-card,
+[data-theme="dark"] .summary-card,
+.dark .summary-card,
+[data-theme="dark"] .checkout-card,
+.dark .checkout-card,
+[data-theme="dark"] .settings-card,
+.dark .settings-card,
+[data-theme="dark"] .profile-card,
+.dark .profile-card,
+[data-theme="dark"] .info-card,
+.dark .info-card,
+[data-theme="dark"] .panel,
+.dark .panel {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+/* Catch hardcoded inline bright backgrounds in nightmode */
+[data-theme="dark"] [style*="#f8fafc"],
+.dark [style*="#f8fafc"],
+[data-theme="dark"] [style*="#F8FAFC"],
+.dark [style*="#F8FAFC"] {
+  background-color: #111a2e !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] [style*="#eff6ff"],
+.dark [style*="#eff6ff"],
+[data-theme="dark"] [style*="#EFF6FF"],
+.dark [style*="#EFF6FF"] {
+  background-color: #162447 !important;
+  color: #93c5fd !important;
+}
+
+/* ============================================================
+   DATA TABLES CONSISTENCY IN DARK MODE
+   ============================================================ */
+[data-theme="dark"] .data-table,
+.dark .data-table,
+[data-theme="dark"] .table,
+.dark .table,
+[data-theme="dark"] .table-responsive table,
+.dark .table-responsive table {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .data-table thead,
+.dark .data-table thead,
+[data-theme="dark"] .data-table thead th,
+.dark .data-table thead th,
+[data-theme="dark"] .table thead th,
+.dark .table thead th {
+  background-color: #090e1a !important;
+  color: #94a3b8 !important;
+  border-bottom-color: #1e293b !important;
+}
+
+[data-theme="dark"] .data-table tbody td,
+.dark .data-table tbody td,
+[data-theme="dark"] .data-table tbody tr,
+.dark .data-table tbody tr,
+[data-theme="dark"] .table tbody td,
+.dark .table tbody td {
+  border-bottom-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .data-table tbody tr:hover,
+.dark .data-table tbody tr:hover,
+[data-theme="dark"] .table tbody tr:hover,
+.dark .table tbody tr:hover {
+  background-color: #162035 !important;
+}
+
+/* ============================================================
+   DARK MODE SCROLLBARS
+   ============================================================ */
+[data-theme="dark"] ::-webkit-scrollbar,
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track,
+.dark ::-webkit-scrollbar-track {
+  background: #090e1a;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb,
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover,
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+

@@ -281,7 +281,7 @@ export const AdminUsersPage = () => {
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Email & Verification</span>
                 <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.email}</div>
                 <div style={{ marginTop: "4px" }}>
@@ -296,7 +296,7 @@ export const AdminUsersPage = () => {
                   )}
                 </div>
               </div>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Phone Number</span>
                 <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.phone || "—"}</div>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Official contact on record</span>
@@ -304,12 +304,12 @@ export const AdminUsersPage = () => {
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Role & Governance Scope</span>
                 <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.role}</div>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>System permission level</span>
               </div>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Affiliated Organization</span>
                 <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.organizationName || "System / Independent"}</div>
                 {selectedUserModal.organizationId && (
@@ -321,14 +321,14 @@ export const AdminUsersPage = () => {
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Failed Login Attempts</span>
                 <div style={{ fontWeight: 700, fontSize: "0.85rem", color: (selectedUserModal.failedLoginAttempts || 0) > 0 ? "var(--danger)" : "var(--text-main)", marginTop: "2px" }}>
                   {selectedUserModal.failedLoginAttempts || 0} attempts
                 </div>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Threshold: 5 attempts before lock</span>
               </div>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Last Login & Created</span>
                 <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.lastLoginAt || "Never"}</div>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Registered: {selectedUserModal.createdAt}</span>

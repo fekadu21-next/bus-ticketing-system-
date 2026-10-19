@@ -378,12 +378,12 @@ export const BookingConfirmationPage = () => {
 
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 -mt-8 space-y-5 relative z-20 print:mt-0 print:p-0">
         {/* Success Banner */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-[0_8px_30px_rgba(15,23,42,0.06)] p-6 sm:p-8 text-center print:shadow-none print:border-none">
-          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
-            <CheckCircle size={36} className="text-emerald-600" />
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-[0_8px_30px_rgba(15,23,42,0.06)] p-6 sm:p-8 text-center print:shadow-none print:border-none transition-colors">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center mx-auto mb-3">
+            <CheckCircle size={36} className="text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-1">Thank You for Your Booking!</h2>
-          <p className="text-sm text-slate-500 mb-4">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-1">Thank You for Your Booking!</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
             {ticketsList.length > 1
               ? `All ${ticketsList.length} seats (${selectedSeats.join(', ')}) are reserved and verified.`
               : 'Your seat has been reserved and your payment is fully verified.'}
@@ -393,11 +393,11 @@ export const BookingConfirmationPage = () => {
             {ticketsList.map((tkt, idx) => (
               <div
                 key={tkt.ticketNumber}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 rounded-xl border border-emerald-200"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800"
               >
-                <Ticket size={14} className="text-emerald-600" />
-                <span className="text-xs font-bold text-emerald-900">Seat {tkt.seatNumber}:</span>
-                <span className="text-xs font-mono font-bold text-emerald-700">{tkt.ticketNumber}</span>
+                <Ticket size={14} className="text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300">Seat {tkt.seatNumber}:</span>
+                <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">{tkt.ticketNumber}</span>
               </div>
             ))}
           </div>
@@ -405,14 +405,14 @@ export const BookingConfirmationPage = () => {
 
         {/* Tab Selector if multiple tickets (Hidden in print) */}
         {ticketsList.length > 1 && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-2 flex flex-wrap items-center gap-2 shadow-sm print:hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-2 flex flex-wrap items-center gap-2 shadow-sm print:hidden transition-colors">
             <button
               type="button"
               onClick={() => setActiveTab('all')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                 activeTab === 'all'
                   ? 'bg-[#2563eb] text-white shadow-md shadow-blue-500/20'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               <Layers size={14} />
@@ -427,7 +427,7 @@ export const BookingConfirmationPage = () => {
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                   activeTab === 'tkt.ticketNumber' || activeTab === tkt.ticketNumber
                     ? 'bg-[#2563eb] text-white shadow-md shadow-blue-500/20'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 <Ticket size={14} />
@@ -444,7 +444,7 @@ export const BookingConfirmationPage = () => {
             return (
               <div
                 key={tkt.ticketNumber}
-                className="bg-white rounded-3xl border border-slate-200/80 shadow-[0_8px_30px_rgba(15,23,42,0.06)] overflow-hidden print:border print:shadow-none print:break-after-page"
+                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-[0_8px_30px_rgba(15,23,42,0.06)] overflow-hidden print:border print:shadow-none print:break-after-page transition-colors"
               >
                 {/* Header */}
                 <div className="bg-gradient-to-r from-[#0b2a4a] to-[#1e40af] p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -471,98 +471,98 @@ export const BookingConfirmationPage = () => {
 
                 <div className="p-6 sm:p-8 space-y-6">
                   {/* Route & Times */}
-                  <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                  <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-5 border border-slate-100 dark:border-slate-700">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="flex-1">
                         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Departure</p>
-                        <p className="text-2xl font-black text-slate-900">{from}</p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                          <span className="flex items-center gap-1 font-semibold text-slate-700">
-                            <Calendar size={13} className="text-[#2563eb]" /> {formatPrettyDate(date)}
+                        <p className="text-2xl font-black text-slate-900 dark:text-white">{from}</p>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
+                            <Calendar size={13} className="text-[#2563eb] dark:text-blue-400" /> {formatPrettyDate(date)}
                           </span>
                           <span>•</span>
-                          <span className="flex items-center gap-1 font-semibold text-slate-700">
-                            <Clock size={13} className="text-[#2563eb]" /> {departureTime}
+                          <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
+                            <Clock size={13} className="text-[#2563eb] dark:text-blue-400" /> {departureTime}
                           </span>
                         </div>
                       </div>
 
                       <div className="hidden md:flex flex-col items-center px-4">
                         <span className="text-xs text-slate-400 font-semibold mb-1">Direct Route</span>
-                        <div className="w-32 h-[2px] bg-slate-300 relative flex items-center justify-center">
+                        <div className="w-32 h-[2px] bg-slate-300 dark:bg-slate-600 relative flex items-center justify-center">
                           <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]" />
                         </div>
                       </div>
 
                       <div className="flex-1 md:text-right">
                         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Destination</p>
-                        <p className="text-2xl font-black text-slate-900">{to}</p>
-                        <p className="text-xs text-slate-500 mt-1 font-semibold">Bus Plate: {busPlate}</p>
+                        <p className="text-2xl font-black text-slate-900 dark:text-white">{to}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">Bus Plate: {busPlate}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Passenger & Ticket Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="p-4 rounded-xl border border-slate-200/80 bg-white">
+                    <div className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800">
                       <p className="text-[11px] font-semibold text-slate-400 uppercase">Passenger</p>
-                      <p className="text-sm font-bold text-slate-900 mt-1">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">
                         {passengerFullName}
                       </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{passengerInfo.phone || 'N/A'}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{passengerInfo.phone || 'N/A'}</p>
                     </div>
 
-                    <div className="p-4 rounded-xl border-2 border-blue-500/30 bg-blue-50/30">
-                      <p className="text-[11px] font-bold text-[#1e40af] uppercase">Reserved Seat</p>
-                      <p className="text-2xl font-black text-[#2563eb] mt-0.5">
+                    <div className="p-4 rounded-xl border-2 border-blue-500/30 dark:border-blue-600/50 bg-blue-50/30 dark:bg-blue-950/30">
+                      <p className="text-[11px] font-bold text-[#1e40af] dark:text-blue-300 uppercase">Reserved Seat</p>
+                      <p className="text-2xl font-black text-[#2563eb] dark:text-blue-400 mt-0.5">
                         Seat #{tkt.seatNumber}
                       </p>
-                      <p className="text-[11px] text-emerald-700 font-semibold">Guaranteed & Confirmed</p>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">Guaranteed & Confirmed</p>
                     </div>
 
-                    <div className="p-4 rounded-xl border border-slate-200/80 bg-white">
+                    <div className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800">
                       <p className="text-[11px] font-semibold text-slate-400 uppercase">Ticket Number</p>
-                      <p className="text-sm font-mono font-bold text-slate-900 mt-1">
+                      <p className="text-sm font-mono font-bold text-slate-900 dark:text-white mt-1">
                         {tkt.ticketNumber}
                       </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Ref: {tkt.bookingId}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Ref: {tkt.bookingId}</p>
                     </div>
 
-                    <div className="p-4 rounded-xl border border-slate-200/80 bg-white">
+                    <div className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800">
                       <p className="text-[11px] font-semibold text-slate-400 uppercase">Fare Status</p>
-                      <p className="text-lg font-black text-slate-900 mt-1">
+                      <p className="text-lg font-black text-slate-900 dark:text-white mt-1">
                         {paymentMethod === 'CHAPA' ? 'Chapa' : paymentMethod === 'TELEBIRR' ? 'Telebirr' : paymentMethod}
                       </p>
-                      <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">Paid in Full</p>
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">Paid in Full</p>
                     </div>
                   </div>
 
                   {/* QR Code Section with Individual Scan Token */}
-                  <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200/80 flex flex-col md:flex-row items-center gap-6">
-                    <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-200 flex-shrink-0 text-center">
+                  <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 dark:from-slate-800/60 dark:to-blue-950/30 border border-slate-200/80 dark:border-slate-700 flex flex-col md:flex-row items-center gap-6">
+                    <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex-shrink-0 text-center">
                       {qrUrl ? (
                         <>
                           <img src={qrUrl} alt={`Security Ticket QR Code - Seat ${tkt.seatNumber}`} className="w-48 h-48 rounded-lg mx-auto" />
-                          <div className="mt-2 text-[11px] font-mono font-bold text-slate-700 bg-slate-100 py-1 px-2 rounded">
+                          <div className="mt-2 text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 py-1 px-2 rounded">
                             Seat #{tkt.seatNumber} • {tkt.ticketNumber}
                           </div>
                         </>
                       ) : (
-                        <div className="w-48 h-48 bg-slate-100 flex items-center justify-center text-xs text-slate-400 rounded-lg">
+                        <div className="w-48 h-48 bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs text-slate-400 rounded-lg">
                           Generating QR Code...
                         </div>
                       )}
                     </div>
 
                     <div className="flex-1 space-y-2 text-center md:text-left">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-100 text-[#1e40af] text-xs font-bold">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-100 dark:bg-blue-900/50 text-[#1e40af] dark:text-blue-300 text-xs font-bold">
                         <ShieldCheck size={14} />
                         <span>Seat #{tkt.seatNumber} Boarding QR Token</span>
                       </div>
-                      <h3 className="text-lg font-black text-slate-900">
+                      <h3 className="text-lg font-black text-slate-900 dark:text-white">
                         Boarding Pass for Seat #{tkt.seatNumber}
                       </h3>
-                      <p className="text-xs text-slate-600 leading-relaxed">
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                         Present this specific QR code at the departure gate for Seat #{tkt.seatNumber}.
                         The verifier or station coordinator will scan this code to grant boarding access for this passenger.
                       </p>

@@ -357,7 +357,7 @@ export const MyBookingsPage = () => {
                 className={`px-4 py-2 rounded-xl text-[12px] font-bold transition-all cursor-pointer ${
                   filter === 'upcoming'
                     ? 'bg-[#2563eb] text-white shadow-md shadow-blue-500/20'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 Upcoming
@@ -368,7 +368,7 @@ export const MyBookingsPage = () => {
                 className={`px-4 py-2 rounded-xl text-[12px] font-bold transition-all cursor-pointer ${
                   filter === 'completed'
                     ? 'bg-[#2563eb] text-white shadow-md shadow-blue-500/20'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 Completed
@@ -379,7 +379,7 @@ export const MyBookingsPage = () => {
                 className={`px-4 py-2 rounded-xl text-[12px] font-bold transition-all cursor-pointer ${
                   filter === 'cancelled'
                     ? 'bg-[#2563eb] text-white shadow-md shadow-blue-500/20'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 Cancelled
@@ -425,20 +425,20 @@ export const MyBookingsPage = () => {
                 return (
                   <div
                     key={b.id}
-                    className="bg-[#f8fafc] rounded-2xl border border-slate-200/90 p-4 sm:p-5 hover:border-slate-300 hover:shadow-sm transition-all"
+                    className="bg-[#f8fafc] dark:bg-slate-800/80 rounded-2xl border border-slate-200/90 dark:border-slate-700 p-4 sm:p-5 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-sm transition-all"
                   >
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2.5">
-                          <span className="text-[11px] font-mono font-bold text-slate-500">
+                          <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400">
                             Ticket #: {b.ticketNumber || b.ticket?.ticketNumber || ('TKT-' + b.id.substring(0, 8).toUpperCase())}
                           </span>
                           {getStatusBadge(b.status, b.rawStatus)}
                         </div>
 
                         <div className="flex items-center gap-2 mb-3">
-                          <MapPin size={17} className="text-[#2563eb] flex-shrink-0" />
-                          <span className="text-[16px] font-black text-slate-900">
+                          <MapPin size={17} className="text-[#2563eb] dark:text-blue-400 flex-shrink-0" />
+                          <span className="text-[16px] font-black text-slate-900 dark:text-white">
                             {origin} → {destination}
                           </span>
                         </div>
@@ -446,33 +446,33 @@ export const MyBookingsPage = () => {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[12px]">
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="text-slate-400" />
-                            <span className="text-slate-700 font-semibold">{formatPrettyDate(depDate)}</span>
+                            <span className="text-slate-700 dark:text-slate-300 font-semibold">{formatPrettyDate(depDate)}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock size={14} className="text-slate-400" />
-                            <span className="text-slate-700 font-semibold">{depTime}</span>
+                            <span className="text-slate-700 dark:text-slate-300 font-semibold">{depTime}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Ticket size={14} className="text-slate-400" />
-                            <span className="text-slate-700 font-semibold">Seat: {seats}</span>
+                            <span className="text-slate-700 dark:text-slate-300 font-semibold">Seat: {seats}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-slate-400">Operator:</span>
-                            <span className="text-slate-700 font-semibold">{op}</span>
+                            <span className="text-slate-700 dark:text-slate-300 font-semibold">{op}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:text-right pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:text-right pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200 dark:border-slate-700">
                         <div>
                           <p className="text-[11px] font-semibold text-slate-400 uppercase">Total Fare</p>
-                          <p className="text-[20px] font-black text-[#2563eb]">{formatEtb(totalFare)}</p>
+                          <p className="text-[20px] font-black text-[#2563eb] dark:text-blue-400">{formatEtb(totalFare)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => handleViewDetails(b)}
-                            className="h-10 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                            className="h-10 px-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                           >
                             Details & QR
                           </button>
@@ -515,19 +515,19 @@ export const MyBookingsPage = () => {
 
       {/* Booking Details & QR Modal */}
       {selectedBooking && (
-        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
-            <div className="sticky top-0 bg-white border-b border-slate-200 p-4 sm:p-5 flex items-center justify-between z-10">
+        <div className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4" onClick={handleCloseDetails}>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 transition-colors" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sm:p-5 flex items-center justify-between z-10">
               <div className="flex items-center gap-2">
-                <Ticket size={20} className="text-[#2563eb]" />
-                <h2 className="text-lg font-black text-slate-900">
+                <Ticket size={20} className="text-[#2563eb] dark:text-blue-400" />
+                <h2 className="text-lg font-black text-slate-900 dark:text-white">
                   Boarding Pass — Seat #{Array.isArray(selectedBooking.seats) ? selectedBooking.seats.join(', ') : selectedBooking.seatNumber || selectedBooking.seat_number || '1'}
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={handleCloseDetails}
-                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors cursor-pointer text-slate-500"
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer text-slate-500 dark:text-slate-400"
               >
                 <X size={20} />
               </button>
@@ -535,22 +535,22 @@ export const MyBookingsPage = () => {
 
             <div className="p-6 space-y-6">
               {/* Header Box */}
-              <div className="bg-[#f8fafc] border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-200/90 dark:border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
                   <p className="text-[11px] font-bold text-slate-400 uppercase">Ticket Number</p>
-                  <p className="text-lg font-mono font-black text-slate-900">
+                  <p className="text-lg font-mono font-black text-slate-900 dark:text-white">
                     {selectedBooking.ticketNumber || selectedBooking.ticket?.ticketNumber || ('TKT-' + selectedBooking.id.substring(0, 8).toUpperCase())}
                   </p>
-                  <p className="text-xs text-slate-500">Booking ID: {selectedBooking.id}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Booking ID: {selectedBooking.id}</p>
                 </div>
                 {getStatusBadge(selectedBooking.status, selectedBooking.rawStatus)}
               </div>
 
               {/* Route */}
-              <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100">
+              <div className="bg-blue-50/50 dark:bg-blue-950/40 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/50">
                 <div className="flex items-center gap-2 mb-3">
-                  <MapPin size={18} className="text-[#2563eb]" />
-                  <span className="text-lg font-black text-slate-900">
+                  <MapPin size={18} className="text-[#2563eb] dark:text-blue-400" />
+                  <span className="text-lg font-black text-slate-900 dark:text-white">
                     {selectedBooking.from || selectedBooking.origin || selectedBooking.trips?.routes?.origin || 'Addis Ababa'} →{' '}
                     {selectedBooking.to || selectedBooking.destination || selectedBooking.trips?.routes?.destination || 'Destination'}
                   </span>
@@ -558,54 +558,54 @@ export const MyBookingsPage = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>
                     <p className="text-slate-400 font-semibold">Date</p>
-                    <p className="font-bold text-slate-800">
+                    <p className="font-bold text-slate-800 dark:text-slate-200">
                       {formatPrettyDate(selectedBooking.date || selectedBooking.departureDate || selectedBooking.trips?.departure_time)}
                     </p>
                   </div>
                   <div>
                     <p className="text-slate-400 font-semibold">Departure</p>
-                    <p className="font-bold text-slate-800">{selectedBooking.departureTime || '06:00 AM'}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{selectedBooking.departureTime || '06:00 AM'}</p>
                   </div>
                   <div>
                     <p className="text-slate-400 font-semibold">Operator</p>
-                    <p className="font-bold text-slate-800">{selectedBooking.operator || selectedBooking.operatorName || 'Bus Line'}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{selectedBooking.operator || selectedBooking.operatorName || 'Bus Line'}</p>
                   </div>
                   <div>
                     <p className="text-slate-400 font-semibold">Bus Plate</p>
-                    <p className="font-bold text-slate-800">{selectedBooking.busPlateNumber || selectedBooking.trips?.buses?.plate_number || 'ET-3-1234'}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{selectedBooking.busPlateNumber || selectedBooking.trips?.buses?.plate_number || 'ET-3-1234'}</p>
                   </div>
                 </div>
               </div>
 
               {/* Passenger & Seat */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 space-y-2">
                   <p className="text-[11px] font-bold text-slate-400 uppercase">Passenger Details</p>
-                  <p className="font-bold text-slate-900 text-sm">
+                  <p className="font-bold text-slate-900 dark:text-white text-sm">
                     {selectedBooking.passengerName || (user ? `${user.firstName || user.first_name} ${user.lastName || user.last_name}` : 'Passenger')}
                   </p>
-                  <p className="text-slate-600">
+                  <p className="text-slate-600 dark:text-slate-300">
                     Phone: {selectedBooking.phone || selectedBooking.passengerPhone || user?.phone || 'N/A'}
                   </p>
-                  <p className="text-slate-600">
+                  <p className="text-slate-600 dark:text-slate-300">
                     Email: {selectedBooking.email || selectedBooking.passengerEmail || user?.email || 'N/A'}
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2">
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 space-y-2">
                   <p className="text-[11px] font-bold text-slate-400 uppercase">Seat & Payment</p>
-                  <p className="font-black text-2xl text-[#2563eb]">
+                  <p className="font-black text-2xl text-[#2563eb] dark:text-blue-400">
                     Seat #{Array.isArray(selectedBooking.seats) ? selectedBooking.seats.join(', ') : selectedBooking.seatNumber || selectedBooking.seat_number || '1'}
                   </p>
-                  <p className="font-bold text-slate-800">
+                  <p className="font-bold text-slate-800 dark:text-slate-200">
                     Fare: {formatEtb(selectedBooking.price || selectedBooking.totalFare || 0)}
                   </p>
-                  <p className="text-emerald-700 font-semibold">Status: Confirmed & Paid</p>
+                  <p className="text-emerald-700 dark:text-emerald-400 font-semibold">Status: Confirmed & Paid</p>
                 </div>
               </div>
 
               {/* QR Code Section */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row items-center gap-5">
+              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/90 dark:border-slate-700 flex flex-col sm:flex-row items-center gap-5">
                 <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-200 flex-shrink-0 text-center">
                   {modalQrUrl ? (
                     <>
@@ -621,12 +621,12 @@ export const MyBookingsPage = () => {
                   )}
                 </div>
                 <div className="text-center sm:text-left space-y-1">
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[11px] font-bold">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-[11px] font-bold">
                     <ShieldCheck size={12} />
                     <span>Seat #{Array.isArray(selectedBooking.seats) ? selectedBooking.seats.join(', ') : selectedBooking.seatNumber || selectedBooking.seat_number || '1'} Boarding Token</span>
                   </div>
-                  <h4 className="text-sm font-black text-slate-900">Digital Gate Verification</h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white">Digital Gate Verification</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                     Show this QR code at the bus terminal to verify your reservation for Seat #{Array.isArray(selectedBooking.seats) ? selectedBooking.seats.join(', ') : selectedBooking.seatNumber || selectedBooking.seat_number || '1'} and board the bus.
                   </p>
                 </div>
@@ -646,7 +646,7 @@ export const MyBookingsPage = () => {
                 <button
                   type="button"
                   onClick={handleCloseDetails}
-                  className="h-11 px-6 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold cursor-pointer"
+                  className="h-11 px-6 rounded-full border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold cursor-pointer"
                 >
                   Close
                 </button>

@@ -335,7 +335,7 @@ export const ManagerTripsPage = () => {
                   flex: 1,
                   height: "5px",
                   borderRadius: "2px",
-                  background: step <= wizardStep ? "var(--primary)" : "#e2e8f0"
+                  background: step <= wizardStep ? "var(--primary)" : "var(--border-color, #334155)"
                 }}
               />
             ))}

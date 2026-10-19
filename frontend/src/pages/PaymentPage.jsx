@@ -169,19 +169,19 @@ export const PaymentPage = () => {
               onClick={() => setPaymentMethod('CHAPA')}
               className={`p-4 rounded-xl border-2 flex items-center gap-3 transition-all text-left ${
                 paymentMethod === 'CHAPA'
-                  ? 'border-[#2563eb] bg-[#eef4ff]'
-                  : 'border-slate-200 hover:border-slate-300'
+                  ? 'border-[#2563eb] dark:border-blue-500 bg-[#eef4ff] dark:bg-blue-950/40'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'
               }`}
             >
-              <CreditCard size={24} className={paymentMethod === 'CHAPA' ? 'text-[#2563eb]' : 'text-slate-400'} />
+              <CreditCard size={24} className={paymentMethod === 'CHAPA' ? 'text-[#2563eb] dark:text-blue-400' : 'text-slate-400'} />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-[14px] font-bold text-slate-900">Chapa (Hosted Gateway)</p>
-                  <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Test Credentials</span>
+                  <p className="text-[14px] font-bold text-slate-900 dark:text-white">Chapa (Hosted Gateway)</p>
+                  <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">Test Credentials</span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">Redirects to Chapa checkout with test payment methods</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Redirects to Chapa checkout with test payment methods</p>
               </div>
-              {paymentMethod === 'CHAPA' && <CheckCircle size={20} className="ml-auto text-[#2563eb] flex-shrink-0" />}
+              {paymentMethod === 'CHAPA' && <CheckCircle size={20} className="ml-auto text-[#2563eb] dark:text-blue-400 flex-shrink-0" />}
             </button>
 
             <button
@@ -189,26 +189,25 @@ export const PaymentPage = () => {
               onClick={() => setPaymentMethod('TELEBIRR')}
               className={`p-4 rounded-xl border-2 flex items-center gap-3 transition-all text-left ${
                 paymentMethod === 'TELEBIRR'
-                  ? 'border-[#2563eb] bg-[#eef4ff]'
-                  : 'border-slate-200 hover:border-slate-300'
+                  ? 'border-[#2563eb] dark:border-blue-500 bg-[#eef4ff] dark:bg-blue-950/40'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'
               }`}
             >
-              <Smartphone size={24} className={paymentMethod === 'TELEBIRR' ? 'text-[#2563eb]' : 'text-slate-400'} />
+              <Smartphone size={24} className={paymentMethod === 'TELEBIRR' ? 'text-[#2563eb] dark:text-blue-400' : 'text-slate-400'} />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-[14px] font-bold text-slate-900">Telebirr (Mobile Money)</p>
-                  <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Real</span>
+                  <p className="text-[14px] font-bold text-slate-900 dark:text-white">Telebirr (Mobile Money)</p>
+                  <span className="text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">Real</span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">Ethio Telecom Telebirr USSD & App PIN payment</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Ethio Telecom Telebirr USSD & App PIN payment</p>
               </div>
-              {paymentMethod === 'TELEBIRR' && <CheckCircle size={20} className="ml-auto text-[#2563eb] flex-shrink-0" />}
+              {paymentMethod === 'TELEBIRR' && <CheckCircle size={20} className="ml-auto text-[#2563eb] dark:text-blue-400 flex-shrink-0" />}
             </button>
           </div>
 
-
-          <div className="flex items-center gap-2 mt-6 p-3 bg-[#f0fdf4] rounded-lg border border-green-200">
-            <Shield size={16} className="text-green-600" />
-            <p className="text-[12px] text-green-700">
+          <div className="flex items-center gap-2 mt-6 p-3 bg-[#f0fdf4] dark:bg-emerald-950/30 rounded-lg border border-green-200 dark:border-emerald-800/60">
+            <Shield size={16} className="text-green-600 dark:text-emerald-400" />
+            <p className="text-[12px] text-green-700 dark:text-emerald-300">
               Your payment is secured with 256-bit SSL encryption
             </p>
           </div>

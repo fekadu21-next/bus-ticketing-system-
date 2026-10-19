@@ -280,7 +280,7 @@ export const ManagerBookingsPage = () => {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div style={{ background: "#f8fafc", padding: "0.85rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.85rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Passenger Name</span>
                 <strong>{selectedBooking.passengerName}</strong>
                 <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
@@ -293,7 +293,7 @@ export const ManagerBookingsPage = () => {
                 )}
               </div>
 
-              <div style={{ background: "#f8fafc", padding: "0.85rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.85rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Seat Allocation</span>
                 <strong style={{ fontSize: "1.2rem", color: "var(--primary)" }}>Seat #{selectedBooking.seatNumber}</strong>
                 <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
@@ -302,7 +302,7 @@ export const ManagerBookingsPage = () => {
               </div>
             </div>
 
-            <div style={{ background: "#f8fafc", padding: "0.85rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+            <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.85rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
               <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Assigned Corridor & Trip</span>
               <strong>{selectedBooking.routeName}</strong>
               <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
@@ -310,7 +310,7 @@ export const ManagerBookingsPage = () => {
               </div>
             </div>
 
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", background: "#eff6ff", border: "1px solid #bfdbfe", padding: "0.75rem", borderRadius: "6px" }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", background: "var(--color-primary-light, #eff6ff)", border: "1px solid var(--color-primary-border, #bfdbfe)", padding: "0.75rem", borderRadius: "6px" }}>
               Ticket verification is processed via physical station staff with the mobile Ticket Verifier terminal. Confirmed bookings are immediately redeemable for boarding.
             </div>
           </div>

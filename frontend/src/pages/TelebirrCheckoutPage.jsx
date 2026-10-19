@@ -177,7 +177,7 @@ export const TelebirrCheckoutPage = () => {
   const departureDate = tripData.date || tripData.departureDate || (tripData.departureTime ? tripData.departureTime.split('T')[0] : 'Today');
 
   return (
-    <div className="min-h-screen bg-[#f0f4f9] text-slate-800 flex flex-col justify-between selection:bg-[#0072ce] selection:text-white">
+    <div className="min-h-screen bg-[#f0f4f9] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col justify-between selection:bg-[#0072ce] selection:text-white transition-colors">
       {/* Top Telebirr / Ethio Telecom Brand Header */}
       <header className="bg-gradient-to-r from-[#004f9e] via-[#005cb9] to-[#0072ce] text-white shadow-md">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -213,7 +213,7 @@ export const TelebirrCheckoutPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Order & Merchant Summary */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_4px_20px_rgba(0,92,185,0.06)] p-5">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,92,185,0.06)] p-5 transition-colors">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Payment Summary
@@ -229,53 +229,53 @@ export const TelebirrCheckoutPage = () => {
                   <span className="text-3xl font-black text-[#005cb9] tracking-tight">
                     {amount.toLocaleString()}
                   </span>
-                  <span className="text-lg font-bold text-slate-700">ETB</span>
+                  <span className="text-lg font-bold text-slate-700 dark:text-slate-300">ETB</span>
                 </div>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-100 space-y-3 text-xs">
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3 text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Merchant</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="text-slate-500 dark:text-slate-400">Merchant</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
                     Ethio Bus Ticketing System
                   </span>
                 </div>
 
                 {tripData.operator && (
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Bus Operator</span>
-                    <span className="font-bold text-slate-900">{tripData.operator}</span>
+                    <span className="text-slate-500 dark:text-slate-400">Bus Operator</span>
+                    <span className="font-bold text-slate-900 dark:text-slate-100">{tripData.operator}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Route</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="text-slate-500 dark:text-slate-400">Route</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
                     {origin} → {destination}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Travel Date</span>
-                  <span className="font-semibold text-slate-800">{departureDate}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Travel Date</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{departureDate}</span>
                 </div>
 
                 {selectedSeats.length > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Selected Seats</span>
-                    <span className="font-bold text-[#005cb9] bg-blue-50 px-2 py-0.5 rounded">
+                    <span className="text-slate-500 dark:text-slate-400">Selected Seats</span>
+                    <span className="font-bold text-[#005cb9] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
                       {selectedSeats.join(', ')}
                     </span>
                   </div>
                 )}
 
-                <div className="pt-2 border-t border-dashed border-slate-200">
+                <div className="pt-2 border-t border-dashed border-slate-200 dark:border-slate-800">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="text-slate-400">Transaction Ref:</span>
                     <button
                       type="button"
                       onClick={handleCopyTxRef}
-                      className="inline-flex items-center gap-1 font-mono font-semibold text-slate-700 hover:text-[#005cb9] transition-colors"
+                      className="inline-flex items-center gap-1 font-mono font-semibold text-slate-700 dark:text-slate-300 hover:text-[#005cb9] dark:hover:text-blue-400 transition-colors"
                       title="Click to copy reference"
                     >
                       <span className="truncate max-w-[150px]">{txRef}</span>
@@ -291,12 +291,12 @@ export const TelebirrCheckoutPage = () => {
             </div>
 
             {/* Test Mode / Sandbox Notice */}
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-200/80 rounded-2xl p-4 text-xs text-amber-900">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50/60 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/80 dark:border-amber-900/40 rounded-2xl p-4 text-xs text-amber-900 dark:text-amber-200">
               <div className="flex items-start gap-2.5">
                 <Sparkles size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold text-amber-950">Telebirr Sandbox Simulator</p>
-                  <p className="mt-0.5 text-amber-800 leading-relaxed text-[11px]">
+                  <p className="font-bold text-amber-950 dark:text-amber-100">Telebirr Sandbox Simulator</p>
+                  <p className="mt-0.5 text-amber-800 dark:text-amber-300 leading-relaxed text-[11px]">
                     This checkout environment simulates the official Ethio Telecom Telebirr Web Gateway.
                     Enter any 4-digit PIN (e.g. <b>1234</b>) or click &ldquo;Confirm Payment&rdquo; to complete your booking.
                   </p>
@@ -307,9 +307,9 @@ export const TelebirrCheckoutPage = () => {
 
           {/* Right Column: Interactive Telebirr Payment UI */}
           <div className="lg:col-span-7">
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_4px_24px_rgba(0,92,185,0.08)] overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-[0_4px_24px_rgba(0,92,185,0.08)] overflow-hidden">
               {/* Payment Tab Selector */}
-              <div className="flex border-b border-slate-200 bg-slate-50/70 p-1.5 gap-1.5">
+              <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 p-1.5 gap-1.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -318,8 +318,8 @@ export const TelebirrCheckoutPage = () => {
                   }}
                   className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     activeTab === 'ussd'
-                      ? 'bg-white text-[#005cb9] shadow-sm border border-slate-200/80'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-800 text-[#005cb9] dark:text-blue-400 shadow-sm border border-slate-200/80 dark:border-slate-700'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <Smartphone size={16} />
@@ -334,8 +334,8 @@ export const TelebirrCheckoutPage = () => {
                   }}
                   className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                     activeTab === 'qr'
-                      ? 'bg-white text-[#005cb9] shadow-sm border border-slate-200/80'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-800 text-[#005cb9] dark:text-blue-400 shadow-sm border border-slate-200/80 dark:border-slate-700'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <QrCode size={16} />
@@ -347,7 +347,7 @@ export const TelebirrCheckoutPage = () => {
               {activeTab === 'ussd' && (
                 <div className="p-6 space-y-5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                       Telebirr Mobile Number (የቴሌብር ስልክ ቁጥር)
                     </label>
                     <div className="relative">
@@ -359,24 +359,24 @@ export const TelebirrCheckoutPage = () => {
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         placeholder="0911 223 344"
-                        className="w-full pl-20 pr-4 py-2.5 text-sm font-semibold rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#005cb9] focus:border-transparent transition-all"
+                        className="w-full pl-20 pr-4 py-2.5 text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#005cb9] focus:border-transparent transition-all"
                       />
                     </div>
-                    <p className="text-[11px] text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                       Registered Ethio Telecom Telebirr account number
                     </p>
                   </div>
 
                   {/* 4-Digit Telebirr PIN Display */}
-                  <div className="bg-[#f8fafc] border border-slate-200/90 rounded-2xl p-4 text-center">
+                  <div className="bg-[#f8fafc] dark:bg-slate-950/60 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 text-center">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-700">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                         Telebirr Wallet PIN (4 Digits)
                       </span>
                       <button
                         type="button"
                         onClick={handleFillDemoPin}
-                        className="text-[11px] font-bold text-[#005cb9] hover:underline"
+                        className="text-[11px] font-bold text-[#005cb9] dark:text-blue-400 hover:underline"
                       >
                         Auto-fill Demo PIN
                       </button>
@@ -392,7 +392,7 @@ export const TelebirrCheckoutPage = () => {
                             className={`w-11 h-12 rounded-xl flex items-center justify-center text-xl font-black transition-all ${
                               filled
                                 ? 'bg-[#005cb9] text-white shadow-sm scale-105'
-                                : 'bg-white border-2 border-slate-200 text-slate-300'
+                                : 'bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-600'
                             }`}
                           >
                             {filled ? '•' : ''}
@@ -409,7 +409,7 @@ export const TelebirrCheckoutPage = () => {
                           type="button"
                           onClick={() => handlePinInput(digit)}
                           disabled={isProcessing}
-                          className="h-10 rounded-lg bg-white border border-slate-200 font-bold text-slate-800 text-sm hover:bg-blue-50 hover:border-[#005cb9] hover:text-[#005cb9] active:scale-95 transition-all disabled:opacity-50"
+                          className="h-10 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-slate-200 text-sm hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-[#005cb9] hover:text-[#005cb9] dark:hover:text-blue-400 active:scale-95 transition-all disabled:opacity-50"
                         >
                           {digit}
                         </button>
@@ -418,7 +418,7 @@ export const TelebirrCheckoutPage = () => {
                         type="button"
                         onClick={handleClearPin}
                         disabled={isProcessing}
-                        className="h-10 rounded-lg bg-slate-100 border border-slate-200 font-bold text-slate-600 text-xs hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50"
+                        className="h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 text-xs hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-50"
                       >
                         Clear
                       </button>
@@ -426,7 +426,7 @@ export const TelebirrCheckoutPage = () => {
                         type="button"
                         onClick={() => handlePinInput('0')}
                         disabled={isProcessing}
-                        className="h-10 rounded-lg bg-white border border-slate-200 font-bold text-slate-800 text-sm hover:bg-blue-50 hover:border-[#005cb9] hover:text-[#005cb9] active:scale-95 transition-all disabled:opacity-50"
+                        className="h-10 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-slate-200 text-sm hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-[#005cb9] hover:text-[#005cb9] dark:hover:text-blue-400 active:scale-95 transition-all disabled:opacity-50"
                       >
                         0
                       </button>
@@ -434,7 +434,7 @@ export const TelebirrCheckoutPage = () => {
                         type="button"
                         onClick={handlePinBackspace}
                         disabled={isProcessing}
-                        className="h-10 rounded-lg bg-slate-100 border border-slate-200 font-bold text-slate-600 text-xs hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50"
+                        className="h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 text-xs hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-50"
                       >
                         ⌫
                       </button>
@@ -446,7 +446,7 @@ export const TelebirrCheckoutPage = () => {
               {/* Tab 2: SuperApp QR Code */}
               {activeTab === 'qr' && (
                 <div className="p-6 text-center space-y-4">
-                  <p className="text-xs font-semibold text-slate-600">
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                     Scan with your <b>telebirr SuperApp</b> to approve payment directly from your smartphone
                   </p>
 
@@ -465,13 +465,13 @@ export const TelebirrCheckoutPage = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="w-56 h-56 bg-slate-100 flex items-center justify-center text-xs text-slate-400">
+                      <div className="w-56 h-56 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs text-slate-400">
                         Generating QR Code...
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-center gap-4 text-[11px] text-slate-500">
+                  <div className="flex items-center justify-center gap-4 text-[11px] text-slate-500 dark:text-slate-400">
                     <span>1. Open telebirr</span>
                     <span>→</span>
                     <span>2. Tap QR Scan</span>
@@ -483,7 +483,7 @@ export const TelebirrCheckoutPage = () => {
 
               {/* Error Message */}
               {error && (
-                <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+                <div className="mx-6 mb-4 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
                   <AlertTriangle size={15} className="flex-shrink-0" />
                   <span>{error}</span>
                 </div>
@@ -491,14 +491,14 @@ export const TelebirrCheckoutPage = () => {
 
               {/* Processing Overlay / Status */}
               {isProcessing && (
-                <div className="mx-6 mb-5 p-4 rounded-xl bg-blue-50/80 border border-blue-200 text-center space-y-2">
-                  <div className="flex items-center justify-center gap-2 text-sm font-black text-[#005cb9]">
+                <div className="mx-6 mb-5 p-4 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-center space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-sm font-black text-[#005cb9] dark:text-blue-400">
                     <RefreshCw size={18} className="animate-spin" />
                     {processStep === 1 && 'Connecting to Ethio Telecom Telebirr Gateway...'}
                     {processStep === 2 && 'Validating Telebirr Wallet & Authorizing Fare...'}
                     {processStep === 3 && 'Payment Approved! Issuing Your Digital Ticket...'}
                   </div>
-                  <div className="w-full bg-blue-200 h-1.5 rounded-full overflow-hidden max-w-xs mx-auto">
+                  <div className="w-full bg-blue-200 dark:bg-blue-900 h-1.5 rounded-full overflow-hidden max-w-xs mx-auto">
                     <div
                       className="bg-[#005cb9] h-full transition-all duration-700 ease-out"
                       style={{
@@ -510,7 +510,7 @@ export const TelebirrCheckoutPage = () => {
               )}
 
               {/* Footer Actions */}
-              <div className="p-6 bg-slate-50/70 border-t border-slate-200 space-y-3">
+              <div className="p-6 bg-slate-50/70 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 space-y-3">
                 <button
                   type="button"
                   onClick={handleConfirmPayment}
@@ -535,7 +535,7 @@ export const TelebirrCheckoutPage = () => {
                     type="button"
                     onClick={handleCancelPayment}
                     disabled={isProcessing}
-                    className="text-slate-500 hover:text-red-600 font-semibold transition-colors disabled:opacity-40"
+                    className="text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-semibold transition-colors disabled:opacity-40"
                   >
                     Cancel Transaction
                   </button>
@@ -543,7 +543,7 @@ export const TelebirrCheckoutPage = () => {
                   <Link
                     to="/passenger-info"
                     state={{ tripData, selectedSeats, passengerInfo }}
-                    className="text-slate-500 hover:text-slate-900 inline-flex items-center gap-1 font-semibold"
+                    className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white inline-flex items-center gap-1 font-semibold"
                   >
                     <ArrowLeft size={13} />
                     Return to Booking
@@ -556,10 +556,10 @@ export const TelebirrCheckoutPage = () => {
       </main>
 
       {/* Footer / Regulatory Notice */}
-      <footer className="bg-white border-t border-slate-200 py-4 mt-8">
-        <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 mt-8">
+        <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-[#005cb9]" />
+            <ShieldCheck size={16} className="text-[#005cb9] dark:text-blue-400" />
             <span>Ethio Telecom • Telebirr Financial Services Regulatory Compliance</span>
           </div>
           <p>© 2026 Ethio Bus Ticketing System. All rights reserved.</p>

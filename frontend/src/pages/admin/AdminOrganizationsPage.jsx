@@ -300,30 +300,30 @@ export const AdminOrganizationsPage = () => {
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem" }}>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Registration Number</span>
                 <div style={{ fontWeight: 700 }}>{selectedOrg.registrationNumber}</div>
               </div>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Application Date</span>
                 <div style={{ fontWeight: 700 }}>{selectedOrg.createdAt}</div>
               </div>
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem" }}>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Primary Contact</span>
                 <div style={{ fontWeight: 700 }}>{selectedOrg.contactName}</div>
                 <div style={{ fontSize: "0.75rem" }}>{selectedOrg.phone} | {selectedOrg.email}</div>
               </div>
-              <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Operational Fleet</span>
                 <div style={{ fontWeight: 700 }}>{getOrgBusCount(selectedOrg)} Registered Buses</div>
                 <div style={{ fontSize: "0.75rem" }}>{selectedOrg.activeTrips} Active Departure Schedules</div>
               </div>
             </div>
 
-            <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px" }}>
+            <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
               <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Address & Notes</span>
               <div style={{ fontSize: "0.82rem", margin: "0.2rem 0" }}>{selectedOrg.address}</div>
               <div style={{ fontSize: "0.78rem", fontStyle: "italic", color: "var(--text-muted)" }}>

@@ -327,7 +327,7 @@ export const AdminTicketsPage = () => {
 
             <div
               style={{
-                background: "#f8fafc",
+                background: "var(--bg-main, #f8fafc)",
                 border: "1px solid var(--border-color)",
                 borderRadius: "6px",
                 padding: "0.75rem",

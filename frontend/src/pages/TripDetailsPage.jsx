@@ -457,27 +457,27 @@ export const TripDetailsPage = () => {
             </button>
           </article>
 
-          <aside id="seat-selection" className="bg-white rounded-[18px] border border-slate-200/80 p-5">
-            <h3 className="text-[15px] font-extrabold text-slate-900 mb-4">Seat Selection</h3>
-            <div className="flex items-center justify-between text-[11px] text-slate-500 mb-4">
+          <aside id="seat-selection" className="bg-white dark:bg-slate-900 rounded-[18px] border border-slate-200/80 dark:border-slate-800 p-5">
+            <h3 className="text-[15px] font-extrabold text-slate-900 dark:text-white mb-4">Seat Selection</h3>
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-4">
               <span className="inline-flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-[3px] bg-emerald-100 border border-emerald-400" /> Available
+                <span className="w-3 h-3 rounded-[3px] bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-400 dark:border-emerald-700/60" /> Available
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-[3px] bg-[#2563eb]" /> Selected
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-[3px] bg-amber-100 border border-amber-300" /> Held
+                <span className="w-3 h-3 rounded-[3px] bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/60" /> Held
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-[3px] bg-slate-200 border border-slate-300" /> Booked
+                <span className="w-3 h-3 rounded-[3px] bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700" /> Booked
               </span>
             </div>
 
-            <div className="bg-[#f8fafc] border border-slate-200 rounded-[22px] p-4">
+            <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-[22px] p-4">
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
                 <span>Front</span>
-                <span className="inline-flex items-center gap-1 normal-case tracking-normal text-slate-500">
+                <span className="inline-flex items-center gap-1 normal-case tracking-normal text-slate-500 dark:text-slate-400">
                   <Navigation size={12} /> Driver
                 </span>
               </div>
@@ -500,14 +500,14 @@ export const TripDetailsPage = () => {
                             title={isHeld ? `Seat ${seat.label} is held` : isBooked ? `Seat ${seat.label} is booked` : isBlocked ? `Seat ${seat.label} is blocked` : `Select Seat ${seat.label}`}
                             className={`w-7 h-7 rounded-[6px] text-[9px] font-bold ${
                               isSelected
-                                ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400'
+                                ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400 dark:ring-blue-300'
                                 : isHeld
-                                ? 'bg-amber-100 text-amber-700 border border-amber-300 cursor-not-allowed'
+                                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 cursor-not-allowed'
                                 : isBlocked
-                                ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
                                 : isBooked
-                                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                : 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 cursor-pointer'
+                                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 hover:bg-emerald-200 dark:hover:bg-emerald-900 cursor-pointer'
                             }`}
                           >
                             {seat.label}
@@ -532,14 +532,14 @@ export const TripDetailsPage = () => {
                             title={isHeld ? `Seat ${seat.label} is held` : isBooked ? `Seat ${seat.label} is booked` : isBlocked ? `Seat ${seat.label} is blocked` : `Select Seat ${seat.label}`}
                             className={`w-7 h-7 rounded-[6px] text-[9px] font-bold ${
                               isSelected
-                                ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400'
+                                ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400 dark:ring-blue-300'
                                 : isHeld
-                                ? 'bg-amber-100 text-amber-700 border border-amber-300 cursor-not-allowed'
+                                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 cursor-not-allowed'
                                 : isBlocked
-                                ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
                                 : isBooked
-                                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                : 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 cursor-pointer'
+                                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 hover:bg-emerald-200 dark:hover:bg-emerald-900 cursor-pointer'
                             }`}
                           >
                             {seat.label}
@@ -552,14 +552,14 @@ export const TripDetailsPage = () => {
               </div>
             </div>
 
-            <div className="mt-4 bg-[#f8fafc] rounded-[14px] p-3.5 flex items-center justify-between">
+            <div className="mt-4 bg-[#f8fafc] dark:bg-slate-800/80 rounded-[14px] p-3.5 border border-transparent dark:border-slate-700 flex items-center justify-between">
               <div>
                 <p className="text-[11px] text-slate-400">Selected Seat</p>
-                <p className="text-[18px] font-black text-slate-900">{selectedSeats.length ? selectedSeats.join(', ') : '—'}</p>
+                <p className="text-[18px] font-black text-slate-900 dark:text-white">{selectedSeats.length ? selectedSeats.join(', ') : '—'}</p>
               </div>
               <div className="text-right">
                 <p className="text-[11px] text-slate-400">Price</p>
-                <p className="text-[18px] font-black text-slate-900">{formatEtb(totalPrice)}</p>
+                <p className="text-[18px] font-black text-slate-900 dark:text-white">{formatEtb(totalPrice)}</p>
               </div>
             </div>
 
