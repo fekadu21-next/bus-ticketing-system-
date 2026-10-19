@@ -232,10 +232,9 @@ export const Header = () => {
           className="header-icon-btn"
           onClick={toggleTheme}
           title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          aria-label="Toggle theme mode"
+          aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
         >
-          {isDark ? <Sun size={15} style={{ color: "#fbbf24" }} /> : <Moon size={15} />}
-          <span className="desktop-only">{isDark ? "Light" : "Dark"}</span>
+          {isDark ? <Sun size={16} style={{ color: "#fbbf24" }} /> : <Moon size={16} />}
         </button>
 
         {/* Bell / Notifications */}
@@ -277,18 +276,21 @@ export const Header = () => {
                 <button
                   type="button"
                   onClick={toggleTheme}
+                  title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                   style={{
-                    padding: "3px 8px",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    borderRadius: "4px",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
                     border: "1px solid var(--border-color)",
                     background: "var(--bg-main)",
                     color: "var(--text-main)",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center"
                   }}
                 >
-                  {isDark ? "Light Mode" : "Dark Mode"}
+                  {isDark ? <Sun size={15} style={{ color: "#fbbf24" }} /> : <Moon size={15} />}
                 </button>
               </div>
 

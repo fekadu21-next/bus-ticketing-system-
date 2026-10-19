@@ -64,19 +64,14 @@ export const DashboardPage = () => {
         <button
           type="button"
           onClick={toggleTheme}
-          className="self-start sm:self-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-xs cursor-pointer"
+          className="self-start sm:self-auto inline-flex items-center justify-center w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-xs cursor-pointer"
           title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {isDark ? (
-            <>
-              <Sun size={16} className="text-amber-400" />
-              <span>Light Mode</span>
-            </>
+            <Sun size={18} className="text-amber-400" />
           ) : (
-            <>
-              <Moon size={16} className="text-indigo-600 dark:text-indigo-400" />
-              <span>Dark Mode</span>
-            </>
+            <Moon size={18} className="text-indigo-600 dark:text-indigo-400" />
           )}
         </button>
       </div>
