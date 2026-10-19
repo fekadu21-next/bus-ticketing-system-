@@ -474,81 +474,83 @@ export const TripDetailsPage = () => {
               </span>
             </div>
 
-            <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-[22px] p-4">
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
-                <span>Front</span>
-                <span className="inline-flex items-center gap-1 normal-case tracking-normal text-slate-500 dark:text-slate-400">
-                  <Navigation size={12} /> Driver
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                {seatsByRow.map((rowSeats) => (
-                  <div key={rowSeats[0]?.row} className="flex items-center justify-between gap-2">
-                    <div className="flex gap-1.5">
-                      {rowSeats.slice(0, 2).map((seat) => {
-                        const isSelected = selectedSeats.includes(seat.label);
-                        const isBooked = seat.status === 'booked';
-                        const isHeld = seat.status === 'held' || seat.status === 'locked';
-                        const isBlocked = seat.status === 'blocked';
-                        const isDisabled = isBooked || isHeld || isBlocked;
-                        return (
-                          <button
-                            key={seat.id}
-                            type="button"
-                            disabled={isDisabled}
-                            onClick={() => toggleSeat(seat)}
-                            title={isHeld ? `Seat ${seat.label} is held` : isBooked ? `Seat ${seat.label} is booked` : isBlocked ? `Seat ${seat.label} is blocked` : `Select Seat ${seat.label}`}
-                            className={`w-7 h-7 rounded-[6px] text-[9px] font-bold ${
-                              isSelected
-                                ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400 dark:ring-blue-300'
-                                : isHeld
-                                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 cursor-not-allowed'
-                                : isBlocked
-                                ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-                                : isBooked
-                                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                                : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 hover:bg-emerald-200 dark:hover:bg-emerald-900 cursor-pointer'
-                            }`}
-                          >
-                            {seat.label}
-                          </button>
-                        );
-                      })}
+            <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-[22px] p-4 overflow-x-auto">
+              <div className="min-w-[210px]">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                  <span>Front</span>
+                  <span className="inline-flex items-center gap-1 normal-case tracking-normal text-slate-500 dark:text-slate-400">
+                    <Navigation size={12} /> Driver
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {seatsByRow.map((rowSeats) => (
+                    <div key={rowSeats[0]?.row} className="flex items-center justify-between gap-2">
+                      <div className="flex gap-1.5">
+                        {rowSeats.slice(0, 2).map((seat) => {
+                          const isSelected = selectedSeats.includes(seat.label);
+                          const isBooked = seat.status === 'booked';
+                          const isHeld = seat.status === 'held' || seat.status === 'locked';
+                          const isBlocked = seat.status === 'blocked';
+                          const isDisabled = isBooked || isHeld || isBlocked;
+                          return (
+                            <button
+                              key={seat.id}
+                              type="button"
+                              disabled={isDisabled}
+                              onClick={() => toggleSeat(seat)}
+                              title={isHeld ? `Seat ${seat.label} is held` : isBooked ? `Seat ${seat.label} is booked` : isBlocked ? `Seat ${seat.label} is blocked` : `Select Seat ${seat.label}`}
+                              className={`w-7 h-7 rounded-[6px] text-[9px] font-bold ${
+                                isSelected
+                                  ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400 dark:ring-blue-300'
+                                  : isHeld
+                                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 cursor-not-allowed'
+                                  : isBlocked
+                                  ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                                  : isBooked
+                                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                  : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 hover:bg-emerald-200 dark:hover:bg-emerald-900 cursor-pointer'
+                              }`}
+                            >
+                              {seat.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="w-4" />
+                      <div className="flex gap-1.5">
+                        {rowSeats.slice(2, 4).map((seat) => {
+                          const isSelected = selectedSeats.includes(seat.label);
+                          const isBooked = seat.status === 'booked';
+                          const isHeld = seat.status === 'held' || seat.status === 'locked';
+                          const isBlocked = seat.status === 'blocked';
+                          const isDisabled = isBooked || isHeld || isBlocked;
+                          return (
+                            <button
+                              key={seat.id}
+                              type="button"
+                              disabled={isDisabled}
+                              onClick={() => toggleSeat(seat)}
+                              title={isHeld ? `Seat ${seat.label} is held` : isBooked ? `Seat ${seat.label} is booked` : isBlocked ? `Seat ${seat.label} is blocked` : `Select Seat ${seat.label}`}
+                              className={`w-7 h-7 rounded-[6px] text-[9px] font-bold ${
+                                isSelected
+                                  ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400 dark:ring-blue-300'
+                                  : isHeld
+                                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 cursor-not-allowed'
+                                  : isBlocked
+                                  ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                                  : isBooked
+                                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                  : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 hover:bg-emerald-200 dark:hover:bg-emerald-900 cursor-pointer'
+                              }`}
+                            >
+                              {seat.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="w-4" />
-                    <div className="flex gap-1.5">
-                      {rowSeats.slice(2, 4).map((seat) => {
-                        const isSelected = selectedSeats.includes(seat.label);
-                        const isBooked = seat.status === 'booked';
-                        const isHeld = seat.status === 'held' || seat.status === 'locked';
-                        const isBlocked = seat.status === 'blocked';
-                        const isDisabled = isBooked || isHeld || isBlocked;
-                        return (
-                          <button
-                            key={seat.id}
-                            type="button"
-                            disabled={isDisabled}
-                            onClick={() => toggleSeat(seat)}
-                            title={isHeld ? `Seat ${seat.label} is held` : isBooked ? `Seat ${seat.label} is booked` : isBlocked ? `Seat ${seat.label} is blocked` : `Select Seat ${seat.label}`}
-                            className={`w-7 h-7 rounded-[6px] text-[9px] font-bold ${
-                              isSelected
-                                ? 'bg-[#2563eb] text-white shadow-sm ring-2 ring-blue-400 dark:ring-blue-300'
-                                : isHeld
-                                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 cursor-not-allowed'
-                                : isBlocked
-                                ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-                                : isBooked
-                                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                                : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 hover:bg-emerald-200 dark:hover:bg-emerald-900 cursor-pointer'
-                            }`}
-                          >
-                            {seat.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
 

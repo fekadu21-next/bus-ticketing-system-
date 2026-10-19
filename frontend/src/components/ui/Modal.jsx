@@ -26,26 +26,26 @@ export const Modal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2.5 sm:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-xs transition-opacity duration-200" />
       <div
-        className="relative bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-[#1e293b] rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] w-full max-h-[90vh] overflow-hidden flex flex-col z-10 transition-colors"
-        style={{ maxWidth }}
+        className="relative bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-[#1e293b] rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] w-full max-h-[94vh] sm:max-h-[90vh] overflow-hidden flex flex-col z-10 transition-colors"
+        style={{ maxWidth: `min(100%, ${maxWidth})` }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-[#1e293b] bg-white dark:bg-[#0f172a]">
-          {title && <h3 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h3>}
+        <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-200 dark:border-[#1e293b] bg-white dark:bg-[#0f172a]">
+          {title && <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate pr-2">{title}</h3>}
           <button
             type="button"
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
             onClick={onClose}
             aria-label="Close modal"
           >
             <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-5 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-[#f8fafc]">{children}</div>
-        {footer && <div className="px-6 py-4 border-t border-slate-200 dark:border-[#1e293b] bg-slate-50 dark:bg-[#090e1a]">{footer}</div>}
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-[#f8fafc]">{children}</div>
+        {footer && <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-200 dark:border-[#1e293b] bg-slate-50 dark:bg-[#090e1a] flex items-center justify-end gap-2 flex-wrap">{footer}</div>}
       </div>
     </div>
   );

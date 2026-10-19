@@ -18,6 +18,7 @@ import {
   ArrowRight,
   Loader2,
   Calendar,
+  SlidersHorizontal,
 } from 'lucide-react';
 import TripSearchBar from '@/components/TripSearchBar';
 import { searchTripsApi, getPublicOperatorsApi } from '@/api/trip.api';
@@ -90,6 +91,7 @@ export const SearchTripsPage = () => {
   const [backendTrips, setBackendTrips] = useState([]);
   const [backendOperators, setBackendOperators] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Sync state if URL search params change
   useEffect(() => {
@@ -331,8 +333,29 @@ export const SearchTripsPage = () => {
         </div>
       </section>
 
-      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)] gap-6">
-        <aside className="bg-white rounded-[18px] border border-slate-200/80 shadow-[0_8px_24px_rgba(15,23,42,0.04)] p-5 h-fit">
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Mobile Filters Toggle Button */}
+        <div className="lg:hidden mb-4">
+          <button
+            type="button"
+            onClick={() => setShowMobileFilters((prev) => !prev)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-100 shadow-sm transition-all cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal size={16} className="text-[#2563eb]" />
+              <span>Filters & Sort Options</span>
+              {(periods.length > 0 || selectedOperators.length > 0 || orgTypes.length > 0 || minSeats !== 'all') && (
+                <span className="w-2 h-2 rounded-full bg-[#2563eb]" />
+              )}
+            </span>
+            <span className="text-xs font-semibold text-[#2563eb]">
+              {showMobileFilters ? 'Hide Filters ▲' : 'Show Filters ▼'}
+            </span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)] gap-6">
+          <aside className={`bg-white dark:bg-slate-900 rounded-[18px] border border-slate-200/80 dark:border-slate-800 shadow-[0_8px_24px_rgba(15,23,42,0.04)] p-5 h-fit ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[16px] font-bold text-slate-900">Filters</h2>
             <button type="button" onClick={clearAllFilters} className="text-[12px] font-semibold text-[#2563eb]">
@@ -575,15 +598,15 @@ export const SearchTripsPage = () => {
                       </div>
                     </div>
 
-                    <div className="md:min-w-[150px] flex md:flex-col items-end justify-between md:justify-start gap-3 md:pl-2">
-                      <div className="text-right">
-                        <p className="text-[20px] font-extrabold text-slate-900 leading-none">{formatEtb(trip.price)}</p>
+                    <div className="md:min-w-[150px] flex flex-wrap sm:flex-nowrap md:flex-col items-center sm:items-end justify-between md:justify-start gap-3 md:pl-2 w-full md:w-auto pt-3 md:pt-0 border-t border-slate-100 dark:border-slate-800 md:border-t-0">
+                      <div className="text-left sm:text-right">
+                        <p className="text-[18px] sm:text-[20px] font-extrabold text-slate-900 dark:text-white leading-none">{formatEtb(trip.price)}</p>
                         <p className="text-[11px] text-slate-400 mt-1">per person</p>
                       </div>
                       <p className="text-[12px] font-semibold text-[#16a34a]">{trip.seatsAvailable} seats available</p>
                       <Link
                         to={`/trips/${trip.id}`}
-                        className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[12px] font-semibold"
+                        className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[12px] font-semibold shrink-0"
                       >
                         View Details
                         <ArrowRight size={14} />
@@ -630,6 +653,7 @@ export const SearchTripsPage = () => {
             </div>
           )}
         </section>
+        </div>
       </div>
 
       <section className="max-w-[1180px] mx-auto px-4 sm:px-6 pb-12">
