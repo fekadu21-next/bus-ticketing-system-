@@ -245,7 +245,7 @@ export const AdminDashboardPage = () => {
                   setCustomDate(e.target.value);
                   setDateFilter(e.target.value ? "CUSTOM" : "ALL");
                 }}
-                style={{ fontSize: "0.75rem", padding: "2px 6px", border: "1px solid var(--border-color, #cbd5e1)", borderRadius: "4px" }}
+                style={{ fontSize: "0.75rem", padding: "2px 6px", border: "1px solid var(--border-color, #cbd5e1)", borderRadius: "4px", background: "var(--input-bg, #ffffff)", color: "var(--input-text, #0f172a)" }}
               />
             </div>
           </div>

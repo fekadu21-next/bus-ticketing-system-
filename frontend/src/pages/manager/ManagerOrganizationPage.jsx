@@ -257,19 +257,19 @@ export const ManagerOrganizationPage = () => {
 
         {/* Capacity Overview Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "1.5rem" }}>
-          <div style={{ background: "#ffffff", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
+          <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
             <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--primary)" }}>{orgBuses.length}</div>
             <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Fleet Buses</div>
           </div>
-          <div style={{ background: "#ffffff", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
+          <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
             <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--success-text)" }}>{orgDrivers.length}</div>
             <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Active Drivers</div>
           </div>
-          <div style={{ background: "#ffffff", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
+          <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
             <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#8b5cf6" }}>{orgVerifiers.length}</div>
             <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Ticket Verifiers</div>
           </div>
-          <div style={{ background: "#ffffff", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
+          <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1.2rem", borderRadius: "8px", textAlign: "center" }}>
             <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--info-text)" }}>{orgTrips.length}</div>
             <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Scheduled Trips</div>
           </div>
@@ -333,8 +333,8 @@ export const ManagerOrganizationPage = () => {
         }
       >
         <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+          <div className="form-group">
+            <label className="form-label">
               Organization Official Name
             </label>
             <input
@@ -344,19 +344,17 @@ export const ManagerOrganizationPage = () => {
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               placeholder="e.g. Selam Bus Transport Share Company"
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
             />
           </div>
 
-          <div>
-            <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.3rem", display: "block" }}>
+          <div className="form-group">
+            <label className="form-label">
               Organization Entity Type
             </label>
             <select
               className="form-control"
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
             >
               <option value="COMPANY">Private Commercial Operator (Share Co / PLC)</option>
               <option value="PUBLIC_ENTERPRISE">Public Enterprise / Regional Line</option>

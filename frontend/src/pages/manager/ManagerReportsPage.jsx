@@ -48,14 +48,14 @@ const MetricBlock = ({ label, value, sub, trend }) => (
 const OccupancyBar = ({ value }) => {
   const pct = Math.min(Number(value), 100);
   const fillColor =
-    pct >= 75 ? "var(--success)" : pct >= 40 ? "var(--warning)" : "#cbd5e1";
+    pct >= 75 ? "var(--success)" : pct >= 40 ? "var(--warning)" : "var(--text-muted, #94a3b8)";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
       <div
         style={{
           flex: 1,
           height: "6px",
-          background: "#f1f5f9",
+          background: "var(--border-color, #e2e8f0)",
           borderRadius: "99px",
           overflow: "hidden",
         }}
@@ -339,7 +339,7 @@ export const ManagerReportsPage = () => {
                     <div
                       style={{
                         height: "8px",
-                        background: "#f1f5f9",
+                        background: "var(--border-color, #e2e8f0)",
                         borderRadius: "99px",
                         overflow: "hidden",
                       }}
@@ -362,7 +362,7 @@ export const ManagerReportsPage = () => {
 
           {/* Booking Summary */}
           <div className="card-table-wrapper" style={{ padding: "1.5rem" }}>
-            <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "1.25rem" }}>
+            <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "1.25rem", color: "var(--text-main)" }}>
               Booking Summary
             </h3>
             <div
@@ -381,7 +381,7 @@ export const ManagerReportsPage = () => {
                 <div
                   key={item.label}
                   style={{
-                    background: "#f8fafc",
+                    background: "var(--bg-main, #f8fafc)",
                     border: "1px solid var(--border-color)",
                     borderRadius: "8px",
                     padding: "0.85rem",
@@ -390,7 +390,7 @@ export const ManagerReportsPage = () => {
                   <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.25rem" }}>
                     {item.label}
                   </div>
-                  <div style={{ fontSize: "1.35rem", fontWeight: 700 }}>
+                  <div style={{ fontSize: "1.35rem", fontWeight: 700, color: "var(--text-main)" }}>
                     {item.value.toLocaleString()}
                   </div>
                 </div>

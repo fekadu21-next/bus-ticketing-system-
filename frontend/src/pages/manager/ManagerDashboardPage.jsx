@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useApp } from "../../context/AppContext";
 import { StatCard } from "../../components/ui/StatCard";
 import { Badge } from "../../components/ui/Badge";
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 
 export const ManagerDashboardPage = () => {
+  const { t } = useTranslation();
   const {
     activeOrg,
     buses,
@@ -122,8 +124,8 @@ export const ManagerDashboardPage = () => {
       {/* Header */}
       <div className="page-header">
         <div className="page-title">
-          <h1>{activeOrg?.name || "Company"} Operational Dashboard</h1>
-          <p>Fleet allocation, passenger bookings, commission settlement, and ticket throughput.</p>
+          <h1>{activeOrg?.name || "Company"} {t("managerDashboard.title")}</h1>
+          <p>{t("managerDashboard.subtitle")}</p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
           {/* Date Filter Toolbar */}
@@ -133,14 +135,14 @@ export const ManagerDashboardPage = () => {
               style={{ border: "none", fontSize: "0.75rem", padding: "4px 8px" }}
               onClick={() => { setDateFilter("ALL"); setCustomDate(""); }}
             >
-              All Time
+              {t("managerDashboard.allTime")}
             </button>
             <button
               className={`btn btn-sm ${dateFilter === "TODAY" ? "btn-primary" : "btn-secondary"}`}
               style={{ border: "none", fontSize: "0.75rem", padding: "4px 8px" }}
               onClick={() => { setDateFilter("TODAY"); setCustomDate(todayStr); }}
             >
-              📅 Today (Daily)
+              📅 {t("managerDashboard.today")}
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: "4px", paddingLeft: "4px" }}>
               <input
@@ -150,7 +152,7 @@ export const ManagerDashboardPage = () => {
                   setCustomDate(e.target.value);
                   setDateFilter(e.target.value ? "CUSTOM" : "ALL");
                 }}
-                style={{ fontSize: "0.75rem", padding: "2px 6px", border: "1px solid var(--border-color, #cbd5e1)", borderRadius: "4px" }}
+                style={{ fontSize: "0.75rem", padding: "2px 6px", border: "1px solid var(--border-color, #cbd5e1)", borderRadius: "4px", background: "var(--input-bg, #ffffff)", color: "var(--input-text, #0f172a)" }}
               />
             </div>
           </div>
@@ -161,16 +163,16 @@ export const ManagerDashboardPage = () => {
             disabled={isLoadingData}
             title="Reload metrics from backend"
           >
-            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
+            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> {t("common.refresh", "Refresh")}
           </button>
           <button className="btn btn-secondary" onClick={() => setActivePage("buses")}>
-            <Bus size={15} /> Fleet & Buses
+            <Bus size={15} /> {t("managerDashboard.fleetBuses")}
           </button>
           <button className="btn btn-secondary" onClick={() => setActivePage("routes")}>
-            <MapPin size={15} /> Routes & Corridors
+            <MapPin size={15} /> {t("managerDashboard.activeCorridors")}
           </button>
           <button className="btn btn-primary" onClick={() => setActivePage("trips")}>
-            <Plus size={15} /> Schedule Trip
+            <Plus size={15} /> {t("managerTrips.scheduleBtn")}
           </button>
         </div>
       </div>
@@ -178,25 +180,25 @@ export const ManagerDashboardPage = () => {
       {/* Operator Financial & Net Revenue KPI Section */}
       <div style={{ marginBottom: "1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem" }}>
-          <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
-            <TrendingUp size={18} color="var(--primary)" /> Company Financials & Net Earnings
+          <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "0.45rem", color: "var(--text-main)" }}>
+            <TrendingUp size={18} color="var(--primary)" /> {t("managerDashboard.companyFinancials")}
           </h2>
           <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-            Platform Fee: <strong>{commissionPercent}%</strong> | Company Net Share: <strong style={{ color: "#10b981" }}>{(100 - commissionPercent).toFixed(1)}%</strong>
+            {t("managerDashboard.platformFee")}: <strong>{commissionPercent}%</strong> | {t("managerDashboard.companyNetShare")}: <strong style={{ color: "#10b981" }}>{(100 - commissionPercent).toFixed(1)}%</strong>
             {dateFilter !== "ALL" && <span style={{ marginLeft: "0.5rem", background: "rgba(59, 130, 246, 0.1)", color: "var(--primary)", padding: "2px 6px", borderRadius: "4px", fontWeight: 600 }}>Filter: {dateFilter === "TODAY" ? "Today" : customDate}</span>}
           </span>
         </div>
 
         <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))" }}>
           <StatCard
-            title="Total Booking Payments"
+            title={t("managerDashboard.totalPayments")}
             value={`${Math.round(totalGrossRevenue).toLocaleString()} ETB`}
             icon={CreditCard}
             subtitle={`${completedOrgPayments.length} paid reservations`}
             onClick={() => setActivePage("payments")}
           />
           <StatCard
-            title="Net Company Revenue"
+            title={t("managerDashboard.netRevenue")}
             value={`${Math.round(netCompanyRevenue).toLocaleString()} ETB`}
             icon={DollarSign}
             trend={`${(100 - commissionPercent).toFixed(1)}% Net`}
@@ -204,21 +206,21 @@ export const ManagerDashboardPage = () => {
             onClick={() => setActivePage("payments")}
           />
           <StatCard
-            title="Platform Commission Paid"
+            title={t("managerDashboard.commissionPaid")}
             value={`${Math.round(platformCommissionFee).toLocaleString()} ETB`}
             icon={TrendingUp}
             subtitle={`${commissionPercent}% service commission fee`}
             onClick={() => setActivePage("payments")}
           />
           <StatCard
-            title="Today's Booking Payments"
+            title={t("managerDashboard.todayPayments")}
             value={`${Math.round(todayGrossRevenue).toLocaleString()} ETB`}
             icon={CalendarDays}
             subtitle={`${todayOrgPayments.length} transactions processed today`}
             onClick={() => setActivePage("payments")}
           />
           <StatCard
-            title="Today's Net Revenue"
+            title={t("managerDashboard.todayNet")}
             value={`${Math.round(todayNetRevenue).toLocaleString()} ETB`}
             icon={DollarSign}
             trend={`Daily Net`}
@@ -231,42 +233,42 @@ export const ManagerDashboardPage = () => {
       {/* Operational Stats Grid */}
       <div className="stats-grid" style={{ marginBottom: "1.5rem" }}>
         <StatCard
-          title="Fleet Buses"
+          title={t("managerDashboard.fleetBuses")}
           value={totalBusesCount}
           icon={Bus}
           subtitle={`${activeBuses} active in service, ${totalBusesCount - activeBuses} maintenance`}
           onClick={() => setActivePage("buses")}
         />
         <StatCard
-          title="Active Corridors"
+          title={t("managerDashboard.activeCorridors")}
           value={totalRoutesCount}
           icon={MapPin}
           subtitle={`${orgRoutes.filter((r) => r.status === "ACTIVE").length} operable intercity routes`}
           onClick={() => setActivePage("routes")}
         />
         <StatCard
-          title="Scheduled Departures"
+          title={t("managerDashboard.scheduledDepartures")}
           value={publishedTrips}
           icon={CalendarDays}
           subtitle={`${todayTrips} departure(s) today`}
           onClick={() => setActivePage("trips")}
         />
         <StatCard
-          title="Confirmed Bookings"
+          title={t("managerDashboard.confirmedBookings")}
           value={confirmedBookingsCount}
           icon={Ticket}
           subtitle={`${todayOrgBookings.length} booked today`}
           onClick={() => setActivePage("bookings")}
         />
         <StatCard
-          title="Seat Occupancy"
+          title={t("managerDashboard.seatOccupancy")}
           value={totalBookedSeats}
           icon={Ticket}
           subtitle={`${availableSeats} open seats across ${totalCapacity} capacity`}
           onClick={() => setActivePage("seats")}
         />
         <StatCard
-          title="Operational Staff"
+          title={t("managerDashboard.operationalStaff")}
           value={orgDrivers.length + orgVerifiers.length}
           icon={UserCheck}
           subtitle={`${activeDriversCount} drivers, ${activeVerifiersCount} ticket verifiers`}
@@ -280,14 +282,14 @@ export const ManagerDashboardPage = () => {
           <div className="card-header-toolbar" style={{ background: "var(--warning-bg)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div className="card-title">
               <h3 style={{ color: "var(--warning-text)", display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
-                <AlertTriangle size={18} /> Operational Notice: Unassigned Drivers ({unassignedTrips.length})
+                <AlertTriangle size={18} /> {t("managerDashboard.unassignedNotice")} ({unassignedTrips.length})
               </h3>
               <p style={{ color: "var(--warning-text)", margin: "0.2rem 0 0 0", fontSize: "0.82rem" }}>
-                Scheduled trips require an assigned qualified driver before vehicle departure.
+                {t("managerDashboard.unassignedDesc")}
               </p>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setActivePage("trips")}>
-              Assign Drivers <ArrowRight size={14} />
+              {t("managerDashboard.assignDriversBtn")} <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -299,57 +301,57 @@ export const ManagerDashboardPage = () => {
         <div className="card-table-wrapper">
           <div className="card-header-toolbar">
             <div className="card-title">
-              <h3>Upcoming Departures</h3>
+              <h3>{t("managerDashboard.upcomingDepartures")}</h3>
               <p>Next scheduled trips for this organization</p>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setActivePage("trips")}>
-              View All Trips
+              {t("managerDashboard.viewAllTrips")}
             </button>
           </div>
           {orgTrips.length === 0 ? (
             <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
               <Clock size={32} style={{ opacity: 0.5, marginBottom: "0.5rem" }} />
-              <div>No trips scheduled yet for this organization.</div>
+              <div>{t("managerTrips.noTrips")}</div>
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "0.75rem" }}
                 onClick={() => setActivePage("trips")}
               >
-                <Plus size={14} /> Schedule First Trip
+                <Plus size={14} /> {t("managerTrips.scheduleFirst")}
               </button>
             </div>
           ) : (
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Trip Code</th>
-                  <th>Route</th>
-                  <th>Driver</th>
-                  <th>Departure</th>
-                  <th>Seats</th>
-                  <th>Status</th>
+                  <th>{t("managerTrips.tableTripCode")}</th>
+                  <th>{t("managerTrips.tableRoute")}</th>
+                  <th>{t("managerTrips.tableDriver")}</th>
+                  <th>{t("managerTrips.tableDeparture")}</th>
+                  <th>{t("managerTrips.tableSeats")}</th>
+                  <th>{t("managerTrips.tableStatus")}</th>
                 </tr>
               </thead>
               <tbody>
-                {orgTrips.slice(0, 6).map((t) => (
-                  <tr key={t.id}>
-                    <td><code>{t.tripCode}</code></td>
-                    <td><strong>{t.routeName}</strong></td>
+                {orgTrips.slice(0, 6).map((tItem) => (
+                  <tr key={tItem.id}>
+                    <td><code>{tItem.tripCode}</code></td>
+                    <td><strong>{tItem.routeName}</strong></td>
                     <td>
-                      <span style={{ color: t.driverName === "Unassigned" ? "var(--warning-text)" : "inherit" }}>
-                        {t.driverName}
+                      <span style={{ color: tItem.driverName === "Unassigned" ? "var(--warning-text)" : "inherit" }}>
+                        {tItem.driverName === "Unassigned" ? t("managerTrips.unassigned") : tItem.driverName}
                       </span>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{t.departureDate}</div>
-                      <div style={{ fontSize: "0.72rem", color: "var(--primary)", fontWeight: 700 }}>{t.departureTime}</div>
+                      <div style={{ fontWeight: 600 }}>{tItem.departureDate}</div>
+                      <div style={{ fontSize: "0.72rem", color: "var(--primary)", fontWeight: 700 }}>{tItem.departureTime}</div>
                     </td>
                     <td>
                       <span style={{ fontWeight: 700 }}>
-                        {t.bookedSeatsCount} / {t.totalSeats}
+                        {tItem.bookedSeatsCount} / {tItem.totalSeats}
                       </span>
                     </td>
-                    <td><Badge status={t.status} /></td>
+                    <td><Badge status={tItem.status} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -361,33 +363,33 @@ export const ManagerDashboardPage = () => {
         <div className="card-table-wrapper">
           <div className="card-header-toolbar">
             <div className="card-title">
-              <h3>Fleet Readiness</h3>
+              <h3>{t("managerDashboard.fleetReadiness")}</h3>
               <p>Buses assigned to organization fleet</p>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setActivePage("buses")}>
-              Manage Fleet
+              {t("managerDashboard.manageFleet")}
             </button>
           </div>
           {orgBuses.length === 0 ? (
             <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
               <Bus size={32} style={{ opacity: 0.5, marginBottom: "0.5rem" }} />
-              <div>No vehicles registered in fleet yet.</div>
+              <div>{t("managerBuses.noBuses")}</div>
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "0.75rem" }}
                 onClick={() => setActivePage("buses")}
               >
-                <Plus size={14} /> Register First Bus
+                <Plus size={14} /> {t("managerBuses.registerFirst")}
               </button>
             </div>
           ) : (
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Plate #</th>
-                  <th>Model</th>
-                  <th>Capacity</th>
-                  <th>Status</th>
+                  <th>{t("managerBuses.tablePlate")}</th>
+                  <th>{t("managerBuses.tableModel")}</th>
+                  <th>{t("managerBuses.tableCapacity")}</th>
+                  <th>{t("managerBuses.tableStatus")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -412,33 +414,33 @@ export const ManagerDashboardPage = () => {
           <div className="card-header-toolbar">
             <div className="card-title">
               <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <UserCheck size={18} color="var(--primary)" /> Active Drivers
+                <UserCheck size={18} color="var(--primary)" /> {t("managerDashboard.activeDrivers")}
               </h3>
               <p>Registered drivers and their status</p>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setActivePage("drivers")}>
-              Manage Drivers
+              {t("managerDashboard.manageDrivers")}
             </button>
           </div>
           {orgDrivers.length === 0 ? (
             <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
               <UserCheck size={32} style={{ opacity: 0.5, marginBottom: "0.5rem" }} />
-              <div>No drivers registered yet.</div>
+              <div>{t("managerDrivers.noDrivers")}</div>
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "0.75rem" }}
                 onClick={() => setActivePage("drivers")}
               >
-                <Plus size={14} /> Register First Driver
+                <Plus size={14} /> {t("managerDrivers.registerFirst")}
               </button>
             </div>
           ) : (
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Driver Name</th>
-                  <th>Phone</th>
-                  <th>Status</th>
+                  <th>{t("managerDrivers.tableName")}</th>
+                  <th>{t("managerDrivers.tablePhone")}</th>
+                  <th>{t("managerDrivers.tableStatus")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -459,33 +461,33 @@ export const ManagerDashboardPage = () => {
           <div className="card-header-toolbar">
             <div className="card-title">
               <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <QrCode size={18} color="#8b5cf6" /> Ticket Verifiers
+                <QrCode size={18} color="#8b5cf6" /> {t("managerDashboard.ticketVerifiers")}
               </h3>
               <p>Station-based verification staff</p>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setActivePage("verifiers")}>
-              Manage Verifiers
+              {t("managerDashboard.manageVerifiers")}
             </button>
           </div>
           {orgVerifiers.length === 0 ? (
             <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
               <QrCode size={32} style={{ opacity: 0.5, marginBottom: "0.5rem" }} />
-              <div>No verifiers registered yet.</div>
+              <div>{t("managerVerifiers.noVerifiers")}</div>
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "0.75rem" }}
                 onClick={() => setActivePage("verifiers")}
               >
-                <Plus size={14} /> Register First Verifier
+                <Plus size={14} /> {t("managerVerifiers.registerFirst")}
               </button>
             </div>
           ) : (
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Verifier Name</th>
-                  <th>Station</th>
-                  <th>Status</th>
+                  <th>{t("managerVerifiers.tableName")}</th>
+                  <th>{t("managerVerifiers.tableStation")}</th>
+                  <th>{t("managerVerifiers.tableStatus")}</th>
                 </tr>
               </thead>
               <tbody>
