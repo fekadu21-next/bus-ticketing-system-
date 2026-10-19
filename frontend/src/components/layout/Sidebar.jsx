@@ -335,27 +335,14 @@ export const Sidebar = () => {
       {/* Navigation */}
       <nav className="sidebar-nav">
         {totalActiveBadges > 0 && !isSidebarCollapsed && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0.4rem 0.75rem",
-              marginBottom: "0.6rem",
-              background: "rgba(59, 130, 246, 0.12)",
-              borderRadius: "6px",
-              border: "1px solid rgba(59, 130, 246, 0.25)",
-              fontSize: "0.72rem",
-              color: "#93c5fd",
-            }}
-          >
+          <div className="sidebar-alert-strip">
             <span>🔔 {totalActiveBadges} new alert{totalActiveBadges > 1 ? "s" : ""}</span>
             <button
               onClick={resetAllBadges}
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#60a5fa",
+                color: "inherit",
                 cursor: "pointer",
                 fontWeight: 700,
                 fontSize: "0.7rem",
@@ -363,6 +350,7 @@ export const Sidebar = () => {
                 alignItems: "center",
                 gap: "3px",
                 padding: "2px 4px",
+                opacity: 0.9,
               }}
               title="Clear all notification badges"
             >

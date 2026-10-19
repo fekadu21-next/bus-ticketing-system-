@@ -218,18 +218,18 @@ export const Header = () => {
 
         {/* Language Switcher */}
         <button
-          className="header-icon-btn"
+          className="dashboard-lang-btn"
           onClick={toggleLanguage}
           title={isAmharic ? "Switch to English" : "ወደ አማርኛ ቀይር"}
           aria-label="Toggle language"
         >
           <Globe size={15} />
-          <span>{isAmharic ? "አማ" : "EN"}</span>
+          <span>{isAmharic ? "EN" : "አማ"}</span>
         </button>
 
         {/* Theme Toggle (Dark / Light) */}
         <button
-          className="header-icon-btn"
+          className="header-toggle-btn"
           onClick={toggleTheme}
           title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
           aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
