@@ -22,7 +22,6 @@ import {
   Ticket,
   Bell,
 } from 'lucide-react';
-import NotificationBell from './ui/NotificationBell';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout, isAdmin, isOperator, isPassenger } = useAuth();
@@ -240,8 +239,7 @@ export const Navbar = () => {
 
           {isAuthenticated ? (
             <div className="hidden lg:flex items-center gap-2.5">
-              <NotificationBell />
-
+              
               {/* Quick Action Pill for Current Role */}
               {userIsPassenger && (
                 <Link
@@ -253,16 +251,7 @@ export const Navbar = () => {
                 </Link>
               )}
 
-              {userIsAdmin && (
-                <Link
-                  to="/admin"
-                  className="px-3.5 py-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
-                >
-                  <Shield size={14} />
-                  Admin Console
-                </Link>
-              )}
-
+              
               {userIsOperator && (
                 <Link
                   to="/operator"
@@ -323,17 +312,7 @@ export const Navbar = () => {
                       </span>
                     </div>
 
-                    {userIsAdmin && (
-                      <Link
-                        to="/admin"
-                        className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                        onClick={() => setUserDropdownOpen(false)}
-                      >
-                        <Shield size={16} />
-                        Admin Console
-                      </Link>
-                    )}
-
+                    
                     {userIsOperator && (
                       <Link
                         to="/operator"
@@ -476,12 +455,7 @@ export const Navbar = () => {
             </div>
           )}
 
-          {isAuthenticated && (
-            <div className="lg:hidden flex items-center">
-              <NotificationBell />
-            </div>
-          )}
-
+          
           {/* Mobile menu hamburger toggle button */}
           <button
             type="button"
