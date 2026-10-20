@@ -49,6 +49,10 @@ export const AdminDashboardPage = () => {
   const [operatorSearch, setOperatorSearch] = React.useState("");
   const [categoryFilter, setCategoryFilter] = React.useState("ALL");
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [tripSearch, setTripSearch] = React.useState("");
+  const [tripStatusFilter, setTripStatusFilter] = React.useState("ALL");
+  const [tripPage, setTripPage] = React.useState(1);
+  const tripPageSize = 10;
 
   const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
   const commissionRate = commissionPercent / 100;
@@ -64,7 +68,37 @@ export const AdminDashboardPage = () => {
     const now = new Date();
 
     if (dateFilter === "TODAY") {
-      return (
+      // Upcoming Trips Computation
+  const filteredUpcomingTrips = React.useMemo(() => {
+    const q = tripSearch.toLowerCase().trim();
+    return scopedTrips
+      .filter((t) => {
+        const matchesStatus = tripStatusFilter === "ALL" || t.status === tripStatusFilter;
+        const matchesDate = matchesDateFilter(t.departureDate);
+        const matchesSearch =
+          !q ||
+          (t.tripCode || "").toLowerCase().includes(q) ||
+          (t.organizationName || "").toLowerCase().includes(q) ||
+          (t.routeName || "").toLowerCase().includes(q) ||
+          (t.originStation || "").toLowerCase().includes(q) ||
+          (t.destinationStation || "").toLowerCase().includes(q) ||
+          (t.busPlateNumber || "").toLowerCase().includes(q) ||
+          (t.driverName || "").toLowerCase().includes(q);
+        return matchesStatus && matchesDate && matchesSearch;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(`${a.departureDate} ${a.departureTime || '00:00'}`).getTime();
+        const dateB = new Date(`${b.departureDate} ${b.departureTime || '00:00'}`).getTime();
+        return dateA - dateB;
+      });
+  }, [scopedTrips, tripSearch, tripStatusFilter, dateFilter, customDate]);
+
+  const totalTripPages = Math.ceil(filteredUpcomingTrips.length / tripPageSize) || 1;
+  const paginatedUpcomingTrips = React.useMemo(() => {
+    return filteredUpcomingTrips.slice((tripPage - 1) * tripPageSize, tripPage * tripPageSize);
+  }, [filteredUpcomingTrips, tripPage, tripPageSize]);
+
+  return (
         d.getFullYear() === now.getFullYear() &&
         d.getMonth() === now.getMonth() &&
         d.getDate() === now.getDate()
@@ -526,214 +560,174 @@ export const AdminDashboardPage = () => {
         </div>
       )}
 
-      {/* Operator Revenue & Performance Breakdown */}
+            {/* Upcoming Platform Trips Section */}
       <div className="card-table-wrapper" style={{ marginBottom: "1.5rem" }}>
         <div className="card-header-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
             <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Building2 size={18} color="var(--primary)" /> Operator Revenue & Performance Breakdown
+              <CalendarDays size={18} color="var(--primary)" /> Upcoming Platform Trips & Scheduled Departures
             </h3>
             <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-              Platform gross bookings, commission earnings ({commissionPercent}%), and operator payout shares across all transport companies.
+              Live schedules, passenger occupancy, vehicle assignments, and departure readiness across transport operators.
               {isFiltered && <span style={{ marginLeft: "0.4rem", fontWeight: 700, color: "var(--primary)" }}>Filtered by: {dateFilterLabel}</span>}
             </p>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <div className="header-search" style={{ width: "220px" }}>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+            <div className="header-search" style={{ width: "230px" }}>
               <Search className="search-icon" size={14} />
               <input
                 type="text"
-                placeholder="Search operator..."
-                value={operatorSearch}
-                onChange={(e) => setOperatorSearch(e.target.value)}
+                placeholder="Search route, code, bus..."
+                value={tripSearch}
+                onChange={(e) => {
+                  setTripSearch(e.target.value);
+                  setTripPage(1);
+                }}
               />
             </div>
+            <select
+              className="org-selector-select"
+              value={tripStatusFilter}
+              onChange={(e) => {
+                setTripStatusFilter(e.target.value);
+                setTripPage(1);
+              }}
+              style={{ fontSize: "0.8rem", padding: "5px 10px" }}
+              title="Filter by trip status"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="PUBLISHED">PUBLISHED</option>
+              <option value="SCHEDULED">SCHEDULED</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => handleNavigate("trips")}
+              title="View Complete Trips Schedule"
+            >
+              View All Trips <ArrowRight size={13} />
+            </button>
           </div>
         </div>
 
         <div style={{ overflowX: "auto" }}>
-          <table className="data-table" style={{ minWidth: "950px" }}>
+          <table className="data-table" style={{ minWidth: "1050px" }}>
             <thead>
               <tr>
+                <th>Trip Code</th>
                 <th>Operator</th>
-                <th>Type</th>
-                <th>Bookings {isFiltered ? `(${dateFilterLabel})` : "Total"}</th>
-                <th>Gross Payments (ETB)</th>
-                <th>Platform Commission ({commissionPercent}%)</th>
-                <th>Operator Payout ({(100 - commissionPercent).toFixed(1)}%)</th>
-                <th>Today's Gross</th>
-                <th>Today's Commission</th>
+                <th>Route Corridor</th>
+                <th>Scheduled Departure</th>
+                <th>Vehicle & Driver</th>
+                <th>Occupancy (Seats)</th>
+                <th>Fare (ETB)</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {operatorBreakdown.length === 0 ? (
+              {paginatedUpcomingTrips.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
-                    No operators match your search or filter criteria.
+                  <td colSpan={9} style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                    No upcoming trips found matching your filter criteria.
                   </td>
                 </tr>
               ) : (
-                operatorBreakdown.map((op) => (
-                  <tr key={op.id}>
-                    <td>
-                      <strong>{op.name}</strong>
-                      <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{op.registrationNumber || op.id.slice(0, 8)}</div>
-                    </td>
-                    <td>{op.type || "Bus Operator"}</td>
-                    <td>
-                      <strong>{op.totalBookings}</strong>
-                      {op.todayBookings > 0 && (
-                        <span style={{ marginLeft: "0.35rem", fontSize: "0.72rem", color: "#10b981", fontWeight: 700 }}>
-                          (+{op.todayBookings} today)
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--text-main)" }}>
-                        {Math.round(op.grossPayments).toLocaleString()} ETB
-                      </strong>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--primary)" }}>
-                        {Math.round(op.platformCommission).toLocaleString()} ETB
-                      </strong>
-                    </td>
-                    <td>
-                      <strong style={{ color: "#10b981" }}>
-                        {Math.round(op.netPayout).toLocaleString()} ETB
-                      </strong>
-                    </td>
-                    <td>
-                      <span style={{ fontWeight: 600 }}>
-                        {Math.round(op.todayGross).toLocaleString()} ETB
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ color: "var(--primary)", fontWeight: 600 }}>
-                        {Math.round(op.todayCommission).toLocaleString()} ETB
-                      </span>
-                    </td>
-                    <td>
-                      <Badge status={op.status} />
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => handleNavigate("organizations")}
-                        title="View Operator in Organizations"
-                      >
-                        View Operator
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                paginatedUpcomingTrips.map((trp) => {
+                  const booked = Number(trp.bookedSeatsCount || 0);
+                  const total = Number(trp.totalSeats || 45);
+                  const occPct = Math.round((booked / total) * 100);
+                  return (
+                    <tr key={trp.id}>
+                      <td>
+                        <code>{trp.tripCode}</code>
+                      </td>
+                      <td>
+                        <strong>{trp.organizationName}</strong>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{trp.routeName}</div>
+                        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                          {trp.originStation} ➔ {trp.destinationStation}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{trp.departureDate}</div>
+                        <div style={{ fontSize: "0.74rem", color: "var(--primary)", fontWeight: 700 }}>
+                          {trp.departureTime}
+                          {trp.arrivalTime && <span style={{ color: "var(--text-muted)", fontWeight: 500 }}> (ETA {trp.arrivalTime})</span>}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{trp.busPlateNumber || "Plate Pending"}</div>
+                        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                          Driver: {trp.driverName || "Unassigned"}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontWeight: 700 }}>{booked}</span>
+                          <span style={{ color: "var(--text-muted)" }}>/ {total}</span>
+                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: occPct >= 80 ? "#10b981" : "var(--text-muted)" }}>
+                            ({occPct}%)
+                          </span>
+                        </div>
+                        <div style={{ width: "85px", height: "4px", background: "rgba(100, 116, 139, 0.2)", borderRadius: "99px", marginTop: "4px", overflow: "hidden" }}>
+                          <div style={{ width: `${Math.min(occPct, 100)}%`, height: "100%", background: occPct >= 80 ? "#10b981" : "var(--primary)" }} />
+                        </div>
+                      </td>
+                      <td>
+                        <strong>{Number(trp.fareAmount || 0).toLocaleString()} ETB</strong>
+                      </td>
+                      <td>
+                        <Badge status={trp.status} />
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleNavigate("trips")}
+                          title="Inspect trip schedule and seats"
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
-            {operatorBreakdown.length > 0 && (
-              <tfoot>
-                <tr style={{ background: "rgba(59, 130, 246, 0.05)", fontWeight: 700 }}>
-                  <td colSpan={2}>
-                    <strong>Total ({operatorBreakdown.length} Operators)</strong>
-                  </td>
-                  <td>
-                    {operatorBreakdown.reduce((sum, o) => sum + o.totalBookings, 0)}
-                  </td>
-                  <td>
-                    {Math.round(operatorBreakdown.reduce((sum, o) => sum + o.grossPayments, 0)).toLocaleString()} ETB
-                  </td>
-                  <td style={{ color: "var(--primary)" }}>
-                    {Math.round(operatorBreakdown.reduce((sum, o) => sum + o.platformCommission, 0)).toLocaleString()} ETB
-                  </td>
-                  <td style={{ color: "#10b981" }}>
-                    {Math.round(operatorBreakdown.reduce((sum, o) => sum + o.netPayout, 0)).toLocaleString()} ETB
-                  </td>
-                  <td>
-                    {Math.round(operatorBreakdown.reduce((sum, o) => sum + o.todayGross, 0)).toLocaleString()} ETB
-                  </td>
-                  <td style={{ color: "var(--primary)" }}>
-                    {Math.round(operatorBreakdown.reduce((sum, o) => sum + o.todayCommission, 0)).toLocaleString()} ETB
-                  </td>
-                  <td colSpan={2}></td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </div>
-
-      {/* Grid of Platform Activity */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-        {/* Today's Operational Trips */}
-        <div className="card-table-wrapper">
-          <div className="card-header-toolbar">
-            <div className="card-title">
-              <h3>Today's Platform Trips</h3>
-              <p>Active departures scheduled across operators</p>
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => handleNavigate("trips")}>
-              View All Trips
-            </button>
-          </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Operator</th>
-                <th>Route</th>
-                <th>Departure</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scopedTrips.slice(0, 5).map((trp) => (
-                <tr key={trp.id}>
-                  <td><strong>{trp.organizationName}</strong></td>
-                  <td>{trp.routeName}</td>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{trp.departureDate}</div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--primary)", fontWeight: 700 }}>{trp.departureTime}</div>
-                  </td>
-                  <td><Badge status={trp.status} /></td>
-                </tr>
-              ))}
-            </tbody>
           </table>
         </div>
 
-        {/* Recent Verification Activity */}
-        <div className="card-table-wrapper">
-          <div className="card-header-toolbar">
-            <div className="card-title">
-              <h3>Recent QR Boarding Verifications</h3>
-              <p>Live ticket scan events at terminals</p>
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => handleNavigate("tickets")}>
-              View Ticket QR Logs
+        {/* Pagination Bar */}
+        <div style={{ padding: "0.75rem 1.25rem", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+            Showing <strong>{paginatedUpcomingTrips.length}</strong> of <strong>{filteredUpcomingTrips.length}</strong> upcoming trips
+          </div>
+          <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              disabled={tripPage <= 1}
+              onClick={() => setTripPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </button>
+            <span style={{ fontSize: "0.78rem", padding: "0 0.5rem", fontWeight: 600 }}>
+              Page {tripPage} of {totalTripPages}
+            </span>
+            <button
+              className="btn btn-secondary btn-sm"
+              disabled={tripPage >= totalTripPages}
+              onClick={() => setTripPage((p) => Math.min(totalTripPages, p + 1))}
+            >
+              Next
             </button>
           </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Ticket #</th>
-                <th>Terminal</th>
-                <th>Result</th>
-                <th>Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {verifications.slice(0, 4).map((vrf) => (
-                <tr key={vrf.id}>
-                  <td><code>{vrf.ticketNumber}</code></td>
-                  <td>{vrf.stationName}</td>
-                  <td><Badge status={vrf.status} /></td>
-                  <td>{vrf.scannedAt}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
+
     </div>
   );
 };
