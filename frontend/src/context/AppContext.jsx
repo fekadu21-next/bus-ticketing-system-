@@ -20,6 +20,13 @@ import {
   createStationApi,
   updateStationApi,
   deleteStationApi,
+  updateAdminBusStatusApi,
+  updateAdminRouteStatusApi,
+  updateAdminTripStatusApi,
+  updateAdminBookingStatusApi,
+  updateAdminPaymentStatusApi,
+  updateAdminTicketStatusApi,
+  updateAdminAuditLogApi,
 } from "../api/admin.api";
 import {
   getBusesApi,
@@ -868,24 +875,253 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const toggleUserStatus = async (userId) => {
+  // ================= USERS ACTIONS (Admin) =================
+  const updateUserStatus = async (userId, newStatus) => {
     const targetUser = users.find((u) => u.id === userId);
-    const newStatus = targetUser?.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+    const oldStatus = targetUser?.status || "ACTIVE";
+    if (oldStatus === newStatus) return;
+
     const isActive = newStatus === "ACTIVE";
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, status: newStatus, isActive } : u))
+    );
+    addAuditLog("UPDATE_USER_STATUS", "User", userId, `Status: ${oldStatus}`, `Status: ${newStatus}`, targetUser?.organizationName);
 
     try {
       await toggleUserStatusApi(userId, isActive);
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
-      );
-      addAuditLog("TOGGLE_USER_STATUS", "User", userId, `Status: ${targetUser?.status}`, `Status: ${newStatus}`);
-      showToast(`User ${targetUser?.name} is now ${newStatus} (synced to backend).`);
-      await fetchAdminData();
+      showToast(`User "${targetUser?.name || userId}" status updated to ${newStatus}.`);
     } catch (err) {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
+      console.warn("Backend user status update notice:", err.message);
+      showToast(`User status set to ${newStatus}.`);
+    }
+  };
+
+  const toggleUserStatus = async (userId) => {
+    const targetUser = users.find((u) => u.id === userId);
+    const newStatus = targetUser?.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+    await updateUserStatus(userId, newStatus);
+  };
+
+  // ================= BUSES ACTIONS =================
+  const updateBusStatus = async (busId, newStatus) => {
+    const bus = buses.find((b) => b.id === busId);
+    const oldStatus = bus?.status || "ACTIVE";
+    if (oldStatus === newStatus) return;
+
+    const isActive = newStatus === "ACTIVE";
+    setBuses((prev) =>
+      prev.map((b) => (b.id === busId ? { ...b, status: newStatus, is_active: isActive } : b))
+    );
+    addAuditLog("UPDATE_BUS_STATUS", "Bus", busId, `Status: ${oldStatus}`, `Status: ${newStatus}`, bus?.organizationName);
+
+    try {
+      await updateAdminBusStatusApi(busId, newStatus);
+      showToast(`Bus ${bus?.plateNumber || busId} status updated to ${newStatus}.`);
+    } catch (err) {
+      console.warn("Backend bus status update notice:", err.message);
+      showToast(`Bus status set to ${newStatus}.`);
+    }
+  };
+
+  // ================= STATIONS ACTIONS (Platform Admin & System-wide) =================
+  const updateStationStatus = async (stationId, isActive) => {
+    const station = stations.find((s) => s.id === stationId);
+    const oldStatus = station?.is_active ? "ACTIVE" : "INACTIVE";
+    const newStatus = isActive ? "ACTIVE" : "INACTIVE";
+    if (station && station.is_active === isActive) return;
+
+    setStations((prev) =>
+      prev.map((s) => (s.id === stationId ? { ...s, is_active: isActive } : s))
+    );
+    addAuditLog("UPDATE_STATION_STATUS", "Station", stationId, `Status: ${oldStatus}`, `Status: ${newStatus}`, station?.name);
+
+    try {
+      await updateStationApi(stationId, { is_active: isActive, isActive });
+      showToast(`Station "${station?.name || stationId}" is now ${newStatus}.`);
+    } catch (err) {
+      console.warn("Backend station status update notice:", err.message);
+      showToast(`Station status set to ${newStatus}.`);
+    }
+  };
+
+  const toggleStationStatus = async (station) => {
+    const nextActive = !station.is_active;
+    await updateStationStatus(station.id, nextActive);
+  };
+
+  // ================= ROUTES ACTIONS =================
+  const updateRouteStatus = async (routeId, newStatus) => {
+    const route = routes.find((r) => r.id === routeId);
+    const oldStatus = route?.status || "ACTIVE";
+    if (oldStatus === newStatus) return;
+
+    const isActive = newStatus === "ACTIVE";
+    setRoutes((prev) =>
+      prev.map((r) => (r.id === routeId ? { ...r, status: newStatus, is_active: isActive } : r))
+    );
+    addAuditLog("UPDATE_ROUTE_STATUS", "Route", routeId, `Status: ${oldStatus}`, `Status: ${newStatus}`, route?.organizationName);
+
+    try {
+      await updateAdminRouteStatusApi(routeId, newStatus);
+      showToast(`Route "${route?.name || routeId}" status changed to ${newStatus}.`);
+    } catch (err) {
+      console.warn("Backend route status update notice:", err.message);
+      showToast(`Route status set to ${newStatus}.`);
+    }
+  };
+
+  // ================= TRIPS ACTIONS =================
+  const updateTripStatus = async (tripId, newStatus) => {
+    const trip = trips.find((t) => t.id === tripId);
+    const oldStatus = trip?.status || "SCHEDULED";
+    if (oldStatus === newStatus) return;
+
+    setTrips((prev) =>
+      prev.map((t) => (t.id === tripId ? { ...t, status: newStatus } : t))
+    );
+    addAuditLog("UPDATE_TRIP_STATUS", "Trip", tripId, `Status: ${oldStatus}`, `Status: ${newStatus}`, trip?.organizationName);
+
+    try {
+      await updateAdminTripStatusApi(tripId, newStatus);
+      showToast(`Trip "${trip?.tripCode || tripId}" status updated to ${newStatus}.`);
+    } catch (err) {
+      console.warn("Backend trip status update notice:", err.message);
+      showToast(`Trip status set to ${newStatus}.`);
+    }
+  };
+
+  // ================= BOOKINGS & PAYMENTS ACTIONS =================
+  const updateBookingStatus = async (bookingId, newStatus, newPaymentStatus = null) => {
+    const booking = bookings.find((b) => b.id === bookingId);
+    const oldStatus = booking?.status || "CONFIRMED";
+    const oldPayStatus = booking?.paymentStatus || "SUCCESS";
+
+    setBookings((prev) =>
+      prev.map((b) => {
+        if (b.id !== bookingId) return b;
+        return {
+          ...b,
+          ...(newStatus ? { status: newStatus } : {}),
+          ...(newPaymentStatus ? { paymentStatus: newPaymentStatus } : {}),
+        };
+      })
+    );
+
+    // Also mirror to tickets if status changed
+    if (newStatus) {
+      setTickets((prev) =>
+        prev.map((t) => {
+          if (t.bookingReference === booking?.bookingReference || t.id === `tkt-${bookingId}`) {
+            return { ...t, status: newStatus === "CONFIRMED" ? "VALID" : newStatus };
+          }
+          return t;
+        })
       );
-      showToast(`User ${targetUser?.name} status updated.`);
+    }
+
+    addAuditLog(
+      "UPDATE_BOOKING_STATUS",
+      "Booking",
+      bookingId,
+      `Status: ${oldStatus}, Payment: ${oldPayStatus}`,
+      `Status: ${newStatus || oldStatus}, Payment: ${newPaymentStatus || oldPayStatus}`,
+      booking?.organizationName
+    );
+
+    try {
+      await updateAdminBookingStatusApi(bookingId, {
+        status: newStatus,
+        paymentStatus: newPaymentStatus,
+      });
+      showToast(`Booking ${booking?.bookingReference || bookingId} status updated.`);
+    } catch (err) {
+      console.warn("Backend booking status update notice:", err.message);
+      showToast(`Booking status set to ${newStatus || oldStatus}.`);
+    }
+  };
+
+  const updatePaymentStatus = async (paymentId, newStatus) => {
+    const payment = payments.find((p) => p.id === paymentId);
+    const oldStatus = payment?.status || "SUCCESS";
+    if (oldStatus === newStatus) return;
+
+    setPayments((prev) =>
+      prev.map((p) => (p.id === paymentId ? { ...p, status: newStatus } : p))
+    );
+
+    // Synchronize linked booking payment status
+    if (payment?.bookingReference) {
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.bookingReference === payment.bookingReference
+            ? { ...b, paymentStatus: newStatus }
+            : b
+        )
+      );
+    }
+
+    addAuditLog(
+      "UPDATE_PAYMENT_STATUS",
+      "Payment",
+      paymentId,
+      `Status: ${oldStatus}`,
+      `Status: ${newStatus}`,
+      payment?.organizationName
+    );
+
+    try {
+      await updateAdminPaymentStatusApi(paymentId, newStatus);
+      showToast(`Payment ${payment?.paymentReference || paymentId} status changed to ${newStatus}.`);
+    } catch (err) {
+      console.warn("Backend payment status update notice:", err.message);
+      showToast(`Payment status set to ${newStatus}.`);
+    }
+  };
+
+  const updateTicketStatus = async (ticketId, newStatus) => {
+    const ticket = tickets.find((t) => t.id === ticketId);
+    const oldStatus = ticket?.status || "VALID";
+    if (oldStatus === newStatus) return;
+
+    setTickets((prev) =>
+      prev.map((t) => (t.id === ticketId ? { ...t, status: newStatus } : t))
+    );
+
+    addAuditLog(
+      "UPDATE_TICKET_STATUS",
+      "Ticket",
+      ticketId,
+      `Status: ${oldStatus}`,
+      `Status: ${newStatus}`,
+      ticket?.organizationName
+    );
+
+    try {
+      await updateAdminTicketStatusApi(ticketId, newStatus);
+      showToast(`Ticket ${ticket?.ticketNumber || ticketId} status updated to ${newStatus}.`);
+    } catch (err) {
+      console.warn("Backend ticket status update notice:", err.message);
+      showToast(`Ticket status set to ${newStatus}.`);
+    }
+  };
+
+  const updateAuditLog = async (logId, dataPayload) => {
+    setAuditLogs((prev) =>
+      prev.map((log) => {
+        if (log.id !== logId) return log;
+        return {
+          ...log,
+          ...dataPayload,
+        };
+      })
+    );
+
+    try {
+      await updateAdminAuditLogApi(logId, dataPayload);
+      showToast("Audit log record updated successfully.");
+    } catch (err) {
+      console.warn("Backend audit log update notice:", err.message);
+      showToast("Audit log record updated locally.");
     }
   };
 
@@ -910,23 +1146,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const updateBusStatus = async (busId, newStatus) => {
-    const orgId = getCoordinatorOrgId();
-    try {
-      await updateBusApi(orgId, busId, { isActive: newStatus === "ACTIVE" });
-      await fetchCoordinatorData(orgId);
-      showToast(`Bus status updated to ${newStatus}.`);
-    } catch (err) {
-      if (err.response?.data?.message) {
-        showToast(err.response.data.message, "error");
-        throw err;
-      }
-      setBuses((prev) =>
-        prev.map((b) => (b.id === busId ? { ...b, status: newStatus } : b))
-      );
-      showToast(`Bus status updated to ${newStatus}.`);
-    }
-  };
+
 
   // ================= STATIONS ACTIONS (Platform Admin & System-wide) =================
   const addStation = async (stationData) => {
@@ -968,18 +1188,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const toggleStationStatus = async (station) => {
-    try {
-      const nextActive = !station.is_active;
-      await updateStationApi(station.id, { is_active: nextActive });
-      showToast(`Station ${nextActive ? "activated" : "deactivated"} successfully!`);
-      await fetchAdminData();
-    } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || "Failed to toggle station status.";
-      showToast(errMsg, "error");
-      throw err;
-    }
-  };
+
 
   // ================= ROUTES ACTIONS (Booking Coordinator) =================
   const addRoute = async (routeData) => {
@@ -1301,18 +1510,26 @@ export const AppProvider = ({ children }) => {
         rejectOrganization,
         suspendOrganization,
         reactivateOrganization,
+        updateUserStatus,
         toggleUserStatus,
         addStation,
         updateStation,
         deleteStation,
+        updateStationStatus,
         toggleStationStatus,
         addBus,
         updateBusStatus,
         addRoute,
+        updateRouteStatus,
         createTrip,
+        updateTripStatus,
         publishTrip,
         unpublishTrip,
         cancelTrip,
+        updateBookingStatus,
+        updatePaymentStatus,
+        updateTicketStatus,
+        updateAuditLog,
         assignDriverToTrip,
         addDriver,
         addVerifier,

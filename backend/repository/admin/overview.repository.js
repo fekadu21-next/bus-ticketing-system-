@@ -301,6 +301,104 @@ export class AdminOverviewRepository {
 
     return { total: stations.length, stations };
   }
+
+  async updateBusStatus(id, { status, isActive }) {
+    const is_active = isActive !== undefined ? isActive : status === 'ACTIVE';
+    return prisma.buses.update({
+      where: { id },
+      data: { is_active },
+      include: { organizations: { select: { id: true, name: true } } },
+    });
+  }
+
+  async updateRouteStatus(id, { status, isActive }) {
+    const is_active = isActive !== undefined ? isActive : status === 'ACTIVE';
+    return prisma.routes.update({
+      where: { id },
+      data: { is_active },
+      include: { organizations: { select: { id: true, name: true } } },
+    });
+  }
+
+  async updateTripStatus(id, { status }) {
+    return prisma.trips.update({
+      where: { id },
+      data: { status },
+      include: {
+        organizations: { select: { id: true, name: true } },
+        buses: { select: { plate_number: true } },
+        routes: { select: { origin: true, destination: true } },
+      },
+    });
+  }
+
+  async updateBookingStatus(id, { status, paymentStatus }) {
+    const data = {};
+    if (status) data.status = status;
+    const updatedBooking = await prisma.bookings.update({
+      where: { id },
+      data,
+      include: {
+        payments: true,
+        users: { select: { first_name: true, last_name: true, email: true } },
+        trips: { select: { id: true } },
+      },
+    });
+    if (paymentStatus && updatedBooking.payments?.id) {
+      await prisma.payments.update({
+        where: { id: updatedBooking.payments.id },
+        data: { status: paymentStatus === 'SUCCESS' ? 'COMPLETED' : paymentStatus },
+      });
+    }
+    return updatedBooking;
+  }
+
+  async updatePaymentStatus(id, { status }) {
+    const pyStatus = status === 'SUCCESS' ? 'COMPLETED' : status;
+    return prisma.payments.update({
+      where: { id },
+      data: { status: pyStatus },
+      include: {
+        organizations: { select: { id: true, name: true } },
+        bookings: true,
+      },
+    });
+  }
+
+  async updateTicketStatus(id, { status }) {
+    return prisma.tickets.update({
+      where: { id },
+      data: { status },
+      include: {
+        passenger: { select: { first_name: true, last_name: true, email: true } },
+        trips: true,
+      },
+    });
+  }
+
+  async updateAuditLog(id, { action, details, ip_address, ipAddress, oldValues, newValues, entityType, entityId }) {
+    const logData = {};
+    if (action) logData.action = action;
+    if (ip_address || ipAddress) logData.ip_address = ip_address || ipAddress;
+    if (details) {
+      logData.details = details;
+    } else if (oldValues !== undefined || newValues !== undefined || entityType) {
+      const existing = await prisma.audit_logs.findUnique({ where: { id } });
+      const currentDetails = existing?.details || {};
+      logData.details = {
+        ...currentDetails,
+        ...(entityType ? { entityType } : {}),
+        ...(entityId ? { entityId } : {}),
+        ...(oldValues !== undefined ? { oldValues } : {}),
+        ...(newValues !== undefined ? { newValues } : {}),
+      };
+    }
+    return prisma.audit_logs.update({
+      where: { id },
+      data: logData,
+      include: { users: { select: { first_name: true, last_name: true, email: true } } },
+    });
+  }
 }
 
 export const adminOverviewRepository = new AdminOverviewRepository();
