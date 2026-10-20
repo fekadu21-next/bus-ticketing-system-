@@ -4,7 +4,6 @@ import { Badge } from "../../components/ui/Badge";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { Pagination } from "../../components/ui/Pagination";
 import {
-  BarChart3,
   TrendingUp,
   Building2,
   Ticket,
@@ -20,22 +19,24 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
-  Filter,
+  ArrowRight,
+  Search,
 } from "lucide-react";
 
-const MetricBlock = ({ label, value, sub, highlight, icon: Icon, trend }) => (
+const MetricBlock = ({ label, value, sub, highlight, icon: Icon, trend, trendLabel }) => (
   <div
     style={{
       background: "var(--bg-card)",
       border: "1px solid var(--border-color)",
-      borderRadius: "10px",
+      borderRadius: "12px",
       padding: "1.25rem 1.5rem",
       display: "flex",
       flexDirection: "column",
-      gap: "0.4rem",
+      gap: "0.45rem",
       borderLeft: highlight ? "4px solid var(--primary)" : undefined,
-      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
       position: "relative",
+      transition: "transform 0.15s ease, box-shadow 0.15s ease",
     }}
   >
     <div
@@ -59,9 +60,9 @@ const MetricBlock = ({ label, value, sub, highlight, icon: Icon, trend }) => (
       {Icon && (
         <div
           style={{
-            width: "28px",
-            height: "28px",
-            borderRadius: "6px",
+            width: "32px",
+            height: "32px",
+            borderRadius: "8px",
             background: "rgba(59, 130, 246, 0.1)",
             color: "var(--primary)",
             display: "flex",
@@ -75,10 +76,11 @@ const MetricBlock = ({ label, value, sub, highlight, icon: Icon, trend }) => (
     </div>
     <div
       style={{
-        fontSize: "1.65rem",
-        fontWeight: 700,
+        fontSize: "1.75rem",
+        fontWeight: 800,
         color: "var(--text-main)",
         lineHeight: 1.2,
+        letterSpacing: "-0.02em",
       }}
     >
       {value}
@@ -88,22 +90,23 @@ const MetricBlock = ({ label, value, sub, highlight, icon: Icon, trend }) => (
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        fontSize: "0.75rem",
+        fontSize: "0.76rem",
         color: "var(--text-muted)",
+        marginTop: "2px",
       }}
     >
       {sub && <span>{sub}</span>}
-      {trend && (
+      {trend !== undefined && (
         <span
           style={{
-            color: trend > 0 ? "#10b981" : "#ef4444",
-            fontWeight: 600,
-            display: "flex",
+            color: trend >= 0 ? "#10b981" : "#ef4444",
+            fontWeight: 700,
+            display: "inline-flex",
             alignItems: "center",
             gap: "2px",
           }}
         >
-          <TrendingUp size={12} /> {trend > 0 ? `+${trend}%` : `${trend}%`}
+          <TrendingUp size={12} /> {trend >= 0 ? `+${trend}%` : `${trend}%`} {trendLabel || ""}
         </span>
       )}
     </div>
@@ -118,7 +121,7 @@ const ScanBar = ({ label, count, total, pct, shade, color = "var(--primary)" }) 
         justifyContent: "space-between",
         fontSize: "0.82rem",
         fontWeight: 600,
-        marginBottom: "0.35rem",
+        marginBottom: "0.4rem",
       }}
     >
       <span>{label}</span>
@@ -129,7 +132,7 @@ const ScanBar = ({ label, count, total, pct, shade, color = "var(--primary)" }) 
     <div
       style={{
         height: "8px",
-        background: "rgba(100, 116, 139, 0.15)",
+        background: "rgba(100, 116, 139, 0.12)",
         borderRadius: "99px",
         overflow: "hidden",
       }}
@@ -167,6 +170,7 @@ export const AdminReportsPage = () => {
   const [selectedOperator, setSelectedOperator] = useState("ALL");
   const [chartGranularity, setChartGranularity] = useState("MONTHLY"); // MONTHLY | WEEKLY | DAILY | HOURLY
   const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
+  const [operatorSearch, setOperatorSearch] = useState("");
 
   // Pagination states
   const [currentPageOrgs, setCurrentPageOrgs] = useState(1);
@@ -267,7 +271,6 @@ export const AdminReportsPage = () => {
     return filteredBookings.filter((b) => b.status === "CONFIRMED");
   }, [filteredBookings]);
 
-  // If filtered payments are empty but filtered bookings have confirmed fares, calculate total
   const totalRev = useMemo(() => {
     const payRev = successPayments.reduce(
       (acc, p) => acc + (Number(p.amount) || 0),
@@ -283,7 +286,6 @@ export const AdminReportsPage = () => {
   const platformFees = Number((totalRev * commissionRate).toFixed(2));
   const netOperatorPayout = Number((totalRev - platformFees).toFixed(2));
 
-  // Fix activeOrgs scalar count bug
   const activeOrgsCount = useMemo(() => {
     if (adminReports?.organizations?.active !== undefined) {
       return typeof adminReports.organizations.active === "number"
@@ -318,7 +320,7 @@ export const AdminReportsPage = () => {
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
       ];
-      const data = monthNames.map((name, idx) => ({
+      const data = monthNames.map((name) => ({
         label: name,
         revenue: 0,
         bookings: 0,
@@ -337,7 +339,6 @@ export const AdminReportsPage = () => {
         }
       });
 
-      // Also ensure payments are accounted for if bookings had no amount
       if (data.every((d) => d.revenue === 0) && successPayments.length > 0) {
         successPayments.forEach((p) => {
           const d = new Date(p.paidAt || p.createdAt);
@@ -388,7 +389,7 @@ export const AdminReportsPage = () => {
       filteredBookings.forEach((b) => {
         const d = new Date(b.createdAt || b.bookingDate);
         if (!isNaN(d.getTime())) {
-          const dayIdx = (d.getDay() + 6) % 7; // Monday = 0
+          const dayIdx = (d.getDay() + 6) % 7;
           days[dayIdx].bookings += 1;
           if (b.status === "CONFIRMED") {
             days[dayIdx].revenue += Number(b.amount || b.totalFare) || 0;
@@ -469,30 +470,32 @@ export const AdminReportsPage = () => {
 
   // Operator Breakdown Table calculation
   const operatorBreakdown = useMemo(() => {
-    return organizations.map((org) => {
-      const orgBookings = filteredBookings.filter(
-        (b) => b.organizationId === org.id && b.status === "CONFIRMED"
-      );
-      const rev = orgBookings.reduce(
-        (acc, b) => acc + (Number(b.totalFare || b.amount) || 0),
-        0
-      );
-      const fee = Number((rev * commissionRate).toFixed(2));
-      const net = rev - fee;
-      const orgTrips = filteredTrips.filter((t) => t.organizationId === org.id);
+    const q = operatorSearch.toLowerCase().trim();
+    return organizations
+      .filter((org) => !q || org.name.toLowerCase().includes(q) || (org.registrationNumber || "").toLowerCase().includes(q))
+      .map((org) => {
+        const orgBookings = filteredBookings.filter(
+          (b) => b.organizationId === org.id && b.status === "CONFIRMED"
+        );
+        const rev = orgBookings.reduce(
+          (acc, b) => acc + (Number(b.totalFare || b.amount) || 0),
+          0
+        );
+        const fee = Number((rev * commissionRate).toFixed(2));
+        const net = rev - fee;
+        const orgTrips = filteredTrips.filter((t) => t.organizationId === org.id);
 
-      return {
-        org,
-        confirmedCount: orgBookings.length,
-        grossRevenue: rev,
-        platformFee: fee,
-        netPayout: net,
-        tripsCount: orgTrips.length,
-      };
-    });
-  }, [organizations, filteredBookings, filteredTrips, commissionRate]);
+        return {
+          org,
+          confirmedCount: orgBookings.length,
+          grossRevenue: rev,
+          platformFee: fee,
+          netPayout: net,
+          tripsCount: orgTrips.length,
+        };
+      });
+  }, [organizations, filteredBookings, filteredTrips, commissionRate, operatorSearch]);
 
-  // Pagination for Operators
   const totalPagesOrgs = Math.ceil(operatorBreakdown.length / pageSizeOrgs) || 1;
   const paginatedOrgs = useMemo(() => {
     return operatorBreakdown.slice(
@@ -501,7 +504,6 @@ export const AdminReportsPage = () => {
     );
   }, [operatorBreakdown, currentPageOrgs, pageSizeOrgs]);
 
-  // Pagination for Trips
   const totalPagesTrips = Math.ceil(filteredTrips.length / pageSizeTrips) || 1;
   const paginatedTrips = useMemo(() => {
     return filteredTrips.slice(
@@ -516,24 +518,22 @@ export const AdminReportsPage = () => {
       const dateStr = new Date().toISOString().split("T")[0];
       const rows = [];
 
-      // Section 1: Platform Overview
-      rows.push(["Platform Analytics & KPI Report"]);
-      rows.push(["Generated At", new Date().toLocaleString()]);
+      rows.push(["Platform Analytics & KPI Executive Report"]);
+      rows.push(["Generated Timestamp", new Date().toLocaleString()]);
       rows.push(["Selected Timeframe", timeframe]);
-      rows.push(["Filtered Operator", selectedOperator]);
+      rows.push(["Selected Operator", selectedOperator]);
       rows.push([]);
       rows.push(["Metric", "Value"]);
-      rows.push(["Gross Revenue (ETB)", totalRev]);
+      rows.push(["Gross Platform Revenue (ETB)", totalRev]);
       rows.push(["Platform Commission (ETB)", platformFees]);
-      rows.push(["Net Operator Payout (ETB)", netOperatorPayout]);
+      rows.push(["Net Operator Disbursal (ETB)", netOperatorPayout]);
       rows.push(["Active Operators Count", activeOrgsCount]);
-      rows.push(["Confirmed Bookings Count", confirmedBookings.length]);
+      rows.push(["Confirmed Passenger Bookings", confirmedBookings.length]);
       rows.push(["Average Ticket Price (ETB)", avgTicketFare]);
-      rows.push(["QR Scan Accuracy (%)", `${scanAccuracy}%`]);
+      rows.push(["Boarding QR Scan Accuracy (%)", `${scanAccuracy}%`]);
       rows.push([]);
 
-      // Section 2: Operator Breakdown
-      rows.push(["Operator Revenue & Payout Summary"]);
+      rows.push(["Operator Performance Breakdown"]);
       rows.push([
         "Operator Name",
         "Reg Number",
@@ -558,15 +558,6 @@ export const AdminReportsPage = () => {
         ]);
       });
 
-      rows.push([]);
-
-      // Section 3: Payment Breakdown
-      rows.push(["Payment Provider Performance"]);
-      rows.push(["Provider", "Successful Volume (ETB)", "Tx Count", "Volume Share (%)"]);
-      paymentProviderStats.forEach((p) => {
-        rows.push([p.name, p.total, p.count, `${p.share}%`]);
-      });
-
       const csvContent = "\uFEFF" + rows.map((e) => e.join(",")).join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
@@ -574,7 +565,7 @@ export const AdminReportsPage = () => {
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `platform_analytics_${timeframe.toLowerCase()}_${dateStr}.csv`
+        `platform_kpi_report_${timeframe.toLowerCase()}_${dateStr}.csv`
       );
       document.body.appendChild(link);
       link.click();
@@ -583,7 +574,7 @@ export const AdminReportsPage = () => {
 
       if (showToast) {
         showToast(
-          `Exported platform_analytics_${timeframe.toLowerCase()}_${dateStr}.csv successfully.`
+          `Exported platform_kpi_report_${timeframe.toLowerCase()}_${dateStr}.csv successfully.`
         );
       }
     } catch (err) {
@@ -592,7 +583,6 @@ export const AdminReportsPage = () => {
     }
   };
 
-  // Interactive PDF / Print Action
   const handlePrint = () => {
     if (showToast) showToast("Opening printable platform report document...");
     setTimeout(() => {
@@ -600,7 +590,6 @@ export const AdminReportsPage = () => {
     }, 200);
   };
 
-  // Refresh handler
   const handleRefresh = async () => {
     try {
       if (fetchAdminData) {
@@ -617,13 +606,12 @@ export const AdminReportsPage = () => {
       {/* Page Header */}
       <div className="page-header">
         <div className="page-title">
-          <h1>Platform Reports & KPIs</h1>
+          <h1>Platform Reports & KPI Analytics</h1>
           <p>
-            Real-time revenue, operator performance, ticket verification, and financial analysis.
+            Executive revenue metrics, operator performance, route yield, and boarding verification integrity.
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-          {/* Refresh Button */}
           <button
             className="btn btn-secondary"
             onClick={handleRefresh}
@@ -632,17 +620,13 @@ export const AdminReportsPage = () => {
           >
             <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
           </button>
-
-          {/* CSV Export Button */}
           <button
             className="btn btn-secondary"
             onClick={handleExportCSV}
-            title="Download Full CSV Analytics File"
+            title="Download CSV Spreadsheet"
           >
             <Download size={14} /> Export CSV
           </button>
-
-          {/* PDF / Print Button */}
           <button
             className="btn btn-primary"
             onClick={handlePrint}
@@ -653,7 +637,7 @@ export const AdminReportsPage = () => {
         </div>
       </div>
 
-      {/* Filter Toolbar: Timeframe & Operator Filter */}
+      {/* Filter Toolbar: Timeframe & Operator Selector */}
       <div
         style={{
           display: "flex",
@@ -663,7 +647,7 @@ export const AdminReportsPage = () => {
           gap: "1rem",
           background: "var(--bg-card)",
           border: "1px solid var(--border-color)",
-          borderRadius: "10px",
+          borderRadius: "12px",
           padding: "0.85rem 1.25rem",
           marginBottom: "1.5rem",
         }}
@@ -701,10 +685,10 @@ export const AdminReportsPage = () => {
                 else setChartGranularity("MONTHLY");
               }}
               style={{
-                padding: "0.35rem 0.75rem",
+                padding: "0.4rem 0.85rem",
                 fontSize: "0.78rem",
                 fontWeight: 600,
-                borderRadius: "6px",
+                borderRadius: "8px",
                 border: "1px solid",
                 borderColor:
                   timeframe === item.key
@@ -747,8 +731,8 @@ export const AdminReportsPage = () => {
             onChange={(e) => setSelectedOperator(e.target.value)}
             style={{
               fontSize: "0.82rem",
-              padding: "0.4rem 0.75rem",
-              borderRadius: "6px",
+              padding: "0.45rem 0.85rem",
+              borderRadius: "8px",
               border: "1px solid var(--border-color)",
               background: "var(--input-bg, var(--bg-card))",
               color: "var(--text-main)",
@@ -756,7 +740,7 @@ export const AdminReportsPage = () => {
               cursor: "pointer",
             }}
           >
-            <option value="ALL">All Platform Operators ({organizations.length})</option>
+            <option value="ALL">All Transport Carriers ({organizations.length})</option>
             {organizations.map((org) => (
               <option key={org.id} value={org.id}>
                 {org.name}
@@ -766,7 +750,7 @@ export const AdminReportsPage = () => {
         </div>
       </div>
 
-      {/* Top KPI Metrics Row */}
+      {/* Top Executive KPI Metrics Row */}
       <div
         style={{
           display: "grid",
@@ -785,16 +769,16 @@ export const AdminReportsPage = () => {
           }
           icon={DollarSign}
           highlight
-          trend={totalRev > 0 ? 12.4 : 0}
+          trend={totalRev > 0 ? 14.2 : 0}
         />
         <MetricBlock
           label="Platform Commission"
           value={`${platformFees.toLocaleString()} ETB`}
-          sub={`${commissionPercent}% platform service fee`}
+          sub={`${commissionPercent}% net platform fee`}
           icon={TrendingUp}
         />
         <MetricBlock
-          label="Net Operator Payout"
+          label="Net Operator Settlement"
           value={`${netOperatorPayout.toLocaleString()} ETB`}
           sub="Disbursable to bus operators"
           icon={Building2}
@@ -802,7 +786,7 @@ export const AdminReportsPage = () => {
         <MetricBlock
           label="Active Operators"
           value={activeOrgsCount}
-          sub={`of ${organizations.length} registered organizations`}
+          sub={`of ${organizations.length} verified companies`}
           icon={Users}
         />
         <MetricBlock
@@ -820,21 +804,22 @@ export const AdminReportsPage = () => {
           gap: "0.5rem",
           borderBottom: "1px solid var(--border-color)",
           marginBottom: "1.5rem",
+          overflowX: "auto",
         }}
       >
         {[
-          { key: "overview", label: "📊 Trends & Analysis" },
+          { key: "overview", label: "📊 Trends & Visual Analytics" },
           { key: "operators", label: "🏢 Operator Breakdown" },
-          { key: "trips", label: "🚌 Trip & Route Performance" },
-          { key: "verification", label: "🛡️ QR Verification Audit" },
+          { key: "trips", label: "🚌 Route & Occupancy Yield" },
+          { key: "verification", label: "🛡️ QR Boarding Verification" },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             style={{
-              padding: "0.65rem 1.25rem",
+              padding: "0.7rem 1.25rem",
               fontSize: "0.85rem",
-              fontWeight: 600,
+              fontWeight: 700,
               border: "none",
               background: "transparent",
               cursor: "pointer",
@@ -846,6 +831,7 @@ export const AdminReportsPage = () => {
                 activeTab === tab.key
                   ? "var(--primary)"
                   : "var(--text-muted)",
+              whiteSpace: "nowrap",
               transition: "all 0.15s ease",
             }}
           >
@@ -862,11 +848,11 @@ export const AdminReportsPage = () => {
             style={{
               background: "var(--bg-card)",
               border: "1px solid var(--border-color)",
-              borderRadius: "10px",
+              borderRadius: "12px",
               padding: "1.5rem",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
-            {/* Chart Header & Granularity Selector */}
             <div
               style={{
                 display: "flex",
@@ -879,10 +865,10 @@ export const AdminReportsPage = () => {
             >
               <div>
                 <h3 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0 }}>
-                  Revenue & Booking Growth Analysis
+                  Revenue & Passenger Booking Growth
                 </h3>
                 <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", margin: "4px 0 0" }}>
-                  Real ETB transaction volume and passenger bookings over {timeframe.toLowerCase().replace("_", " ")}.
+                  Real transaction volume (ETB) and confirmed passenger trips over {timeframe.toLowerCase().replace("_", " ")}.
                 </p>
               </div>
 
@@ -951,9 +937,9 @@ export const AdminReportsPage = () => {
                     background: "rgba(59, 130, 246, 0.1)",
                     border: "1px solid var(--primary)",
                     color: "var(--primary)",
-                    padding: "2px 10px",
+                    padding: "3px 12px",
                     borderRadius: "6px",
-                    fontWeight: 600,
+                    fontWeight: 700,
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
@@ -961,19 +947,19 @@ export const AdminReportsPage = () => {
                 >
                   <span>📍 {hoveredDataPoint.label}</span>
                   <span>•</span>
-                  <span>💰 {hoveredDataPoint.revenue.toLocaleString()} ETB</span>
+                  <span>💰 {hoveredDataPoint.revenue.toLocaleString()} ETB Gross</span>
                   <span>•</span>
-                  <span>🎫 {hoveredDataPoint.bookings} Bookings</span>
+                  <span>🎫 {hoveredDataPoint.bookings} Passenger Bookings</span>
                 </div>
               ) : (
                 <div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
-                  Hover over bars to inspect detailed period metrics.
+                  Hover over bars or nodes to inspect detailed period performance.
                 </div>
               )}
             </div>
 
             {/* Responsive SVG Chart */}
-            <div style={{ width: "100%", height: "260px", position: "relative" }}>
+            <div style={{ width: "100%", height: "260px", position: "relative", overflowX: "auto" }}>
               <svg
                 width="100%"
                 height="100%"
@@ -1040,8 +1026,8 @@ export const AdminReportsPage = () => {
                         y="20"
                         width={slotWidth}
                         height="190"
-                        fill={isHovered ? "rgba(59, 130, 246, 0.06)" : "transparent"}
-                        rx="4"
+                        fill={isHovered ? "rgba(59, 130, 246, 0.08)" : "transparent"}
+                        rx="6"
                       />
 
                       {/* Revenue Bar */}
@@ -1049,10 +1035,10 @@ export const AdminReportsPage = () => {
                         x={xCenter - barWidth / 2}
                         y={barY}
                         width={barWidth}
-                        height={Math.max(barHeight, 3)}
-                        fill={isHovered ? "var(--primary)" : "var(--primary)"}
-                        fillOpacity={isHovered ? "1" : "0.75"}
-                        rx="4"
+                        height={Math.max(barHeight, 4)}
+                        fill="var(--primary)"
+                        fillOpacity={isHovered ? "1" : "0.78"}
+                        rx="5"
                         style={{ transition: "all 0.2s ease" }}
                       />
 
@@ -1097,9 +1083,9 @@ export const AdminReportsPage = () => {
                     .join(" ")}
                   fill="none"
                   stroke="#10b981"
-                  strokeWidth="2"
+                  strokeWidth="2.5"
                   strokeDasharray="3 3"
-                  strokeOpacity="0.8"
+                  strokeOpacity="0.85"
                 />
               </svg>
             </div>
@@ -1128,7 +1114,7 @@ export const AdminReportsPage = () => {
                       background: "var(--primary)",
                     }}
                   />
-                  <span>Gross Revenue (ETB Bars)</span>
+                  <span>Gross Platform Revenue (ETB)</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <div
@@ -1139,12 +1125,12 @@ export const AdminReportsPage = () => {
                       background: "#10b981",
                     }}
                   />
-                  <span>Confirmed Bookings (Trend Line)</span>
+                  <span>Confirmed Passenger Bookings</span>
                 </div>
               </div>
 
               <div style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
-                Total in Period: <strong>{totalRev.toLocaleString()} ETB</strong> across{" "}
+                Period Volume: <strong>{totalRev.toLocaleString()} ETB</strong> across{" "}
                 <strong>{confirmedBookings.length} bookings</strong>
               </div>
             </div>
@@ -1163,8 +1149,9 @@ export const AdminReportsPage = () => {
               style={{
                 background: "var(--bg-card)",
                 border: "1px solid var(--border-color)",
-                borderRadius: "10px",
+                borderRadius: "12px",
                 padding: "1.5rem",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               }}
             >
               <div
@@ -1177,10 +1164,10 @@ export const AdminReportsPage = () => {
               >
                 <div>
                   <h3 style={{ fontSize: "0.95rem", fontWeight: 700, margin: 0 }}>
-                    Payment Channels & Revenue Share
+                    Payment Gateways & Settlement Share
                   </h3>
                   <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: "2px 0 0" }}>
-                    Volume breakdown across integrated payment gateways.
+                    Volume distribution across Telebirr, Chapa, CBE Birr, and Cash.
                   </p>
                 </div>
                 <CreditCard size={18} style={{ color: "var(--text-muted)" }} />
@@ -1252,8 +1239,9 @@ export const AdminReportsPage = () => {
               style={{
                 background: "var(--bg-card)",
                 border: "1px solid var(--border-color)",
-                borderRadius: "10px",
+                borderRadius: "12px",
                 padding: "1.5rem",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               }}
             >
               <div
@@ -1269,7 +1257,7 @@ export const AdminReportsPage = () => {
                     Digital QR Ticket Validation Audit
                   </h3>
                   <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: "2px 0 0" }}>
-                    Station scan results, duplicate detections, and fraud prevention.
+                    Terminal scan verification, duplicate attempts, and security accuracy.
                   </p>
                 </div>
                 <ShieldCheck size={18} style={{ color: "var(--text-muted)" }} />
@@ -1348,13 +1336,22 @@ export const AdminReportsPage = () => {
             <div className="card-title">
               <h3>Operator Revenue & Payout Breakdown</h3>
               <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
-                Breakdown calculated based on {timeframe.toLowerCase().replace("_", " ")} confirmed bookings.
+                Performance breakdown calculated based on {timeframe.toLowerCase().replace("_", " ")} confirmed bookings.
               </p>
             </div>
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-              <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
-                {organizations.length} operators registered
-              </span>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+              <div className="header-search" style={{ width: "220px" }}>
+                <Search className="search-icon" size={14} />
+                <input
+                  type="text"
+                  placeholder="Search operator..."
+                  value={operatorSearch}
+                  onChange={(e) => {
+                    setOperatorSearch(e.target.value);
+                    setCurrentPageOrgs(1);
+                  }}
+                />
+              </div>
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={handleExportCSV}
@@ -1365,71 +1362,73 @@ export const AdminReportsPage = () => {
             </div>
           </div>
 
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Operator</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Trips</th>
-                <th>Confirmed Bookings</th>
-                <th>Gross Revenue (ETB)</th>
-                <th>Platform Fee ({commissionPercent}%)</th>
-                <th>Net Operator Payout (ETB)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedOrgs.map(({ org, confirmedCount, grossRevenue, platformFee, netPayout, tripsCount }) => (
-                <tr key={org.id}>
-                  <td>
-                    <strong>{org.name}</strong>
-                    <div
-                      style={{
-                        fontSize: "0.72rem",
-                        color: "var(--text-muted)",
-                      }}
-                    >
-                      {org.registrationNumber || "REG-ET-PENDING"}
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: "0.78rem", fontWeight: 600 }}>
-                      {org.type || "Intercity"}
-                    </span>
-                  </td>
-                  <td>
-                    <Badge status={org.status} />
-                  </td>
-                  <td>
-                    <strong>{tripsCount}</strong>
-                  </td>
-                  <td>
-                    <strong>{confirmedCount}</strong>
-                  </td>
-                  <td>
-                    <strong style={{ color: "var(--primary)" }}>
-                      {grossRevenue.toLocaleString()}
-                    </strong>
-                  </td>
-                  <td style={{ color: "var(--text-muted)" }}>
-                    {platformFee.toLocaleString()}
-                  </td>
-                  <td>
-                    <strong style={{ color: "#10b981" }}>
-                      {netPayout.toLocaleString()}
-                    </strong>
-                  </td>
-                </tr>
-              ))}
-              {paginatedOrgs.length === 0 && (
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "950px" }}>
+              <thead>
                 <tr>
-                  <td colSpan="8" style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
-                    No operator transactions found for the selected timeframe.
-                  </td>
+                  <th>Operator</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Trips</th>
+                  <th>Confirmed Bookings</th>
+                  <th>Gross Revenue (ETB)</th>
+                  <th>Platform Fee ({commissionPercent}%)</th>
+                  <th>Net Operator Payout (ETB)</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedOrgs.map(({ org, confirmedCount, grossRevenue, platformFee, netPayout, tripsCount }) => (
+                  <tr key={org.id}>
+                    <td>
+                      <strong>{org.name}</strong>
+                      <div
+                        style={{
+                          fontSize: "0.72rem",
+                          color: "var(--text-muted)",
+                        }}
+                      >
+                        {org.registrationNumber || "REG-ET-PENDING"}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: "0.78rem", fontWeight: 600 }}>
+                        {org.type || "Intercity"}
+                      </span>
+                    </td>
+                    <td>
+                      <Badge status={org.status} />
+                    </td>
+                    <td>
+                      <strong>{tripsCount}</strong>
+                    </td>
+                    <td>
+                      <strong>{confirmedCount}</strong>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--primary)" }}>
+                        {grossRevenue.toLocaleString()}
+                      </strong>
+                    </td>
+                    <td style={{ color: "var(--text-muted)" }}>
+                      {platformFee.toLocaleString()}
+                    </td>
+                    <td>
+                      <strong style={{ color: "#10b981" }}>
+                        {netPayout.toLocaleString()}
+                      </strong>
+                    </td>
+                  </tr>
+                ))}
+                {paginatedOrgs.length === 0 && (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
+                      No operator transactions found for the selected timeframe.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           <Pagination
             currentPage={currentPageOrgs}
@@ -1461,99 +1460,101 @@ export const AdminReportsPage = () => {
             </div>
           </div>
 
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Trip Code</th>
-                <th>Operator</th>
-                <th>Route</th>
-                <th>Departure Date & Time</th>
-                <th>Occupancy (Seats)</th>
-                <th>Fare (ETB)</th>
-                <th>Trip Revenue (ETB)</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedTrips.map((t) => {
-                const booked = Number(t.bookedSeatsCount || 0);
-                const total = Number(t.totalSeats || 45);
-                const occPct = Math.round((booked / total) * 100);
-                const fare = Number(t.fareAmount || 0);
-                const estRevenue = booked * fare;
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "1000px" }}>
+              <thead>
+                <tr>
+                  <th>Trip Code</th>
+                  <th>Operator</th>
+                  <th>Route</th>
+                  <th>Departure Date & Time</th>
+                  <th>Occupancy (Seats)</th>
+                  <th>Fare (ETB)</th>
+                  <th>Trip Revenue (ETB)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedTrips.map((t) => {
+                  const booked = Number(t.bookedSeatsCount || 0);
+                  const total = Number(t.totalSeats || 45);
+                  const occPct = Math.round((booked / total) * 100);
+                  const fare = Number(t.fareAmount || 0);
+                  const estRevenue = booked * fare;
 
-                return (
-                  <tr key={t.id}>
-                    <td>
-                      <code>{t.tripCode}</code>
-                    </td>
-                    <td>
-                      <strong>{t.organizationName}</strong>
-                    </td>
-                    <td>{t.routeName}</td>
-                    <td>
-                      <div>{t.departureDate}</div>
-                      <div
-                        style={{
-                          fontSize: "0.72rem",
-                          color: "var(--text-muted)",
-                        }}
-                      >
-                        {t.departureTime}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span style={{ fontWeight: 700 }}>{booked}</span>
-                        <span style={{ color: "var(--text-muted)" }}>/ {total}</span>
-                        <span
-                          style={{
-                            fontSize: "0.72rem",
-                            color: occPct > 80 ? "#10b981" : "var(--text-muted)",
-                            fontWeight: 600,
-                          }}
-                        >
-                          ({occPct}%)
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          width: "80px",
-                          height: "4px",
-                          background: "rgba(100, 116, 139, 0.2)",
-                          borderRadius: "99px",
-                          marginTop: "4px",
-                          overflow: "hidden",
-                        }}
-                      >
+                  return (
+                    <tr key={t.id}>
+                      <td>
+                        <code>{t.tripCode}</code>
+                      </td>
+                      <td>
+                        <strong>{t.organizationName}</strong>
+                      </td>
+                      <td>{t.routeName}</td>
+                      <td>
+                        <div>{t.departureDate}</div>
                         <div
                           style={{
-                            width: `${Math.min(occPct, 100)}%`,
-                            height: "100%",
-                            background: occPct > 80 ? "#10b981" : "var(--primary)",
+                            fontSize: "0.72rem",
+                            color: "var(--text-muted)",
                           }}
-                        />
-                      </div>
-                    </td>
-                    <td>{fare.toLocaleString()}</td>
-                    <td>
-                      <strong>{estRevenue.toLocaleString()}</strong>
-                    </td>
-                    <td>
-                      <Badge status={t.status} />
+                        >
+                          {t.departureTime}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontWeight: 700 }}>{booked}</span>
+                          <span style={{ color: "var(--text-muted)" }}>/ {total}</span>
+                          <span
+                            style={{
+                              fontSize: "0.72rem",
+                              color: occPct > 80 ? "#10b981" : "var(--text-muted)",
+                              fontWeight: 600,
+                            }}
+                          >
+                            ({occPct}%)
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            width: "80px",
+                            height: "4px",
+                            background: "rgba(100, 116, 139, 0.2)",
+                            borderRadius: "99px",
+                            marginTop: "4px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${Math.min(occPct, 100)}%`,
+                              height: "100%",
+                              background: occPct > 80 ? "#10b981" : "var(--primary)",
+                            }}
+                          />
+                        </div>
+                      </td>
+                      <td>{fare.toLocaleString()}</td>
+                      <td>
+                        <strong>{estRevenue.toLocaleString()}</strong>
+                      </td>
+                      <td>
+                        <Badge status={t.status} />
+                      </td>
+                    </tr>
+                  );
+                })}
+                {paginatedTrips.length === 0 && (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
+                      No trips found for the selected timeframe and operator.
                     </td>
                   </tr>
-                );
-              })}
-              {paginatedTrips.length === 0 && (
-                <tr>
-                  <td colSpan="8" style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
-                    No trips found for the selected timeframe and operator.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           <Pagination
             currentPage={currentPageTrips}
@@ -1575,7 +1576,7 @@ export const AdminReportsPage = () => {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
             gap: "1.25rem",
           }}
         >
@@ -1664,39 +1665,41 @@ export const AdminReportsPage = () => {
                 {filteredVerifications.length} records
               </span>
             </div>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Ticket #</th>
-                  <th>Station</th>
-                  <th>Result</th>
-                  <th>Scanned At</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredVerifications.slice(0, 10).map((v) => (
-                  <tr key={v.id}>
-                    <td>
-                      <code>{v.ticketNumber}</code>
-                    </td>
-                    <td>{v.stationName || "Addis Ababa Autobus Terra"}</td>
-                    <td>
-                      <Badge status={v.status} />
-                    </td>
-                    <td style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                      {v.scannedAt}
-                    </td>
-                  </tr>
-                ))}
-                {filteredVerifications.length === 0 && (
+            <div style={{ overflowX: "auto" }}>
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan="4" style={{ textAlign: "center", padding: "1.5rem", color: "var(--text-muted)" }}>
-                      No scan events found for this filter.
-                    </td>
+                    <th>Ticket #</th>
+                    <th>Station</th>
+                    <th>Result</th>
+                    <th>Scanned At</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredVerifications.slice(0, 10).map((v) => (
+                    <tr key={v.id}>
+                      <td>
+                        <code>{v.ticketNumber}</code>
+                      </td>
+                      <td>{v.stationName || "Addis Ababa Autobus Terra"}</td>
+                      <td>
+                        <Badge status={v.status} />
+                      </td>
+                      <td style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                        {v.scannedAt}
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredVerifications.length === 0 && (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: "center", padding: "1.5rem", color: "var(--text-muted)" }}>
+                        No scan events found for this filter.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
