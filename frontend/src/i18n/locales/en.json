@@ -527,7 +527,8 @@
   },
   "sidebar": {
     "overview": "Overview & Access",
-    "dashboard": "Dashboard",
+    "overviewItem": "Overview",
+    "dashboard": "Overview",
     "organizations": "Organizations",
     "users": "Users & Roles",
     "transit": "Transit Infrastructure",

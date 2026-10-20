@@ -123,7 +123,7 @@ export const Sidebar = () => {
     {
       group: t("sidebar.overview", "Overview & Access"),
       items: [
-        { id: "dashboard", label: t("sidebar.dashboard", "Dashboard"), icon: LayoutDashboard },
+        { id: "dashboard", label: t("sidebar.overviewItem", "Overview"), icon: LayoutDashboard },
         {
           id: "organizations",
           label: t("sidebar.organizations", "Organizations"),
@@ -195,7 +195,7 @@ export const Sidebar = () => {
     {
       group: t("sidebar.coreOperations", "Core Operations"),
       items: [
-        { id: "dashboard", label: t("sidebar.dashboard", "Dashboard"), icon: LayoutDashboard },
+        { id: "dashboard", label: t("sidebar.overviewItem", "Overview"), icon: LayoutDashboard },
       ],
     },
     {
@@ -284,7 +284,7 @@ export const Sidebar = () => {
             cursor: "pointer",
             flex: 1,
           }}
-          title="Go to Dashboard"
+          title="Go to Overview"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {

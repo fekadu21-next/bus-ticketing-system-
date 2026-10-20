@@ -1,12 +1,11 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 import { StatCard } from "../../components/ui/StatCard";
 import { Badge } from "../../components/ui/Badge";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import {
   Building2,
-  AlertTriangle,
-  CheckCircle2,
   CalendarDays,
   Ticket,
   CreditCard,
@@ -14,16 +13,18 @@ import {
   DollarSign,
   ArrowRight,
   ShieldAlert,
-  Plus,
   Users,
   RefreshCw,
   Search,
-  Filter,
   Calendar,
   TrendingUp,
+  BarChart3,
+  MapPin,
+  Route as RouteIcon,
 } from "lucide-react";
 
 export const AdminDashboardPage = () => {
+  const navigate = useNavigate();
   const {
     organizations = [],
     users = [],
@@ -40,17 +41,71 @@ export const AdminDashboardPage = () => {
     fetchAdminData,
     selectedOrgId,
     setSelectedOrgId,
+    showToast,
   } = useApp();
 
-  const [dateFilter, setDateFilter] = React.useState("ALL"); // ALL, TODAY, CUSTOM
+  const [dateFilter, setDateFilter] = React.useState("ALL"); // ALL, THIS_YEAR, THIS_MONTH, THIS_WEEK, TODAY, CUSTOM
   const [customDate, setCustomDate] = React.useState("");
   const [operatorSearch, setOperatorSearch] = React.useState("");
   const [categoryFilter, setCategoryFilter] = React.useState("ALL");
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
   const commissionRate = commissionPercent / 100;
 
   const todayStr = new Date().toISOString().split("T")[0];
+
+  const matchesDateFilter = (dateVal) => {
+    if (!dateVal) return false;
+    if (dateFilter === "ALL") return true;
+
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return true;
+    const now = new Date();
+
+    if (dateFilter === "TODAY") {
+      return (
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate()
+      );
+    }
+
+    if (dateFilter === "THIS_WEEK") {
+      const nowCopy = new Date(now);
+      const day = nowCopy.getDay();
+      // Monday as first day of week
+      const diff = nowCopy.getDate() - day + (day === 0 ? -6 : 1);
+      const startOfWeek = new Date(nowCopy.setDate(diff));
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7);
+      return d >= startOfWeek && d <= endOfWeek;
+    }
+
+    if (dateFilter === "THIS_MONTH") {
+      return (
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth()
+      );
+    }
+
+    if (dateFilter === "THIS_YEAR") {
+      return d.getFullYear() === now.getFullYear();
+    }
+
+    if (dateFilter === "CUSTOM" && customDate) {
+      if (typeof dateVal === "string" && dateVal.includes(customDate)) return true;
+      const [cy, cm, cd] = customDate.split("-").map(Number);
+      return (
+        d.getFullYear() === cy &&
+        d.getMonth() + 1 === cm &&
+        d.getDate() === cd
+      );
+    }
+
+    return true;
+  };
 
   const isTodayDate = (dateVal) => {
     if (!dateVal) return false;
@@ -59,15 +114,21 @@ export const AdminDashboardPage = () => {
     return !isNaN(d.getTime()) && d.toISOString().split("T")[0] === todayStr;
   };
 
-  const matchesDateFilter = (dateVal) => {
-    if (dateFilter === "ALL") return true;
-    if (dateFilter === "TODAY") return isTodayDate(dateVal);
-    if (dateFilter === "CUSTOM" && customDate) {
-      if (typeof dateVal === "string" && dateVal.includes(customDate)) return true;
-      const d = new Date(dateVal);
-      return !isNaN(d.getTime()) && d.toISOString().split("T")[0] === customDate;
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      await fetchAdminData();
+      if (showToast) showToast("Platform overview records synchronized successfully.");
+    } catch (err) {
+      if (showToast) showToast("Failed to refresh platform data.", "error");
+    } finally {
+      setIsRefreshing(false);
     }
-    return true;
+  };
+
+  const handleNavigate = (page) => {
+    setActivePage(page);
+    navigate(`/admin/${page}`);
   };
 
   // Extract distinct operator categories from registered organizations
@@ -122,11 +183,14 @@ export const AdminDashboardPage = () => {
 
   // Payments & Revenue aggregations
   const completedPayments = scopedPayments.filter((p) => p.status === "SUCCESS" || p.status === "COMPLETED");
-  const totalGrossRevenue = (isUnfiltered && adminStats?.financials?.totalRevenue !== undefined)
-    ? adminStats.financials.totalRevenue
-    : completedPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
-  const totalPlatformCommission = totalGrossRevenue * commissionRate;
-  const totalOperatorPayouts = totalGrossRevenue * (1 - commissionRate);
+
+  // Filtered payments & bookings according to active date filter
+  const filteredCompletedPayments = completedPayments.filter((p) => matchesDateFilter(p.createdAt || p.created_at || p.paidAt));
+  const filteredGrossRevenue = filteredCompletedPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+  const filteredPlatformCommission = filteredGrossRevenue * commissionRate;
+  const filteredOperatorPayouts = filteredGrossRevenue * (1 - commissionRate);
+  const filteredBookings = scopedBookings.filter((b) => matchesDateFilter(b.bookingDate || b.created_at));
+  const filteredTrips = scopedTrips.filter((t) => matchesDateFilter(t.departureDate || t.departure_time || t.departureTime || t.createdAt));
 
   // Daily (Today) payments & revenue
   const todayPayments = completedPayments.filter((p) => isTodayDate(p.createdAt || p.created_at || p.paidAt));
@@ -137,20 +201,38 @@ export const AdminDashboardPage = () => {
     ? adminStats.today.tripsCount
     : scopedTrips.filter((t) => isTodayDate(t.departureDate || t.departure_time)).length;
 
-  // Filtered payments & bookings according to active date filter
-  const filteredCompletedPayments = completedPayments.filter((p) => matchesDateFilter(p.createdAt || p.created_at || p.paidAt));
-  const filteredGrossRevenue = filteredCompletedPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
-  const filteredPlatformCommission = filteredGrossRevenue * commissionRate;
-  const filteredBookings = scopedBookings.filter((b) => matchesDateFilter(b.bookingDate || b.created_at));
+  // Display totals based on active date filter
+  const isFiltered = dateFilter !== "ALL";
+  const displayGrossRevenue = isFiltered ? filteredGrossRevenue : (
+    (isUnfiltered && adminStats?.financials?.totalRevenue !== undefined)
+      ? adminStats.financials.totalRevenue
+      : completedPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0)
+  );
+  const displayPlatformCommission = displayGrossRevenue * commissionRate;
+  const displayOperatorPayouts = displayGrossRevenue * (1 - commissionRate);
+  const displayBookingsCount = isFiltered ? filteredBookings.length : scopedBookings.length;
+  const displayCompletedCount = isFiltered ? filteredCompletedPayments.length : completedPayments.length;
+
+  const dateFilterLabel = {
+    ALL: "All Time",
+    THIS_YEAR: "This Year",
+    THIS_MONTH: "This Month",
+    THIS_WEEK: "This Week",
+    TODAY: "Today",
+    CUSTOM: customDate ? `Date: ${customDate}` : "Custom Date",
+  }[dateFilter] || "All Time";
 
   // Per-Operator breakdown data
   const operatorBreakdown = targetOrganizations.map((org) => {
     const orgBookings = bookings.filter((b) => b.organizationId === org.id || b.organization_id === org.id);
+    const orgFilteredBookings = orgBookings.filter((b) => matchesDateFilter(b.bookingDate || b.created_at));
     const orgTodayBookings = orgBookings.filter((b) => isTodayDate(b.bookingDate || b.created_at));
+
     const orgPayments = completedPayments.filter((p) => p.organizationId === org.id || p.organization_id === org.id);
+    const orgFilteredPayments = orgPayments.filter((p) => matchesDateFilter(p.createdAt || p.created_at || p.paidAt));
     const orgTodayPayments = orgPayments.filter((p) => isTodayDate(p.createdAt || p.created_at || p.paidAt));
 
-    const gross = orgPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+    const gross = orgFilteredPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
     const commission = gross * commissionRate;
     const netPayout = gross * (1 - commissionRate);
 
@@ -159,7 +241,8 @@ export const AdminDashboardPage = () => {
 
     return {
       ...org,
-      totalBookings: orgBookings.length,
+      totalBookings: orgFilteredBookings.length,
+      allTimeBookings: orgBookings.length,
       todayBookings: orgTodayBookings.length,
       grossPayments: gross,
       platformCommission: commission,
@@ -179,7 +262,7 @@ export const AdminDashboardPage = () => {
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Admin Dashboard</h1>
+          <h1>Platform Overview</h1>
           <p>
             {isSingleOrg
               ? `Operational metrics and financials for ${selectedOrg.name}.`
@@ -192,7 +275,7 @@ export const AdminDashboardPage = () => {
             className="org-selector-select"
             value={selectedOrgId || "ALL"}
             onChange={(e) => setSelectedOrgId(e.target.value)}
-            style={{ fontSize: "0.8rem", padding: "5px 10px", minWidth: "160px" }}
+            style={{ fontSize: "0.8rem", padding: "6px 10px", minWidth: "160px" }}
             title="Filter dashboard by transport operator"
           >
             <option value="ALL">🏢 All Operators</option>
@@ -209,7 +292,7 @@ export const AdminDashboardPage = () => {
               className="org-selector-select"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              style={{ fontSize: "0.8rem", padding: "5px 10px" }}
+              style={{ fontSize: "0.8rem", padding: "6px 10px" }}
               title="Filter by operator category / type"
             >
               <option value="ALL">All Categories</option>
@@ -221,47 +304,64 @@ export const AdminDashboardPage = () => {
             </select>
           )}
 
-          {/* Date Filter Toolbar */}
-          <div style={{ display: "flex", alignItems: "center", background: "var(--bg-card, #fff)", border: "1px solid var(--border-color, #e2e8f0)", borderRadius: "8px", padding: "2px 4px" }}>
-            <button
-              className={`btn btn-sm ${dateFilter === "ALL" ? "btn-primary" : "btn-secondary"}`}
-              style={{ border: "none", fontSize: "0.75rem", padding: "4px 8px" }}
-              onClick={() => { setDateFilter("ALL"); setCustomDate(""); }}
+          {/* Date Filter Dropdown */}
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <Calendar size={15} style={{ color: "var(--text-muted)" }} />
+            <select
+              className="org-selector-select"
+              value={dateFilter}
+              onChange={(e) => {
+                setDateFilter(e.target.value);
+                if (e.target.value !== "CUSTOM") setCustomDate("");
+              }}
+              style={{ fontSize: "0.8rem", padding: "6px 10px", minWidth: "135px", fontWeight: 600 }}
+              title="Filter by timeframe"
             >
-              All Time
-            </button>
-            <button
-              className={`btn btn-sm ${dateFilter === "TODAY" ? "btn-primary" : "btn-secondary"}`}
-              style={{ border: "none", fontSize: "0.75rem", padding: "4px 8px" }}
-              onClick={() => { setDateFilter("TODAY"); setCustomDate(todayStr); }}
-            >
-              📅 Today (Daily)
-            </button>
-            <div style={{ display: "flex", alignItems: "center", gap: "4px", paddingLeft: "4px" }}>
+              <option value="ALL">All Time</option>
+              <option value="THIS_YEAR">This Year</option>
+              <option value="THIS_MONTH">This Month</option>
+              <option value="THIS_WEEK">This Week</option>
+              <option value="TODAY">Today</option>
+              <option value="CUSTOM">Custom Date</option>
+            </select>
+
+            {dateFilter === "CUSTOM" && (
               <input
                 type="date"
                 value={customDate}
-                onChange={(e) => {
-                  setCustomDate(e.target.value);
-                  setDateFilter(e.target.value ? "CUSTOM" : "ALL");
+                onChange={(e) => setCustomDate(e.target.value)}
+                style={{
+                  fontSize: "0.75rem",
+                  padding: "4px 6px",
+                  border: "1px solid var(--border-color, #cbd5e1)",
+                  borderRadius: "6px",
+                  background: "var(--input-bg, #ffffff)",
+                  color: "var(--input-text, #0f172a)",
                 }}
-                style={{ fontSize: "0.75rem", padding: "2px 6px", border: "1px solid var(--border-color, #cbd5e1)", borderRadius: "4px", background: "var(--input-bg, #ffffff)", color: "var(--input-text, #0f172a)" }}
               />
-            </div>
+            )}
           </div>
 
+          {/* Active Refresh Button */}
           <button
             className="btn btn-secondary"
-            onClick={() => fetchAdminData()}
+            onClick={handleRefresh}
+            disabled={isRefreshing || isLoadingData}
             title="Refresh Platform State"
+            style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
           >
-            <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+            <RefreshCw size={14} className={isRefreshing || isLoadingData ? "spin animate-spin" : ""} />
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
-          <button className="btn btn-secondary" onClick={() => setActivePage("reports")}>
-            Reports
-          </button>
-          <button className="btn btn-primary" onClick={() => setActivePage("organizations")}>
-            Organizations
+
+          {/* Active Report Button */}
+          <button
+            className="btn btn-secondary"
+            onClick={() => handleNavigate("reports")}
+            title="Navigate to Reports & Analytics"
+            style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+          >
+            <BarChart3 size={14} /> Reports
           </button>
         </div>
       </div>
@@ -278,34 +378,38 @@ export const AdminDashboardPage = () => {
           <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
             <TrendingUp size={18} color="var(--primary)" /> Platform Financials & Commission Overview
           </h2>
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-            Configured Platform Commission: <strong style={{ color: "var(--primary)" }}>{commissionPercent}%</strong>
-            {dateFilter !== "ALL" && <span style={{ marginLeft: "0.5rem", background: "rgba(59, 130, 246, 0.1)", color: "var(--primary)", padding: "2px 6px", borderRadius: "4px", fontWeight: 600 }}>Active Filter: {dateFilter === "TODAY" ? "Today" : customDate}</span>}
+          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <span>Configured Platform Commission: <strong style={{ color: "var(--primary)" }}>{commissionPercent}%</strong></span>
+            {isFiltered && (
+              <span style={{ background: "rgba(59, 130, 246, 0.12)", color: "var(--primary)", padding: "2px 8px", borderRadius: "4px", fontWeight: 700 }}>
+                Filter: {dateFilterLabel}
+              </span>
+            )}
           </span>
         </div>
 
         <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           <StatCard
-            title="Total Booking Payments"
-            value={`${Math.round(totalGrossRevenue).toLocaleString()} ETB`}
+            title={isFiltered ? `Payments (${dateFilterLabel})` : "Total Booking Payments"}
+            value={`${Math.round(displayGrossRevenue).toLocaleString()} ETB`}
             icon={CreditCard}
-            subtitle={`${completedPayments.length} completed platform transactions`}
-            onClick={() => setActivePage("payments")}
+            subtitle={`${displayCompletedCount} completed transactions`}
+            onClick={() => handleNavigate("payments")}
           />
           <StatCard
-            title="Platform Commission Revenue"
-            value={`${Math.round(totalPlatformCommission).toLocaleString()} ETB`}
+            title={isFiltered ? `Commission (${dateFilterLabel})` : "Platform Commission Revenue"}
+            value={`${Math.round(displayPlatformCommission).toLocaleString()} ETB`}
             icon={DollarSign}
             trend={`${commissionPercent}% Fee`}
-            subtitle={`Earned from all operators`}
-            onClick={() => setActivePage("reports")}
+            subtitle={isFiltered ? `From ${dateFilterLabel.toLowerCase()} volume` : `Earned from all operators`}
+            onClick={() => handleNavigate("reports")}
           />
           <StatCard
             title="Today's Booking Payments"
             value={`${Math.round(todayGrossRevenue).toLocaleString()} ETB`}
             icon={CalendarDays}
             subtitle={`${todayPayments.length} payments collected today`}
-            onClick={() => setActivePage("payments")}
+            onClick={() => handleNavigate("payments")}
           />
           <StatCard
             title="Today's Platform Revenue"
@@ -313,14 +417,14 @@ export const AdminDashboardPage = () => {
             icon={TrendingUp}
             trend={`Daily ${commissionPercent}%`}
             subtitle={`Platform fee from today's trips`}
-            onClick={() => setActivePage("reports")}
+            onClick={() => handleNavigate("reports")}
           />
           <StatCard
-            title="Total Operator Payouts"
-            value={`${Math.round(totalOperatorPayouts).toLocaleString()} ETB`}
+            title={isFiltered ? `Operator Payouts (${dateFilterLabel})` : "Total Operator Payouts"}
+            value={`${Math.round(displayOperatorPayouts).toLocaleString()} ETB`}
             icon={Building2}
             subtitle={`${(100 - commissionPercent).toFixed(1)}% net share to operators`}
-            onClick={() => setActivePage("organizations")}
+            onClick={() => handleNavigate("organizations")}
           />
         </div>
       </div>
@@ -332,35 +436,35 @@ export const AdminDashboardPage = () => {
           value={isSingleOrg ? selectedOrg.name : totalOrgs}
           icon={Building2}
           subtitle={isSingleOrg ? `${selectedOrg.type} • Status: ${selectedOrg.status}` : `${activeOrgs} active, ${pendingOrgsCount} pending`}
-          onClick={() => setActivePage("organizations")}
+          onClick={() => handleNavigate("organizations")}
         />
         <StatCard
           title={isSingleOrg ? "Operator Staff" : "Platform Users"}
           value={scopedUsers.length}
           icon={Users}
           subtitle={isSingleOrg ? `Affiliated staff & personnel` : `${scopedUsers.filter((u) => u.status === "ACTIVE" || u.isActive).length} active accounts`}
-          onClick={() => setActivePage("users")}
+          onClick={() => handleNavigate("users")}
         />
         <StatCard
           title="Today's Departures"
           value={todayTrips}
           icon={CalendarDays}
           subtitle={isSingleOrg ? `Scheduled for ${selectedOrg.name}` : "Scheduled operational departures"}
-          onClick={() => setActivePage("trips")}
+          onClick={() => handleNavigate("trips")}
         />
         <StatCard
-          title="Today's Bookings"
-          value={todayBookingsCount || scopedBookings.length}
+          title={isFiltered ? `Bookings (${dateFilterLabel})` : "Total Bookings"}
+          value={displayBookingsCount}
           icon={Ticket}
-          subtitle={isSingleOrg ? `Bookings on ${selectedOrg.name}` : "Confirmed passenger bookings today"}
-          onClick={() => setActivePage("bookings")}
+          subtitle={isFiltered ? `Bookings within ${dateFilterLabel.toLowerCase()}` : (isSingleOrg ? `Bookings on ${selectedOrg.name}` : `${todayBookingsCount} created today`)}
+          onClick={() => handleNavigate("bookings")}
         />
         <StatCard
           title="Tickets Verified"
           value={validScans}
           icon={QrCode}
           subtitle="QR boarding verification events"
-          onClick={() => setActivePage("tickets")}
+          onClick={() => handleNavigate("tickets")}
         />
       </div>
 
@@ -370,11 +474,11 @@ export const AdminDashboardPage = () => {
           <div className="card-header-toolbar" style={{ background: "var(--warning-bg)" }}>
             <div className="card-title">
               <h3 style={{ color: "var(--warning-text)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <ShieldAlert size={18} /> Pending Approvals ({pendingOrgs.length})
+                <ShieldAlert size={18} /> Pending Operator Approvals ({pendingOrgs.length})
               </h3>
             </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setActivePage("organizations")}>
-              View All <ArrowRight size={14} />
+            <button className="btn btn-secondary btn-sm" onClick={() => handleNavigate("organizations")}>
+              View All in Organizations <ArrowRight size={14} />
             </button>
           </div>
           <table className="data-table">
@@ -422,7 +526,7 @@ export const AdminDashboardPage = () => {
         </div>
       )}
 
-      {/* Operator Revenue & Performance Breakdown (All and Per-Operator) */}
+      {/* Operator Revenue & Performance Breakdown */}
       <div className="card-table-wrapper" style={{ marginBottom: "1.5rem" }}>
         <div className="card-header-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
@@ -431,6 +535,7 @@ export const AdminDashboardPage = () => {
             </h3>
             <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
               Platform gross bookings, commission earnings ({commissionPercent}%), and operator payout shares across all transport companies.
+              {isFiltered && <span style={{ marginLeft: "0.4rem", fontWeight: 700, color: "var(--primary)" }}>Filtered by: {dateFilterLabel}</span>}
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
@@ -452,7 +557,7 @@ export const AdminDashboardPage = () => {
               <tr>
                 <th>Operator</th>
                 <th>Type</th>
-                <th>Total Bookings</th>
+                <th>Bookings {isFiltered ? `(${dateFilterLabel})` : "Total"}</th>
                 <th>Gross Payments (ETB)</th>
                 <th>Platform Commission ({commissionPercent}%)</th>
                 <th>Operator Payout ({(100 - commissionPercent).toFixed(1)}%)</th>
@@ -466,7 +571,7 @@ export const AdminDashboardPage = () => {
               {operatorBreakdown.length === 0 ? (
                 <tr>
                   <td colSpan={10} style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
-                    No operators match your search.
+                    No operators match your search or filter criteria.
                   </td>
                 </tr>
               ) : (
@@ -516,10 +621,10 @@ export const AdminDashboardPage = () => {
                     <td>
                       <button
                         className="btn btn-secondary btn-sm"
-                        onClick={() => setActivePage("organizations")}
-                        title="View Operator Details"
+                        onClick={() => handleNavigate("organizations")}
+                        title="View Operator in Organizations"
                       >
-                        View Details
+                        View Operator
                       </button>
                     </td>
                   </tr>
@@ -567,8 +672,8 @@ export const AdminDashboardPage = () => {
               <h3>Today's Platform Trips</h3>
               <p>Active departures scheduled across operators</p>
             </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setActivePage("trips")}>
-              View Trips
+            <button className="btn btn-secondary btn-sm" onClick={() => handleNavigate("trips")}>
+              View All Trips
             </button>
           </div>
           <table className="data-table">
@@ -603,8 +708,8 @@ export const AdminDashboardPage = () => {
               <h3>Recent QR Boarding Verifications</h3>
               <p>Live ticket scan events at terminals</p>
             </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setActivePage("tickets")}>
-              View Logs
+            <button className="btn btn-secondary btn-sm" onClick={() => handleNavigate("tickets")}>
+              View Ticket QR Logs
             </button>
           </div>
           <table className="data-table">
@@ -632,3 +737,4 @@ export const AdminDashboardPage = () => {
     </div>
   );
 };
+export default AdminDashboardPage;

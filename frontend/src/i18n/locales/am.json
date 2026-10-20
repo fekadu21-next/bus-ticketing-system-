@@ -527,7 +527,8 @@
   },
   "sidebar": {
     "overview": "አጠቃላይ እይታ እና መዳረሻ",
-    "dashboard": "ዳሽቦርድ",
+    "overviewItem": "አጠቃላይ እይታ",
+    "dashboard": "አጠቃላይ እይታ",
     "organizations": "ድርጅቶች",
     "users": "ተጠቃሚዎች እና ሚናዎች",
     "transit": "የትራንዚት መሰረተ-ልማት",
