@@ -551,7 +551,8 @@
     "settings": "Settings",
     "coreOperations": "Core Operations",
     "fleetScheduling": "Fleet & Scheduling",
-    "bookingsRevenue": "Bookings & Revenue"
+    "bookingsRevenue": "Bookings & Revenue",
+    "notifications": "Notifications"
   },
   "dashboardSettings": {
     "appearanceTitle": "Appearance & Display",
@@ -790,4 +791,3 @@
     "manageVerifiers": "Manage Verifiers"
   }
 }
-
