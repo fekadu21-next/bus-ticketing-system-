@@ -1,21 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { Building2, CheckCircle2, XCircle, AlertTriangle, ShieldCheck, Eye, Search, RefreshCw } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ShieldCheck,
+  Eye,
+  Search,
+  RefreshCw,
+  Power,
+  RotateCcw,
+} from "lucide-react";
 
 export const AdminOrganizationsPage = () => {
   const {
-    organizations,
+    organizations = [],
     buses = [],
     approveOrganization,
     rejectOrganization,
     suspendOrganization,
     reactivateOrganization,
+    updateOrganizationStatus,
     isLoadingData,
     fetchAdminData,
+    showToast,
   } = useApp();
 
   const [selectedOrg, setSelectedOrg] = useState(null);
@@ -29,12 +42,22 @@ export const AdminOrganizationsPage = () => {
   const [targetOrgId, setTargetOrgId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  React.useEffect(() => {
+  // Performance: only load if empty on initial mount
+  useEffect(() => {
+    if (organizations.length === 0 && fetchAdminData) {
+      fetchAdminData();
+    }
+  }, [organizations.length, fetchAdminData]);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [filterStatus, filterType, searchQuery]);
 
-  const categories = Array.from(new Set(organizations.map((o) => o.type).filter(Boolean)));
+  const categories = useMemo(() => {
+    return Array.from(new Set(organizations.map((o) => o.type).filter(Boolean)));
+  }, [organizations]);
 
   const getOrgBusCount = (org) => {
     if (org.totalBuses !== undefined && org.totalBuses > 0) return org.totalBuses;
@@ -42,42 +65,92 @@ export const AdminOrganizationsPage = () => {
     return fromBuses || (org._count?.buses ?? org.buses?.length ?? 0);
   };
 
-  const filteredOrgs = organizations.filter((org) => {
-    const matchesStatus = filterStatus === "ALL" || org.status === filterStatus;
-    const matchesType = filterType === "ALL" || org.type === filterType;
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      (org.name || "").toLowerCase().includes(q) ||
-      (org.registrationNumber || "").toLowerCase().includes(q) ||
-      (org.contactName || "").toLowerCase().includes(q) ||
-      (org.address || "").toLowerCase().includes(q);
-    return matchesStatus && matchesType && matchesSearch;
-  });
+  const filteredOrgs = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return organizations.filter((org) => {
+      const matchesStatus = filterStatus === "ALL" || org.status === filterStatus;
+      const matchesType = filterType === "ALL" || org.type === filterType;
+      const matchesSearch =
+        !q ||
+        (org.name || "").toLowerCase().includes(q) ||
+        (org.registrationNumber || "").toLowerCase().includes(q) ||
+        (org.contactName || "").toLowerCase().includes(q) ||
+        (org.address || "").toLowerCase().includes(q) ||
+        (org.email || "").toLowerCase().includes(q);
+      return matchesStatus && matchesType && matchesSearch;
+    });
+  }, [organizations, filterStatus, filterType, searchQuery]);
 
   const totalPages = Math.ceil(filteredOrgs.length / pageSize) || 1;
-  const paginatedOrgs = filteredOrgs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedOrgs = useMemo(() => {
+    return filteredOrgs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [filteredOrgs, currentPage, pageSize]);
 
-  React.useEffect(() => {
-    if (fetchAdminData) {
-      fetchAdminData();
+  const handleManualRefresh = async () => {
+    if (!fetchAdminData) return;
+    try {
+      setIsRefreshing(true);
+      await fetchAdminData();
+      if (showToast) showToast("Organizations directory updated from backend.");
+    } catch {
+      if (showToast) showToast("Failed to refresh organizations.", "error");
+    } finally {
+      setIsRefreshing(false);
     }
-  }, [fetchAdminData]);
+  };
+
+  const handleStatusSelectChange = (orgId, nextStatus) => {
+    if (nextStatus === "REJECTED") {
+      setTargetOrgId(orgId);
+      setShowRejectModal(true);
+    } else if (nextStatus === "SUSPENDED") {
+      setTargetOrgId(orgId);
+      setShowSuspendModal(true);
+    } else {
+      updateOrganizationStatus(orgId, nextStatus);
+      if (selectedOrg && selectedOrg.id === orgId) {
+        setSelectedOrg((prev) => (prev ? { ...prev, status: nextStatus } : null));
+      }
+    }
+  };
 
   const handleConfirmReject = () => {
     if (targetOrgId) {
-      rejectOrganization(targetOrgId, rejectReason || "Documentation non-compliant");
+      const reason = rejectReason.trim() || "Documentation verification failed";
+      rejectOrganization(targetOrgId, reason);
+      if (selectedOrg && selectedOrg.id === targetOrgId) {
+        setSelectedOrg((prev) => (prev ? { ...prev, status: "REJECTED", notes: reason } : null));
+      }
       setShowRejectModal(false);
       setRejectReason("");
-      setSelectedOrg(null);
+      setTargetOrgId(null);
     }
   };
 
   const handleConfirmSuspend = () => {
     if (targetOrgId) {
-      suspendOrganization(targetOrgId, suspendReason || "Safety policy non-conformance");
+      const reason = suspendReason.trim() || "Administrative safety suspension";
+      suspendOrganization(targetOrgId, reason);
+      if (selectedOrg && selectedOrg.id === targetOrgId) {
+        setSelectedOrg((prev) => (prev ? { ...prev, status: "SUSPENDED", notes: reason } : null));
+      }
       setShowSuspendModal(false);
       setSuspendReason("");
-      setSelectedOrg(null);
+      setTargetOrgId(null);
+    }
+  };
+
+  const handleApprove = (orgId) => {
+    approveOrganization(orgId);
+    if (selectedOrg && selectedOrg.id === orgId) {
+      setSelectedOrg((prev) => (prev ? { ...prev, status: "APPROVED" } : null));
+    }
+  };
+
+  const handleReactivate = (orgId) => {
+    reactivateOrganization(orgId);
+    if (selectedOrg && selectedOrg.id === orgId) {
+      setSelectedOrg((prev) => (prev ? { ...prev, status: "APPROVED" } : null));
     }
   };
 
@@ -85,20 +158,20 @@ export const AdminOrganizationsPage = () => {
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Organizations</h1>
-          <p>Review operator applications and active transport providers.</p>
+          <h1>Organizations & Bus Operators</h1>
+          <p>Supervise transport operator credentials, legal registration, operational fleet, and live licensing status.</p>
         </div>
       </div>
 
       {/* Filter Toolbar */}
       <div className="card-table-wrapper">
         <div className="card-header-toolbar">
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
             <div className="header-search" style={{ width: "260px" }}>
               <Search className="search-icon" size={15} />
               <input
                 type="text"
-                placeholder="Filter by name, reg #..."
+                placeholder="Search by name, reg #, email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -118,10 +191,11 @@ export const AdminOrganizationsPage = () => {
               className="org-selector-select"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
+              title="Filter by approval status"
             >
               <option value="ALL">All Statuses</option>
-              <option value="PENDING">Pending Review</option>
               <option value="APPROVED">Approved Active</option>
+              <option value="PENDING">Pending Review</option>
               <option value="SUSPENDED">Suspended</option>
               <option value="REJECTED">Rejected</option>
             </select>
@@ -137,121 +211,190 @@ export const AdminOrganizationsPage = () => {
                 cursor: "pointer",
                 borderRadius: "0.5rem"
               }}
-              onClick={() => fetchAdminData && fetchAdminData()}
-              disabled={isLoadingData}
+              onClick={handleManualRefresh}
+              disabled={isRefreshing || isLoadingData}
               title="Refresh organizations list from backend"
             >
-              <RefreshCw size={13} className={isLoadingData ? "animate-spin" : ""} />
-              Refresh
+              <RefreshCw size={13} className={isRefreshing || isLoadingData ? "spin animate-spin" : ""} />
+              {isRefreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-            Showing <strong>{filteredOrgs.length}</strong> of <strong>{organizations.length}</strong> registered operators
+            Showing <strong>{filteredOrgs.length}</strong> of <strong>{organizations.length}</strong> operators
           </div>
         </div>
 
         {/* Operators Table */}
         <div style={{ overflowX: "auto" }}>
-          <table className="data-table" style={{ minWidth: "1000px" }}>
-          <thead>
-            <tr>
-              <th>Organization</th>
-              <th>Type</th>
-              <th>Registration Ref</th>
-              <th>Contact Details</th>
-              <th>Fleet / Trips</th>
-              <th>Status</th>
-              <th>Registered</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoadingData && organizations.length === 0 ? (
+          <table className="data-table" style={{ minWidth: "1050px" }}>
+            <thead>
               <tr>
-                <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem" }}>
-                  <LoadingSpinner label="Loading registered organizations..." />
-                </td>
+                <th>Organization</th>
+                <th>Type</th>
+                <th>Registration Ref</th>
+                <th>Contact Details</th>
+                <th>Fleet / Trips</th>
+                <th>Current Status</th>
+                <th>Registered</th>
+                <th>Actions</th>
               </tr>
-            ) : filteredOrgs.length === 0 ? (
-              <tr>
-                <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
-                  No organizations found matching the selected filter or search term.
-                </td>
-              </tr>
-            ) : (
-              paginatedOrgs.map((org) => (
-                <tr key={org.id}>
-                  <td>
-                    <strong>{org.name}</strong>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.address}</div>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>{org.type}</span>
-                  </td>
-                  <td><code>{org.registrationNumber}</code></td>
-                  <td>
-                    <div>{org.contactName}</div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.phone} | {org.email}</div>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--primary)" }}>{getOrgBusCount(org)} buses</span>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.activeTrips} active trips</div>
-                  </td>
-                  <td><Badge status={org.status} /></td>
-                  <td>{org.createdAt}</td>
-                  <td>
-                    <div style={{ display: "flex", gap: "0.35rem" }}>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setSelectedOrg(org)}
-                      >
-                        <Eye size={13} /> View
-                      </button>
-                      {org.status === "PENDING" && (
-                        <>
-                          <button
-                            className="btn btn-success btn-sm"
-                            onClick={() => approveOrganization(org.id)}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => {
-                              setTargetOrgId(org.id);
-                              setShowRejectModal(true);
-                            }}
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      {org.status === "APPROVED" && (
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => {
-                            setTargetOrgId(org.id);
-                            setShowSuspendModal(true);
-                          }}
-                        >
-                          Suspend
-                        </button>
-                      )}
-                      {org.status === "SUSPENDED" && (
-                        <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => reactivateOrganization(org.id)}
-                        >
-                          Reactivate
-                        </button>
-                      )}
-                    </div>
+            </thead>
+            <tbody>
+              {isLoadingData && organizations.length === 0 ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem" }}>
+                    <LoadingSpinner label="Loading registered organizations..." />
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : filteredOrgs.length === 0 ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                    No organizations found matching the selected filter or search term.
+                  </td>
+                </tr>
+              ) : (
+                paginatedOrgs.map((org) => {
+                  const currentStatus = org.status || "APPROVED";
+                  const busCount = getOrgBusCount(org);
+                  return (
+                    <tr key={org.id}>
+                      <td>
+                        <strong>{org.name}</strong>
+                        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.address}</div>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>{org.type}</span>
+                      </td>
+                      <td><code>{org.registrationNumber}</code></td>
+                      <td>
+                        <div>{org.contactName}</div>
+                        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.phone} | {org.email}</div>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--primary)" }}>
+                          {busCount} {busCount === 1 ? "bus" : "buses"}
+                        </span>
+                        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.activeTrips || 0} active trips</div>
+                      </td>
+                      <td>
+                        {/* Interactive Current Status Dropdown */}
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                          <select
+                            className="status-selector"
+                            value={currentStatus}
+                            onChange={(e) => handleStatusSelectChange(org.id, e.target.value)}
+                            title="Change organization status"
+                            style={{
+                              fontSize: "0.75rem",
+                              fontWeight: 700,
+                              padding: "4px 8px",
+                              borderRadius: "6px",
+                              border: "1px solid var(--border-color, #cbd5e1)",
+                              cursor: "pointer",
+                              background:
+                                currentStatus === "APPROVED"
+                                  ? "rgba(16, 185, 129, 0.12)"
+                                  : currentStatus === "PENDING"
+                                  ? "rgba(245, 158, 11, 0.12)"
+                                  : currentStatus === "SUSPENDED"
+                                  ? "rgba(239, 68, 68, 0.12)"
+                                  : "rgba(100, 116, 139, 0.12)",
+                              color:
+                                currentStatus === "APPROVED"
+                                  ? "#059669"
+                                  : currentStatus === "PENDING"
+                                  ? "#d97706"
+                                  : currentStatus === "SUSPENDED"
+                                  ? "#dc2626"
+                                  : "#475569",
+                            }}
+                          >
+                            <option value="APPROVED">APPROVED</option>
+                            <option value="PENDING">PENDING</option>
+                            <option value="SUSPENDED">SUSPENDED</option>
+                            <option value="REJECTED">REJECTED</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td>{org.createdAt}</td>
+                      <td>
+                        <div style={{ display: "flex", gap: "0.35rem", alignItems: "center", flexWrap: "wrap" }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setSelectedOrg(org)}
+                            title="View complete organization profile"
+                          >
+                            <Eye size={13} /> View
+                          </button>
+
+                          {currentStatus === "PENDING" && (
+                            <>
+                              <button
+                                type="button"
+                                className="btn btn-success btn-sm"
+                                onClick={() => handleApprove(org.id)}
+                                title="Approve operator application"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-danger btn-sm"
+                                onClick={() => {
+                                  setTargetOrgId(org.id);
+                                  setShowRejectModal(true);
+                                }}
+                                title="Reject operator application"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+
+                          {currentStatus === "APPROVED" && (
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              onClick={() => {
+                                setTargetOrgId(org.id);
+                                setShowSuspendModal(true);
+                              }}
+                              title="Suspend operator operations"
+                            >
+                              Suspend
+                            </button>
+                          )}
+
+                          {currentStatus === "SUSPENDED" && (
+                            <button
+                              type="button"
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleReactivate(org.id)}
+                              title="Reactivate suspended operator"
+                            >
+                              Reactivate
+                            </button>
+                          )}
+
+                          {currentStatus === "REJECTED" && (
+                            <button
+                              type="button"
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleApprove(org.id)}
+                              title="Re-evaluate and approve operator"
+                            >
+                              Approve
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
 
         <Pagination
@@ -269,19 +412,54 @@ export const AdminOrganizationsPage = () => {
       <Modal
         isOpen={!!selectedOrg}
         onClose={() => setSelectedOrg(null)}
-        title={`Organization Profile: ${selectedOrg?.name}`}
+        title={`Organization Profile: ${selectedOrg?.name || ""}`}
         footer={
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
             <button className="btn btn-secondary" onClick={() => setSelectedOrg(null)}>
               Close
             </button>
             {selectedOrg?.status === "PENDING" && (
+              <>
+                <button
+                  className="btn btn-success"
+                  onClick={() => handleApprove(selectedOrg.id)}
+                >
+                  Approve Operator
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => {
+                    setTargetOrgId(selectedOrg.id);
+                    setShowRejectModal(true);
+                  }}
+                >
+                  Reject
+                </button>
+              </>
+            )}
+            {selectedOrg?.status === "APPROVED" && (
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  setTargetOrgId(selectedOrg.id);
+                  setShowSuspendModal(true);
+                }}
+              >
+                Suspend Operator
+              </button>
+            )}
+            {selectedOrg?.status === "SUSPENDED" && (
               <button
                 className="btn btn-success"
-                onClick={() => {
-                  approveOrganization(selectedOrg.id);
-                  setSelectedOrg(null);
-                }}
+                onClick={() => handleReactivate(selectedOrg.id)}
+              >
+                Reactivate Operator
+              </button>
+            )}
+            {selectedOrg?.status === "REJECTED" && (
+              <button
+                className="btn btn-success"
+                onClick={() => handleApprove(selectedOrg.id)}
               >
                 Approve Operator
               </button>
@@ -293,10 +471,29 @@ export const AdminOrganizationsPage = () => {
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <div>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: 700 }}>{selectedOrg.name}</h2>
-                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{selectedOrg.type}</p>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0 }}>{selectedOrg.name}</h2>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "0.2rem 0 0 0" }}>{selectedOrg.type}</p>
               </div>
-              <Badge status={selectedOrg.status} />
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontSize: "0.78rem", fontWeight: 600 }}>Status:</span>
+                <select
+                  value={selectedOrg.status || "APPROVED"}
+                  onChange={(e) => handleStatusSelectChange(selectedOrg.id, e.target.value)}
+                  style={{
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border-color)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <option value="APPROVED">APPROVED</option>
+                  <option value="PENDING">PENDING</option>
+                  <option value="SUSPENDED">SUSPENDED</option>
+                  <option value="REJECTED">REJECTED</option>
+                </select>
+              </div>
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem" }}>
@@ -319,15 +516,15 @@ export const AdminOrganizationsPage = () => {
               <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Operational Fleet</span>
                 <div style={{ fontWeight: 700 }}>{getOrgBusCount(selectedOrg)} Registered Buses</div>
-                <div style={{ fontSize: "0.75rem" }}>{selectedOrg.activeTrips} Active Departure Schedules</div>
+                <div style={{ fontSize: "0.75rem" }}>{selectedOrg.activeTrips || 0} Active Departure Schedules</div>
               </div>
             </div>
 
             <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
-              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Address & Notes</span>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Address & Operational Notes</span>
               <div style={{ fontSize: "0.82rem", margin: "0.2rem 0" }}>{selectedOrg.address}</div>
               <div style={{ fontSize: "0.78rem", fontStyle: "italic", color: "var(--text-muted)" }}>
-                "{selectedOrg.notes}"
+                "{selectedOrg.notes || "Registered transport operator."}"
               </div>
             </div>
           </div>
@@ -337,22 +534,40 @@ export const AdminOrganizationsPage = () => {
       {/* Reject Modal */}
       <Modal
         isOpen={showRejectModal}
-        onClose={() => setShowRejectModal(false)}
+        onClose={() => {
+          setShowRejectModal(false);
+          setRejectReason("");
+          setTargetOrgId(null);
+        }}
         title="Reject Operator Application"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setShowRejectModal(false)}>Cancel</button>
-            <button className="btn btn-danger" onClick={handleConfirmReject}>Confirm Rejection</button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                setShowRejectModal(false);
+                setRejectReason("");
+                setTargetOrgId(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button className="btn btn-danger" onClick={handleConfirmReject}>
+              Confirm Rejection
+            </button>
           </>
         }
       >
         <div className="form-group">
-          <label>Reason for Application Rejection</label>
+          <label style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.35rem", display: "block" }}>
+            Reason for Application Rejection
+          </label>
           <textarea
             rows={3}
             placeholder="Provide official rationale (e.g. invalid commercial transport license...)"
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
+            style={{ width: "100%", padding: "0.5rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
           />
         </div>
       </Modal>
@@ -360,25 +575,44 @@ export const AdminOrganizationsPage = () => {
       {/* Suspend Modal */}
       <Modal
         isOpen={showSuspendModal}
-        onClose={() => setShowSuspendModal(false)}
+        onClose={() => {
+          setShowSuspendModal(false);
+          setSuspendReason("");
+          setTargetOrgId(null);
+        }}
         title="Suspend Organization Operations"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setShowSuspendModal(false)}>Cancel</button>
-            <button className="btn btn-danger" onClick={handleConfirmSuspend}>Suspend Operator</button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                setShowSuspendModal(false);
+                setSuspendReason("");
+                setTargetOrgId(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button className="btn btn-danger" onClick={handleConfirmSuspend}>
+              Suspend Operator
+            </button>
           </>
         }
       >
         <div className="form-group">
-          <label>Reason for Suspension</label>
+          <label style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.35rem", display: "block" }}>
+            Reason for Suspension
+          </label>
           <textarea
             rows={3}
             placeholder="Specify reason for suspending operator active status..."
             value={suspendReason}
             onChange={(e) => setSuspendReason(e.target.value)}
+            style={{ width: "100%", padding: "0.5rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
           />
         </div>
       </Modal>
     </div>
   );
 };
+export default AdminOrganizationsPage;

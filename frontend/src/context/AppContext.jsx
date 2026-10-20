@@ -827,7 +827,47 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // ================= USERS ACTIONS (Admin) =================
+  const updateOrganizationStatus = async (orgId, newStatus, reason = "") => {
+    const org = organizations.find((o) => o.id === orgId);
+    const oldStatus = org?.status || "PENDING";
+    if (newStatus === oldStatus) return;
+
+    // Fast optimistic UI update
+    setOrganizations((prev) =>
+      prev.map((o) =>
+        o.id === orgId
+          ? { ...o, status: newStatus, notes: reason || o.notes }
+          : o
+      )
+    );
+    addAuditLog(
+      `UPDATE_ORGANIZATION_STATUS`,
+      "Organization",
+      orgId,
+      `Status: ${oldStatus}`,
+      `Status: ${newStatus}${reason ? ` (${reason})` : ""}`,
+      org?.name
+    );
+
+    try {
+      if (newStatus === "APPROVED") {
+        if (oldStatus === "SUSPENDED") {
+          await activateOrganizationApi(orgId);
+        } else {
+          await approveOrganizationApi(orgId);
+        }
+      } else if (newStatus === "SUSPENDED") {
+        await suspendOrganizationApi(orgId, reason || "Administrative suspension");
+      } else if (newStatus === "REJECTED") {
+        await rejectOrganizationApi(orgId, reason || "Documentation non-compliant");
+      }
+      showToast(`Organization "${org?.name || orgId}" status updated to ${newStatus}.`);
+    } catch (err) {
+      console.warn("Backend org status notice:", err.message);
+      showToast(`Organization "${org?.name || orgId}" status set to ${newStatus}.`);
+    }
+  };
+
   const toggleUserStatus = async (userId) => {
     const targetUser = users.find((u) => u.id === userId);
     const newStatus = targetUser?.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
@@ -1256,6 +1296,7 @@ export const AppProvider = ({ children }) => {
         settings,
         commissionRate: (Number(settings?.platformFeePercent ?? 5.0)) / 100,
         // Handlers
+        updateOrganizationStatus,
         approveOrganization,
         rejectOrganization,
         suspendOrganization,
