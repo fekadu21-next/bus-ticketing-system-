@@ -15,10 +15,13 @@ export default function IndexScreen() {
   }
 
   if (user) {
+    if (user.roles?.includes('TICKET_VERIFIER')) {
+      return <Redirect href="/verifier/dashboard" />;
+    }
     return <Redirect href="/dashboard" />;
   }
 
-  return <Redirect href="/landing" />;
+  return <Redirect href="/login" />;
 }
 
 const styles = StyleSheet.create({
