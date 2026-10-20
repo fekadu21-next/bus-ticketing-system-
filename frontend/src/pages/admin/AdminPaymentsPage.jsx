@@ -332,37 +332,7 @@ export const AdminPaymentsPage = () => {
                       </td>
                       <td><strong>{p.amount} {p.currency || "ETB"}</strong></td>
                       <td>
-                        {/* Active Payment Status Selector */}
-                        <select
-                          className="status-selector"
-                          value={currentStatus}
-                          onChange={(e) => handleStatusChange(p.id, e.target.value)}
-                          title="Change payment status"
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            padding: "3px 6px",
-                            borderRadius: "6px",
-                            border: "1px solid var(--border-color, #cbd5e1)",
-                            cursor: "pointer",
-                            background: isSuccess
-                              ? "rgba(16, 185, 129, 0.12)"
-                              : currentStatus === "PENDING"
-                              ? "rgba(245, 158, 11, 0.12)"
-                              : "rgba(239, 68, 68, 0.12)",
-                            color: isSuccess
-                              ? "#059669"
-                              : currentStatus === "PENDING"
-                              ? "#d97706"
-                              : "#dc2626",
-                          }}
-                        >
-                          <option value="SUCCESS">SUCCESS</option>
-                          <option value="COMPLETED">COMPLETED</option>
-                          <option value="PENDING">PENDING</option>
-                          <option value="REFUNDED">REFUNDED</option>
-                          <option value="FAILED">FAILED</option>
-                        </select>
+                        <Badge status={currentStatus} />
                       </td>
                       <td>{p.paidAt || p.createdAt || "Pending Callback"}</td>
                       <td>
@@ -375,27 +345,7 @@ export const AdminPaymentsPage = () => {
                           >
                             <Eye size={12} /> View
                           </button>
-                          {currentStatus !== "SUCCESS" && currentStatus !== "COMPLETED" && (
-                            <button
-                              type="button"
-                              className="btn btn-success btn-sm"
-                              onClick={() => handleStatusChange(p.id, "SUCCESS")}
-                              title="Mark as successful payment"
-                            >
-                              Approve
-                            </button>
-                          )}
-                          {isSuccess && (
-                            <button
-                              type="button"
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleStatusChange(p.id, "REFUNDED")}
-                              title="Issue transaction refund"
-                            >
-                              Refund
-                            </button>
-                          )}
-                        </div>
+                          </div>
                       </td>
                     </tr>
                   );
@@ -426,27 +376,7 @@ export const AdminPaymentsPage = () => {
             <button className="btn btn-secondary" onClick={() => setSelectedPayment(null)}>
               Close
             </button>
-            {selectedPayment?.status !== "SUCCESS" && selectedPayment?.status !== "COMPLETED" && (
-              <button
-                className="btn btn-success"
-                onClick={() => {
-                  handleStatusChange(selectedPayment.id, "SUCCESS");
-                }}
-              >
-                Mark as Success
-              </button>
-            )}
-            {selectedPayment?.status !== "REFUNDED" && (
-              <button
-                className="btn btn-danger"
-                onClick={() => {
-                  handleStatusChange(selectedPayment.id, "REFUNDED");
-                }}
-              >
-                Mark as Refunded
-              </button>
-            )}
-          </div>
+            </div>
         }
       >
         {selectedPayment && (
@@ -456,20 +386,7 @@ export const AdminPaymentsPage = () => {
                 <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>{selectedPayment.amount} {selectedPayment.currency || "ETB"}</h3>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>via {selectedPayment.provider || selectedPayment.paymentMethod}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Status:</span>
-                <select
-                  value={selectedPayment.status || "SUCCESS"}
-                  onChange={(e) => handleStatusChange(selectedPayment.id, e.target.value)}
-                  style={{ fontSize: "0.78rem", fontWeight: 700, padding: "4px 8px", borderRadius: "6px", border: "1px solid var(--border-color)" }}
-                >
-                  <option value="SUCCESS">SUCCESS</option>
-                  <option value="COMPLETED">COMPLETED</option>
-                  <option value="PENDING">PENDING</option>
-                  <option value="REFUNDED">REFUNDED</option>
-                  <option value="FAILED">FAILED</option>
-                </select>
-              </div>
+              <Badge status={selectedPayment.status || "SUCCESS"} />
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem" }}>

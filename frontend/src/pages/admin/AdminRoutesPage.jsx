@@ -179,26 +179,7 @@ export const AdminRoutesPage = () => {
                         </span>
                       </td>
                       <td>
-                        {/* Active Route Status Selector */}
-                        <select
-                          className="status-selector"
-                          value={currentStatus}
-                          onChange={(e) => handleStatusChange(r.id, e.target.value)}
-                          title="Change route status"
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            padding: "4px 8px",
-                            borderRadius: "6px",
-                            border: "1px solid var(--border-color, #cbd5e1)",
-                            cursor: "pointer",
-                            background: isActive ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
-                            color: isActive ? "#059669" : "#dc2626",
-                          }}
-                        >
-                          <option value="ACTIVE">ACTIVE</option>
-                          <option value="INACTIVE">INACTIVE</option>
-                        </select>
+                        <Badge status={currentStatus} />
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
@@ -210,14 +191,7 @@ export const AdminRoutesPage = () => {
                           >
                             <Eye size={13} /> View
                           </button>
-                          <button
-                            type="button"
-                            className={`btn btn-sm ${isActive ? "btn-secondary" : "btn-success"}`}
-                            onClick={() => handleStatusChange(r.id, isActive ? "INACTIVE" : "ACTIVE")}
-                            title={isActive ? "Deactivate route corridor" : "Activate route corridor"}
-                          >
-                            <Power size={13} /> {isActive ? "Deactivate" : "Activate"}
-                          </button>
+                          
                         </div>
                       </td>
                     </tr>
@@ -249,18 +223,7 @@ export const AdminRoutesPage = () => {
             <button className="btn btn-secondary" onClick={() => setSelectedRoute(null)}>
               Close
             </button>
-            <button
-              className={`btn ${selectedRoute?.status === "ACTIVE" ? "btn-danger" : "btn-success"}`}
-              onClick={() => {
-                if (selectedRoute?.id) {
-                  const nextStatus = selectedRoute.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-                  handleStatusChange(selectedRoute.id, nextStatus);
-                  setSelectedRoute((prev) => (prev ? { ...prev, status: nextStatus } : null));
-                }
-              }}
-            >
-              {selectedRoute?.status === "ACTIVE" ? "Deactivate Route" : "Activate Route"}
-            </button>
+            
           </div>
         }
       >
@@ -271,24 +234,7 @@ export const AdminRoutesPage = () => {
                 <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>{selectedRoute.name}</h3>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Intercity Transit Corridor</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Status:</span>
-                <select
-                  value={selectedRoute.status || "ACTIVE"}
-                  onChange={(e) => handleStatusChange(selectedRoute.id, e.target.value)}
-                  style={{
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    padding: "4px 10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--border-color)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                </select>
-              </div>
+              <Badge status={selectedRoute.status || "ACTIVE"} />
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem" }}>

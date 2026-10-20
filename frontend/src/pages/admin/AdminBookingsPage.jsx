@@ -342,71 +342,10 @@ export const AdminBookingsPage = () => {
                       <td><span style={{ fontWeight: 700 }}>Seat {b.seatNumber}</span></td>
                       <td><strong>{b.amount ?? b.totalFare ?? 0} ETB</strong></td>
                       <td>
-                        {/* Active Payment State Selector */}
-                        <select
-                          className="status-selector"
-                          value={currentPaymentStatus}
-                          onChange={(e) => handlePaymentStatusChange(b.id, e.target.value)}
-                          title="Change payment state"
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            padding: "3px 6px",
-                            borderRadius: "6px",
-                            border: "1px solid var(--border-color, #cbd5e1)",
-                            cursor: "pointer",
-                            background:
-                              currentPaymentStatus === "SUCCESS"
-                                ? "rgba(16, 185, 129, 0.12)"
-                                : currentPaymentStatus === "PENDING"
-                                ? "rgba(245, 158, 11, 0.12)"
-                                : "rgba(239, 68, 68, 0.12)",
-                            color:
-                              currentPaymentStatus === "SUCCESS"
-                                ? "#059669"
-                                : currentPaymentStatus === "PENDING"
-                                ? "#d97706"
-                                : "#dc2626",
-                          }}
-                        >
-                          <option value="SUCCESS">SUCCESS</option>
-                          <option value="PENDING">PENDING</option>
-                          <option value="FAILED">FAILED</option>
-                          <option value="REFUNDED">REFUNDED</option>
-                        </select>
+                        <Badge status={currentPaymentStatus} />
                       </td>
                       <td>
-                        {/* Active Booking Status Selector */}
-                        <select
-                          className="status-selector"
-                          value={currentStatus}
-                          onChange={(e) => handleBookingStatusChange(b.id, e.target.value)}
-                          title="Change booking status"
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            padding: "3px 6px",
-                            borderRadius: "6px",
-                            border: "1px solid var(--border-color, #cbd5e1)",
-                            cursor: "pointer",
-                            background:
-                              currentStatus === "CONFIRMED"
-                                ? "rgba(16, 185, 129, 0.12)"
-                                : currentStatus === "PENDING"
-                                ? "rgba(245, 158, 11, 0.12)"
-                                : "rgba(239, 68, 68, 0.12)",
-                            color:
-                              currentStatus === "CONFIRMED"
-                                ? "#059669"
-                                : currentStatus === "PENDING"
-                                ? "#d97706"
-                                : "#dc2626",
-                          }}
-                        >
-                          <option value="CONFIRMED">CONFIRMED</option>
-                          <option value="PENDING">PENDING</option>
-                          <option value="CANCELLED">CANCELLED</option>
-                        </select>
+                        <Badge status={currentStatus} />
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: "0.3rem", alignItems: "center" }}>
@@ -465,29 +404,7 @@ export const AdminBookingsPage = () => {
             <button className="btn btn-secondary" onClick={() => setSelectedBooking(null)}>
               Close
             </button>
-            {selectedBooking?.status !== "CONFIRMED" && (
-              <button
-                className="btn btn-success"
-                onClick={() => {
-                  handleBookingStatusChange(selectedBooking.id, "CONFIRMED");
-                  handlePaymentStatusChange(selectedBooking.id, "SUCCESS");
-                }}
-              >
-                Confirm & Mark Paid
-              </button>
-            )}
-            {selectedBooking?.status !== "CANCELLED" && (
-              <button
-                className="btn btn-danger"
-                onClick={() => {
-                  handleBookingStatusChange(selectedBooking.id, "CANCELLED");
-                  handlePaymentStatusChange(selectedBooking.id, "REFUNDED");
-                }}
-              >
-                Cancel & Refund
-              </button>
-            )}
-          </div>
+            </div>
         }
       >
         {selectedBooking && (
@@ -497,27 +414,7 @@ export const AdminBookingsPage = () => {
                 <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>{selectedBooking.bookingReference}</h3>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{selectedBooking.routeName}</span>
               </div>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <select
-                  value={selectedBooking.status || "CONFIRMED"}
-                  onChange={(e) => handleBookingStatusChange(selectedBooking.id, e.target.value)}
-                  style={{ fontSize: "0.78rem", fontWeight: 700, padding: "4px 8px", borderRadius: "6px", border: "1px solid var(--border-color)" }}
-                >
-                  <option value="CONFIRMED">CONFIRMED</option>
-                  <option value="PENDING">PENDING</option>
-                  <option value="CANCELLED">CANCELLED</option>
-                </select>
-                <select
-                  value={selectedBooking.paymentStatus || "SUCCESS"}
-                  onChange={(e) => handlePaymentStatusChange(selectedBooking.id, e.target.value)}
-                  style={{ fontSize: "0.78rem", fontWeight: 700, padding: "4px 8px", borderRadius: "6px", border: "1px solid var(--border-color)" }}
-                >
-                  <option value="SUCCESS">SUCCESS</option>
-                  <option value="PENDING">PENDING</option>
-                  <option value="FAILED">FAILED</option>
-                  <option value="REFUNDED">REFUNDED</option>
-                </select>
-              </div>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}><Badge status={selectedBooking.status || "CONFIRMED"} /><Badge status={selectedBooking.paymentStatus || "SUCCESS"} /></div>
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem" }}>

@@ -166,37 +166,7 @@ export const AdminBusesPage = () => {
                       <td>{b.model}</td>
                       <td><span style={{ fontWeight: 700 }}>{b.capacity} Seats</span></td>
                       <td>
-                        {/* Interactive Status Selector */}
-                        <select
-                          className="status-selector"
-                          value={currentStatus}
-                          onChange={(e) => handleStatusChange(b.id, e.target.value)}
-                          title="Change bus operational status"
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            padding: "4px 8px",
-                            borderRadius: "6px",
-                            border: "1px solid var(--border-color, #cbd5e1)",
-                            cursor: "pointer",
-                            background:
-                              currentStatus === "ACTIVE"
-                                ? "rgba(16, 185, 129, 0.12)"
-                                : currentStatus === "MAINTENANCE"
-                                ? "rgba(245, 158, 11, 0.12)"
-                                : "rgba(239, 68, 68, 0.12)",
-                            color:
-                              currentStatus === "ACTIVE"
-                                ? "#059669"
-                                : currentStatus === "MAINTENANCE"
-                                ? "#d97706"
-                                : "#dc2626",
-                          }}
-                        >
-                          <option value="ACTIVE">ACTIVE</option>
-                          <option value="INACTIVE">INACTIVE</option>
-                          <option value="MAINTENANCE">MAINTENANCE</option>
-                        </select>
+                        <Badge status={currentStatus} />
                       </td>
                       <td>{b.lastMaintenance || "—"}</td>
                       <td>
@@ -209,28 +179,7 @@ export const AdminBusesPage = () => {
                           >
                             <Eye size={13} /> View
                           </button>
-                          {currentStatus !== "ACTIVE" && (
-                            <button
-                              type="button"
-                              className="btn btn-success btn-sm"
-                              onClick={() => handleStatusChange(b.id, "ACTIVE")}
-                              title="Activate vehicle for departures"
-                            >
-                              Activate
-                            </button>
-                          )}
-                          {currentStatus !== "MAINTENANCE" && (
-                            <button
-                              type="button"
-                              className="btn btn-warning btn-sm"
-                              onClick={() => handleStatusChange(b.id, "MAINTENANCE")}
-                              title="Send vehicle to maintenance"
-                              style={{ background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a" }}
-                            >
-                              <Wrench size={12} />
-                            </button>
-                          )}
-                        </div>
+                          </div>
                       </td>
                     </tr>
                   );
@@ -261,37 +210,7 @@ export const AdminBusesPage = () => {
             <button className="btn btn-secondary" onClick={() => setSelectedBus(null)}>
               Close
             </button>
-            {selectedBus?.status !== "ACTIVE" && (
-              <button
-                className="btn btn-success"
-                onClick={() => {
-                  handleStatusChange(selectedBus.id, "ACTIVE");
-                }}
-              >
-                Mark as Active
-              </button>
-            )}
-            {selectedBus?.status !== "MAINTENANCE" && (
-              <button
-                className="btn btn-warning"
-                onClick={() => {
-                  handleStatusChange(selectedBus.id, "MAINTENANCE");
-                }}
-              >
-                Send to Maintenance
-              </button>
-            )}
-            {selectedBus?.status !== "INACTIVE" && (
-              <button
-                className="btn btn-danger"
-                onClick={() => {
-                  handleStatusChange(selectedBus.id, "INACTIVE");
-                }}
-              >
-                Deactivate Bus
-              </button>
-            )}
-          </div>
+            </div>
         }
       >
         {selectedBus && (
@@ -301,25 +220,7 @@ export const AdminBusesPage = () => {
                 <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>{selectedBus.plateNumber}</h3>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{selectedBus.busNumber} • {selectedBus.model}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Status:</span>
-                <select
-                  value={selectedBus.status || "ACTIVE"}
-                  onChange={(e) => handleStatusChange(selectedBus.id, e.target.value)}
-                  style={{
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    padding: "4px 10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--border-color)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                  <option value="MAINTENANCE">MAINTENANCE</option>
-                </select>
-              </div>
+              <Badge status={selectedBus.status || "ACTIVE"} />
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem" }}>

@@ -177,43 +177,7 @@ export const AdminTripsPage = () => {
                         </span>
                       </td>
                       <td>
-                        {/* Active Trip Status Selector */}
-                        <select
-                          className="status-selector"
-                          value={currentStatus}
-                          onChange={(e) => handleStatusChange(t.id, e.target.value)}
-                          title="Change trip dispatch status"
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            padding: "4px 8px",
-                            borderRadius: "6px",
-                            border: "1px solid var(--border-color, #cbd5e1)",
-                            cursor: "pointer",
-                            background:
-                              currentStatus === "PUBLISHED" || currentStatus === "SCHEDULED"
-                                ? "rgba(16, 185, 129, 0.12)"
-                                : currentStatus === "COMPLETED"
-                                ? "rgba(59, 130, 246, 0.12)"
-                                : currentStatus === "DRAFT"
-                                ? "rgba(245, 158, 11, 0.12)"
-                                : "rgba(239, 68, 68, 0.12)",
-                            color:
-                              currentStatus === "PUBLISHED" || currentStatus === "SCHEDULED"
-                                ? "#059669"
-                                : currentStatus === "COMPLETED"
-                                ? "#2563eb"
-                                : currentStatus === "DRAFT"
-                                ? "#d97706"
-                                : "#dc2626",
-                          }}
-                        >
-                          <option value="PUBLISHED">PUBLISHED</option>
-                          <option value="SCHEDULED">SCHEDULED</option>
-                          <option value="DRAFT">DRAFT</option>
-                          <option value="COMPLETED">COMPLETED</option>
-                          <option value="CANCELLED">CANCELLED</option>
-                        </select>
+                        <Badge status={currentStatus} />
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
@@ -225,27 +189,7 @@ export const AdminTripsPage = () => {
                           >
                             <Eye size={13} /> View
                           </button>
-                          {currentStatus !== "PUBLISHED" && currentStatus !== "COMPLETED" && (
-                            <button
-                              type="button"
-                              className="btn btn-success btn-sm"
-                              onClick={() => handleStatusChange(t.id, "PUBLISHED")}
-                              title="Publish trip for passenger bookings"
-                            >
-                              Publish
-                            </button>
-                          )}
-                          {currentStatus !== "CANCELLED" && currentStatus !== "COMPLETED" && (
-                            <button
-                              type="button"
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleStatusChange(t.id, "CANCELLED")}
-                              title="Cancel scheduled departure"
-                            >
-                              Cancel
-                            </button>
-                          )}
-                        </div>
+                          </div>
                       </td>
                     </tr>
                   );
@@ -276,37 +220,7 @@ export const AdminTripsPage = () => {
             <button className="btn btn-secondary" onClick={() => setSelectedTrip(null)}>
               Close
             </button>
-            {selectedTrip?.status !== "PUBLISHED" && selectedTrip?.status !== "COMPLETED" && (
-              <button
-                className="btn btn-success"
-                onClick={() => {
-                  handleStatusChange(selectedTrip.id, "PUBLISHED");
-                }}
-              >
-                Publish Trip
-              </button>
-            )}
-            {selectedTrip?.status !== "COMPLETED" && selectedTrip?.status !== "CANCELLED" && (
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  handleStatusChange(selectedTrip.id, "COMPLETED");
-                }}
-              >
-                Mark Completed
-              </button>
-            )}
-            {selectedTrip?.status !== "CANCELLED" && selectedTrip?.status !== "COMPLETED" && (
-              <button
-                className="btn btn-danger"
-                onClick={() => {
-                  handleStatusChange(selectedTrip.id, "CANCELLED");
-                }}
-              >
-                Cancel Trip
-              </button>
-            )}
-          </div>
+            </div>
         }
       >
         {selectedTrip && (
@@ -316,27 +230,7 @@ export const AdminTripsPage = () => {
                 <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>{selectedTrip.tripCode}</h3>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{selectedTrip.routeName}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Status:</span>
-                <select
-                  value={selectedTrip.status || "SCHEDULED"}
-                  onChange={(e) => handleStatusChange(selectedTrip.id, e.target.value)}
-                  style={{
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    padding: "4px 10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--border-color)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <option value="PUBLISHED">PUBLISHED</option>
-                  <option value="SCHEDULED">SCHEDULED</option>
-                  <option value="DRAFT">DRAFT</option>
-                  <option value="COMPLETED">COMPLETED</option>
-                  <option value="CANCELLED">CANCELLED</option>
-                </select>
-              </div>
+              <Badge status={selectedTrip.status || "SCHEDULED"} />
             </div>
 
             <div className="form-row" style={{ marginBottom: "1rem" }}>

@@ -240,38 +240,7 @@ export const AdminTicketsPage = () => {
                       <td><strong>{t.seatNumber}</strong></td>
                       <td><code>{t.qrToken}</code></td>
                       <td>
-                        {/* Active Ticket Status Selector */}
-                        <select
-                          className="status-selector"
-                          value={currentStatus}
-                          onChange={(e) => handleStatusChange(t.id, e.target.value)}
-                          title="Change ticket status"
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            padding: "3px 6px",
-                            borderRadius: "6px",
-                            border: "1px solid var(--border-color, #cbd5e1)",
-                            cursor: "pointer",
-                            background:
-                              isValid
-                                ? "rgba(16, 185, 129, 0.12)"
-                                : currentStatus === "USED"
-                                ? "rgba(59, 130, 246, 0.12)"
-                                : "rgba(239, 68, 68, 0.12)",
-                            color:
-                              isValid
-                                ? "#059669"
-                                : currentStatus === "USED"
-                                ? "#2563eb"
-                                : "#dc2626",
-                          }}
-                        >
-                          <option value="VALID">VALID</option>
-                          <option value="USED">USED</option>
-                          <option value="CANCELLED">CANCELLED</option>
-                          <option value="EXPIRED">EXPIRED</option>
-                        </select>
+                        <Badge status={currentStatus} />
                       </td>
                       <td>{t.issuedAt}</td>
                       <td>
@@ -284,27 +253,7 @@ export const AdminTicketsPage = () => {
                           >
                             <Eye size={13} /> View QR
                           </button>
-                          {currentStatus !== "USED" && (
-                            <button
-                              type="button"
-                              className="btn btn-primary btn-sm"
-                              onClick={() => handleStatusChange(t.id, "USED")}
-                              title="Mark as used / boarded"
-                            >
-                              Mark Used
-                            </button>
-                          )}
-                          {isValid && (
-                            <button
-                              type="button"
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleStatusChange(t.id, "CANCELLED")}
-                              title="Cancel / invalidate ticket"
-                            >
-                              Invalidate
-                            </button>
-                          )}
-                        </div>
+                          </div>
                       </td>
                     </tr>
                   );
@@ -477,26 +426,7 @@ export const AdminTicketsPage = () => {
               {selectedTicket.routeName} | Seat <strong>{selectedTicket.seatNumber}</strong>
             </p>
 
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", margin: "0.5rem 0" }}>
-              <span style={{ fontSize: "0.78rem", fontWeight: 600 }}>Ticket State:</span>
-              <select
-                value={selectedTicket.status || "VALID"}
-                onChange={(e) => handleStatusChange(selectedTicket.id, e.target.value)}
-                style={{
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  border: "1px solid var(--border-color)",
-                  cursor: "pointer",
-                }}
-              >
-                <option value="VALID">VALID</option>
-                <option value="USED">USED</option>
-                <option value="CANCELLED">CANCELLED</option>
-                <option value="EXPIRED">EXPIRED</option>
-              </select>
-            </div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", margin: "0.5rem 0" }}><Badge status={selectedTicket.status || "VALID"} /></div>
 
             <div
               style={{
