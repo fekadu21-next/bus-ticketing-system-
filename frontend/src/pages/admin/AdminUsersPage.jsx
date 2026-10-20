@@ -40,9 +40,21 @@ export const AdminUsersPage = () => {
     setCurrentPage(1);
   }, [filterRole, filterOrg, searchQuery]);
 
+  // Deduplicate users by email to prevent duplicate accounts in the Users & Roles section
+  const uniqueUsers = useMemo(() => {
+    const seen = new Set();
+    return users.filter((u) => {
+      const emailKey = (u.email || "").toLowerCase().trim();
+      if (!emailKey) return true;
+      if (seen.has(emailKey)) return false;
+      seen.add(emailKey);
+      return true;
+    });
+  }, [users]);
+
   const filteredUsers = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    return users.filter((u) => {
+    return uniqueUsers.filter((u) => {
       const roleUpper = (u.role || "").toUpperCase();
       const matchesRole =
         filterRole === "ALL" ||
@@ -70,7 +82,7 @@ export const AdminUsersPage = () => {
 
       return matchesRole && matchesOrg && matchesSearch;
     });
-  }, [users, organizations, filterRole, filterOrg, searchQuery]);
+  }, [uniqueUsers, organizations, filterRole, filterOrg, searchQuery]);
 
   const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1;
   const paginatedUsers = useMemo(() => {
@@ -203,7 +215,7 @@ export const AdminUsersPage = () => {
                   return (
                     <tr key={u.id}>
                       <td>
-                        <strong>{u.name}</strong>
+                        <strong>{u.name && u.name !== u.email ? u.name : (u.email ? u.email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Platform User')}</strong>
                         <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
                           ID: {u.id?.length > 18 ? `${u.id.substring(0, 18)}...` : u.id}
                         </div>
@@ -355,7 +367,7 @@ export const AdminUsersPage = () => {
                   {selectedUserModal.name?.charAt(0)?.toUpperCase() || "U"}
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{selectedUserModal.name}</h3>
+                  <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{selectedUserModal.name && selectedUserModal.name !== selectedUserModal.email ? selectedUserModal.name : (selectedUserModal.email ? selectedUserModal.email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Platform User')}</h3>
                   <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{selectedUserModal.email}</span>
                 </div>
               </div>

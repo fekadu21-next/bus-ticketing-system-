@@ -301,9 +301,12 @@ export const AppProvider = ({ children }) => {
             const orgName = orgObj?.name || u.organizationName || u.organization_name || "—";
             const orgId = orgObj?.id || userRole?.organization_id || u.organization_id || "";
 
+            const fullName = [u.first_name, u.last_name].filter(Boolean).join(" ").trim();
+            const resolvedName = fullName || (u.name && u.name !== u.email ? u.name : (u.email ? u.email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Platform User"));
+
             return {
               id: u.id,
-              name: [u.first_name, u.last_name].filter(Boolean).join(" ") || u.name || u.email,
+              name: resolvedName,
               firstName: u.first_name || "",
               lastName: u.last_name || "",
               email: u.email,
