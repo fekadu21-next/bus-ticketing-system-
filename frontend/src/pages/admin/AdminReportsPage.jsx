@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { Pagination } from "../../components/ui/Pagination";
 import {
   BarChart3,
   TrendingUp,
@@ -98,14 +99,34 @@ export const AdminReportsPage = () => {
     verifications,
     showToast,
     adminReports,
+    settings,
     isLoadingData,
     fetchAdminData,
   } = useApp();
   const [activeTab, setActiveTab] = useState("operators");
+  const [currentPageOrgs, setCurrentPageOrgs] = useState(1);
+  const [pageSizeOrgs, setPageSizeOrgs] = useState(10);
+  const [currentPageTrips, setCurrentPageTrips] = useState(1);
+  const [pageSizeTrips, setPageSizeTrips] = useState(10);
+
+  const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
+  const commissionRate = commissionPercent / 100;
+
+  const totalPagesOrgs = Math.ceil(organizations.length / pageSizeOrgs) || 1;
+  const paginatedOrgs = organizations.slice(
+    (currentPageOrgs - 1) * pageSizeOrgs,
+    currentPageOrgs * pageSizeOrgs
+  );
+
+  const totalPagesTrips = Math.ceil(trips.length / pageSizeTrips) || 1;
+  const paginatedTrips = trips.slice(
+    (currentPageTrips - 1) * pageSizeTrips,
+    currentPageTrips * pageSizeTrips
+  );
 
   const successPayments = payments.filter((p) => p.status === "SUCCESS" || p.status === "COMPLETED");
   const totalRev = adminReports?.financials?.totalRevenue ?? successPayments.reduce((acc, p) => acc + p.amount, 0);
-  const platformFees = adminReports?.financials?.platformCommission ?? (totalRev * 0.035).toFixed(2);
+  const platformFees = adminReports?.financials?.platformCommission ?? (totalRev * commissionRate).toFixed(2);
   const activeOrgs = adminReports?.organizations?.active ?? organizations.filter((o) => o.status === "APPROVED").length;
   const validScans = verifications.filter((v) => v.status === "VALID").length;
   const totalScans = verifications.length;
@@ -165,7 +186,7 @@ export const AdminReportsPage = () => {
         <MetricBlock
           label="Platform Commission"
           value={`${Number(platformFees).toLocaleString()} ETB`}
-          sub="3.5% fee on gross revenue"
+          sub={`${commissionPercent}% fee on gross revenue`}
         />
         <MetricBlock
           label="Active Operators"
@@ -243,13 +264,13 @@ export const AdminReportsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {organizations.map((org) => {
+              {paginatedOrgs.map((org) => {
                 const orgBookings = bookings.filter(
                   (b) =>
                     b.organizationId === org.id && b.status === "CONFIRMED"
                 );
-                const rev = orgBookings.reduce((acc, b) => acc + b.amount, 0);
-                const fee = (rev * 0.035).toFixed(0);
+                const rev = orgBookings.reduce((acc, b) => acc + (b.totalFare || b.amount || 0), 0);
+                const fee = (rev * commissionRate).toFixed(0);
                 const net = (rev - Number(fee)).toLocaleString();
                 return (
                   <tr key={org.id}>
@@ -291,6 +312,19 @@ export const AdminReportsPage = () => {
               })}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPageOrgs}
+            totalPages={totalPagesOrgs}
+            totalItems={organizations.length}
+            pageSize={pageSizeOrgs}
+            onPageChange={setCurrentPageOrgs}
+            onPageSizeChange={(sz) => {
+              setPageSizeOrgs(sz);
+              setCurrentPageOrgs(1);
+            }}
+            itemLabel="operators"
+          />
         </div>
       )}
 
@@ -416,7 +450,7 @@ export const AdminReportsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {trips.map((t) => (
+              {paginatedTrips.map((t) => (
                 <tr key={t.id}>
                   <td>
                     <code>{t.tripCode}</code>
@@ -453,6 +487,19 @@ export const AdminReportsPage = () => {
               ))}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPageTrips}
+            totalPages={totalPagesTrips}
+            totalItems={trips.length}
+            pageSize={pageSizeTrips}
+            onPageChange={setCurrentPageTrips}
+            onPageSizeChange={(sz) => {
+              setPageSizeTrips(sz);
+              setCurrentPageTrips(1);
+            }}
+            itemLabel="trips"
+          />
         </div>
       )}
     </div>

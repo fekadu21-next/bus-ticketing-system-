@@ -1,10 +1,13 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import { CalendarDays, Plus, Search, UserCheck, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Clock } from "lucide-react";
 
 export const ManagerTripsPage = () => {
+  const { t } = useTranslation();
   const {
     trips,
     routes,
@@ -22,8 +25,14 @@ export const ManagerTripsPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [showWizardModal, setShowWizardModal] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus]);
 
   // Wizard form state
   const orgBuses = buses.filter((b) => b.organizationId === selectedOrgId && b.status === "ACTIVE");
@@ -31,9 +40,9 @@ export const ManagerTripsPage = () => {
 
   const [selectedRouteId, setSelectedRouteId] = useState(routes[0]?.id || "");
   const [selectedBusId, setSelectedBusId] = useState(orgBuses[0]?.id || "");
-  const [departureDate, setDepartureDate] = useState("2026-09-27");
-  const [departureTime, setDepartureTime] = useState("06:00 AM");
-  const [arrivalTime, setArrivalTime] = useState("02:30 PM");
+  const [departureDate, setDepartureDate] = useState("");
+  const [departureTime, setDepartureTime] = useState("");
+  const [arrivalTime, setArrivalTime] = useState("");
   const [fareAmount, setFareAmount] = useState(850);
   const [selectedDriverId, setSelectedDriverId] = useState(orgDrivers[0]?.id || "");
 
@@ -53,6 +62,12 @@ export const ManagerTripsPage = () => {
     return matchesStatus && matchesSearch;
   });
 
+  const totalPages = Math.ceil(filteredTrips.length / pageSize) || 1;
+  const paginatedTrips = filteredTrips.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   const [tripError, setTripError] = useState("");
   const [isSubmittingTrip, setIsSubmittingTrip] = useState(false);
 
@@ -60,6 +75,11 @@ export const ManagerTripsPage = () => {
     setTripError("");
     setIsSubmittingTrip(true);
     try {
+      if (!departureDate || !departureTime) {
+        setTripError("Departure date and time are required.");
+        setIsSubmittingTrip(false);
+        return;
+      }
       await createTrip({
         routeId: selectedRouteId,
         busId: selectedBusId,
@@ -72,6 +92,9 @@ export const ManagerTripsPage = () => {
       setTripError("");
       setShowWizardModal(false);
       setWizardStep(1);
+      setDepartureDate("");
+      setDepartureTime("");
+      setArrivalTime("");
     } catch (err) {
       setTripError(err.response?.data?.message || err.message || "Failed to schedule trip.");
     } finally {
@@ -94,8 +117,8 @@ export const ManagerTripsPage = () => {
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Trip Operations</h1>
-          <p>Schedule, publish, and manage company bus departures.</p>
+          <h1>{t("managerTrips.title")}</h1>
+          <p>{t("managerTrips.subtitle")}</p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
@@ -103,7 +126,7 @@ export const ManagerTripsPage = () => {
             onClick={() => fetchCoordinatorData(selectedOrgId)}
             disabled={isLoadingData}
           >
-            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
+            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> {t("common.refresh", "Refresh")}
           </button>
           <button
             className="btn btn-primary"
@@ -113,7 +136,7 @@ export const ManagerTripsPage = () => {
               setWizardStep(1);
             }}
           >
-            <Plus size={16} /> Schedule Trip
+            <Plus size={16} /> {t("managerTrips.scheduleBtn")}
           </button>
         </div>
       </div>
@@ -125,7 +148,8 @@ export const ManagerTripsPage = () => {
               <Search className="search-icon" size={15} />
               <input
                 type="text"
-                placeholder="Search trip code, route, bus..."
+                className="form-control"
+                placeholder={t("managerTrips.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -135,7 +159,7 @@ export const ManagerTripsPage = () => {
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="ALL">All Trip States</option>
+              <option value="ALL">{t("managerTrips.allStatuses")}</option>
               <option value="PUBLISHED">PUBLISHED</option>
               <option value="DRAFT">DRAFT</option>
               <option value="CANCELLED">CANCELLED</option>
@@ -143,14 +167,14 @@ export const ManagerTripsPage = () => {
             </select>
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-            Total Organization Trips: <strong>{orgTrips.length}</strong>
+            {t("managerTrips.totalTrips")}: <strong>{orgTrips.length}</strong>
           </div>
         </div>
 
         {filteredTrips.length === 0 ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
             <Clock size={36} style={{ opacity: 0.4, marginBottom: "0.5rem" }} />
-            <div>No departure trips matching your criteria.</div>
+            <div>{t("managerTrips.noTrips")}</div>
             {orgTrips.length === 0 && (
               <button
                 className="btn btn-primary btn-sm"
@@ -160,78 +184,79 @@ export const ManagerTripsPage = () => {
                   setWizardStep(1);
                 }}
               >
-                <Plus size={14} /> Schedule First Trip
+                <Plus size={14} /> {t("managerTrips.scheduleFirst")}
               </button>
             )}
           </div>
         ) : (
-          <table className="data-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "900px" }}>
             <thead>
               <tr>
-                <th>Trip Code</th>
-                <th>Route Name</th>
-                <th>Bus Plate</th>
-                <th>Assigned Driver</th>
-                <th>Departure Time</th>
-                <th>Fare</th>
-                <th>Booked / Seats</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t("managerTrips.tableTripCode")}</th>
+                <th>{t("managerTrips.tableRoute")}</th>
+                <th>{t("managerTrips.tableBus")}</th>
+                <th>{t("managerTrips.tableDriver")}</th>
+                <th>{t("managerTrips.tableDeparture")}</th>
+                <th>{t("managerTrips.tableFare")}</th>
+                <th>{t("managerTrips.tableSeats")}</th>
+                <th>{t("managerTrips.tableStatus")}</th>
+                <th>{t("managerTrips.tableActions")}</th>
               </tr>
             </thead>
             <tbody>
-              {filteredTrips.map((t) => (
-                <tr key={t.id}>
-                  <td><code>{t.tripCode}</code></td>
-                  <td><strong>{t.routeName}</strong></td>
-                  <td><code>{t.busPlateNumber}</code></td>
+              {paginatedTrips.map((tItem) => (
+                <tr key={tItem.id}>
+                  <td><code>{tItem.tripCode}</code></td>
+                  <td><strong>{tItem.routeName}</strong></td>
+                  <td><code>{tItem.busPlateNumber}</code></td>
                   <td>
-                    <span style={{ fontWeight: 600, color: t.driverName === "Unassigned" ? "var(--warning-text)" : "var(--text-main)" }}>
-                      {t.driverName}
+                    <span style={{ fontWeight: 600, color: tItem.driverName === "Unassigned" ? "var(--warning-text)" : "var(--text-main)" }}>
+                      {tItem.driverName === "Unassigned" ? t("managerTrips.unassigned") : tItem.driverName}
                     </span>
                   </td>
                   <td>
-                    <div>{t.departureDate}</div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{t.departureTime}</div>
+                    <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{tItem.departureDate}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--primary)", fontWeight: 700 }}>{tItem.departureTime}</div>
                   </td>
-                  <td><strong>{t.fareAmount} ETB</strong></td>
+                  <td><strong>{tItem.fareAmount} ETB</strong></td>
                   <td>
-                    <span style={{ fontWeight: 700 }}>{t.bookedSeatsCount} / {t.totalSeats}</span>
+                    <span style={{ fontWeight: 700 }}>{tItem.bookedSeatsCount} / {tItem.totalSeats}</span>
                   </td>
-                  <td><Badge status={t.status} /></td>
+                  <td><Badge status={tItem.status} /></td>
                   <td>
                     <div style={{ display: "flex", gap: "0.3rem" }}>
-                      {t.status === "DRAFT" ? (
+                      {tItem.status === "DRAFT" ? (
                         <button
                           className="btn btn-success btn-sm"
-                          onClick={() => publishTrip(t.id)}
+                          onClick={() => publishTrip(tItem.id)}
                         >
-                          Publish
+                          {t("managerTrips.publish")}
                         </button>
-                      ) : (t.status === "PUBLISHED" || t.status === "SCHEDULED") && (
+                      ) : (tItem.status === "PUBLISHED" || tItem.status === "SCHEDULED") && (
                         <button
                           className="btn btn-secondary btn-sm"
-                          onClick={() => unpublishTrip(t.id)}
+                          onClick={() => unpublishTrip(tItem.id)}
                           title="Move trip back to draft"
                         >
-                          Unpublish
+                          {t("managerTrips.unpublish")}
                         </button>
                       )}
                       <button
                         className="btn btn-secondary btn-sm"
                         onClick={() => {
-                          setTargetTripId(t.id);
+                          setTargetTripId(tItem.id);
                           setShowDriverModal(true);
                         }}
                       >
-                        Driver
+                        {t("managerTrips.assignDriver")}
                       </button>
-                      {t.status !== "CANCELLED" && (
+                      {tItem.status !== "CANCELLED" && (
                         <button
                           className="btn btn-danger btn-sm"
-                          onClick={() => cancelTrip(t.id)}
+                          onClick={() => cancelTrip(tItem.id)}
                         >
-                          Cancel
+                          {t("managerTrips.cancel")}
                         </button>
                       )}
                     </div>
@@ -240,24 +265,38 @@ export const ManagerTripsPage = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTrips.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(sz) => {
+            setPageSize(sz);
+            setCurrentPage(1);
+          }}
+          itemLabel="trips"
+        />
       </div>
 
       {/* 10-Step Wizard Modal */}
       <Modal
         isOpen={showWizardModal}
         onClose={() => setShowWizardModal(false)}
-        title={`Trip Scheduling Wizard (Step ${wizardStep} of 10)`}
+        title={`${t("managerTrips.wizardTitle")} (${t("managerTrips.step")} ${wizardStep} ${t("managerTrips.of")} 10)`}
         footer={
           <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
             {wizardStep > 1 ? (
               <button className="btn btn-secondary" onClick={() => setWizardStep(wizardStep - 1)}>
-                Back
+                {t("managerTrips.back")}
               </button>
             ) : <div />}
             {wizardStep < 10 ? (
               <button className="btn btn-primary" onClick={() => setWizardStep(wizardStep + 1)}>
-                Next Step <ArrowRight size={14} />
+                {t("managerTrips.next")} <ArrowRight size={14} />
               </button>
             ) : (
               <button
@@ -265,7 +304,7 @@ export const ManagerTripsPage = () => {
                 onClick={handleCreateTripSubmit}
                 disabled={isSubmittingTrip}
               >
-                {isSubmittingTrip ? "Creating Trip..." : "Confirm & Create Trip"}
+                {isSubmittingTrip ? t("managerTrips.creating") : t("managerTrips.confirmTrip")}
               </button>
             )}
           </div>
@@ -299,7 +338,7 @@ export const ManagerTripsPage = () => {
                   flex: 1,
                   height: "5px",
                   borderRadius: "2px",
-                  background: step <= wizardStep ? "var(--primary)" : "#e2e8f0"
+                  background: step <= wizardStep ? "var(--primary)" : "var(--border-color, #334155)"
                 }}
               />
             ))}
@@ -307,13 +346,14 @@ export const ManagerTripsPage = () => {
 
           {wizardStep === 1 && (
             <div>
-              <h3>Step 1: Select Reusable Route</h3>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
-                Verify organization is permitted to operate the specified corridor.
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step1Title")}</h3>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
+                {t("managerTrips.step1Desc")}
               </p>
+              <div className="form-divider" />
               <div className="form-group">
-                <label>Route</label>
-                <select value={selectedRouteId} onChange={(e) => setSelectedRouteId(e.target.value)}>
+                <label className="form-label">{t("managerTrips.tableRoute")}</label>
+                <select className="form-control" value={selectedRouteId} onChange={(e) => setSelectedRouteId(e.target.value)}>
                   {routes.map((r) => (
                     <option key={r.id} value={r.id}>{r.name} ({r.distanceKm} km)</option>
                   ))}
@@ -324,10 +364,11 @@ export const ManagerTripsPage = () => {
 
           {wizardStep === 2 && (
             <div>
-              <h3>Step 2: Select Fleet Bus</h3>
-              <div className="form-group" style={{ marginTop: "1rem" }}>
-                <label>Active Fleet Bus</label>
-                <select value={selectedBusId} onChange={(e) => setSelectedBusId(e.target.value)}>
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step2Title")}</h3>
+              <div className="form-divider" />
+              <div className="form-group">
+                <label className="form-label">{t("managerTrips.tableBus")}</label>
+                <select className="form-control" value={selectedBusId} onChange={(e) => setSelectedBusId(e.target.value)}>
                   {orgBuses.map((b) => (
                     <option key={b.id} value={b.id}>{b.busNumber} ({b.plateNumber}) - {b.capacity} Seats</option>
                   ))}
@@ -338,50 +379,55 @@ export const ManagerTripsPage = () => {
 
           {wizardStep === 3 && (
             <div>
-              <h3>Step 3: Departure Terminal</h3>
-              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "6px" }}>
-                <strong>Origin Terminal:</strong> {selectedRouteObj?.originStationName}
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step3Title")}</h3>
+              <div className="form-divider" />
+              <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1rem", borderRadius: "8px", color: "var(--text-main)" }}>
+                <strong>{t("managerRoutes.originLabel")}:</strong> {selectedRouteObj?.originStationName}
               </div>
             </div>
           )}
 
           {wizardStep === 4 && (
             <div>
-              <h3>Step 4: Arrival Terminal</h3>
-              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "6px" }}>
-                <strong>Destination Terminal:</strong> {selectedRouteObj?.destinationStationName}
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step4Title")}</h3>
+              <div className="form-divider" />
+              <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1rem", borderRadius: "8px", color: "var(--text-main)" }}>
+                <strong>{t("managerRoutes.destLabel")}:</strong> {selectedRouteObj?.destinationStationName}
               </div>
             </div>
           )}
 
           {wizardStep === 5 && (
             <div>
-              <h3>Step 5: Departure Schedule & Times</h3>
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step5Title")}</h3>
+              <div className="form-divider" />
               <div className="form-row">
                 <div className="form-group">
-                  <label>Departure Date</label>
-                  <input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} />
+                  <label className="form-label">{t("managerTrips.depDate")}</label>
+                  <input className="form-control" type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>Departure Time</label>
-                  <input type="text" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)} />
+                  <label className="form-label">{t("managerTrips.depTime")}</label>
+                  <input className="form-control" type="time" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)} />
                 </div>
               </div>
               <div className="form-group">
-                <label>Estimated Arrival Time</label>
-                <input type="text" value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)} />
+                <label className="form-label">{t("managerTrips.arrTime")}</label>
+                <input className="form-control" type="time" value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)} />
               </div>
             </div>
           )}
 
           {wizardStep === 6 && (
             <div>
-              <h3>Step 6: Configure Ticket Fare</h3>
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step6Title")}</h3>
+              <div className="form-divider" />
               <div className="form-group">
-                <label>Fare Amount (ETB)</label>
+                <label className="form-label">{t("managerTrips.fareAmount")}</label>
                 <input
                   type="number"
                   min="50"
+                  className="form-control"
                   value={fareAmount}
                   onChange={(e) => setFareAmount(e.target.value)}
                 />
@@ -391,10 +437,11 @@ export const ManagerTripsPage = () => {
 
           {wizardStep === 7 && (
             <div>
-              <h3>Step 7: Configure Seat Inventory</h3>
-              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "6px" }}>
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step7Title")}</h3>
+              <div className="form-divider" />
+              <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1rem", borderRadius: "8px", color: "var(--text-main)" }}>
                 <div>Total Seat Grid: <strong>{selectedBusObj?.capacity || 45} Seats</strong></div>
-                <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.3rem" }}>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.4rem" }}>
                   Seats 1 through {selectedBusObj?.capacity || 45} will be initialized as AVAILABLE.
                 </div>
               </div>
@@ -403,10 +450,11 @@ export const ManagerTripsPage = () => {
 
           {wizardStep === 8 && (
             <div>
-              <h3>Step 8: Assign Eligible Driver</h3>
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step8Title")}</h3>
+              <div className="form-divider" />
               <div className="form-group">
-                <label>Driver Staff</label>
-                <select value={selectedDriverId} onChange={(e) => setSelectedDriverId(e.target.value)}>
+                <label className="form-label">{t("managerTrips.driverStaff")}</label>
+                <select className="form-control" value={selectedDriverId} onChange={(e) => setSelectedDriverId(e.target.value)}>
                   {orgDrivers.map((d) => (
                     <option key={d.id} value={d.id}>{d.name} ({d.licenseNumber})</option>
                   ))}
@@ -417,12 +465,13 @@ export const ManagerTripsPage = () => {
 
           {wizardStep === 9 && (
             <div>
-              <h3>Step 9: Review Complete Summary</h3>
-              <div style={{ background: "#f8fafc", padding: "1rem", borderRadius: "6px", fontSize: "0.85rem" }}>
-                <div><strong>Route:</strong> {selectedRouteObj?.name}</div>
-                <div><strong>Bus:</strong> {selectedBusObj?.busNumber} ({selectedBusObj?.plateNumber})</div>
-                <div><strong>Schedule:</strong> {departureDate} at {departureTime}</div>
-                <div><strong>Fare:</strong> {fareAmount} ETB</div>
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step9Title")}</h3>
+              <div className="form-divider" />
+              <div style={{ background: "var(--bg-card, #ffffff)", border: "1px solid var(--border-color)", padding: "1rem", borderRadius: "8px", fontSize: "0.85rem", color: "var(--text-main)" }}>
+                <div style={{ marginBottom: "0.4rem" }}><strong>Route:</strong> {selectedRouteObj?.name}</div>
+                <div style={{ marginBottom: "0.4rem" }}><strong>Bus:</strong> {selectedBusObj?.busNumber} ({selectedBusObj?.plateNumber})</div>
+                <div style={{ marginBottom: "0.4rem" }}><strong>Schedule:</strong> {departureDate} at {departureTime}</div>
+                <div style={{ marginBottom: "0.4rem" }}><strong>Fare:</strong> {fareAmount} ETB</div>
                 <div><strong>Driver:</strong> {selectedDriverObj?.name}</div>
               </div>
             </div>
@@ -430,7 +479,8 @@ export const ManagerTripsPage = () => {
 
           {wizardStep === 10 && (
             <div>
-              <h3>Step 10: Publish Confirmation</h3>
+              <h3 style={{ marginBottom: "0.4rem", color: "var(--text-main)" }}>{t("managerTrips.step10Title")}</h3>
+              <div className="form-divider" />
               <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
                 Clicking Confirm will generate trip record in DRAFT state. You can publish it immediately to make it visible to passengers.
               </p>
@@ -443,18 +493,18 @@ export const ManagerTripsPage = () => {
       <Modal
         isOpen={showDriverModal}
         onClose={() => setShowDriverModal(false)}
-        title="Assign / Reassign Driver"
+        title={t("managerTrips.assignModalTitle")}
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setShowDriverModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleAssignDriver}>Save Assignment</button>
+            <button className="btn btn-secondary" onClick={() => setShowDriverModal(false)}>{t("common.cancel", "Cancel")}</button>
+            <button className="btn btn-primary" onClick={handleAssignDriver}>{t("managerTrips.saveAssignment")}</button>
           </>
         }
       >
         <div className="form-group">
-          <label>Select Eligible Driver (Same Organization)</label>
-          <select value={driverSelectId} onChange={(e) => setDriverSelectId(e.target.value)}>
-            <option value="">-- Choose Driver --</option>
+          <label className="form-label">{t("managerTrips.selectDriverPrompt")}</label>
+          <select className="form-control" value={driverSelectId} onChange={(e) => setDriverSelectId(e.target.value)}>
+            <option value="">{t("managerTrips.chooseDriver")}</option>
             {orgDrivers.map((d) => (
               <option key={d.id} value={d.id}>{d.name} ({d.licenseNumber})</option>
             ))}

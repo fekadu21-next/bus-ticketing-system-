@@ -27,10 +27,33 @@ export class AdminOrganizationRepository {
         orderBy: { created_at: 'desc' },
         include: {
           _count: {
-            select: { user_roles: true },
+            select: {
+              user_roles: true,
+              buses: true,
+              routes: true,
+              trips: true,
+              bookings: true,
+            },
+          },
+          buses: {
+            select: {
+              id: true,
+              plate_number: true,
+              model: true,
+              capacity: true,
+            },
+          },
+          trips: {
+            where: {
+              status: { in: ['SCHEDULED', 'PUBLISHED'] },
+            },
+            select: {
+              id: true,
+              status: true,
+            },
           },
           user_roles: {
-            take: 3,
+            take: 5,
             include: {
               users: {
                 select: {
@@ -63,8 +86,16 @@ export class AdminOrganizationRepository {
       where: { id },
       include: {
         _count: {
-          select: { user_roles: true },
+          select: {
+            user_roles: true,
+            buses: true,
+            routes: true,
+            trips: true,
+            bookings: true,
+          },
         },
+        buses: true,
+        routes: true,
         user_roles: {
           include: {
             users: {

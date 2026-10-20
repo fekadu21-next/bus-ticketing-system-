@@ -89,7 +89,7 @@ export class AdminDashboardRepository {
     });
 
     const totalRevenue = Number(aggregate._sum.amount || 0);
-    const platformCommission = Number((totalRevenue * 0.035).toFixed(2));
+    const platformCommission = Number((totalRevenue * 0.05).toFixed(2));
 
     return {
       totalRevenue,

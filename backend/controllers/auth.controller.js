@@ -22,10 +22,40 @@ class AuthController {
       userAgent,
     });
 
+    // Auto-login after registration for immediate access
+    const loginResult = await authService.login({
+      email,
+      password,
+      clientIp,
+      userAgent,
+    });
+
+    setRefreshTokenCookie(res, loginResult.refreshToken);
+
     res.status(201).json({
       success: true,
-      message: 'Registration successful. A verification link has been sent to your email.',
-      data: { user },
+      message: 'Registration successful. You have been logged in automatically.',
+      data: {
+        user,
+        accessToken: loginResult.accessToken,
+      },
+    });
+  });
+
+  registerPartner = asyncHandler(async (req, res) => {
+    const clientIp = req.ip;
+    const userAgent = req.headers['user-agent'];
+
+    const result = await authService.registerPartner({
+      ...req.body,
+      clientIp,
+      userAgent,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Partner organization application registered successfully.',
+      data: result,
     });
   });
 
@@ -58,22 +88,27 @@ class AuthController {
     const clientIp = req.ip;
     const userAgent = req.headers['user-agent'];
 
-    const result = await authService.refreshTokens({
-      rawRefreshToken,
-      clientIp,
-      userAgent,
-    });
+    try {
+      const result = await authService.refreshTokens({
+        rawRefreshToken,
+        clientIp,
+        userAgent,
+      });
 
-    setRefreshTokenCookie(res, result.refreshToken);
+      setRefreshTokenCookie(res, result.refreshToken);
 
-    res.status(200).json({
-      success: true,
-      message: 'Token refreshed successfully',
-      data: {
-        accessToken: result.accessToken,
-        user: result.user,
-      },
-    });
+      res.status(200).json({
+        success: true,
+        message: 'Token refreshed successfully',
+        data: {
+          accessToken: result.accessToken,
+          user: result.user,
+        },
+      });
+    } catch (err) {
+      clearRefreshTokenCookie(res);
+      throw err;
+    }
   });
 
   logout = asyncHandler(async (req, res) => {
@@ -82,14 +117,20 @@ class AuthController {
     const clientIp = req.ip;
     const userAgent = req.headers['user-agent'];
 
-    await authService.logout({
-      rawRefreshToken,
-      userId,
-      clientIp,
-      userAgent,
-    });
-
-    clearRefreshTokenCookie(res);
+    try {
+      if (rawRefreshToken || userId) {
+        await authService.logout({
+          rawRefreshToken,
+          userId,
+          clientIp,
+          userAgent,
+        });
+      }
+    } catch (err) {
+      console.warn('Logout service warning (proceeding to clear cookie):', err.message);
+    } finally {
+      clearRefreshTokenCookie(res);
+    }
 
     res.status(200).json({
       success: true,

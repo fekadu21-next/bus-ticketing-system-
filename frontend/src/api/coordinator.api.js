@@ -58,6 +58,40 @@ export const deleteRouteApi = async (orgId, routeId) => {
   return data;
 };
 
+// ─── Drivers ─────────────────────────────────────────────────────────────────
+
+// ─── Drivers ─────────────────────────────────────────────────────────────────
+
+export const getDriversApi = async (orgId, params = {}) => {
+  const { data } = await api.get(`/organizations/${orgId}/staff/drivers`, { params });
+  return data;
+};
+
+export const getDriverByIdApi = async (orgId, driverId) => {
+  const { data } = await api.get(`/organizations/${orgId}/staff/drivers/${driverId}`);
+  return data;
+};
+
+export const createDriverApi = async (orgId, payload) => {
+  const { data } = await api.post(`/organizations/${orgId}/staff/drivers`, payload);
+  return data;
+};
+
+export const updateDriverApi = async (orgId, driverId, payload) => {
+  const { data } = await api.patch(`/organizations/${orgId}/staff/drivers/${driverId}`, payload);
+  return data;
+};
+
+export const toggleDriverStatusApi = async (orgId, driverId, isActive) => {
+  const { data } = await api.patch(`/organizations/${orgId}/staff/drivers/${driverId}/status`, { isActive });
+  return data;
+};
+
+export const assignDriverToTripApi = async (orgId, tripId, driverId) => {
+  const { data } = await api.patch(`/organizations/${orgId}/trips/${tripId}/assign-driver`, { driverId });
+  return data;
+};
+
 // ─── Trips ───────────────────────────────────────────────────────────────────
 
 export const getTripsApi = async (orgId, params = {}) => {
@@ -194,6 +228,13 @@ export const verifyTicketApi = async (orgId, payload) => {
   return data;
 };
 
+// ─── Stations (for route creation) ─────────────────────────────────────────────
+
+export const getActiveStationsApi = async () => {
+  const { data } = await api.get('/stations/active');
+  return data;
+};
+
 export default {
   getStaffApi,
   createStaffApi,
@@ -228,4 +269,11 @@ export default {
   getOperationalStatsApi,
   getDashboardReportApi,
   verifyTicketApi,
+  getDriversApi,
+  getDriverByIdApi,
+  createDriverApi,
+  updateDriverApi,
+  toggleDriverStatusApi,
+  assignDriverToTripApi,
+  getActiveStationsApi,
 };

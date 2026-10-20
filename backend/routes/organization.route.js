@@ -12,11 +12,12 @@ import { ROLES } from '../constants/index.js';
 
 const router = Router();
 
-// All organization routes require authentication
-router.use(authenticate);
-
-// List organizations (Any authenticated user)
+// List organizations (Public / Any user)
 router.get('/', organizationController.getOrganizations);
+router.get('/public', organizationController.getOrganizations);
+
+// Administrative & scoped organization routes require authentication
+router.use(authenticate);
 
 // Register organization (Admin only)
 router.post(
@@ -72,6 +73,13 @@ router.post('/:orgId/drivers', requireCoordinator, coordinatorStaffController.cr
 router.get('/:orgId/drivers/:driverId', requireCoordinator, coordinatorStaffController.getDriverById);
 router.patch('/:orgId/drivers/:driverId', requireCoordinator, coordinatorStaffController.updateDriver);
 router.patch('/:orgId/drivers/:driverId/status', requireCoordinator, coordinatorStaffController.toggleDriverStatus);
+
+// Also support /staff/drivers alias routes
+router.get('/:orgId/staff/drivers', requireCoordinator, coordinatorStaffController.getDrivers);
+router.post('/:orgId/staff/drivers', requireCoordinator, coordinatorStaffController.createDriver);
+router.get('/:orgId/staff/drivers/:driverId', requireCoordinator, coordinatorStaffController.getDriverById);
+router.patch('/:orgId/staff/drivers/:driverId', requireCoordinator, coordinatorStaffController.updateDriver);
+router.patch('/:orgId/staff/drivers/:driverId/status', requireCoordinator, coordinatorStaffController.toggleDriverStatus);
 
 // Organization Problem Reports
 router.get('/:orgId/problems', requireCoordinator, driverController.getOrganizationProblems);

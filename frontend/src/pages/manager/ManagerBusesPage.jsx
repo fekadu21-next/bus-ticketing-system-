@@ -1,10 +1,13 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
+import { Pagination } from "../../components/ui/Pagination";
 import { Bus, Plus, Search, AlertCircle, RefreshCw } from "lucide-react";
 
 export const ManagerBusesPage = () => {
+  const { t } = useTranslation();
   const {
     buses,
     selectedOrgId,
@@ -19,6 +22,12 @@ export const ManagerBusesPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchQuery]);
 
   const [busNumber, setBusNumber] = useState("");
   const [plateNumber, setPlateNumber] = useState("");
@@ -35,6 +44,9 @@ export const ManagerBusesPage = () => {
       (b.model && b.model.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredBuses.length / pageSize) || 1;
+  const paginatedBuses = filteredBuses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleAddBus = async (e) => {
     if (e) e.preventDefault();
@@ -88,8 +100,8 @@ export const ManagerBusesPage = () => {
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Fleet & Buses</h1>
-          <p>Manage vehicle inventory and operational statuses for your organization fleet.</p>
+          <h1>{t("managerBuses.title", "Fleet & Buses")}</h1>
+          <p>{t("managerBuses.subtitle", "Manage vehicle inventory and operational statuses for your organization fleet.")}</p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
@@ -97,10 +109,10 @@ export const ManagerBusesPage = () => {
             onClick={() => fetchCoordinatorData(selectedOrgId)}
             disabled={isLoadingData}
           >
-            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> Refresh
+            <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> {t("common.refresh", "Refresh")}
           </button>
           <button className="btn btn-primary" onClick={() => { setFormError(""); setShowAddModal(true); }}>
-            <Plus size={16} /> Register New Bus
+            <Plus size={16} /> {t("managerBuses.registerBtn", "Register New Bus")}
           </button>
         </div>
       </div>
@@ -112,7 +124,7 @@ export const ManagerBusesPage = () => {
               <Search className="search-icon" size={15} />
               <input
                 type="text"
-                placeholder="Search bus #, plate, model..."
+                placeholder={t("managerBuses.searchPlaceholder", "Search bus #, plate, model...")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -122,47 +134,48 @@ export const ManagerBusesPage = () => {
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="ALL">All Statuses</option>
+              <option value="ALL">{t("managerBuses.allStatuses", "All Statuses")}</option>
               <option value="ACTIVE">ACTIVE</option>
               <option value="INACTIVE">INACTIVE</option>
               <option value="MAINTENANCE">MAINTENANCE</option>
             </select>
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-            Total Company Buses: <strong>{orgBuses.length}</strong>
+            {t("managerBuses.totalBuses", "Total Company Buses")}: <strong>{orgBuses.length}</strong>
           </div>
         </div>
 
         {filteredBuses.length === 0 ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
             <Bus size={36} style={{ opacity: 0.4, marginBottom: "0.5rem" }} />
-            <div>No vehicles matching your filter.</div>
+            <div>{t("managerBuses.noVehicles", "No vehicles matching your filter.")}</div>
             {orgBuses.length === 0 && (
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "1rem" }}
                 onClick={() => { setFormError(""); setShowAddModal(true); }}
               >
-                <Plus size={14} /> Register First Bus
+                <Plus size={14} /> {t("managerBuses.registerFirst", "Register First Bus")}
               </button>
             )}
           </div>
         ) : (
-          <table className="data-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "900px" }}>
             <thead>
               <tr>
-                <th>Bus Code</th>
-                <th>Plate Number</th>
-                <th>Vehicle Model</th>
-                <th>Passenger Capacity</th>
-                <th>Year</th>
-                <th>Status</th>
-                <th>Last Update</th>
-                <th>Status Action</th>
+                <th>{t("managerBuses.tableBusCode", "Bus Code")}</th>
+                <th>{t("managerBuses.tablePlateNumber", "Plate Number")}</th>
+                <th>{t("managerBuses.tableModel", "Vehicle Model")}</th>
+                <th>{t("managerBuses.tableCapacity", "Passenger Capacity")}</th>
+                <th>{t("managerBuses.tableYear", "Year")}</th>
+                <th>{t("managerBuses.tableStatus", "Status")}</th>
+                <th>{t("managerBuses.tableLastUpdate", "Last Update")}</th>
+                <th>{t("managerBuses.tableAction", "Status Action")}</th>
               </tr>
             </thead>
             <tbody>
-              {filteredBuses.map((b) => (
+              {paginatedBuses.map((b) => (
                 <tr key={b.id}>
                   <td>
                     <strong style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
@@ -171,7 +184,7 @@ export const ManagerBusesPage = () => {
                   </td>
                   <td><code>{b.plateNumber}</code></td>
                   <td>{b.model}</td>
-                  <td><span style={{ fontWeight: 700 }}>{b.capacity} Seats</span></td>
+                  <td><span style={{ fontWeight: 700 }}>{b.capacity} {t("managerBuses.seatsSuffix", "Seats")}</span></td>
                   <td>{b.manufactureYear}</td>
                   <td><Badge status={b.status} /></td>
                   <td>{b.lastMaintenance}</td>
@@ -191,14 +204,25 @@ export const ManagerBusesPage = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredBuses.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel={t("managerBuses.title", "fleet buses")}
+        />
       </div>
 
       {/* Add Bus Modal */}
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title="Register New Fleet Vehicle"
+        title={t("managerBuses.modalTitle", "Register New Fleet Vehicle")}
         footer={
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", width: "100%" }}>
             <button
@@ -206,30 +230,31 @@ export const ManagerBusesPage = () => {
               onClick={() => setShowAddModal(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("common.cancel", "Cancel")}
             </button>
             <button
               className="btn btn-primary"
               onClick={handleAddBus}
               disabled={isSubmitting || !plateNumber.trim()}
             >
-              {isSubmitting ? "Saving..." : "Save Vehicle"}
+              {isSubmitting ? t("managerBuses.saving", "Saving...") : t("managerBuses.saveBtn", "Save Vehicle")}
             </button>
           </div>
         }
       >
-        <form onSubmit={handleAddBus} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <form onSubmit={handleAddBus} style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
           {formError && (
             <div style={{
               padding: "0.75rem 1rem",
               backgroundColor: "rgba(239, 68, 68, 0.12)",
               border: "1px solid rgba(239, 68, 68, 0.35)",
-              borderRadius: "0.375rem",
+              borderRadius: "0.5rem",
               color: "#ef4444",
               fontSize: "0.85rem",
               display: "flex",
               alignItems: "center",
-              gap: "0.5rem"
+              gap: "0.5rem",
+              marginBottom: "0.75rem"
             }}>
               <AlertCircle size={16} style={{ flexShrink: 0 }} />
               <span>{formError}</span>
@@ -237,19 +262,21 @@ export const ManagerBusesPage = () => {
           )}
           <div className="form-row">
             <div className="form-group">
-              <label>Bus Number / Operational Code</label>
+              <label className="form-label">{t("managerBuses.busNumberLabel", "Bus Number / Operational Code")}</label>
               <input
                 type="text"
-                placeholder="e.g. SLM-104"
+                className="form-control"
+                placeholder={t("managerBuses.busNumberPlaceholder", "e.g. SLM-104")}
                 value={busNumber}
                 onChange={(e) => setBusNumber(e.target.value)}
               />
             </div>
             <div className="form-group">
-              <label>Plate Number</label>
+              <label className="form-label">{t("managerBuses.plateNumberLabel", "Plate Number")} *</label>
               <input
                 type="text"
-                placeholder="e.g. ET-3-55109"
+                className="form-control"
+                placeholder={t("managerBuses.plateNumberPlaceholder", "e.g. ET-3-55109")}
                 value={plateNumber}
                 onChange={(e) => {
                   setPlateNumber(e.target.value);
@@ -257,16 +284,20 @@ export const ManagerBusesPage = () => {
                 }}
                 required
               />
-              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                Must be unique within your organization.
+              <span className="help-text">
+                {t("managerBuses.plateHint", "Must be unique within your organization.")}
               </span>
             </div>
           </div>
+
+          <div className="form-divider" />
+
           <div className="form-row">
             <div className="form-group">
-              <label>Passenger Seat Capacity</label>
+              <label className="form-label">{t("managerBuses.capacityLabel", "Passenger Seat Capacity")} *</label>
               <input
                 type="number"
+                className="form-control"
                 min="10"
                 max="80"
                 value={capacity}
@@ -275,19 +306,24 @@ export const ManagerBusesPage = () => {
               />
             </div>
             <div className="form-group">
-              <label>Manufacture Year</label>
+              <label className="form-label">{t("managerBuses.yearLabel", "Manufacture Year")}</label>
               <input
                 type="text"
+                className="form-control"
                 value={manufactureYear}
                 onChange={(e) => setManufactureYear(e.target.value)}
               />
             </div>
           </div>
+
+          <div className="form-divider" />
+
           <div className="form-group">
-            <label>Bus Make & Model Specification</label>
+            <label className="form-label">{t("managerBuses.modelLabel", "Bus Make & Model Specification")}</label>
             <input
               type="text"
-              placeholder="e.g. Yutong ZK6129 Luxury Coach"
+              className="form-control"
+              placeholder={t("managerBuses.modelPlaceholder", "e.g. Yutong ZK6129 Luxury Coach")}
               value={model}
               onChange={(e) => setModel(e.target.value)}
             />

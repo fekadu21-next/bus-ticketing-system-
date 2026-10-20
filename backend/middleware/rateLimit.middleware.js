@@ -1,6 +1,12 @@
 import rateLimit from 'express-rate-limit';
+import env from '../Config/env.js';
 
-const isDevOrTest = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
+const isDevOrTest =
+  env.nodeEnv === 'development' ||
+  env.nodeEnv === 'test' ||
+  !process.env.NODE_ENV ||
+  process.env.NODE_ENV === 'development' ||
+  process.env.NODE_ENV === 'test';
 
 export const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -34,7 +40,6 @@ export const resendLimiter = rateLimit({
     message: 'Too many verification email requests. Please try again after 15 minutes.',
   },
 });
-
 export default {
   globalLimiter,
   authLimiter,

@@ -35,51 +35,51 @@ const VerifyEmailPage = () => {
   }, [token, t]);
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card" style={{ textAlign: 'center' }}>
-        <div className="auth-header">
-          <h1>{t('auth.verifyEmail.title', 'Verify Your Email')}</h1>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('auth.verifyEmail.title', 'Verify Your Email')}</h1>
         </div>
 
         {status === 'verifying' && (
-          <div style={{ padding: '32px 0' }}>
+          <div className="py-8">
             <LoadingSpinner label={t('auth.verifyEmail.verifying', 'Verifying your email address...')} />
           </div>
         )}
 
         {status === 'success' && (
-          <div style={{ padding: '12px 0' }}>
-            <div className="icon-circle icon-circle-success" style={{ margin: '0 auto 16px' }}>
-              <CheckCircle2 size={36} />
+          <div className="py-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={36} className="text-green-600 dark:text-green-400" />
             </div>
-            <h3 style={{ fontWeight: 800, color: 'var(--color-success)', marginBottom: 8 }}>
+            <h3 className="text-xl font-bold text-green-600 dark:text-green-400 mb-2">
               {t('auth.verifyEmail.successTitle', 'Email Verified Successfully')}
             </h3>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
+            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
               {message}
             </p>
-            <Link to="/login" className="btn btn-primary btn-block">
+            <Link to="/login" className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 inline-block flex items-center justify-center gap-2">
               {t('auth.verifyEmail.continueToLogin', 'Continue to Sign In')} <ArrowRight size={15} />
             </Link>
           </div>
         )}
 
         {status === 'error' && (
-          <div style={{ padding: '12px 0' }}>
-            <div className="icon-circle icon-circle-danger" style={{ margin: '0 auto 16px' }}>
-              <AlertCircle size={36} />
+          <div className="py-4">
+            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={36} className="text-red-600 dark:text-red-400" />
             </div>
-            <h3 style={{ fontWeight: 800, color: 'var(--color-danger)', marginBottom: 8 }}>
+            <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">
               {t('auth.verifyEmail.errorTitle', 'Verification Failed')}
             </h3>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
+            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
               {message}
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Link to="/resend-verification" className="btn btn-primary btn-block">
+            <div className="flex flex-col gap-3">
+              <Link to="/resend-verification" className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200">
                 {t('auth.verifyEmail.requestNewLink', 'Request a New Verification Link')}
               </Link>
-              <Link to="/login" className="btn btn-secondary btn-block">
+              <Link to="/login" className="w-full px-4 py-2.5 bg-slate-600 text-white rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors duration-200">
                 {t('auth.verifyEmail.backToLogin', 'Back to Sign In')}
               </Link>
             </div>

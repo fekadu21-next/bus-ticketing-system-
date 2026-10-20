@@ -25,43 +25,43 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card">
-        <div className="auth-lang-row">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+        <div className="flex justify-end mb-4">
           <LanguageSwitcher variant="compact" />
         </div>
 
-        <div className="auth-header">
-          <h1>{t('auth.forgotPassword.title', 'Forgot Password')}</h1>
-          <p>{t('auth.forgotPassword.subtitle', 'Enter your email to receive a password reset link')}</p>
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('auth.forgotPassword.title', 'Forgot Password')}</h1>
+          <p className="text-slate-600 dark:text-slate-400">{t('auth.forgotPassword.subtitle', 'Enter your email to receive a password reset link')}</p>
         </div>
 
         {isSubmitted ? (
-          <div style={{ textAlign: 'center', padding: '8px 0' }}>
-            <div className="icon-circle icon-circle-primary" style={{ margin: '0 auto 16px' }}>
-              <CheckCircle2 size={36} />
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={36} className="text-blue-600 dark:text-blue-400" />
             </div>
-            <h3 style={{ fontWeight: 800, marginBottom: 8 }}>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
               {t('auth.forgotPassword.sentTitle', 'Reset Link Sent')}
             </h3>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: 24, fontSize: '0.9rem', lineHeight: 1.6 }}>
+            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
               {t('auth.forgotPassword.sentText', { email, defaultValue: `If an account exists with ${email}, we have sent password reset instructions.` })}
             </p>
-            <Link to="/login" className="btn btn-secondary btn-block">
+            <Link to="/login" className="w-full px-4 py-2.5 bg-slate-600 text-white rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors duration-200 inline-block flex items-center justify-center gap-2">
               <ArrowLeft size={15} /> {t('auth.forgotPassword.backToLogin', 'Back to Sign In')}
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="form-group">
-              <label className="form-label" htmlFor="email">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="email">
                 {t('auth.forgotPassword.emailLabel', 'Email Address')}
               </label>
               <input
                 id="email"
                 type="email"
                 required
-                className="form-input"
+                className="w-full px-4 py-2.5 text-sm rounded-lg border border-slate-300 bg-white dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder={t('auth.forgotPassword.emailPlaceholder', 'name@example.com')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -70,10 +70,10 @@ const ForgotPasswordPage = () => {
               />
             </div>
 
-            <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting} style={{ marginTop: 6 }}>
+            <button type="submit" className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   {t('auth.forgotPassword.submitting', 'Sending link...')}
                 </>
               ) : (
@@ -81,8 +81,8 @@ const ForgotPasswordPage = () => {
               )}
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: 20 }}>
-              <Link to="/login" className="back-link">
+            <div className="text-center mt-4">
+              <Link to="/login" className="text-sm text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-300 flex items-center justify-center gap-2">
                 <ArrowLeft size={15} /> {t('auth.forgotPassword.backToLogin', 'Back to Sign In')}
               </Link>
             </div>

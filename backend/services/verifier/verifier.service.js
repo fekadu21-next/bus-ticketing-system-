@@ -3,6 +3,8 @@ import ApiError from '../../utils/apiError.js';
 import { ROLES } from '../../constants/index.js';
 import jwt from 'jsonwebtoken';
 import env from '../../Config/env.js';
+import notificationService from '../notification.service.js';
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 export class VerifierService {
   resolveVerifierOrg(user) {
@@ -224,6 +226,24 @@ export class VerifierService {
       result: 'VALID',
       notes: 'Passenger boarding permitted',
     });
+
+    if (ticket.passenger_id) {
+      await notificationService.safeCreateNotification({
+        userId: ticket.passenger_id,
+        type: NOTIFICATION_TYPES.TICKET_VERIFIED,
+        priority: NOTIFICATION_PRIORITIES.NORMAL,
+        title: 'Ticket Verified',
+        message: `Your ticket ${ticket.ticket_number} (Seat ${ticket.seat_number}) has been verified for boarding. Have a safe journey!`,
+        metadata: {
+          ticketId: ticket.id,
+          ticketNumber: ticket.ticket_number,
+          tripId,
+          bookingId: ticket.booking_id,
+          seatNumber: ticket.seat_number,
+          idempotencyKey: `ticket-verify-${ticket.id}`,
+        },
+      });
+    }
 
     const passengerName = `${ticket.passenger?.first_name || ''} ${ticket.passenger?.last_name || ''}`.trim();
 

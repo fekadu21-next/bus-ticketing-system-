@@ -7,6 +7,9 @@ import ApiError from '../../utils/apiError.js';
 import env from '../../Config/env.js';
 import { formatSafeUser } from './utils/formatSafeUser.js';
 
+/** Coalesce concurrent refresh attempts that present the same raw token. */
+const inFlightRefreshByHash = new Map();
+
 export class SessionService {
   /**
    * User login with failed attempt tracking and lockout
@@ -80,7 +83,7 @@ export class SessionService {
     const accessToken = generateAccessToken(user.id);
     const rawRefreshToken = generateSecureToken();
     const refreshTokenHash = hashToken(rawRefreshToken);
-    const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
     await authRepository.createRefreshToken({
       userId: user.id,
@@ -106,7 +109,9 @@ export class SessionService {
   }
 
   /**
-   * Rotate refresh token and detect reuse
+   * Rotate refresh token and detect reuse.
+   * Concurrent refreshes with the same token (React Strict Mode, multi-tab)
+   * are coalesced so we do not treat them as replay attacks.
    */
   async refreshTokens({ rawRefreshToken, clientIp, userAgent }) {
     if (!rawRefreshToken) {
@@ -114,13 +119,27 @@ export class SessionService {
     }
 
     const tokenHash = hashToken(rawRefreshToken);
+    const inFlight = inFlightRefreshByHash.get(tokenHash);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const work = this._rotateRefreshToken({ tokenHash, clientIp, userAgent }).finally(() => {
+      inFlightRefreshByHash.delete(tokenHash);
+    });
+
+    inFlightRefreshByHash.set(tokenHash, work);
+    return work;
+  }
+
+  async _rotateRefreshToken({ tokenHash, clientIp, userAgent }) {
     const tokenRecord = await authRepository.findRefreshTokenByHash(tokenHash);
 
     if (!tokenRecord) {
       throw new ApiError(401, 'Invalid or expired session. Please log in again.');
     }
 
-    // REUSE DETECTION: If token is already revoked, potential theft!
+    // REUSE DETECTION: If token is already revoked, reject session immediately
     if (tokenRecord.revoked_at) {
       await authRepository.revokeAllUserRefreshTokens(tokenRecord.user_id);
 
@@ -149,7 +168,7 @@ export class SessionService {
     // Generate new refresh token
     const newRawRefreshToken = generateSecureToken();
     const newTokenHash = hashToken(newRawRefreshToken);
-    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const newExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     const newRecord = await authRepository.createRefreshToken({
       userId: user.id,

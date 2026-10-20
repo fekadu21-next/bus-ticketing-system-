@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { Badge } from "../../components/ui/Badge";
+import { Pagination } from "../../components/ui/Pagination";
 import {
   BarChart3,
   TrendingUp,
@@ -47,14 +48,14 @@ const MetricBlock = ({ label, value, sub, trend }) => (
 const OccupancyBar = ({ value }) => {
   const pct = Math.min(Number(value), 100);
   const fillColor =
-    pct >= 75 ? "var(--success)" : pct >= 40 ? "var(--warning)" : "#cbd5e1";
+    pct >= 75 ? "var(--success)" : pct >= 40 ? "var(--warning)" : "var(--text-muted, #94a3b8)";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
       <div
         style={{
           flex: 1,
           height: "6px",
-          background: "#f1f5f9",
+          background: "var(--border-color, #e2e8f0)",
           borderRadius: "99px",
           overflow: "hidden",
         }}
@@ -88,8 +89,15 @@ export const ManagerReportsPage = () => {
     showToast
   } = useApp();
   const [activeTab, setActiveTab] = useState("routes");
+  const [currentPageRoutes, setCurrentPageRoutes] = useState(1);
+  const [pageSizeRoutes, setPageSizeRoutes] = useState(10);
 
   const orgTrips = trips.filter((t) => t.organizationId === selectedOrgId);
+  const totalPagesRoutes = Math.ceil(orgTrips.length / pageSizeRoutes) || 1;
+  const paginatedOrgTrips = orgTrips.slice(
+    (currentPageRoutes - 1) * pageSizeRoutes,
+    currentPageRoutes * pageSizeRoutes
+  );
   const orgBookings = bookings.filter(
     (b) => b.organizationId === selectedOrgId && (b.status === "CONFIRMED" || b.status === "SUCCESS")
   );
@@ -245,7 +253,7 @@ export const ManagerReportsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {orgTrips.map((t) => {
+              {paginatedOrgTrips.map((t) => {
                 const occupancy =
                   t.totalSeats > 0
                     ? ((t.bookedSeatsCount / t.totalSeats) * 100).toFixed(1)
@@ -279,6 +287,19 @@ export const ManagerReportsPage = () => {
               })}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPageRoutes}
+            totalPages={totalPagesRoutes}
+            totalItems={orgTrips.length}
+            pageSize={pageSizeRoutes}
+            onPageChange={setCurrentPageRoutes}
+            onPageSizeChange={(sz) => {
+              setPageSizeRoutes(sz);
+              setCurrentPageRoutes(1);
+            }}
+            itemLabel="routes"
+          />
         </div>
       )}
 
@@ -318,7 +339,7 @@ export const ManagerReportsPage = () => {
                     <div
                       style={{
                         height: "8px",
-                        background: "#f1f5f9",
+                        background: "var(--border-color, #e2e8f0)",
                         borderRadius: "99px",
                         overflow: "hidden",
                       }}
@@ -341,7 +362,7 @@ export const ManagerReportsPage = () => {
 
           {/* Booking Summary */}
           <div className="card-table-wrapper" style={{ padding: "1.5rem" }}>
-            <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "1.25rem" }}>
+            <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "1.25rem", color: "var(--text-main)" }}>
               Booking Summary
             </h3>
             <div
@@ -360,7 +381,7 @@ export const ManagerReportsPage = () => {
                 <div
                   key={item.label}
                   style={{
-                    background: "#f8fafc",
+                    background: "var(--bg-main, #f8fafc)",
                     border: "1px solid var(--border-color)",
                     borderRadius: "8px",
                     padding: "0.85rem",
@@ -369,7 +390,7 @@ export const ManagerReportsPage = () => {
                   <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.25rem" }}>
                     {item.label}
                   </div>
-                  <div style={{ fontSize: "1.35rem", fontWeight: 700 }}>
+                  <div style={{ fontSize: "1.35rem", fontWeight: 700, color: "var(--text-main)" }}>
                     {item.value.toLocaleString()}
                   </div>
                 </div>

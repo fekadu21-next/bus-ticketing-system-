@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useApp } from "../../context/AppContext";
 import { getTripSeatsApi, updateSeatStatusApi } from "../../api/coordinator.api";
 
 export const ManagerSeatsPage = () => {
-  const { trips, selectedOrgId, showToast } = useApp();
+  const { t } = useTranslation();
+  const { trips, selectedOrgId, showToast, refreshData } = useApp();
 
   const orgTrips = trips.filter((t) => t.organizationId === selectedOrgId);
   const [selectedTripId, setSelectedTripId] = useState(orgTrips[0]?.id || "");
@@ -31,6 +33,7 @@ export const ManagerSeatsPage = () => {
       getTripSeatsApi(selectedOrgId, selectedTripId)
         .then((res) => {
           const rawSeats = res.data?.seats || res.data || [];
+          console.log('Seats from backend:', rawSeats);
           if (Array.isArray(rawSeats) && rawSeats.length > 0) {
             const stateMap = {};
             const idMap = {};
@@ -40,16 +43,31 @@ export const ManagerSeatsPage = () => {
             });
             setSeatStates(stateMap);
             setSeatDbIds(idMap);
+          } else {
+            // If no seats from backend, initialize all as AVAILABLE
+            const map = {};
+            for (let i = 1; i <= capacity; i++) {
+              map[i] = "AVAILABLE";
+            }
+            setSeatStates(map);
+            setSeatDbIds({});
           }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error('Error fetching seats:', err);
           // Graceful fallback to default initial seats
+          const map = {};
+          for (let i = 1; i <= capacity; i++) {
+            map[i] = "AVAILABLE";
+          }
+          setSeatStates(map);
+          setSeatDbIds({});
         })
         .finally(() => {
           setLoadingSeats(false);
         });
     } else {
-      // Default generated states for mock trips
+      // Default generated states for mock trips - use all 4 statuses
       const map = {};
       for (let i = 1; i <= capacity; i++) {
         if (i === 12 || i === 14) map[i] = "BOOKED";
@@ -58,24 +76,34 @@ export const ManagerSeatsPage = () => {
         else map[i] = "AVAILABLE";
       }
       setSeatStates(map);
+      setSeatDbIds({});
     }
   }, [selectedTripId, selectedOrgId, capacity]);
 
   const handleSeatClick = async (seatNum) => {
     const current = seatStates[seatNum] || "AVAILABLE";
     if (current === "BOOKED") {
-      showToast(`Seat ${seatNum} is assigned to a confirmed booking.`, "info");
+      showToast(`Seat ${seatNum} is assigned to a confirmed booking. Cannot change status.`, "info");
       return;
     }
-    const nextState = current === "BLOCKED" ? "AVAILABLE" : "BLOCKED";
+    
+    // Cycle through all 4 statuses: AVAILABLE -> HELD -> BLOCKED -> AVAILABLE
+    const statusCycle = ["AVAILABLE", "HELD", "BLOCKED"];
+    const currentIndex = statusCycle.indexOf(current);
+    const nextIndex = (currentIndex + 1) % statusCycle.length;
+    const nextState = statusCycle[nextIndex];
 
-    const seatId = seatDbIds[seatNum];
-    if (seatId && selectedTripId?.length === 36) {
+    const targetSeatId = seatDbIds[seatNum] || seatNum;
+    if (selectedTripId?.length === 36) {
       try {
-        await updateSeatStatusApi(selectedOrgId, selectedTripId, seatId, nextState);
+        await updateSeatStatusApi(selectedOrgId, selectedTripId, targetSeatId, nextState);
         setSeatStates((prev) => ({ ...prev, [seatNum]: nextState }));
-        showToast(`Seat ${seatNum} status updated to ${nextState} via backend.`);
+        showToast(`Seat ${seatNum} status updated to ${nextState} in database.`);
+        if (refreshData) {
+          refreshData();
+        }
       } catch (err) {
+        console.error('Failed to update seat status in backend:', err);
         setSeatStates((prev) => ({ ...prev, [seatNum]: nextState }));
         showToast(`Seat ${seatNum} status set to ${nextState}.`);
       }
@@ -85,59 +113,72 @@ export const ManagerSeatsPage = () => {
     }
   };
 
+  const liveAvailableCount = Object.values(seatStates).length > 0
+    ? Object.values(seatStates).filter((s) => s === "AVAILABLE").length
+    : (activeTrip?.availableSeatsCount || 0);
+
+  const liveBookedCount = Object.values(seatStates).length > 0
+    ? Object.values(seatStates).filter((s) => s === "BOOKED").length
+    : (activeTrip?.bookedSeatsCount || 0);
+
+  const liveHeldCount = Object.values(seatStates).filter((s) => s === "HELD").length;
+  const liveBlockedCount = Object.values(seatStates).filter((s) => s === "BLOCKED").length;
+
   return (
     <div>
       <div className="page-header">
         <div className="page-title">
-          <h1>Seat Inventory</h1>
-          <p>Visual seat layout matrix and real-time inventory management connected to backend.</p>
+          <h1>{t("managerSeats.title")}</h1>
+          <p>{t("managerSeats.subtitle")}</p>
         </div>
       </div>
 
       <div className="card-table-wrapper" style={{ padding: "1.25rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
           <div>
-            <label style={{ fontSize: "0.8rem", fontWeight: 700, marginRight: "0.5rem" }}>Select Trip:</label>
+            <label style={{ fontSize: "0.8rem", fontWeight: 700, marginRight: "0.5rem" }}>{t("managerSeats.tripSelectorLabel")}</label>
             <select
               className="org-selector-select"
               value={selectedTripId}
               onChange={(e) => setSelectedTripId(e.target.value)}
             >
-              {orgTrips.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.tripCode} ({t.routeName} - {t.departureDate})
+              {orgTrips.map((tItem) => (
+                <option key={tItem.id} value={tItem.id}>
+                  {tItem.tripCode} ({tItem.routeName} - {tItem.departureDate})
                 </option>
               ))}
             </select>
           </div>
           {activeTrip && (
             <div style={{ display: "flex", gap: "1rem", fontSize: "0.8rem" }}>
-              <div>Total: <strong>{activeTrip.totalSeats}</strong></div>
-              <div style={{ color: "var(--success-text)" }}>Available: <strong>{activeTrip.availableSeatsCount}</strong></div>
-              <div style={{ color: "var(--primary)" }}>Booked: <strong>{activeTrip.bookedSeatsCount}</strong></div>
+              <div>{t("managerSeats.total")}: <strong>{activeTrip.totalSeats}</strong></div>
+              <div style={{ color: "var(--success-text)" }}>{t("managerSeats.available")}: <strong>{liveAvailableCount}</strong></div>
+              <div style={{ color: "var(--primary)" }}>{t("managerSeats.booked")}: <strong>{liveBookedCount}</strong></div>
+              {liveHeldCount > 0 && <div style={{ color: "#d97706" }}>{t("managerSeats.held")}: <strong>{liveHeldCount}</strong></div>}
+              {liveBlockedCount > 0 && <div style={{ color: "#64748b" }}>{t("managerSeats.blocked")}: <strong>{liveBlockedCount}</strong></div>}
             </div>
           )}
         </div>
 
         {/* Legend */}
-        <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", marginBottom: "1.5rem", fontSize: "0.8rem" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", marginBottom: "1.5rem", fontSize: "0.8rem", flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ width: "14px", height: "14px", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: "3px" }} /> AVAILABLE
+            <span className="seat-legend-dot seat-legend-available" /> {t("managerSeats.available")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ width: "14px", height: "14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "3px" }} /> HELD (15m Timer)
+            <span className="seat-legend-dot seat-legend-held" /> {t("managerSeats.held")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ width: "14px", height: "14px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "3px" }} /> BOOKED
+            <span className="seat-legend-dot seat-legend-booked" /> {t("managerSeats.booked")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ width: "14px", height: "14px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "3px" }} /> BLOCKED
+            <span className="seat-legend-dot seat-legend-blocked" /> {t("managerSeats.blocked")}
           </div>
         </div>
 
         {loadingSeats && (
           <div style={{ textAlign: "center", padding: "1rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
-            Loading seat layout from backend...
+            {t("managerSeats.loadingSeats")}
           </div>
         )}
 

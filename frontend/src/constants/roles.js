@@ -10,6 +10,7 @@ export const ROLES = {
   // Backward compatibility aliases if referenced
   PLATFORM_ADMIN: 'ADMIN',
   OPERATIONAL_MANAGER: 'BOOKING_COORDINATOR',
+  OPERATOR: 'BOOKING_COORDINATOR',
 };
 
 /** Ordered list for display purposes */

@@ -2,8 +2,12 @@
 
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
+
 html,
 body,
 #root {
   font-family: Inter, system-ui, -apple-system, sans-serif;
-}
+  max-width: 100vw;
+  overflow-x: hidden;
+}

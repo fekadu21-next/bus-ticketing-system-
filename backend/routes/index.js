@@ -6,12 +6,15 @@ import organizationRoutes from './organization.route.js';
 import adminRoutes from './admin/index.js';
 import coordinatorRoutes from './coordinator/index.js';
 import passengerRoutes from './passenger/index.js';
+import passengerTripRoutes from './passenger/trip.route.js';
 import verifierRoutes from './verifier/index.js';
 import driverRoutes from './driver/index.js';
+import notificationRoutes from './notification.route.js';
 import authenticate from '../middleware/authenticate.middleware.js';
 import { authorizeRole, authorizePermission } from '../middleware/authorize.middleware.js';
 import { authorizeOrgRole } from '../middleware/organization.middleware.js';
 import { ROLES, PERMISSIONS } from '../constants/index.js';
+import stationsController from '../controllers/admin/stations.controller.js';
 
 const router = Router();
 
@@ -57,7 +60,21 @@ router.use('/users', userRoutes);
 router.use('/rbac', rbacRoutes);
 router.use('/organizations', organizationRoutes);
 router.use('/admin', adminRoutes);
+router.use('/notifications', notificationRoutes);
+
+// Shared Stations Catalog (Accessible to authenticated users for routing & discovery)
+router.get('/stations', authenticate, stationsController.getStations);
+router.get('/stations/active', authenticate, stationsController.getActiveStations);
+
 router.use('/coordinator', authenticate, authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]), coordinatorRoutes);
+// Public passenger routes (trip search, trip details, trip seats) - no auth required
+router.use('/passenger/trips', passengerTripRoutes);
+// Public passenger payment initialization route - no auth required for initial payment flow
+import paymentRoutes from './passenger/payment.route.js';
+router.use('/passenger/payments', paymentRoutes);
+// Public passenger payment callback routes (Chapa/Telebirr webhooks) - no auth required
+router.use('/passenger/callback', passengerRoutes);
+// Authenticated passenger routes (bookings, tickets, feedback)
 router.use('/passenger', authenticate, authorizeRole(ROLES.PASSENGER), passengerRoutes);
 router.use('/verifier', authenticate, authorizeRole(ROLES.TICKET_VERIFIER), verifierRoutes);
 router.use('/driver', authenticate, authorizeRole(ROLES.DRIVER), driverRoutes);

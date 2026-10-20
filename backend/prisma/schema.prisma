@@ -104,6 +104,7 @@ model users {
   driven_trips              trips[]                 @relation("DriverTrips")
   driver_problems           trip_problem_reports[]  @relation("DriverProblems")
   resolved_problems         trip_problem_reports[]  @relation("ResolvedProblems")
+  notifications             notifications[]
 }
 
 model refresh_tokens {
@@ -179,20 +180,44 @@ model buses {
   @@index([organization_id])
 }
 
+model stations {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String   @db.VarChar(150)
+  city              String   @db.VarChar(100)
+  code              String   @unique @db.VarChar(20)
+  address           String?  @db.Text
+  latitude          Float?
+  longitude         Float?
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+  origin_routes     routes[] @relation("OriginStation")
+  destination_routes routes[] @relation("DestinationStation")
+
+  @@index([city])
+  @@index([is_active])
+}
+
 model routes {
   id                       String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organization_id          String        @db.Uuid
   origin                   String        @db.VarChar(100)
   destination              String        @db.VarChar(100)
+  origin_station_id       String?       @db.Uuid
+  destination_station_id  String?       @db.Uuid
   distance_km              Float?
   estimated_duration_hours Float?
   is_active                Boolean       @default(true)
   created_at               DateTime      @default(now()) @db.Timestamptz(6)
   updated_at               DateTime      @default(now()) @db.Timestamptz(6)
   organizations            organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  origin_station           stations?     @relation("OriginStation", fields: [origin_station_id], references: [id], onDelete: SetNull)
+  destination_station      stations?     @relation("DestinationStation", fields: [destination_station_id], references: [id], onDelete: SetNull)
   trips                    trips[]
 
   @@index([organization_id])
+  @@index([origin_station_id])
+  @@index([destination_station_id])
 }
 
 model trips {
@@ -384,3 +409,22 @@ model trip_problem_reports {
   @@index([status])
   @@index([created_at])
 }
+
+model notifications {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  type       String    @db.VarChar(50)
+  priority   String    @default("NORMAL") @db.VarChar(20)
+  title      String    @db.VarChar(200)
+  message    String    @db.Text
+  metadata   Json?
+  read_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([user_id, read_at])
+  @@index([user_id, created_at])
+  @@index([type])
+}
+

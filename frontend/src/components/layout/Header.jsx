@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useTranslation } from "react-i18next";
+import { formatUserFullName } from "../../utils/userUtils";
+import NotificationBell from "../ui/NotificationBell";
 import {
   Search,
   Bell,
@@ -14,6 +18,9 @@ import {
   Menu,
   X,
   Lock,
+  Globe,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 export const Header = () => {
@@ -28,6 +35,7 @@ export const Header = () => {
     globalSearchQuery,
     setGlobalSearchQuery,
     activeOrg,
+    setActivePage,
     isSidebarCollapsed,
     setIsSidebarCollapsed,
   } = useApp();
@@ -35,6 +43,15 @@ export const Header = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+
+  const { theme, isDark, toggleTheme } = useTheme();
+  const { t, i18n } = useTranslation();
+  const isAmharic = i18n.language === "am" || i18n.language?.startsWith("am");
+
+  const toggleLanguage = () => {
+    const nextLang = isAmharic ? "en" : "am";
+    i18n.changeLanguage(nextLang);
+  };
 
   const pendingApprovalsCount = organizations.filter(
     (o) => o.status === "PENDING"
@@ -51,19 +68,34 @@ export const Header = () => {
     navigate(path);
   };
 
-  const displayName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-    user?.name ||
-    (currentRole === "ADMIN" ? "Solomon Tekle" : "Booking Coordinator");
+  const handleProfileClick = () => {
+    setShowUserMenu(false);
+    const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+    if (setActivePage) setActivePage("profile");
+    navigate(`${basePath}/profile`);
+  };
+
+  const handleChangePasswordClick = () => {
+    setShowUserMenu(false);
+    const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+    if (setActivePage) setActivePage("change-password");
+    navigate(`${basePath}/change-password`);
+  };
+
+  const displayName = formatUserFullName(
+    user,
+    currentRole === "ADMIN" ? "System Admin" : "Booking Coordinator"
+  );
 
   const userInitials = displayName
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2) || (currentRole === "ADMIN" ? "ST" : "BC");
+    .slice(0, 2) || (currentRole === "ADMIN" ? "SA" : "BC");
 
-  const userEmail = user?.email || (currentRole === "ADMIN" ? "admin@busticket.com" : "coordinator@busticket.com");
+  const userEmail = user?.email || "";
 
   return (
     <header className="top-header">
@@ -184,57 +216,29 @@ export const Header = () => {
           </div>
         )}
 
-        {/* Bell / Notifications */}
-        <div style={{ position: "relative" }}>
-          <button
-            className="header-icon-btn"
-            onClick={() => {
-              setShowNotifications(!showNotifications);
-              setShowUserMenu(false);
-            }}
-          >
-            <Bell size={17} />
-            {pendingApprovalsCount > 0 && (
-              <span className="header-badge">{pendingApprovalsCount}</span>
-            )}
-          </button>
+        {/* Language Switcher */}
+        <button
+          className="dashboard-lang-btn"
+          onClick={toggleLanguage}
+          title={isAmharic ? "Switch to English" : "ወደ አማርኛ ቀይር"}
+          aria-label="Toggle language"
+        >
+          <Globe size={15} />
+          <span>{isAmharic ? "EN" : "አማ"}</span>
+        </button>
 
-          {showNotifications && (
-            <div className="dropdown-panel notif-panel">
-              <div className="dropdown-header">
-                <h4>Notifications</h4>
-                <span
-                  style={{ fontSize: "0.7rem", color: "var(--primary)", fontWeight: 600, cursor: "pointer" }}
-                  onClick={() => setShowNotifications(false)}
-                >
-                  Clear all
-                </span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", padding: "0.75rem" }}>
-                {pendingApprovalsCount > 0 ? (
-                  <div className="notif-item notif-warning">
-                    <div style={{ fontSize: "0.78rem", fontWeight: 700 }}>
-                      Pending Approvals ({pendingApprovalsCount})
-                    </div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                      Operators awaiting registration review.
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", padding: "0.5rem 0" }}>
-                    No unread platform alerts.
-                  </div>
-                )}
-                <div className="notif-item">
-                  <strong style={{ display: "block", fontSize: "0.78rem" }}>Payment Log</strong>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>
-                    Telebirr TEL-98231999 pending.
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Theme Toggle (Dark / Light) */}
+        <button
+          className="header-toggle-btn"
+          onClick={toggleTheme}
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {isDark ? <Sun size={16} style={{ color: "#fbbf24" }} /> : <Moon size={16} />}
+        </button>
+
+        {/* Bell / Notifications */}
+        <NotificationBell variant="header" />
 
         {/* User profile */}
         <div style={{ position: "relative" }}>
@@ -263,10 +267,60 @@ export const Header = () => {
                 <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>{displayName}</div>
                 <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{userEmail}</div>
               </div>
-              <button className="dropdown-btn" onClick={() => handleNavigate("/profile")}>
+
+              {/* Theme Preference Quick Switch */}
+              <div style={{ padding: "0.55rem 1rem", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  {isDark ? <Sun size={14} style={{ color: "#fbbf24" }} /> : <Moon size={14} />} Theme
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-main)",
+                    color: "var(--text-main)",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  {isDark ? <Sun size={15} style={{ color: "#fbbf24" }} /> : <Moon size={15} />}
+                </button>
+              </div>
+
+              {/* Language Preference Quick Switch */}
+              <div style={{ padding: "0.55rem 1rem", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Globe size={14} /> Language
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  style={{
+                    padding: "3px 8px",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    borderRadius: "4px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-main)",
+                    color: "var(--text-main)",
+                    cursor: "pointer"
+                  }}
+                >
+                  {isAmharic ? "English" : "አማርኛ"}
+                </button>
+              </div>
+
+              <button className="dropdown-btn" onClick={handleProfileClick}>
                 <User size={14} /> Profile & Account
               </button>
-              <button className="dropdown-btn" onClick={() => handleNavigate("/change-password")}>
+              <button className="dropdown-btn" onClick={handleChangePasswordClick}>
                 <KeyRound size={14} /> Change Password
               </button>
               <button className="dropdown-btn danger-btn" onClick={handleLogout}>

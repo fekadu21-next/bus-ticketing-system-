@@ -96,7 +96,14 @@ export class AdminOverviewRepository {
           organizations: { select: { id: true, name: true } },
           buses: { select: { id: true, plate_number: true, model: true, capacity: true } },
           routes: { select: { id: true, origin: true, destination: true, distance_km: true } },
-          _count: { select: { seats: true, bookings: true } },
+          _count: {
+            select: {
+              seats: true,
+              bookings: {
+                where: { status: { in: ['CONFIRMED', 'PENDING'] } },
+              },
+            },
+          },
         },
       }),
     ]);
@@ -246,7 +253,7 @@ export class AdminOverviewRepository {
     ]);
 
     const totalRevenue = Number(paymentAggregate._sum.amount || 0);
-    const platformCommission = Number((totalRevenue * 0.035).toFixed(2));
+    const platformCommission = Number((totalRevenue * 0.05).toFixed(2));
 
     return {
       organizations: { total: totalOrgs, active: activeOrgs },

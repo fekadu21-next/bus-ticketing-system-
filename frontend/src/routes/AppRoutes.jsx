@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
@@ -7,11 +7,20 @@ import { DashboardLayout } from "../components/layout/DashboardLayout";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 // Public Pages
-import HomePage from "../pages/HomePage";
-import SearchTripsPage from "../pages/SearchTripsPage";
-import AboutPage from "../pages/AboutPage";
-import ContactPage from "../pages/ContactPage";
-import PartnerRegisterPage from "../pages/PartnerRegisterPage";
+import HomePage from '@/pages/HomePage';
+import SearchTripsPage from '@/pages/SearchTripsPage';
+import TripDetailsPage from '@/pages/TripDetailsPage';
+import PassengerInfoPage from '@/pages/PassengerInfoPage';
+import PaymentPage from '@/pages/PaymentPage';
+import PaymentCallbackPage from '@/pages/PaymentCallbackPage';
+import TelebirrCheckoutPage from '@/pages/TelebirrCheckoutPage';
+import BookingConfirmationPage from '@/pages/BookingConfirmationPage';
+import MyBookingsPage from '@/pages/MyBookingsPage';
+import AboutPage from '@/pages/AboutPage';
+import ContactPage from '@/pages/ContactPage';
+import PartnerRegisterPage from '@/pages/PartnerRegisterPage';
+import NotificationsPage from '@/pages/NotificationsPage';
+
 
 // Auth Pages
 import LoginPage from "../features/auth/pages/LoginPage";
@@ -42,7 +51,6 @@ import { AdminSettingsPage } from "../pages/admin/AdminSettingsPage";
 
 // Manager Pages
 import { ManagerDashboardPage } from "../pages/manager/ManagerDashboardPage";
-import { ManagerOrganizationPage } from "../pages/manager/ManagerOrganizationPage";
 import { ManagerBusesPage } from "../pages/manager/ManagerBusesPage";
 import { ManagerRoutesPage } from "../pages/manager/ManagerRoutesPage";
 import { ManagerTripsPage } from "../pages/manager/ManagerTripsPage";
@@ -56,10 +64,12 @@ import { ManagerSettingsPage } from "../pages/manager/ManagerSettingsPage";
 
 export const ManagementConsole = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
   const {
     currentRole,
     setCurrentRole,
     activePage,
+    setActivePage,
     selectedOrgId,
     setSelectedOrgId,
   } = useApp();
@@ -68,16 +78,21 @@ export const ManagementConsole = () => {
   const isAdmin = userRoles.includes("ADMIN") || userRoles.includes("PLATFORM_ADMIN");
   const isCoordinator =
     userRoles.includes("BOOKING_COORDINATOR") ||
-    userRoles.includes("OPERATIONAL_MANAGER");
+    userRoles.includes("OPERATIONAL_MANAGER") ||
+    userRoles.includes("OPERATOR") ||
+    Boolean(user?.organizationContext?.length);
+
+  const isOperatorRoute = location.pathname.startsWith("/operator");
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   React.useEffect(() => {
     if (!isAuthenticated || !user) return;
 
-    if (isAdmin) {
+    if (isAdmin && !isOperatorRoute) {
       if (currentRole !== "ADMIN") {
         setCurrentRole("ADMIN");
       }
-    } else if (isCoordinator) {
+    } else if (isCoordinator || isOperatorRoute) {
       if (currentRole !== "MANAGER") {
         setCurrentRole("MANAGER");
       }
@@ -87,24 +102,57 @@ export const ManagementConsole = () => {
         setSelectedOrgId(orgId);
       }
     }
-  }, [user, isAuthenticated, isAdmin, isCoordinator, currentRole, setCurrentRole, selectedOrgId, setSelectedOrgId]);
+  }, [user, isAuthenticated, isAdmin, isCoordinator, isOperatorRoute, currentRole, setCurrentRole, selectedOrgId, setSelectedOrgId]);
+
+  const pageFromUrl = React.useMemo(() => {
+    const basePath = isOperatorRoute
+      ? "/operator"
+      : isAdminRoute
+      ? "/admin"
+      : location.pathname.startsWith("/dashboard")
+      ? "/dashboard"
+      : null;
+
+    if (!basePath) return "dashboard";
+    const rest = location.pathname.replace(basePath, "").replace(/^\//, "");
+    return rest.split("/")[0] || "dashboard";
+  }, [location.pathname, isOperatorRoute, isAdminRoute]);
+
+  const consolePage = pageFromUrl || activePage || "dashboard";
+
+  // Synchronize URL subpath with activePage on route change / deep link
+  React.useEffect(() => {
+    if (consolePage && consolePage !== activePage) {
+      setActivePage(consolePage);
+    }
+  }, [consolePage, activePage, setActivePage]);
 
   if (isLoading) {
     return <LoadingSpinner fullPage label="Authenticating session..." />;
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Operator cannot access platform Admin console
+  if (!isAdmin && isAdminRoute) {
+    return <Navigate to="/operator" replace />;
+  }
+
+  // Passengers cannot access admin or operator management consoles
   if (!isAdmin && !isCoordinator) {
-    return <Navigate to="/account-overview" replace />;
+    return <Navigate to="/my-bookings" replace />;
   }
 
   const renderAdminContent = () => {
-    switch (activePage) {
+    switch (consolePage) {
       case "dashboard":
         return <AdminDashboardPage />;
+      case "profile":
+        return <ProfilePage embedded={true} />;
+      case "change-password":
+        return <ChangePasswordPage embedded={true} />;
       case "organizations":
         return <AdminOrganizationsPage />;
       case "users":
@@ -135,11 +183,13 @@ export const ManagementConsole = () => {
   };
 
   const renderManagerContent = () => {
-    switch (activePage) {
+    switch (consolePage) {
       case "dashboard":
         return <ManagerDashboardPage />;
-      case "organization":
-        return <ManagerOrganizationPage />;
+      case "profile":
+        return <ProfilePage embedded={true} />;
+      case "change-password":
+        return <ChangePasswordPage embedded={true} />;
       case "buses":
         return <ManagerBusesPage />;
       case "routes":
@@ -160,45 +210,89 @@ export const ManagementConsole = () => {
         return <ManagerReportsPage />;
       case "settings":
         return <ManagerSettingsPage />;
+      case "trip-details":
+        return <TripDetailsPage />;
       default:
         return <ManagerDashboardPage />;
     }
   };
 
+  const showAdminUI = isAdmin && !isOperatorRoute;
+
   return (
     <DashboardLayout>
-      {isAdmin ? renderAdminContent() : renderManagerContent()}
+      {showAdminUI ? renderAdminContent() : renderManagerContent()}
     </DashboardLayout>
   );
 };
 
 export const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading, isAdmin, isOperator } = useAuth();
+  const location = useLocation();
+
+  const getAuthenticatedHome = () => {
+    const fromPath = location.state?.from?.pathname;
+    if (fromPath && fromPath !== "/login" && fromPath !== "/register") {
+      return fromPath;
+    }
+    if (isAdmin()) return "/admin";
+    if (isOperator()) return "/operator";
+    return "/my-bookings";
+  };
 
   return (
     <Routes>
       {/* Public Pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/search-trips" element={<SearchTripsPage />} />
+      <Route path="/trips/:tripId" element={<TripDetailsPage />} />
+      <Route path="/passenger-info" element={<PassengerInfoPage />} />
+      <Route path="/payment" element={<PaymentPage />} />
+      <Route path="/checkout/telebirr" element={<TelebirrCheckoutPage />} />
+      <Route path="/payment/callback" element={<PaymentCallbackPage />} />
+      <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
+
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/partner-register" element={<PartnerRegisterPage />} />
       <Route path="/partner" element={<Navigate to="/partner-register" replace />} />
 
-      {/* Interactive Operations Console & System Dashboard */}
+      {/* Interactive Operations Console & System Dashboards */}
+      <Route path="/dashboard" element={<ManagementConsole />} />
       <Route path="/dashboard/*" element={<ManagementConsole />} />
+      <Route path="/operator" element={<ManagementConsole />} />
+      <Route path="/operator/*" element={<ManagementConsole />} />
+      <Route path="/manager" element={<Navigate to="/operator" replace />} />
+      <Route path="/manager/*" element={<Navigate to="/operator" replace />} />
       <Route path="/portal/*" element={<ManagementConsole />} />
       <Route path="/management/*" element={<ManagementConsole />} />
+      <Route path="/admin" element={<ManagementConsole />} />
       <Route path="/admin/*" element={<ManagementConsole />} />
 
       {/* Public Auth Routes */}
       <Route
         path="/login"
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+        element={
+          isLoading ? (
+            <LoadingSpinner fullPage label="Authenticating session..." />
+          ) : isAuthenticated ? (
+            <Navigate to={getAuthenticatedHome()} replace />
+          ) : (
+            <LoginPage />
+          )
+        }
       />
       <Route
         path="/register"
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />}
+        element={
+          isLoading ? (
+            <LoadingSpinner fullPage label="Authenticating session..." />
+          ) : isAuthenticated ? (
+            <Navigate to={getAuthenticatedHome()} replace />
+          ) : (
+            <RegisterPage />
+          )
+        }
       />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -210,7 +304,7 @@ export const AppRoutes = () => {
         path="/account-overview"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <Navigate to="/profile" replace />
           </ProtectedRoute>
         }
       />
@@ -218,7 +312,29 @@ export const AppRoutes = () => {
         path="/profile"
         element={
           <ProtectedRoute>
-            <ProfilePage />
+            {isAdmin() ? (
+              <Navigate to="/admin/profile" replace />
+            ) : isOperator() ? (
+              <Navigate to="/operator/profile" replace />
+            ) : (
+              <ProfilePage />
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-bookings"
+        element={
+          <ProtectedRoute>
+            <MyBookingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />
@@ -226,7 +342,13 @@ export const AppRoutes = () => {
         path="/change-password"
         element={
           <ProtectedRoute>
-            <ChangePasswordPage />
+            {isAdmin() ? (
+              <Navigate to="/admin/change-password" replace />
+            ) : isOperator() ? (
+              <Navigate to="/operator/change-password" replace />
+            ) : (
+              <ChangePasswordPage />
+            )}
           </ProtectedRoute>
         }
       />

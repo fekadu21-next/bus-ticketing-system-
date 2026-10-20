@@ -5,7 +5,9 @@ export class OrganizationRepository {
    * Find organizations with pagination and filtering
    */
   async findAll({ page = 1, limit = 20, search = '', isActive = null } = {}) {
-    const skip = (page - 1) * limit;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
+    const skip = (pageNum - 1) * limitNum;
 
     const where = {};
     if (isActive !== null) {
@@ -21,17 +23,32 @@ export class OrganizationRepository {
       prisma.organizations.findMany({
         where,
         skip,
-        take: limit,
+        take: limitNum,
         orderBy: { name: 'asc' },
         include: {
           _count: {
-            select: { user_roles: true },
+            select: { user_roles: true, trips: true, buses: true },
+          },
+          trips: {
+            where: {
+              status: { in: ['SCHEDULED', 'PUBLISHED'] },
+              departure_time: { gte: new Date() },
+            },
+            select: {
+              routes: {
+                select: {
+                  origin: true,
+                  destination: true,
+                },
+              },
+            },
+            take: 20,
           },
         },
       }),
     ]);
 
-    return { total, page, limit, organizations };
+    return { total, page: pageNum, limit: limitNum, organizations };
   }
 
   /**

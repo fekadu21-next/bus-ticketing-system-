@@ -2,12 +2,8 @@ import { z } from 'zod';
 
 const passwordRule = z
   .string()
-  .min(8, 'Password must be at least 8 characters long')
-  .max(128, 'Password must not exceed 128 characters')
-  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[^a-zA-Z0-9]/, 'Password must contain at least one special character');
+  .min(6, 'Password must be at least 6 characters long')
+  .max(128, 'Password must not exceed 128 characters');
 
 export const registerSchema = z
   .object({
@@ -33,9 +29,49 @@ export const registerSchema = z
       .optional()
       .or(z.literal('')),
     password: passwordRule,
-    confirmPassword: z.string({ required_error: 'Confirm password is required' }),
+    confirmPassword: z.string().optional(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
+  .refine((data) => !data.confirmPassword || data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+const partnerPasswordRule = z
+  .string()
+  .min(8, 'Password must be at least 8 characters long')
+  .max(128, 'Password must not exceed 128 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number');
+
+export const registerPartnerSchema = z
+  .object({
+    orgName: z
+      .string({ required_error: 'Organization name is required' })
+      .trim()
+      .min(2, 'Organization name must be at least 2 characters')
+      .max(150, 'Organization name must not exceed 150 characters'),
+    orgType: z.string().trim().optional().default('COMPANY'),
+    orgEmail: z.string().trim().email('Invalid organization email address').optional().or(z.literal('')),
+    orgPhone: z.string().trim().optional().or(z.literal('')),
+    city: z.string().trim().optional().or(z.literal('')),
+    regNumber: z.string().trim().optional().or(z.literal('')),
+    address: z.string().trim().optional().or(z.literal('')),
+    repFullName: z.string().trim().optional().or(z.literal('')),
+    repPosition: z.string().trim().optional().or(z.literal('')),
+    repPhone: z.string().trim().optional().or(z.literal('')),
+    repEmail: z.string().trim().email('Invalid representative email address').optional().or(z.literal('')),
+    firstName: z.string().trim().optional().or(z.literal('')),
+    lastName: z.string().trim().optional().or(z.literal('')),
+    email: z
+      .string({ required_error: 'Email is required' })
+      .trim()
+      .toLowerCase()
+      .email('Invalid email address'),
+    phone: z.string().trim().optional().or(z.literal('')),
+    password: partnerPasswordRule,
+    confirmPassword: z.string().optional(),
+  })
+  .refine((data) => !data.confirmPassword || data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
   });

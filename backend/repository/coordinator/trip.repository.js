@@ -17,9 +17,6 @@ export class TripRepository {
         include: {
           buses: true,
           routes: true,
-          driver: {
-            select: { id: true, first_name: true, last_name: true, email: true, phone: true },
-          },
         },
       });
 
@@ -38,7 +35,19 @@ export class TripRepository {
         data: seatData,
       });
 
-      return trip;
+      // Manually fetch driver information if assigned
+      let driver = null;
+      if (trip.driver_id) {
+        driver = await tx.users.findUnique({
+          where: { id: trip.driver_id },
+          select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+        });
+      }
+
+      return {
+        ...trip,
+        driver,
+      };
     }, { timeout: 30000, maxWait: 10000 });
   }
 
@@ -47,13 +56,19 @@ export class TripRepository {
     if (organizationId) {
       where.organization_id = organizationId;
     }
-    return prisma.trips.findFirst({
+    const trip = await prisma.trips.findFirst({
       where,
       include: {
         buses: true,
-        routes: true,
-        driver: {
-          select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+        routes: {
+          include: {
+            origin_station: {
+              select: { id: true, name: true, city: true, code: true },
+            },
+            destination_station: {
+              select: { id: true, name: true, city: true, code: true },
+            },
+          },
         },
         organizations: {
           select: { id: true, name: true },
@@ -61,14 +76,32 @@ export class TripRepository {
         _count: {
           select: {
             seats: true,
-            bookings: true,
+            bookings: {
+              where: { status: { in: ['CONFIRMED', 'PENDING'] } },
+            },
           },
         },
       },
     });
+
+    if (!trip) return null;
+
+    // Manually fetch driver information
+    let driver = null;
+    if (trip.driver_id) {
+      driver = await prisma.users.findUnique({
+        where: { id: trip.driver_id },
+        select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+      });
+    }
+
+    return {
+      ...trip,
+      driver,
+    };
   }
 
-  async findAll(organizationId, { page = 1, limit = 20, status = null, routeId = null, busId = null, fromDate = null, toDate = null } = {}) {
+  async findAll(organizationId, { page = 1, limit = 20, status = null, routeId = null, busId = null, driverId = null, fromDate = null, toDate = null } = {}) {
     const skip = (page - 1) * limit;
     const where = { organization_id: organizationId };
 
@@ -81,8 +114,8 @@ export class TripRepository {
     if (busId) {
       where.bus_id = busId;
     }
-    if (query.driverId) {
-      where.driver_id = query.driverId;
+    if (driverId) {
+      where.driver_id = driverId;
     }
     if (fromDate || toDate) {
       where.departure_time = {};
@@ -102,22 +135,60 @@ export class TripRepository {
             select: { id: true, plate_number: true, model: true, capacity: true },
           },
           routes: {
-            select: { id: true, origin: true, destination: true, distance_km: true },
+            include: {
+              origin_station: {
+                select: { id: true, name: true, city: true, code: true },
+              },
+              destination_station: {
+                select: { id: true, name: true, city: true, code: true },
+              },
+            },
           },
-          driver: {
-            select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+          seats: {
+            select: { id: true, status: true, seat_number: true },
           },
           _count: {
             select: {
               seats: true,
-              bookings: true,
+              bookings: {
+                where: { status: { in: ['CONFIRMED', 'PENDING'] } },
+              },
             },
           },
         },
       }),
     ]);
 
-    return { total, page, limit, trips };
+    // Manually fetch driver information to avoid relation issues
+    const tripsWithDrivers = await Promise.all(
+      trips.map(async (trip) => {
+        let driver = null;
+        if (trip.driver_id) {
+          driver = await prisma.users.findUnique({
+            where: { id: trip.driver_id },
+            select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+          });
+        }
+
+        const seats = trip.seats || [];
+        const activeBookingsCount = trip._count?.bookings || 0;
+        const availableCount = seats.filter((s) => s.status === 'AVAILABLE').length;
+        const bookedCount = seats.filter((s) => s.status === 'BOOKED').length;
+        const blockedCount = seats.filter((s) => s.status === 'BLOCKED').length;
+        const heldCount = seats.filter((s) => s.status === 'HELD' || s.status === 'LOCKED').length;
+
+        return {
+          ...trip,
+          driver,
+          availableSeatsCount: availableCount,
+          bookedSeatsCount: Math.max(bookedCount, activeBookingsCount),
+          blockedSeatsCount: blockedCount,
+          heldSeatsCount: heldCount,
+        };
+      })
+    );
+
+    return { total, page, limit, trips: tripsWithDrivers };
   }
 
   async update(tripId, organizationId, updateData) {
@@ -143,21 +214,32 @@ export class TripRepository {
       delete data.driverId;
     }
 
-    return prisma.trips.update({
+    const trip = await prisma.trips.update({
       where: { id: tripId, organization_id: organizationId },
       data,
       include: {
         buses: true,
         routes: true,
-        driver: {
-          select: { id: true, first_name: true, last_name: true, email: true, phone: true },
-        },
       },
     });
+
+    // Manually fetch driver information
+    let driver = null;
+    if (trip.driver_id) {
+      driver = await prisma.users.findUnique({
+        where: { id: trip.driver_id },
+        select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+      });
+    }
+
+    return {
+      ...trip,
+      driver,
+    };
   }
 
   async assignDriver(tripId, organizationId, driverId) {
-    return prisma.trips.update({
+    const trip = await prisma.trips.update({
       where: { id: tripId, organization_id: organizationId },
       data: {
         driver_id: driverId || null,
@@ -166,11 +248,22 @@ export class TripRepository {
       include: {
         buses: true,
         routes: true,
-        driver: {
-          select: { id: true, first_name: true, last_name: true, email: true, phone: true },
-        },
       },
     });
+
+    // Manually fetch driver information
+    let driver = null;
+    if (trip.driver_id) {
+      driver = await prisma.users.findUnique({
+        where: { id: trip.driver_id },
+        select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+      });
+    }
+
+    return {
+      ...trip,
+      driver,
+    };
   }
 
   async findDriverConflictingTrip(driverId, departureTime, arrivalTime, excludeTripId = null) {
@@ -236,14 +329,29 @@ export class TripRepository {
   }
 
   async findSeatById(seatId, tripId) {
-    return prisma.seats.findFirst({
-      where: { id: seatId, trip_id: tripId },
-    });
+    if (!seatId) return null;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(seatId));
+    if (isUuid) {
+      return prisma.seats.findFirst({
+        where: { id: seatId, trip_id: tripId },
+      });
+    }
+    const seatNum = parseInt(seatId, 10);
+    if (!isNaN(seatNum)) {
+      return prisma.seats.findFirst({
+        where: { trip_id: tripId, seat_number: seatNum },
+      });
+    }
+    return null;
   }
 
   async updateSeatStatus(seatId, tripId, status) {
+    const seat = await this.findSeatById(seatId, tripId);
+    if (!seat) {
+      throw new Error('Seat not found for this trip.');
+    }
     return prisma.seats.update({
-      where: { id: seatId, trip_id: tripId },
+      where: { id: seat.id },
       data: {
         status,
         updated_at: new Date(),

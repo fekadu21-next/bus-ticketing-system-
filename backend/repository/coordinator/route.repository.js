@@ -1,15 +1,40 @@
 import prisma from '../../Config/db.js';
 
 export class RouteRepository {
-  async create({ organizationId, origin, destination, distanceKm, estimatedDurationHours, isActive = true }) {
+  async create({ organizationId, origin, destination, originStationId, destinationStationId, distanceKm, estimatedDurationHours, isActive = true }) {
+    let resolvedOrigin = origin;
+    let resolvedDestination = destination;
+
+    if (!resolvedOrigin && originStationId) {
+      const stn = await prisma.stations.findUnique({ where: { id: originStationId } });
+      if (stn) resolvedOrigin = stn.city || stn.name;
+    }
+    if (!resolvedDestination && destinationStationId) {
+      const stn = await prisma.stations.findUnique({ where: { id: destinationStationId } });
+      if (stn) resolvedDestination = stn.city || stn.name;
+    }
+
+    resolvedOrigin = resolvedOrigin || 'Origin Terminal';
+    resolvedDestination = resolvedDestination || 'Destination Terminal';
+
     return prisma.routes.create({
       data: {
         organization_id: organizationId,
-        origin,
-        destination,
+        origin: resolvedOrigin,
+        destination: resolvedDestination,
+        origin_station_id: originStationId,
+        destination_station_id: destinationStationId,
         distance_km: distanceKm,
         estimated_duration_hours: estimatedDurationHours,
         is_active: isActive,
+      },
+      include: {
+        origin_station: {
+          select: { id: true, name: true, city: true, code: true },
+        },
+        destination_station: {
+          select: { id: true, name: true, city: true, code: true },
+        },
       },
     });
   }
@@ -25,16 +50,22 @@ export class RouteRepository {
         organizations: {
           select: { id: true, name: true },
         },
+        origin_station: {
+          select: { id: true, name: true, city: true, code: true },
+        },
+        destination_station: {
+          select: { id: true, name: true, city: true, code: true },
+        },
       },
     });
   }
 
-  async findDuplicate(organizationId, origin, destination) {
+  async findDuplicate(organizationId, originStationId, destinationStationId) {
     return prisma.routes.findFirst({
       where: {
         organization_id: organizationId,
-        origin: { equals: origin, mode: 'insensitive' },
-        destination: { equals: destination, mode: 'insensitive' },
+        origin_station_id: originStationId,
+        destination_station_id: destinationStationId,
       },
     });
   }
@@ -49,8 +80,10 @@ export class RouteRepository {
 
     if (search) {
       where.OR = [
-        { origin: { contains: search, mode: 'insensitive' } },
-        { destination: { contains: search, mode: 'insensitive' } },
+        { origin_station: { name: { contains: search, mode: 'insensitive' } } },
+        { origin_station: { city: { contains: search, mode: 'insensitive' } } },
+        { destination_station: { name: { contains: search, mode: 'insensitive' } } },
+        { destination_station: { city: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
@@ -61,6 +94,14 @@ export class RouteRepository {
         skip,
         take: limit,
         orderBy: { created_at: 'desc' },
+        include: {
+          origin_station: {
+            select: { id: true, name: true, city: true, code: true },
+          },
+          destination_station: {
+            select: { id: true, name: true, city: true, code: true },
+          },
+        },
       }),
     ]);
 
@@ -81,10 +122,26 @@ export class RouteRepository {
       data.is_active = data.isActive;
       delete data.isActive;
     }
+    if (data.originStationId !== undefined) {
+      data.origin_station_id = data.originStationId;
+      delete data.originStationId;
+    }
+    if (data.destinationStationId !== undefined) {
+      data.destination_station_id = data.destinationStationId;
+      delete data.destinationStationId;
+    }
 
     return prisma.routes.update({
       where: { id: routeId, organization_id: organizationId },
       data,
+      include: {
+        origin_station: {
+          select: { id: true, name: true, city: true, code: true },
+        },
+        destination_station: {
+          select: { id: true, name: true, city: true, code: true },
+        },
+      },
     });
   }
 

@@ -1,22 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import {
-  initialOrganizations,
-  initialUsers,
-  initialStations,
-  initialBuses,
-  initialRoutes,
-  initialTrips,
-  initialBookings,
-  initialPayments,
-  initialTickets,
-  initialVerifications,
-  initialDrivers,
-  initialVerifiers,
-  initialAuditLogs,
-  initialSettings
-} from "../data/mockData";
-import {
   getAdminDashboardStatsApi,
   getAdminOrganizationsApi,
   approveOrganizationApi,
@@ -33,6 +17,9 @@ import {
   getAdminAuditLogsApi,
   getAdminReportsApi,
   getAdminStationsApi,
+  createStationApi,
+  updateStationApi,
+  deleteStationApi,
 } from "../api/admin.api";
 import {
   getBusesApi,
@@ -45,6 +32,7 @@ import {
   cancelTripApi,
   publishTripApi,
   unpublishTripApi,
+  assignDriverToTripApi,
   getBookingsApi,
   getPaymentsApi,
   getOperationalStatsApi,
@@ -54,17 +42,72 @@ import {
   updateStaffApi,
   getOrganizationDetailsApi,
   updateOrganizationProfileApi,
+  getDriversApi,
+  createDriverApi,
+  updateDriverApi,
+  toggleDriverStatusApi,
+  getActiveStationsApi,
 } from "../api/coordinator.api";
 
 const AppContext = createContext();
 
+export const DEFAULT_PLATFORM_SETTINGS = {
+  platformFeePercent: 5.0,
+  holdDurationMinutes: 15,
+  requireDriverAssignmentBeforePublish: true,
+  telebirrMerchantId: "TB-ET-994821",
+  chapaPublicKey: "CHAPUBK_TEST-xxxxxxxx",
+  currency: "ETB",
+};
+
+export const formatTripSchedule = (rawDepartureTime) => {
+  if (!rawDepartureTime) {
+    return {
+      departureDate: "2026-10-18",
+      departureTime: "06:00 AM",
+      formattedDate: "Sun, Oct 18, 2026",
+    };
+  }
+  const d = new Date(rawDepartureTime);
+  if (isNaN(d.getTime())) {
+    return {
+      departureDate: String(rawDepartureTime).split("T")[0] || "2026-10-18",
+      departureTime: "06:00 AM",
+      formattedDate: String(rawDepartureTime),
+    };
+  }
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const departureDate = `${year}-${month}-${day}`;
+  const departureTime = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+  const formattedDate = d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  return { departureDate, departureTime, formattedDate };
+};
+
+const getInitialConsolePage = () => {
+  if (typeof window === "undefined") return "dashboard";
+  const match = window.location.pathname.match(
+    /^\/(?:admin|operator|dashboard|manager|portal|management)(?:\/([^/?#]+))?/
+  );
+  return match?.[1] || "dashboard";
+};
+
+const getInitialConsoleRole = () => {
+  if (typeof window === "undefined") return null;
+  const path = window.location.pathname;
+  if (path.startsWith("/operator") || path.startsWith("/manager")) return "MANAGER";
+  if (path.startsWith("/admin")) return "ADMIN";
+  return null;
+};
+
 export const AppProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
 
-  // Role & Scope Guard State
-  const [currentRole, setCurrentRole] = useState("ADMIN"); // 'ADMIN' or 'MANAGER' (Booking Coordinator)
+  // Role & Scope Guard State - strictly derived from auth and path
+  const [currentRole, setCurrentRole] = useState(getInitialConsoleRole); // 'ADMIN', 'MANAGER', 'PASSENGER', or null
   const [selectedOrgId, setSelectedOrgId] = useState("00000000-0000-0000-0000-000000000001");
-  const [activePage, setActivePage] = useState("dashboard");
+  const [activePage, setActivePage] = useState(getInitialConsolePage);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [toast, setToast] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -74,21 +117,32 @@ export const AppProvider = ({ children }) => {
   // Search filter
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
 
-  // System Entities State
-  const [organizations, setOrganizations] = useState(initialOrganizations);
-  const [users, setUsers] = useState(initialUsers);
-  const [stations, setStations] = useState(initialStations);
-  const [buses, setBuses] = useState(initialBuses);
-  const [routes, setRoutes] = useState(initialRoutes);
-  const [trips, setTrips] = useState(initialTrips);
-  const [bookings, setBookings] = useState(initialBookings);
-  const [payments, setPayments] = useState(initialPayments);
-  const [tickets, setTickets] = useState(initialTickets);
-  const [verifications, setVerifications] = useState(initialVerifications);
-  const [drivers, setDrivers] = useState(initialDrivers);
-  const [verifiers, setVerifiers] = useState(initialVerifiers);
-  const [auditLogs, setAuditLogs] = useState(initialAuditLogs);
-  const [settings, setSettings] = useState(initialSettings);
+  // System Entities State - Strictly live database records
+  const [organizations, setOrganizations] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [stations, setStations] = useState([]);
+  const [buses, setBuses] = useState([]);
+  const [routes, setRoutes] = useState([]);
+  const [trips, setTrips] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [verifications, setVerifications] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [verifiers, setVerifiers] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem("platform_system_settings");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_PLATFORM_SETTINGS, ...parsed };
+      }
+    } catch (e) {
+      console.warn("Could not load settings from localStorage:", e);
+    }
+    return DEFAULT_PLATFORM_SETTINGS;
+  });
   const [adminStats, setAdminStats] = useState(null);
   const [adminReports, setAdminReports] = useState(null);
   const [coordinatorStats, setCoordinatorStats] = useState(null);
@@ -155,7 +209,7 @@ export const AppProvider = ({ children }) => {
         getAdminPaymentsApi({ limit: 100 }),
         getAdminAuditLogsApi({ limit: 100 }),
         getAdminReportsApi(),
-        getAdminStationsApi(),
+        getAdminStationsApi({ limit: 100 }),
       ]);
 
       if (statsRes.status === "fulfilled" && statsRes.value?.data) {
@@ -166,41 +220,66 @@ export const AppProvider = ({ children }) => {
         setAdminReports(reportsRes.value.data);
       }
 
-      if (stationsRes.status === "fulfilled" && stationsRes.value?.data) {
-        const rawStations = stationsRes.value.data.stations || stationsRes.value.data;
-        if (Array.isArray(rawStations) && rawStations.length > 0) {
+      if (stationsRes.status === "fulfilled" && stationsRes.value) {
+        const rawStations =
+          stationsRes.value.data?.stations ||
+          stationsRes.value.data ||
+          stationsRes.value.stations ||
+          [];
+        if (Array.isArray(rawStations)) {
           setStations(rawStations.map((st) => ({
             id: st.id,
             name: st.name,
-            city: st.city || st.name.replace(/ Central.*| Intercity.*/, ""),
-            code: st.code || `${(st.city || st.name).substring(0, 3).toUpperCase()}-01`,
-            address: st.address || `Terminal, ${st.city || st.name}, Ethiopia`,
-            activeRoutesCount: st.activeRoutesCount || 1,
-            status: st.status || "ACTIVE",
-            createdAt: st.createdAt || "2024-01-01",
+            city: st.city,
+            code: st.code,
+            address: st.address,
+            latitude: st.latitude,
+            longitude: st.longitude,
+            is_active: st.is_active ?? st.isActive ?? true,
+            _count: st._count,
+            created_at: st.created_at,
           })));
         }
       }
 
       if (orgsRes.status === "fulfilled" && orgsRes.value?.data) {
         const rawOrgs = orgsRes.value.data.organizations || orgsRes.value.data;
+        const rawBuses = (busesRes.status === "fulfilled" && (busesRes.value?.data?.buses || busesRes.value?.data)) || [];
+        const rawTrips = (tripsRes.status === "fulfilled" && (tripsRes.value?.data?.trips || tripsRes.value?.data)) || [];
+
         if (Array.isArray(rawOrgs) && rawOrgs.length > 0) {
-          const mappedOrgs = rawOrgs.map((o) => ({
-            id: o.id,
-            name: o.name,
-            type: o.type || "Intercity Bus Operator",
-            status: o.status || "APPROVED",
-            isActive: o.is_active ?? true,
-            createdAt: o.created_at ? o.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
-            registrationNumber: `REG-${o.id.substring(0, 8).toUpperCase()}`,
-            contactName: "Operations Lead",
-            phone: "+251 911 000000",
-            email: `contact@${o.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.et`,
-            address: "Addis Ababa, Ethiopia",
-            totalBuses: o.buses?.length || 0,
-            activeTrips: o.trips?.length || 0,
-            notes: o.status === "PENDING" ? "Awaiting review and commercial operator license validation." : "Verified transport provider."
-          }));
+          const mappedOrgs = rawOrgs.map((o) => {
+            const orgBusCount = o.totalBuses ?? o._count?.buses ?? (Array.isArray(rawBuses) ? rawBuses.filter(b => b.organization_id === o.id || b.organizationId === o.id).length : 0) || (o.buses?.length || 0);
+            const orgTripCount = o.activeTrips ?? o._count?.trips ?? (Array.isArray(rawTrips) ? rawTrips.filter(t => t.organization_id === o.id || t.organizationId === o.id).length : 0) || (o.trips?.length || 0);
+
+            return {
+              id: o.id,
+              name: o.name,
+              type: o.type || "Intercity Bus Operator",
+              status: o.status || "APPROVED",
+              isActive: o.isActive ?? o.is_active ?? true,
+              createdAt: o.createdAt
+                ? o.createdAt.split("T")[0]
+                : o.created_at
+                ? o.created_at.split("T")[0]
+                : new Date().toISOString().split("T")[0],
+              registrationNumber: o.registrationNumber || `REG-${o.id.substring(0, 8).toUpperCase()}`,
+              contactName:
+                o.contactName ||
+                (o.representative
+                  ? `${o.representative.firstName || ''} ${o.representative.lastName || ''}`.trim()
+                  : "Operations Lead"),
+              phone: o.phone || "+251 911 000000",
+              email: o.email || `contact@${o.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.et`,
+              address: o.address || "Addis Ababa, Ethiopia",
+              totalBuses: orgBusCount,
+              activeTrips: orgTripCount,
+              notes:
+                o.status === "PENDING"
+                  ? "Awaiting review and commercial operator license validation."
+                  : "Verified transport provider.",
+            };
+          });
           setOrganizations(mappedOrgs);
         }
       }
@@ -209,16 +288,27 @@ export const AppProvider = ({ children }) => {
         const rawUsers = usersRes.value.data.users || usersRes.value.data;
         if (Array.isArray(rawUsers) && rawUsers.length > 0) {
           const mappedUsers = rawUsers.map((u) => {
-            const roleName = u.user_roles?.[0]?.roles?.name || (u.roles && u.roles[0]) || "PASSENGER";
-            const orgName = u.user_roles?.[0]?.organizations?.name || "—";
+            const userRole = u.user_roles?.[0];
+            const roleName = userRole?.roles?.name || (u.roles && u.roles[0]) || "PASSENGER";
+            const orgObj = userRole?.organizations || u.organizations;
+            const orgName = orgObj?.name || u.organizationName || u.organization_name || "—";
+            const orgId = orgObj?.id || userRole?.organization_id || u.organization_id || "";
+
             return {
               id: u.id,
               name: [u.first_name, u.last_name].filter(Boolean).join(" ") || u.name || u.email,
+              firstName: u.first_name || "",
+              lastName: u.last_name || "",
               email: u.email,
               phone: u.phone || "—",
               role: roleName,
+              organizationId: orgId,
               organizationName: orgName,
               status: u.is_active ? "ACTIVE" : "SUSPENDED",
+              isActive: u.is_active ?? true,
+              emailVerified: u.email_verified ?? false,
+              failedLoginAttempts: u.failed_login_attempts ?? 0,
+              lastLoginAt: u.last_login_at ? u.last_login_at.split("T")[0] : "Never",
               createdAt: u.created_at ? u.created_at.split("T")[0] : new Date().toISOString().split("T")[0]
             };
           });
@@ -251,9 +341,15 @@ export const AppProvider = ({ children }) => {
             id: r.id,
             organizationId: r.organization_id,
             organizationName: r.organizations?.name || "Operator",
-            name: `${r.origin} ↔ ${r.destination}`,
-            originStationName: r.origin,
-            destinationStationName: r.destination,
+            name: r.origin_station && r.destination_station
+              ? `${r.origin_station.name} ↔ ${r.destination_station.name}`
+              : r.origin && r.destination
+              ? `${r.origin} ↔ ${r.destination}`
+              : "Route",
+            originStationName: r.origin_station?.name || r.origin || "Origin",
+            destinationStationName: r.destination_station?.name || r.destination || "Destination",
+            originStationId: r.origin_station_id,
+            destinationStationId: r.destination_station_id,
             distanceKm: r.distance_km || 400,
             estimatedDuration: r.estimated_duration_hours ? `${r.estimated_duration_hours}h` : "5h 30m",
             status: r.is_active ? "ACTIVE" : "INACTIVE",
@@ -265,24 +361,28 @@ export const AppProvider = ({ children }) => {
       if (tripsRes.status === "fulfilled" && tripsRes.value?.data) {
         const rawTrips = tripsRes.value.data.trips || tripsRes.value.data;
         if (Array.isArray(rawTrips)) {
-          setTrips(rawTrips.map((t) => ({
-            id: t.id,
-            tripCode: `TRP-${t.id.slice(0, 6).toUpperCase()}`,
-            organizationId: t.organization_id,
-            organizationName: t.organizations?.name || "Operator",
-            routeName: t.routes ? `${t.routes.origin} ↔ ${t.routes.destination}` : "Route",
-            originStation: t.routes?.origin || "Origin",
-            destinationStation: t.routes?.destination || "Destination",
-            busPlateNumber: t.buses?.plate_number || "ET-BUS",
-            driverName: "Scheduled Driver",
-            bookedSeatsCount: t._count?.bookings || 0,
-            availableSeatsCount: Math.max(0, (t._count?.seats || t.buses?.capacity || 50) - (t._count?.bookings || 0)),
-            totalSeats: t._count?.seats || t.buses?.capacity || 50,
-            departureTime: new Date(t.departure_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            departureDate: new Date(t.departure_time).toISOString().split("T")[0],
-            status: t.status === "SCHEDULED" ? "PUBLISHED" : t.status,
-            fareAmount: Number(t.fare || 0),
-          })));
+          setTrips(rawTrips.map((t) => {
+            const sched = formatTripSchedule(t.departure_time);
+            return {
+              id: t.id,
+              tripCode: `TRP-${t.id.slice(0, 6).toUpperCase()}`,
+              organizationId: t.organization_id,
+              organizationName: t.organizations?.name || "Operator",
+              routeName: t.routes ? `${t.routes.origin} ↔ ${t.routes.destination}` : "Route",
+              originStation: t.routes?.origin || "Origin",
+              destinationStation: t.routes?.destination || "Destination",
+              busPlateNumber: t.buses?.plate_number || "ET-BUS",
+              driverName: "Scheduled Driver",
+              bookedSeatsCount: t.bookedSeatsCount !== undefined ? t.bookedSeatsCount : (t._count?.bookings || 0),
+              availableSeatsCount: t.availableSeatsCount !== undefined ? t.availableSeatsCount : Math.max(0, (t._count?.seats || t.buses?.capacity || 50) - (t._count?.bookings || 0)),
+              totalSeats: t._count?.seats || t.buses?.capacity || 50,
+              departureTime: sched.departureTime,
+              departureDate: sched.departureDate,
+              formattedDate: sched.formattedDate,
+              status: t.status === "SCHEDULED" ? "PUBLISHED" : t.status,
+              fareAmount: Number(t.fare || 0),
+            };
+          }));
         }
       }
 
@@ -386,6 +486,8 @@ export const AppProvider = ({ children }) => {
         paymentsRes,
         statsRes,
         staffRes,
+        driversRes,
+        stationsRes,
         orgDetailsRes,
       ] = await Promise.allSettled([
         getBusesApi(orgId),
@@ -395,6 +497,8 @@ export const AppProvider = ({ children }) => {
         getPaymentsApi(orgId),
         getOperationalStatsApi(orgId),
         getStaffApi(orgId),
+        getDriversApi(orgId),
+        getActiveStationsApi(),
         getOrganizationDetailsApi(orgId),
       ]);
 
@@ -424,8 +528,8 @@ export const AppProvider = ({ children }) => {
 
       if (busesRes.status === "fulfilled" && busesRes.value?.data) {
         const rawBuses = busesRes.value.data.buses || busesRes.value.data;
-        if (Array.isArray(rawBuses) && rawBuses.length > 0) {
-          const mappedBuses = rawBuses.map((b) => ({
+        if (Array.isArray(rawBuses)) {
+          setBuses(rawBuses.map((b) => ({
             id: b.id,
             organizationId: b.organization_id || orgId,
             busNumber: b.plate_number || b.busNumber || `BUS-${b.id.slice(0, 4)}`,
@@ -435,67 +539,68 @@ export const AppProvider = ({ children }) => {
             status: b.is_active ? "ACTIVE" : "MAINTENANCE",
             manufactureYear: "2023",
             lastMaintenance: b.updated_at ? b.updated_at.split("T")[0] : new Date().toISOString().split("T")[0],
-          }));
-          setBuses((prev) => {
-            const others = prev.filter((item) => item.organizationId !== orgId);
-            return [...mappedBuses, ...others];
-          });
+          })));
         }
       }
 
       if (routesRes.status === "fulfilled" && routesRes.value?.data) {
         const rawRoutes = routesRes.value.data.routes || routesRes.value.data;
-        if (Array.isArray(rawRoutes) && rawRoutes.length > 0) {
-          const mappedRoutes = rawRoutes.map((r) => ({
+        if (Array.isArray(rawRoutes)) {
+          setRoutes(rawRoutes.map((r) => ({
             id: r.id,
             organizationId: r.organization_id || orgId,
-            name: `${r.origin} ↔ ${r.destination}`,
-            originStationName: r.origin,
-            destinationStationName: r.destination,
+            name: r.origin_station && r.destination_station
+              ? `${r.origin_station.name} ↔ ${r.destination_station.name}`
+              : `${r.origin || 'Origin'} ↔ ${r.destination || 'Destination'}`,
+            originStationName: r.origin_station?.name || r.origin || "Origin",
+            destinationStationName: r.destination_station?.name || r.destination || "Destination",
+            originStationId: r.origin_station_id,
+            destinationStationId: r.destination_station_id,
             distanceKm: r.distance_km || 400,
             estimatedDuration: r.estimated_duration_hours ? `${r.estimated_duration_hours}h` : "5h 30m",
             status: r.is_active ? "ACTIVE" : "INACTIVE",
             assignedOrganizationsCount: 1,
-          }));
-          setRoutes((prev) => {
-            const others = prev.filter((item) => item.organizationId !== orgId);
-            return [...mappedRoutes, ...others];
-          });
+          })));
         }
       }
 
       if (tripsRes.status === "fulfilled" && tripsRes.value?.data) {
         const rawTrips = tripsRes.value.data.trips || tripsRes.value.data;
-        if (Array.isArray(rawTrips) && rawTrips.length > 0) {
-          const mappedTrips = rawTrips.map((t) => ({
-            id: t.id,
-            tripCode: `TRP-${t.id.slice(0, 6).toUpperCase()}`,
-            organizationId: t.organization_id || orgId,
-            organizationName: activeOrg?.name || "Assigned Company",
-            routeName: t.routes ? `${t.routes.origin} ↔ ${t.routes.destination}` : "Route",
-            originStation: t.routes?.origin || "Origin",
-            destinationStation: t.routes?.destination || "Destination",
-            busPlateNumber: t.buses?.plate_number || "ET-BUS",
-            driverName: "Scheduled Driver",
-            bookedSeatsCount: t._count?.bookings || 0,
-            availableSeatsCount: Math.max(0, (t._count?.seats || t.buses?.capacity || 50) - (t._count?.bookings || 0)),
-            totalSeats: t._count?.seats || t.buses?.capacity || 50,
-            departureTime: new Date(t.departure_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            departureDate: new Date(t.departure_time).toISOString().split("T")[0],
-            status: t.status === "SCHEDULED" ? "PUBLISHED" : t.status,
-            fareAmount: Number(t.fare || 0),
+        if (Array.isArray(rawTrips)) {
+          setTrips(rawTrips.map((t) => {
+            const sched = formatTripSchedule(t.departure_time);
+            return {
+              id: t.id,
+              tripCode: `TRP-${t.id.slice(0, 6).toUpperCase()}`,
+              organizationId: t.organization_id || orgId,
+              organizationName: activeOrg?.name || "Assigned Company",
+              routeName: t.routes?.origin_station && t.routes?.destination_station
+                ? `${t.routes.origin_station.name} ↔ ${t.routes.destination_station.name}`
+                : t.routes?.origin && t.routes?.destination
+                ? `${t.routes.origin} ↔ ${t.routes.destination}`
+                : "Route",
+              originStation: t.routes?.origin_station?.name || t.routes?.origin || "Origin",
+              destinationStation: t.routes?.destination_station?.name || t.routes?.destination || "Destination",
+              busPlateNumber: t.buses?.plate_number || "ET-BUS",
+              driverName: t.driver ? [t.driver.first_name, t.driver.last_name].filter(Boolean).join(" ") : "Unassigned",
+              driverId: t.driver_id,
+              bookedSeatsCount: t.bookedSeatsCount !== undefined ? t.bookedSeatsCount : (t._count?.bookings || 0),
+              availableSeatsCount: t.availableSeatsCount !== undefined ? t.availableSeatsCount : Math.max(0, (t._count?.seats || t.buses?.capacity || 50) - (t._count?.bookings || 0)),
+              totalSeats: t._count?.seats || t.buses?.capacity || 50,
+              departureTime: sched.departureTime,
+              departureDate: sched.departureDate,
+              formattedDate: sched.formattedDate,
+              status: t.status === "SCHEDULED" ? "PUBLISHED" : t.status,
+              fareAmount: Number(t.fare || 0),
+            };
           }));
-          setTrips((prev) => {
-            const others = prev.filter((item) => item.organizationId !== orgId);
-            return [...mappedTrips, ...others];
-          });
         }
       }
 
       if (bookingsRes.status === "fulfilled" && bookingsRes.value?.data) {
         const rawBookings = bookingsRes.value.data.bookings || bookingsRes.value.data;
-        if (Array.isArray(rawBookings) && rawBookings.length > 0) {
-          const mappedBookings = rawBookings.map((bk) => ({
+        if (Array.isArray(rawBookings)) {
+          setBookings(rawBookings.map((bk) => ({
             id: bk.id,
             bookingReference: `BK-${bk.id.slice(0, 8).toUpperCase()}`,
             organizationId: bk.organization_id || orgId,
@@ -508,18 +613,14 @@ export const AppProvider = ({ children }) => {
             status: bk.status,
             paymentStatus: bk.payments?.status === "COMPLETED" ? "SUCCESS" : bk.status === "CONFIRMED" ? "SUCCESS" : "PENDING",
             bookingDate: bk.created_at ? bk.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
-          }));
-          setBookings((prev) => {
-            const others = prev.filter((item) => item.organizationId !== orgId);
-            return [...mappedBookings, ...others];
-          });
+          })));
         }
       }
 
       if (paymentsRes.status === "fulfilled" && paymentsRes.value?.data) {
         const rawPayments = paymentsRes.value.data.payments || paymentsRes.value.data;
-        if (Array.isArray(rawPayments) && rawPayments.length > 0) {
-          const mappedPayments = rawPayments.map((py) => ({
+        if (Array.isArray(rawPayments)) {
+          setPayments(rawPayments.map((py) => ({
             id: py.id,
             transactionReference: py.transaction_reference || `TXN-${py.id.slice(0, 8).toUpperCase()}`,
             organizationId: py.organization_id || orgId,
@@ -529,16 +630,29 @@ export const AppProvider = ({ children }) => {
             paymentMethod: py.payment_method || "Telebirr",
             status: py.status === "COMPLETED" ? "SUCCESS" : py.status,
             createdAt: py.created_at ? py.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
-          }));
-          setPayments((prev) => {
-            const others = prev.filter((item) => item.organizationId !== orgId);
-            return [...mappedPayments, ...others];
-          });
+          })));
         }
       }
 
       if (statsRes.status === "fulfilled" && statsRes.value?.data?.stats) {
         setCoordinatorStats(statsRes.value.data.stats);
+      }
+
+      if (driversRes.status === "fulfilled" && driversRes.value?.data) {
+        const rawDrivers = driversRes.value.data.drivers || driversRes.value.data.staff || [];
+        if (Array.isArray(rawDrivers)) {
+          setDrivers(rawDrivers.map((d) => ({
+            id: d.id,
+            organizationId: orgId,
+            name: d.name || [d.firstName, d.lastName].filter(Boolean).join(" ") || d.email,
+            email: d.email || "",
+            phone: d.phone || "",
+            status: d.status || (d.is_active ? "ACTIVE" : "INACTIVE"),
+            totalTripsCompleted: 0,
+            rating: 5.0,
+            licenseNumber: d.licenseNumber || null,
+          })));
+        }
       }
 
       if (staffRes.status === "fulfilled" && staffRes.value?.data?.staff) {
@@ -549,16 +663,43 @@ export const AppProvider = ({ children }) => {
             id: s.id,
             organizationId: orgId,
             name: s.name,
-            phone: s.phone || "+251911000000",
+            email: s.email || "",
+            phone: s.phone || "",
             status: s.status,
-            totalTripsCompleted: 12,
-            rating: 4.9,
+            totalTripsCompleted: 0,
+            rating: 5.0,
+            licenseNumber: null,
           }));
+        // Merge driverList with existing drivers
         setDrivers((prev) => {
-          const others = prev.filter((d) => d.organizationId !== orgId);
-          return [...driverList, ...others];
+          const byId = new Map(prev.map((d) => [d.id, d]));
+          driverList.forEach((d) => {
+            byId.set(d.id, d);
+          });
+          return Array.from(byId.values());
         });
+      }
 
+      if (stationsRes.status === "fulfilled" && stationsRes.value) {
+        const rawStations =
+          stationsRes.value.data?.stations ||
+          stationsRes.value.data ||
+          stationsRes.value.stations ||
+          [];
+        if (Array.isArray(rawStations)) {
+          setStations(rawStations.map((st) => ({
+            id: st.id,
+            name: st.name,
+            city: st.city,
+            code: st.code,
+            address: st.address,
+            is_active: st.is_active ?? st.isActive ?? true,
+          })));
+        }
+      }
+
+      if (staffRes.status === "fulfilled" && staffRes.value?.data?.staff) {
+        const rawStaff = staffRes.value.data.staff;
         const verifierList = rawStaff
           .filter((s) => s.role === "TICKET_VERIFIER")
           .map((s) => ({
@@ -571,34 +712,45 @@ export const AppProvider = ({ children }) => {
             scansToday: 0,
             createdAt: s.createdAt ? s.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           }));
-        setVerifiers((prev) => {
-          const others = prev.filter((v) => v.organizationId !== orgId);
-          return [...verifierList, ...others];
-        });
+        setVerifiers(verifierList);
       }
     } catch (err) {
       console.warn("Backend coordinator sync notice:", err.message);
     } finally {
       setIsLoadingData(false);
     }
-  }, [isAuthenticated, activeOrg]);
+  }, [isAuthenticated, activeOrg, getCoordinatorOrgId]);
 
   // Synchronize on mount and whenever user/role/org changes
   useEffect(() => {
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated || !user) {
+      setCurrentRole(null);
+      return;
+    }
 
-    if (user.roles?.includes("ADMIN") || user.roles?.includes("PLATFORM_ADMIN")) {
+    const roles = Array.isArray(user.roles) ? user.roles : [];
+
+    if (roles.includes("ADMIN") || roles.includes("PLATFORM_ADMIN")) {
       setCurrentRole("ADMIN");
       fetchAdminData();
+    } else if (roles.includes("DRIVER")) {
+      setCurrentRole("DRIVER");
     } else if (
-      user.roles?.includes("BOOKING_COORDINATOR") ||
-      user.roles?.includes("OPERATIONAL_MANAGER")
+      roles.includes("BOOKING_COORDINATOR") ||
+      roles.includes("OPERATIONAL_MANAGER") ||
+      roles.includes("OPERATOR") ||
+      Boolean(user.organizationContext?.length)
     ) {
       setCurrentRole("MANAGER");
       const targetOrgId = getCoordinatorOrgId();
       if (targetOrgId) {
+        setSelectedOrgId((prev) => (prev === targetOrgId ? prev : targetOrgId));
         fetchCoordinatorData(targetOrgId);
       }
+    } else if (roles.includes("PASSENGER")) {
+      setCurrentRole("PASSENGER");
+    } else {
+      setCurrentRole(null);
     }
   }, [isAuthenticated, user, selectedOrgId, fetchAdminData, fetchCoordinatorData, getCoordinatorOrgId]);
 
@@ -697,28 +849,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // ================= STATIONS ACTIONS (Admin) =================
-  const addStation = (stationData) => {
-    const newStation = {
-      id: `stn-${Date.now()}`,
-      activeRoutesCount: 0,
-      status: "ACTIVE",
-      createdAt: new Date().toISOString().split("T")[0],
-      ...stationData
-    };
-    setStations((prev) => [newStation, ...prev]);
-    addAuditLog("ADD_STATION", "Station", newStation.id, "—", `Created ${newStation.name} (${newStation.city})`);
-    showToast(`Station "${newStation.name}" added successfully.`);
-  };
-
-  const updateStation = (id, updatedData) => {
-    setStations((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updatedData } : s))
-    );
-    addAuditLog("UPDATE_STATION", "Station", id, "—", `Updated details for station ${id}`);
-    showToast("Station updated successfully.");
-  };
-
   // ================= BUSES ACTIONS (Booking Coordinator) =================
   const addBus = async (busData) => {
     const orgId = getCoordinatorOrgId();
@@ -758,6 +888,59 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // ================= STATIONS ACTIONS (Platform Admin & System-wide) =================
+  const addStation = async (stationData) => {
+    try {
+      const res = await createStationApi(stationData);
+      showToast(`Station "${stationData.name}" registered successfully!`);
+      await fetchAdminData();
+      return res;
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.message || "Failed to register station.";
+      showToast(errMsg, "error");
+      throw err;
+    }
+  };
+
+  const updateStation = async (stationId, updateData) => {
+    try {
+      const res = await updateStationApi(stationId, updateData);
+      showToast("Station updated successfully!");
+      await fetchAdminData();
+      return res;
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.message || "Failed to update station.";
+      showToast(errMsg, "error");
+      throw err;
+    }
+  };
+
+  const deleteStation = async (stationId) => {
+    try {
+      const res = await deleteStationApi(stationId);
+      showToast("Station deleted successfully!");
+      await fetchAdminData();
+      return res;
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.message || "Failed to delete station.";
+      showToast(errMsg, "error");
+      throw err;
+    }
+  };
+
+  const toggleStationStatus = async (station) => {
+    try {
+      const nextActive = !station.is_active;
+      await updateStationApi(station.id, { is_active: nextActive });
+      showToast(`Station ${nextActive ? "activated" : "deactivated"} successfully!`);
+      await fetchAdminData();
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.message || "Failed to toggle station status.";
+      showToast(errMsg, "error");
+      throw err;
+    }
+  };
+
   // ================= ROUTES ACTIONS (Booking Coordinator) =================
   const addRoute = async (routeData) => {
     const orgId = getCoordinatorOrgId();
@@ -769,8 +952,10 @@ export const AppProvider = ({ children }) => {
     const payload = {
       origin: originName,
       destination: destName,
+      originStationId: routeData.originStationId,
+      destinationStationId: routeData.destinationStationId,
       distanceKm: Number(routeData.distanceKm) || 400,
-      estimatedDurationHours: 6.0,
+      estimatedDurationHours: Number(routeData.estimatedDurationHours) || 6.0,
       isActive: true,
     };
 
@@ -798,21 +983,38 @@ export const AppProvider = ({ children }) => {
       depISO = new Date(`${depDate}T${depTime.trim()}:00`).toISOString();
     }
 
+    let arrISO = null;
+    if (tripData.arrivalTime) {
+      const arrDate = tripData.departureDate || new Date().toISOString().split("T")[0];
+      const arrTime = tripData.arrivalTime.replace(/\s*[AP]M/i, '');
+      arrISO = new Date(`${arrDate}T${arrTime.trim()}:00`).toISOString();
+    }
+
     const payload = {
       busId: bus?.id?.length === 36 ? bus.id : undefined,
       routeId: route?.id?.length === 36 ? route.id : undefined,
-      origin: route?.originStationName || route?.origin,
-      destination: route?.destinationStationName || route?.destination,
+      origin: route?.originStationName,
+      destination: route?.destinationStationName,
+      originStationId: route?.originStationId,
+      destinationStationId: route?.destinationStationId,
       departureTime: depISO,
+      arrivalTime: arrISO,
       fare: Number(tripData.fareAmount || tripData.fare || 850),
+      driverId:
+        tripData.driverId && tripData.driverId.length === 36 ? tripData.driverId : null,
     };
 
+    console.log('Creating trip with orgId:', orgId, 'payload:', payload);
+
     try {
-      await createTripApi(orgId, payload);
+      const response = await createTripApi(orgId, payload);
+      console.log('Trip creation response:', response);
       await fetchCoordinatorData(orgId);
+      console.log('Trips after creation:', trips);
       showToast(`Trip created and published successfully via backend!`);
       return true;
     } catch (err) {
+      console.error('Trip creation error:', err);
       const errMsg = err.response?.data?.message || err.message || "Failed to schedule trip.";
       showToast(errMsg, "error");
       throw err;
@@ -879,27 +1081,43 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const assignDriverToTrip = (tripId, driverId) => {
-    const driver = drivers.find((d) => d.id === driverId);
-    if (!driver) return;
-    setTrips((prev) =>
-      prev.map((t) => (t.id === tripId ? { ...t, driverId: driver.id, driverName: driver.name } : t))
-    );
-    showToast(`Driver ${driver.name} assigned to trip.`);
+  const assignDriverToTrip = async (tripId, driverId) => {
+    const orgId = getCoordinatorOrgId();
+    try {
+      if (tripId && tripId.length === 36) {
+        await assignDriverToTripApi(orgId, tripId, driverId || null);
+        await fetchCoordinatorData(orgId);
+      } else {
+        const driver = drivers.find((d) => d.id === driverId);
+        setTrips((prev) =>
+          prev.map((t) => (t.id === tripId ? { ...t, driverId, driverName: driver?.name || "Assigned Driver" } : t))
+        );
+      }
+      showToast("Driver assigned to trip successfully!");
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.message || "Failed to assign driver.";
+      showToast(errMsg, "error");
+    }
   };
 
   // ================= DRIVERS & VERIFIERS ACTIONS (Booking Coordinator) =================
   const addDriver = async (driverData) => {
     const orgId = getCoordinatorOrgId();
     try {
-      await createStaffApi(orgId, {
+      console.log('Creating driver with orgId:', orgId, 'and data:', driverData);
+      const response = await createStaffApi(orgId, {
         name: driverData.name,
         phone: driverData.phone,
+        email: driverData.email,
+        password: driverData.password,
         role: "DRIVER",
       });
+      console.log('Driver creation response:', response);
       await fetchCoordinatorData(orgId);
       showToast(`Driver ${driverData.name} registered via backend!`);
     } catch (err) {
+      console.error('Driver creation error:', err);
+      console.error('Error response:', err.response?.data);
       const errMsg = err.response?.data?.message || err.message || "Failed to register driver.";
       showToast(errMsg, "error");
       throw err;
@@ -913,7 +1131,9 @@ export const AppProvider = ({ children }) => {
         name: verifierData.name,
         email: verifierData.email,
         phone: verifierData.phone,
+        password: verifierData.password,
         role: "TICKET_VERIFIER",
+        assignedStation: verifierData.assignedStation,
       });
       await fetchCoordinatorData(orgId);
       showToast(`Ticket Verifier ${verifierData.name} registered via backend!`);
@@ -928,18 +1148,8 @@ export const AppProvider = ({ children }) => {
     const orgId = getCoordinatorOrgId();
     const nextActive = !isCurrentlyActive;
     try {
-      if (staffId && staffId.length === 36) {
-        await toggleStaffStatusApi(orgId, staffId, nextActive);
-        await fetchCoordinatorData(orgId);
-      } else {
-        const nextStatus = nextActive ? "ACTIVE" : "INACTIVE";
-        setDrivers((prev) =>
-          prev.map((d) => (d.id === staffId ? { ...d, status: nextStatus } : d))
-        );
-        setVerifiers((prev) =>
-          prev.map((v) => (v.id === staffId ? { ...v, status: nextStatus } : v))
-        );
-      }
+      await toggleStaffStatusApi(orgId, staffId, nextActive);
+      await fetchCoordinatorData(orgId);
       showToast(`Staff member is now ${nextActive ? "ACTIVE" : "INACTIVE"}.`);
     } catch (err) {
       const nextStatus = nextActive ? "ACTIVE" : "INACTIVE";
@@ -949,7 +1159,7 @@ export const AppProvider = ({ children }) => {
       setVerifiers((prev) =>
         prev.map((v) => (v.id === staffId ? { ...v, status: nextStatus } : v))
       );
-      showToast(`Staff member status updated.`);
+      showToast(err.response?.data?.message || err.message || "Failed to toggle staff status.", "error");
     }
   };
 
@@ -994,7 +1204,15 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateSystemSettings = (newSettings) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    setSettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+      try {
+        localStorage.setItem("platform_system_settings", JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to persist settings to localStorage:", err);
+      }
+      return updated;
+    });
     showToast("Platform configuration updated!");
   };
 
@@ -1036,6 +1254,7 @@ export const AppProvider = ({ children }) => {
         verifiers,
         auditLogs,
         settings,
+        commissionRate: (Number(settings?.platformFeePercent ?? 5.0)) / 100,
         // Handlers
         approveOrganization,
         rejectOrganization,
@@ -1044,6 +1263,8 @@ export const AppProvider = ({ children }) => {
         toggleUserStatus,
         addStation,
         updateStation,
+        deleteStation,
+        toggleStationStatus,
         addBus,
         updateBusStatus,
         addRoute,

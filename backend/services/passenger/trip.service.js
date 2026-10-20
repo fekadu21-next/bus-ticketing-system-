@@ -25,8 +25,26 @@ export class PassengerTripService {
       throw new ApiError(400, 'Trip operator is currently inactive.');
     }
 
-    const availableSeatsCount = trip.seats.filter((s) => s.status === 'AVAILABLE').length;
-    const bookedSeatsCount = trip.seats.filter((s) => s.status === 'BOOKED').length;
+    const activeBookedSeatNums = new Set(
+      (trip.bookings || []).map((b) => b.seat_number)
+    );
+
+    const mappedSeats = (trip.seats || []).map((s) => {
+      let status = s.status;
+      if (activeBookedSeatNums.has(s.seat_number) && status === 'AVAILABLE') {
+        status = 'BOOKED';
+      }
+      return {
+        id: s.id,
+        seatNumber: s.seat_number,
+        status,
+      };
+    });
+
+    const availableSeatsCount = mappedSeats.filter((s) => s.status === 'AVAILABLE').length;
+    const bookedSeatsCount = mappedSeats.filter((s) => s.status === 'BOOKED').length;
+    const heldSeatsCount = mappedSeats.filter((s) => s.status === 'HELD' || s.status === 'LOCKED').length;
+    const blockedSeatsCount = mappedSeats.filter((s) => s.status === 'BLOCKED').length;
 
     return {
       id: trip.id,
@@ -46,13 +64,12 @@ export class PassengerTripService {
       price: Number(trip.fare),
       status: trip.status,
       totalSeats: trip.buses?.capacity || trip.seats.length,
+      availableSeats: availableSeatsCount,
       availableSeatsCount,
       bookedSeatsCount,
-      seats: trip.seats.map((s) => ({
-        id: s.id,
-        seatNumber: s.seat_number,
-        status: s.status,
-      })),
+      heldSeatsCount,
+      blockedSeatsCount,
+      seats: mappedSeats,
     };
   }
 
@@ -67,21 +84,38 @@ export class PassengerTripService {
       throw new ApiError(400, 'Trip is not available for booking.');
     }
 
+    const activeBookedSeatNums = new Set(
+      (trip.bookings || []).map((b) => b.seat_number)
+    );
+
     const seats = await passengerTripRepository.getTripSeats(tripId);
-    const availableCount = seats.filter((s) => s.status === 'AVAILABLE').length;
-    const bookedCount = seats.filter((s) => s.status === 'BOOKED').length;
+    const mappedSeats = (seats || []).map((seat) => {
+      let status = seat.status;
+      if (activeBookedSeatNums.has(seat.seat_number) && status === 'AVAILABLE') {
+        status = 'BOOKED';
+      }
+      return {
+        id: seat.id,
+        seatNumber: seat.seat_number,
+        status,
+      };
+    });
+
+    const availableCount = mappedSeats.filter((s) => s.status === 'AVAILABLE').length;
+    const bookedCount = mappedSeats.filter((s) => s.status === 'BOOKED').length;
+    const heldCount = mappedSeats.filter((s) => s.status === 'HELD' || s.status === 'LOCKED').length;
+    const blockedCount = mappedSeats.filter((s) => s.status === 'BLOCKED').length;
 
     return {
       tripId: trip.id,
       bus: trip.buses,
-      totalSeats: trip.buses?.capacity || seats.length,
+      totalSeats: trip.buses?.capacity || mappedSeats.length,
+      availableSeats: availableCount,
       availableSeatsCount: availableCount,
       bookedSeatsCount: bookedCount,
-      seats: seats.map((seat) => ({
-        id: seat.id,
-        seatNumber: seat.seat_number,
-        status: seat.status,
-      })),
+      heldSeatsCount: heldCount,
+      blockedSeatsCount: blockedCount,
+      seats: mappedSeats,
     };
   }
 }
