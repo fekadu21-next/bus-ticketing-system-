@@ -45,7 +45,6 @@ import { AdminRoutesPage } from "../pages/admin/AdminRoutesPage";
 import { AdminTripsPage } from "../pages/admin/AdminTripsPage";
 import { AdminBookingsPage } from "../pages/admin/AdminBookingsPage";
 import { AdminPaymentsPage } from "../pages/admin/AdminPaymentsPage";
-import { AdminTicketsPage } from "../pages/admin/AdminTicketsPage";
 import { AdminReportsPage } from "../pages/admin/AdminReportsPage";
 import { AdminAuditLogsPage } from "../pages/admin/AdminAuditLogsPage";
 import { AdminSettingsPage } from "../pages/admin/AdminSettingsPage";
@@ -177,8 +176,6 @@ export const ManagementConsole = () => {
         return <AdminBookingsPage />;
       case "payments":
         return <AdminPaymentsPage />;
-      case "tickets":
-        return <AdminTicketsPage />;
       case "reports":
         return <AdminReportsPage />;
       case "audit":

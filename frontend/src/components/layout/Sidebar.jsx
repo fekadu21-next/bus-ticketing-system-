@@ -186,11 +186,11 @@ export const Sidebar = () => {
           title: isDuplicate ? "Duplicate QR Scan Flagged" : "Invalid Ticket Scan Rejected",
           message: `Boarding attempt rejected for ticket #${v.ticketNumber} at terminal "${v.stationName || 'Autobus Terra'}".`,
           timestamp: v.scannedAt || "Recently",
-          targetPage: "tickets",
+          targetPage: "bookings",
           icon: ShieldCheck,
           color: "#ef4444",
           badge: isDuplicate ? "Duplicate Scan" : "Security Alert",
-          actionText: "View QR Log",
+          actionText: "View Bookings",
         });
       });
 
@@ -265,7 +265,6 @@ export const Sidebar = () => {
       trips: true,
       bookings: true,
       payments: true,
-      tickets: true,
       reports: true,
       audit: true,
       drivers: true,
@@ -357,8 +356,6 @@ export const Sidebar = () => {
         return pendingBookingsCount;
       case "payments":
         return pendingPaymentsCount;
-      case "tickets":
-        return securityAlertsCount;
       default:
         return 0;
     }
@@ -505,14 +502,6 @@ export const Sidebar = () => {
           badge: formatBadge(pendingPaymentsCount, "payments"),
           badgeType: "primary",
           notifCategory: "PAYMENT",
-        },
-        {
-          id: "tickets",
-          label: t("sidebar.tickets", "Tickets & QR"),
-          icon: QrCode,
-          badge: formatBadge(securityAlertsCount, "tickets"),
-          badgeType: "danger",
-          notifCategory: "SECURITY",
         },
       ],
     },
