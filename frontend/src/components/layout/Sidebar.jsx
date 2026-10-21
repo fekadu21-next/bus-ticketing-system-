@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
 import {
   LayoutDashboard,
@@ -29,6 +30,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
+  LogOut,
 } from "lucide-react";
 
 import logoImg from "../../assets/logo.png";
@@ -45,10 +47,14 @@ export const Sidebar = () => {
     activeOrg,
     selectedOrgId,
     buses = [],
+    routes = [],
     trips = [],
+    drivers = [],
+    verifiers = [],
     bookings = [],
     payments = [],
     users = [],
+    stations = [],
     verifications = [],
     auditLogs = [],
     settings = {},
@@ -57,9 +63,17 @@ export const Sidebar = () => {
     isSidebarCollapsed,
     setIsSidebarCollapsed,
     toggleSidebar,
+    resetAppState,
   } = useApp();
 
+  const { logout } = useAuth();
   const { t } = useTranslation();
+
+  const handleLogout = async () => {
+    if (resetAppState) resetAppState();
+    await logout();
+    navigate("/login", { replace: true });
+  };
 
   // Notification Drawer Modal State
   const [showNotificationsDrawer, setShowNotificationsDrawer] = useState(false);
@@ -75,48 +89,94 @@ export const Sidebar = () => {
     }
   });
 
+  const isScopedToCurrentOrg = (orgId) => {
+    if (!selectedOrgId || selectedOrgId === "ALL") return true;
+    return orgId === selectedOrgId;
+  };
+
   // Calculate real notifications based on active system data
   const dynamicNotifications = useMemo(() => {
     const list = [];
 
     // 1. Organization events: Pending or newly added organizations
-    organizations.forEach((org) => {
-      const isPending = org.status === "PENDING";
-      list.push({
-        id: `notif-org-${org.id}`,
-        category: "ORG",
-        title: isPending ? "New Organization Registration" : "Organization Profile Active",
-        message: isPending
-          ? `Transport operator "${org.name}" registered and is awaiting administrative approval.`
-          : `Operator "${org.name}" is verified and active on the platform.`,
-        timestamp: org.createdAt || "Recently",
-        targetPage: "organizations",
-        icon: Building2,
-        color: isPending ? "#f59e0b" : "#10b981",
-        badge: isPending ? "Pending Approval" : "Verified",
-        actionText: "Review Organization",
-      });
+    (organizations || []).forEach((org) => {
+      const isPending = org?.status === "PENDING";
+      if (!selectedOrgId || selectedOrgId === "ALL" || org?.id === selectedOrgId) {
+        list.push({
+          id: `notif-org-${org?.id}`,
+          category: "ORG",
+          title: isPending ? "Organization Awaiting Approval" : "Organization Profile Active",
+          message: isPending
+            ? `Transport operator "${org?.name}" registered and is awaiting administrative approval.`
+            : `Operator "${org?.name}" is verified and active on the platform.`,
+          timestamp: org?.createdAt || "Recently",
+          targetPage: "organizations",
+          icon: Building2,
+          color: isPending ? "#f59e0b" : "#10b981",
+          badge: isPending ? "Pending Approval" : "Verified",
+          actionText: "Review Organization",
+        });
+      }
     });
 
     // 2. Trip events: Newly created or scheduled trips
-    trips.forEach((trip) => {
-      list.push({
-        id: `notif-trip-${trip.id}`,
-        category: "TRIP",
-        title: "New Trip Created & Scheduled",
-        message: `Trip "${trip.tripCode || 'TRIP'}" scheduled on route "${trip.routeName || 'Intercity'}" by ${trip.organizationName || 'Operator'}.`,
-        timestamp: trip.departureDate ? `${trip.departureDate} at ${trip.departureTime || '06:00 AM'}` : "Scheduled",
-        targetPage: "trips",
-        icon: CalendarDays,
-        color: "#2563eb",
-        badge: trip.status || "PUBLISHED",
-        actionText: "Inspect Trip",
-      });
+    (trips || []).forEach((trip) => {
+      const isDraft = trip?.status === "DRAFT";
+      if (isScopedToCurrentOrg(trip?.organizationId || trip?.organization_id)) {
+        list.push({
+          id: `notif-trip-${trip?.id}`,
+          category: "TRIP",
+          title: isDraft ? "Trip Requires Action / Publishing" : "New Trip Scheduled",
+          message: `Trip "${trip?.tripCode || 'TRIP'}" scheduled on route "${trip?.routeName || 'Intercity'}" by ${trip?.organizationName || 'Operator'}.`,
+          timestamp: trip?.departureDate ? `${trip?.departureDate} at ${trip?.departureTime || '06:00 AM'}` : "Scheduled",
+          targetPage: "trips",
+          icon: CalendarDays,
+          color: isDraft ? "#f59e0b" : "#2563eb",
+          badge: trip?.status || "PUBLISHED",
+          actionText: "Inspect Trip",
+        });
+      }
     });
 
-    // 3. Security & Ticket QR Scan events
-    verifications
-      .filter((v) => v.status === "ALREADY_USED" || v.status === "INVALID")
+    // 3. Payment events: Pending payments
+    (payments || [])
+      .filter((p) => p?.status === "PENDING" && isScopedToCurrentOrg(p?.organizationId || p?.organization_id))
+      .forEach((p) => {
+        list.push({
+          id: `notif-pay-${p?.id}`,
+          category: "PAYMENT",
+          title: "Pending Payment Settlement",
+          message: `Payment #${p?.paymentReference || p?.id?.slice(0, 8)} (${Number(p?.amount || 0).toLocaleString()} ETB) awaiting verification.`,
+          timestamp: p?.paidAt || p?.createdAt || "Pending",
+          targetPage: "payments",
+          icon: CreditCard,
+          color: "#f59e0b",
+          badge: "Pending Settlement",
+          actionText: "Inspect Payment",
+        });
+      });
+
+    // 4. Fleet bus maintenance events
+    (buses || [])
+      .filter((b) => (b?.status === "MAINTENANCE" || b?.status === "INACTIVE" || b?.isActive === false) && isScopedToCurrentOrg(b?.organizationId || b?.organization_id))
+      .forEach((b) => {
+        list.push({
+          id: `notif-bus-${b?.id}`,
+          category: "FLEET",
+          title: "Bus In Maintenance",
+          message: `Bus "${b?.plateNumber || b?.busNumber}" (${b?.organizationName}) flagged for maintenance inspection.`,
+          timestamp: b?.lastMaintenance || "Recent",
+          targetPage: "buses",
+          icon: Bus,
+          color: "#f59e0b",
+          badge: b?.status || "MAINTENANCE",
+          actionText: "View Fleet",
+        });
+      });
+
+    // 5. Security & Ticket QR Scan events
+    (verifications || [])
+      .filter((v) => (v?.status === "ALREADY_USED" || v?.status === "INVALID") && isScopedToCurrentOrg(v?.organizationId))
       .forEach((v) => {
         const isDuplicate = v.status === "ALREADY_USED";
         list.push({
@@ -134,7 +194,7 @@ export const Sidebar = () => {
       });
 
     return list;
-  }, [organizations, trips, verifications]);
+  }, [organizations, trips, verifications, payments, buses, selectedOrgId]);
 
   // Compute unread count
   const unreadNotifCount = useMemo(() => {
@@ -220,23 +280,158 @@ export const Sidebar = () => {
     }
   };
 
-  // Raw counts of items requiring operational attention
-  const pendingApprovalsCount = organizations.filter(
-    (o) => o.status === "PENDING"
+  // Context Menu State for Navigation Items
+  const [contextMenu, setContextMenu] = useState(null); // { x, y, item }
+  const contextMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+
+    const handleClickOutside = (e) => {
+      if (contextMenuRef.current && contextMenuRef.current.contains(e.target)) return;
+      setContextMenu(null);
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleClickOutside, true);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleClickOutside, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [contextMenu]);
+
+  // Dynamic counts of items requiring operational attention (scoped to active organization selection)
+  const pendingApprovalsCount = (organizations || []).filter(
+    (o) => isScopedToCurrentOrg(o?.id) && o?.status === "PENDING"
   ).length;
 
-  const pendingBookingsCount = bookings.filter(
-    (bk) => (bk.organizationId === selectedOrgId || currentRole === "ADMIN") && bk.status === "PENDING"
+  const pendingTripsCount = (trips || []).filter(
+    (t) => isScopedToCurrentOrg(t?.organizationId || t?.organization_id) && (t?.status === "DRAFT" || t?.status === "PENDING")
   ).length;
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const newTripsCount = trips.filter(
-    (t) => (t.organizationId === selectedOrgId || currentRole === "ADMIN") && (t.departureDate === todayStr || t.status === "DRAFT")
+  const attentionBusesCount = (buses || []).filter(
+    (b) => isScopedToCurrentOrg(b?.organizationId || b?.organization_id) && (b?.status === "MAINTENANCE" || b?.status === "INACTIVE" || b?.isActive === false)
   ).length;
 
-  const pendingPaymentsCount = payments.filter(
-    (p) => (p.organizationId === selectedOrgId || currentRole === "ADMIN") && p.status === "PENDING"
+  const attentionRoutesCount = (routes || []).filter(
+    (r) => isScopedToCurrentOrg(r?.organizationId || r?.organization_id) && (r?.status === "INACTIVE" || r?.isActive === false)
   ).length;
+
+  const attentionUsersCount = (users || []).filter(
+    (u) => isScopedToCurrentOrg(u?.organizationId || u?.organization_id) && (u?.status === "SUSPENDED" || u?.isActive === false || !u?.emailVerified)
+  ).length;
+
+  const pendingBookingsCount = (bookings || []).filter(
+    (bk) => isScopedToCurrentOrg(bk?.organizationId || bk?.organization_id) && bk?.status === "PENDING"
+  ).length;
+
+  const pendingPaymentsCount = (payments || []).filter(
+    (p) => isScopedToCurrentOrg(p?.organizationId || p?.organization_id) && p?.status === "PENDING"
+  ).length;
+
+  const securityAlertsCount = (verifications || []).filter(
+    (v) => isScopedToCurrentOrg(v?.organizationId) && (v?.status === "ALREADY_USED" || v?.status === "INVALID")
+  ).length;
+
+  const getItemCount = (itemId) => {
+    switch (itemId) {
+      case "organizations":
+        return pendingApprovalsCount;
+      case "trips":
+        return pendingTripsCount;
+      case "buses":
+        return attentionBusesCount;
+      case "routes":
+        return attentionRoutesCount;
+      case "users":
+        return attentionUsersCount;
+      case "bookings":
+        return pendingBookingsCount;
+      case "payments":
+        return pendingPaymentsCount;
+      case "tickets":
+        return securityAlertsCount;
+      default:
+        return 0;
+    }
+  };
+
+  const handleItemContextMenu = (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const menuWidth = 200;
+    const menuHeight = 110;
+    const clickX = e.clientX;
+    const clickY = e.clientY;
+
+    const x = clickX + menuWidth > window.innerWidth ? Math.max(10, window.innerWidth - menuWidth - 12) : clickX;
+    const y = clickY + menuHeight > window.innerHeight ? Math.max(10, window.innerHeight - menuHeight - 12) : clickY;
+
+    setContextMenu({ x, y, item });
+  };
+
+  const handleMarkItemRead = (item) => {
+    if (!item) return;
+    setContextMenu(null);
+
+    const currentCount = getItemCount(item.id);
+    setSeenBadges((prev) => {
+      const updated = { ...prev, [item.id]: currentCount || true };
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to save seen badges:", err);
+      }
+      return updated;
+    });
+
+    const matchingNotifIds = dynamicNotifications
+      .filter((n) => (item.notifCategory && n.category === item.notifCategory) || n.targetPage === item.id)
+      .map((n) => n.id);
+
+    if (matchingNotifIds.length > 0) {
+      setReadNotifIds((prev) => {
+        const updated = { ...prev };
+        matchingNotifIds.forEach((id) => {
+          updated[id] = true;
+        });
+        try {
+          localStorage.setItem("platform_read_notifications", JSON.stringify(updated));
+        } catch (err) {
+          console.error("Failed to save read notification:", err);
+        }
+        return updated;
+      });
+    }
+  };
+
+  const handleSeeNotifications = (item) => {
+    if (!item) return;
+    setContextMenu(null);
+    setNotifCategoryFilter(item.notifCategory || "ALL");
+    setShowNotificationsDrawer(true);
+  };
+
+  const formatBadge = (count, itemId) => {
+    if (!count || count <= 0) return null;
+    if (itemId && seenBadges) {
+      const seen = seenBadges[itemId];
+      if (seen === true || seen === count) return null;
+      if (typeof seen === "number" && count > seen) {
+        const diff = count - seen;
+        return diff > 99 ? "99+" : String(diff);
+      }
+    }
+    return count > 99 ? "99+" : String(count);
+  };
 
   const adminNavGroups = [
     {
@@ -244,26 +439,20 @@ export const Sidebar = () => {
       items: [
         { id: "dashboard", label: t("sidebar.overviewItem", "Overview"), icon: LayoutDashboard },
         {
-          id: "notifications",
-          label: t("sidebar.notifications", "Notifications"),
-          icon: Bell,
-          badge: unreadNotifCount > 0 ? unreadNotifCount : null,
-          badgeType: "warning",
-          isNotificationTrigger: true,
-        },
-        {
           id: "organizations",
           label: t("sidebar.organizations", "Organizations"),
           icon: Building2,
-          badge: !seenBadges.organizations && pendingApprovalsCount > 0 ? pendingApprovalsCount : null,
+          badge: formatBadge(pendingApprovalsCount, "organizations"),
           badgeType: "warning",
+          notifCategory: "ORG",
         },
         {
           id: "users",
           label: t("sidebar.users", "Users & Roles"),
           icon: Users,
-          badge: !seenBadges.users && users.filter((u) => !u.isActive).length > 0 ? users.filter((u) => !u.isActive).length : null,
+          badge: formatBadge(attentionUsersCount, "users"),
           badgeType: "primary",
+          notifCategory: "USER",
         },
       ],
     },
@@ -271,14 +460,29 @@ export const Sidebar = () => {
       group: t("sidebar.transit", "Transit Infrastructure"),
       items: [
         { id: "stations", label: t("sidebar.stations", "Stations"), icon: MapPin },
-        { id: "buses", label: t("sidebar.buses", "Fleet Buses"), icon: Bus },
-        { id: "routes", label: t("sidebar.routes", "Routes & Corridors"), icon: RouteIcon },
+        {
+          id: "buses",
+          label: t("sidebar.buses", "Fleet Buses"),
+          icon: Bus,
+          badge: formatBadge(attentionBusesCount, "buses"),
+          badgeType: "warning",
+          notifCategory: "FLEET",
+        },
+        {
+          id: "routes",
+          label: t("sidebar.routes", "Routes & Corridors"),
+          icon: RouteIcon,
+          badge: formatBadge(attentionRoutesCount, "routes"),
+          badgeType: "primary",
+          notifCategory: "ROUTE",
+        },
         {
           id: "trips",
           label: t("sidebar.trips", "Trips & Schedules"),
           icon: CalendarDays,
-          badge: !seenBadges.trips && newTripsCount > 0 ? newTripsCount : null,
+          badge: formatBadge(pendingTripsCount, "trips"),
           badgeType: "primary",
+          notifCategory: "TRIP",
         },
       ],
     },
@@ -289,30 +493,33 @@ export const Sidebar = () => {
           id: "bookings",
           label: t("sidebar.bookings", "Bookings"),
           icon: Ticket,
-          badge: !seenBadges.bookings && pendingBookingsCount > 0 ? pendingBookingsCount : null,
+          badge: formatBadge(pendingBookingsCount, "bookings"),
           badgeType: "warning",
+          notifCategory: "BOOKING",
         },
         {
           id: "payments",
           label: t("sidebar.payments", "Payments & Revenue"),
           icon: CreditCard,
-          badge: !seenBadges.payments && pendingPaymentsCount > 0 ? pendingPaymentsCount : null,
+          badge: formatBadge(pendingPaymentsCount, "payments"),
           badgeType: "primary",
+          notifCategory: "PAYMENT",
         },
-        { id: "tickets", label: t("sidebar.tickets", "Tickets & QR"), icon: QrCode },
+        {
+          id: "tickets",
+          label: t("sidebar.tickets", "Tickets & QR"),
+          icon: QrCode,
+          badge: formatBadge(securityAlertsCount, "tickets"),
+          badgeType: "danger",
+          notifCategory: "SECURITY",
+        },
       ],
     },
     {
       group: t("sidebar.governance", "Governance & System"),
       items: [
         { id: "reports", label: t("sidebar.reports", "Reports & KPIs"), icon: BarChart3 },
-        {
-          id: "audit",
-          label: t("sidebar.audit", "Audit Logs"),
-          icon: FileSpreadsheet,
-          badge: !seenBadges.audit && auditLogs.length > 0 ? Math.min(auditLogs.length, 5) : null,
-          badgeType: "primary",
-        },
+        { id: "audit", label: t("sidebar.audit", "Audit Logs"), icon: FileSpreadsheet },
         { id: "settings", label: t("sidebar.settings", "Settings"), icon: Settings },
       ],
     },
@@ -323,27 +530,20 @@ export const Sidebar = () => {
       group: t("sidebar.coreOperations", "Core Operations"),
       items: [
         { id: "dashboard", label: t("sidebar.overviewItem", "Overview"), icon: LayoutDashboard },
-        {
-          id: "notifications",
-          label: t("sidebar.notifications", "Notifications"),
-          icon: Bell,
-          badge: unreadNotifCount > 0 ? unreadNotifCount : null,
-          badgeType: "warning",
-          isNotificationTrigger: true,
-        },
       ],
     },
     {
       group: t("sidebar.fleetScheduling", "Fleet & Scheduling"),
       items: [
-        { id: "buses", label: t("sidebar.buses", "Fleet & Buses"), icon: Bus },
-        { id: "routes", label: t("sidebar.routes", "Routes & Corridors"), icon: RouteIcon },
+        { id: "buses", label: t("sidebar.buses", "Fleet & Buses"), icon: Bus, badge: formatBadge(attentionBusesCount, "buses"), badgeType: "warning", notifCategory: "FLEET" },
+        { id: "routes", label: t("sidebar.routes", "Routes & Corridors"), icon: RouteIcon, badge: formatBadge(attentionRoutesCount, "routes"), badgeType: "primary", notifCategory: "ROUTE" },
         {
           id: "trips",
           label: t("sidebar.trips", "Trips & Schedules"),
           icon: CalendarDays,
-          badge: !seenBadges.trips && newTripsCount > 0 ? newTripsCount : null,
+          badge: formatBadge(pendingTripsCount, "trips"),
           badgeType: "primary",
+          notifCategory: "TRIP",
         },
         { id: "seats", label: t("sidebar.seats", "Seat Allocations"), icon: Grid3X3 },
       ],
@@ -355,23 +555,25 @@ export const Sidebar = () => {
           id: "bookings",
           label: t("sidebar.bookings", "Bookings"),
           icon: Ticket,
-          badge: !seenBadges.bookings && pendingBookingsCount > 0 ? pendingBookingsCount : null,
+          badge: formatBadge(pendingBookingsCount, "bookings"),
           badgeType: "warning",
+          notifCategory: "BOOKING",
         },
         {
           id: "payments",
           label: t("sidebar.payments", "Payments & Revenue"),
           icon: CreditCard,
-          badge: !seenBadges.payments && pendingPaymentsCount > 0 ? pendingPaymentsCount : null,
+          badge: formatBadge(pendingPaymentsCount, "payments"),
           badgeType: "primary",
+          notifCategory: "PAYMENT",
         },
       ],
     },
     {
       group: t("sidebar.personnel", "Personnel & Verification"),
       items: [
-        { id: "drivers", label: t("sidebar.drivers", "Drivers"), icon: UserCheck },
-        { id: "verifiers", label: t("sidebar.verifiers", "Ticket Verifiers"), icon: QrCode },
+        { id: "drivers", label: t("sidebar.drivers", "Drivers"), icon: UserCheck, notifCategory: "STAFF" },
+        { id: "verifiers", label: t("sidebar.verifiers", "Ticket Verifiers"), icon: QrCode, notifCategory: "STAFF" },
       ],
     },
     {
@@ -487,7 +689,15 @@ export const Sidebar = () => {
         {/* Navigation */}
         <nav className="sidebar-nav">
           {totalActiveBadges > 0 && !isSidebarCollapsed && (
-            <div className="sidebar-alert-strip">
+            <div
+              className="sidebar-alert-strip"
+              onClick={() => {
+                setNotifCategoryFilter("ALL");
+                setShowNotificationsDrawer(true);
+              }}
+              style={{ cursor: "pointer" }}
+              title="Click to view notification center"
+            >
               <span>🔔 {totalActiveBadges} active alert{totalActiveBadges > 1 ? "s" : ""}</span>
               <button
                 onClick={resetAllBadges}
@@ -525,6 +735,7 @@ export const Sidebar = () => {
                     key={item.id}
                     className={`nav-item ${isActive ? "active" : ""}`}
                     onClick={() => handleNavClick(item)}
+                    onContextMenu={(e) => handleItemContextMenu(e, item)}
                     title={isSidebarCollapsed ? item.label : undefined}
                   >
                     <div className="nav-link-content">
@@ -538,6 +749,33 @@ export const Sidebar = () => {
                             ? "badge-dot"
                             : `badge-count ${item.badgeType ? `badge-${item.badgeType}` : ""}`
                         }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (item.notifCategory) {
+                            setNotifCategoryFilter(item.notifCategory);
+                            setShowNotificationsDrawer(true);
+                          } else {
+                            handleNavClick(item);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.stopPropagation();
+                          handleItemContextMenu(e, item);
+                        }}
+                        title={isSidebarCollapsed ? `${item.badge} notifications for ${item.label}` : `View ${item.badge} notifications for ${item.label}`}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.stopPropagation();
+                            if (item.notifCategory) {
+                              setNotifCategoryFilter(item.notifCategory);
+                              setShowNotificationsDrawer(true);
+                            } else {
+                              handleNavClick(item);
+                            }
+                          }
+                        }}
                       >
                         {isSidebarCollapsed ? "" : item.badge}
                       </span>
@@ -570,8 +808,124 @@ export const Sidebar = () => {
               </div>
             )}
           </div>
+          <button
+            type="button"
+            className="sidebar-logout-btn"
+            onClick={handleLogout}
+            title={t("header.logout", "Sign Out")}
+          >
+            <LogOut size={16} />
+            {!isSidebarCollapsed && <span>{t("header.logout", "Sign Out")}</span>}
+          </button>
         </div>
       </aside>
+
+      {/* Floating Context Menu for Sidebar Items */}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="sidebar-context-menu"
+          style={{
+            position: "fixed",
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+            zIndex: 9999,
+            minWidth: "205px",
+            background: "var(--bg-card, #ffffff)",
+            border: "1px solid var(--border-color, #e2e8f0)",
+            borderRadius: "10px",
+            boxShadow: "0 12px 30px -4px rgba(0, 0, 0, 0.2), 0 6px 12px -4px rgba(0, 0, 0, 0.08)",
+            padding: "6px",
+            userSelect: "none",
+          }}
+        >
+          <div
+            style={{
+              padding: "6px 10px 6px",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              color: "var(--text-muted, #64748b)",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              borderBottom: "1px solid var(--border-color, #e2e8f0)",
+              marginBottom: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>{contextMenu.item?.label || "Navigation"}</span>
+            {contextMenu.item?.badge && (
+              <span
+                style={{
+                  fontSize: "0.68rem",
+                  padding: "1px 6px",
+                  borderRadius: "99px",
+                  background: "rgba(37, 99, 235, 0.12)",
+                  color: "var(--primary, #2563eb)",
+                  fontWeight: 800,
+                }}
+              >
+                {contextMenu.item.badge}
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="context-menu-btn"
+            onClick={() => handleMarkItemRead(contextMenu.item)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: "9px",
+              padding: "8px 10px",
+              fontSize: "0.82rem",
+              fontWeight: 600,
+              color: "var(--text-main, #0f172a)",
+              background: "transparent",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              textAlign: "left",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-main, #f1f5f9)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            <CheckCheck size={16} color="var(--primary, #2563eb)" />
+            <span>Mark as read</span>
+          </button>
+
+          <button
+            type="button"
+            className="context-menu-btn"
+            onClick={() => handleSeeNotifications(contextMenu.item)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: "9px",
+              padding: "8px 10px",
+              fontSize: "0.82rem",
+              fontWeight: 600,
+              color: "var(--text-main, #0f172a)",
+              background: "transparent",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              textAlign: "left",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-main, #f1f5f9)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            <Bell size={16} color="#f59e0b" />
+            <span>See notifications</span>
+          </button>
+        </div>
+      )}
 
       {/* Sidebar Notifications Slideout Drawer */}
       {showNotificationsDrawer && (
@@ -701,7 +1055,9 @@ export const Sidebar = () => {
               {[
                 { key: "ALL", label: `All (${dynamicNotifications.length})` },
                 { key: "ORG", label: `🏢 Organizations` },
-                { key: "TRIP", label: `🚌 Trips` },
+                { key: "TRIP", label: `📅 Trips` },
+                { key: "FLEET", label: `🚌 Fleet` },
+                { key: "PAYMENT", label: `💳 Payments` },
                 { key: "SECURITY", label: `🛡️ Security` },
               ].map((c) => (
                 <button

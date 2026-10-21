@@ -650,6 +650,30 @@ html.dark .stat-card,
   background: #1e293b;
 }
 
+[data-theme="dark"] .dropdown-item {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item:focus-visible {
+  background-color: #1e293b;
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .dropdown-item:active {
+  background-color: #334155;
+}
+
+[data-theme="dark"] .dropdown-item.text-danger {
+  color: #f87171;
+}
+
+[data-theme="dark"] .dropdown-item.text-danger:hover,
+[data-theme="dark"] .dropdown-item.text-danger:focus-visible {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
 [data-theme="dark"] .pagination-container {
   background: var(--bg-card);
   border-color: var(--border-color);

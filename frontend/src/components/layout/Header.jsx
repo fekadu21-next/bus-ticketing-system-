@@ -34,10 +34,34 @@ export const Header = () => {
     setActivePage,
     isSidebarCollapsed,
     setIsSidebarCollapsed,
+    resetAppState,
   } = useApp();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const userMenuRef = React.useRef(null);
+
+  // Close dropdown on click outside or Escape
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowUserMenu(false);
+      }
+    };
+    if (showUserMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showUserMenu]);
 
   const { isDark, toggleTheme } = useTheme();
   const { i18n } = useTranslation();
@@ -50,6 +74,7 @@ export const Header = () => {
 
   const handleLogout = async () => {
     setShowUserMenu(false);
+    if (resetAppState) resetAppState();
     await logout();
     navigate("/login", { replace: true });
   };
@@ -195,11 +220,23 @@ export const Header = () => {
         </button>
 
         {/* User profile dropdown */}
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative" }} ref={userMenuRef}>
           <div
+            id="user-profile-button"
             className="user-profile-btn"
+            role="button"
+            tabIndex={0}
+            aria-haspopup="menu"
+            aria-expanded={showUserMenu}
+            aria-label="User Account Menu"
             onClick={() => {
               setShowUserMenu(!showUserMenu);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowUserMenu(!showUserMenu);
+              }
             }}
           >
             <div className="avatar">{userInitials}</div>
@@ -215,7 +252,7 @@ export const Header = () => {
           </div>
 
           {showUserMenu && (
-            <div className="dropdown-panel user-panel">
+            <div className="dropdown-panel user-panel" role="menu" aria-labelledby="user-profile-button">
               <div style={{ padding: "0.65rem 1rem", borderBottom: "1px solid var(--border-color)" }}>
                 <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>{displayName}</div>
                 <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{userEmail}</div>
@@ -270,26 +307,34 @@ export const Header = () => {
                 </button>
               </div>
 
-              <div
-                className="dropdown-item"
-                onClick={handleProfileClick}
-              >
-                <User size={15} />
-                <span>My Profile</span>
-              </div>
-              <div
-                className="dropdown-item"
-                onClick={handleChangePasswordClick}
-              >
-                <KeyRound size={15} />
-                <span>Change Password</span>
-              </div>
-              <div
-                className="dropdown-item text-danger"
-                onClick={handleLogout}
-              >
-                <LogOut size={15} />
-                <span>Sign Out</span>
+              <div style={{ padding: "4px 0" }}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dropdown-item"
+                  onClick={handleProfileClick}
+                >
+                  <User size={16} />
+                  <span>My Profile</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dropdown-item"
+                  onClick={handleChangePasswordClick}
+                >
+                  <KeyRound size={16} />
+                  <span>Change Password</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dropdown-item text-danger"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  <span>Sign Out</span>
+                </button>
               </div>
             </div>
           )}

@@ -314,9 +314,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await logoutApi();
+      // 1.5s timeout for API call so UI never hangs if network / backend delays
+      await Promise.race([
+        logoutApi(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Logout timeout')), 1500))
+      ]);
     } catch {
-      // Ignore network errors on logout — always clear local state
+      // Ignore network errors or timeouts on logout — always clear local state
     } finally {
       if (user?.id) {
         try {
