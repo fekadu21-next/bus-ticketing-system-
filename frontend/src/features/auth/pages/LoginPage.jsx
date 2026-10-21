@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import Alert from '@/components/ui/Alert';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { Bus, Eye, EyeOff, ArrowRight, Building } from 'lucide-react';
+import { isUserAdmin, isUserOperator } from '@/utils/userUtils';
 
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { user, isAuthenticated, isLoading, login } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // If user is already authenticated, immediately bounce to their respective home dashboard
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      const dest = isUserAdmin(user) ? '/admin' : isUserOperator(user) ? '/operator' : '/my-bookings';
+      navigate(dest, { replace: true });
+    }
+  }, [isLoading, isAuthenticated, user, navigate]);
 
   const [formData, setFormData] = useState({
     email: location.state?.email || '',
@@ -34,33 +43,39 @@ const LoginPage = () => {
 
     if (result.success) {
       const targetUser = result.user;
-      const roles = Array.isArray(targetUser?.roles) ? targetUser.roles : [];
-      const isAdminUser = roles.includes('ADMIN') || roles.includes('PLATFORM_ADMIN');
-      const isOperatorUser =
-        roles.includes('BOOKING_COORDINATOR') ||
-        roles.includes('OPERATIONAL_MANAGER') ||
-        roles.includes('OPERATOR') ||
-        Boolean(targetUser?.organizationContext?.length);
-
-      let defaultPath = '/my-bookings';
-      if (isAdminUser) {
-        defaultPath = '/admin';
-      } else if (isOperatorUser) {
-        defaultPath = '/operator';
-      }
+      const isAdminUser = isUserAdmin(targetUser);
+      const isOperatorUser = isUserOperator(targetUser);
 
       const requestedFrom = location.state?.from?.pathname;
       let targetPath;
-      if (location.state?.isPartner && isOperatorUser) {
-        targetPath = '/operator';
-      } else if (requestedFrom && requestedFrom !== '/login' && requestedFrom !== '/register') {
-        if (!isAdminUser && !isOperatorUser && (requestedFrom.startsWith('/admin') || requestedFrom.startsWith('/operator') || requestedFrom.startsWith('/dashboard'))) {
-          targetPath = '/my-bookings';
-        } else {
+      if (isAdminUser) {
+        // Platform Admins always go to Platform Admin console
+        if (requestedFrom && requestedFrom.startsWith('/admin')) {
           targetPath = requestedFrom;
+        } else {
+          targetPath = '/admin';
+        }
+      } else if (isOperatorUser) {
+        // Transport Operators go to Operator console
+        if (requestedFrom && (requestedFrom.startsWith('/operator') || requestedFrom.startsWith('/manager'))) {
+          targetPath = requestedFrom;
+        } else {
+          targetPath = '/operator';
         }
       } else {
-        targetPath = result.redirectPath || defaultPath;
+        // Passengers go to their bookings or requested public page
+        if (
+          requestedFrom &&
+          !requestedFrom.startsWith('/admin') &&
+          !requestedFrom.startsWith('/operator') &&
+          !requestedFrom.startsWith('/manager') &&
+          requestedFrom !== '/login' &&
+          requestedFrom !== '/register'
+        ) {
+          targetPath = requestedFrom;
+        } else {
+          targetPath = '/my-bookings';
+        }
       }
 
       navigate(targetPath, { replace: true });

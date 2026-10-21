@@ -116,6 +116,15 @@ export class PassengerBookingService {
 
     return this.formatBooking(booking);
   }
+
+  async cancelBooking(bookingId, passengerId) {
+    if (!passengerId) {
+      throw new ApiError(401, 'User authentication required.');
+    }
+
+    const booking = await passengerBookingRepository.cancelBookingAtomic(bookingId, passengerId);
+    return this.formatBooking(booking);
+  }
 }
 
 export const passengerBookingService = new PassengerBookingService();

@@ -527,7 +527,8 @@
   },
   "sidebar": {
     "overview": "Overview & Access",
-    "dashboard": "Dashboard",
+    "overviewItem": "Overview",
+    "dashboard": "Overview",
     "organizations": "Organizations",
     "users": "Users & Roles",
     "transit": "Transit Infrastructure",
@@ -550,7 +551,8 @@
     "settings": "Settings",
     "coreOperations": "Core Operations",
     "fleetScheduling": "Fleet & Scheduling",
-    "bookingsRevenue": "Bookings & Revenue"
+    "bookingsRevenue": "Bookings & Revenue",
+    "notifications": "Notifications"
   },
   "dashboardSettings": {
     "appearanceTitle": "Appearance & Display",
@@ -789,4 +791,3 @@
     "manageVerifiers": "Manage Verifiers"
   }
 }
-

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
-import { formatUserFullName } from '@/utils/userUtils';
+import { formatUserFullName, isUserAdmin, isUserOperator, isUserPassenger } from '@/utils/userUtils';
 import {
   User,
   LogOut,
@@ -22,7 +22,6 @@ import {
   Ticket,
   Bell,
 } from 'lucide-react';
-import NotificationBell from './ui/NotificationBell';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout, isAdmin, isOperator, isPassenger } = useAuth();
@@ -35,14 +34,9 @@ export const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  const userIsAdmin = isAdmin ? isAdmin() : (user?.roles?.includes('ADMIN') || user?.roles?.includes('PLATFORM_ADMIN'));
-  const userIsOperator = isOperator ? isOperator() : (
-    user?.roles?.includes('BOOKING_COORDINATOR') ||
-    user?.roles?.includes('OPERATIONAL_MANAGER') ||
-    user?.roles?.includes('OPERATOR') ||
-    Boolean(user?.organizationContext?.length)
-  );
-  const userIsPassenger = isPassenger ? isPassenger() : (!userIsAdmin && !userIsOperator);
+  const userIsAdmin = isUserAdmin(user);
+  const userIsOperator = isUserOperator(user);
+  const userIsPassenger = isUserPassenger(user);
 
   // Close mobile drawer and user dropdown whenever location changes
   useEffect(() => {
@@ -240,8 +234,7 @@ export const Navbar = () => {
 
           {isAuthenticated ? (
             <div className="hidden lg:flex items-center gap-2.5">
-              <NotificationBell />
-
+              
               {/* Quick Action Pill for Current Role */}
               {userIsPassenger && (
                 <Link
@@ -253,13 +246,14 @@ export const Navbar = () => {
                 </Link>
               )}
 
+              
               {userIsAdmin && (
                 <Link
                   to="/admin"
                   className="px-3.5 py-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
                 >
                   <Shield size={14} />
-                  Admin Console
+                  Platform Admin
                 </Link>
               )}
 
@@ -323,6 +317,7 @@ export const Navbar = () => {
                       </span>
                     </div>
 
+                    
                     {userIsAdmin && (
                       <Link
                         to="/admin"
@@ -330,7 +325,7 @@ export const Navbar = () => {
                         onClick={() => setUserDropdownOpen(false)}
                       >
                         <Shield size={16} />
-                        Admin Console
+                        Admin Dashboard
                       </Link>
                     )}
 
@@ -476,12 +471,7 @@ export const Navbar = () => {
             </div>
           )}
 
-          {isAuthenticated && (
-            <div className="lg:hidden flex items-center">
-              <NotificationBell />
-            </div>
-          )}
-
+          
           {/* Mobile menu hamburger toggle button */}
           <button
             type="button"

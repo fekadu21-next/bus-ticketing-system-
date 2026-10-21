@@ -3,8 +3,8 @@ import api from '@/services/api';
 /**
  * Platform Admin Dashboard Statistics
  */
-export const getAdminDashboardStatsApi = async () => {
-  const { data } = await api.get('/admin/dashboard');
+export const getAdminDashboardStatsApi = async (params = {}) => {
+  const { data } = await api.get('/admin/dashboard', { params });
   return data;
 };
 
@@ -112,11 +112,23 @@ export const getAdminBusesApi = async (params = {}) => {
   return data;
 };
 
+export const updateAdminBusStatusApi = async (busId, status) => {
+  const isActive = status === 'ACTIVE';
+  const { data } = await api.patch(`/admin/buses/${busId}/status`, { status, isActive });
+  return data;
+};
+
 /**
  * Admin Monitor: Platform-wide Routes
  */
 export const getAdminRoutesApi = async (params = {}) => {
   const { data } = await api.get('/admin/routes', { params });
+  return data;
+};
+
+export const updateAdminRouteStatusApi = async (routeId, status) => {
+  const isActive = status === 'ACTIVE';
+  const { data } = await api.patch(`/admin/routes/${routeId}/status`, { status, isActive });
   return data;
 };
 
@@ -128,11 +140,21 @@ export const getAdminTripsApi = async (params = {}) => {
   return data;
 };
 
+export const updateAdminTripStatusApi = async (tripId, status) => {
+  const { data } = await api.patch(`/admin/trips/${tripId}/status`, { status });
+  return data;
+};
+
 /**
  * Admin Monitor: Platform-wide Bookings
  */
 export const getAdminBookingsApi = async (params = {}) => {
   const { data } = await api.get('/admin/bookings', { params });
+  return data;
+};
+
+export const updateAdminBookingStatusApi = async (bookingId, payload) => {
+  const { data } = await api.patch(`/admin/bookings/${bookingId}/status`, payload);
   return data;
 };
 
@@ -144,11 +166,21 @@ export const getAdminPaymentsApi = async (params = {}) => {
   return data;
 };
 
+export const updateAdminPaymentStatusApi = async (paymentId, status) => {
+  const { data } = await api.patch(`/admin/payments/${paymentId}/status`, { status });
+  return data;
+};
+
 /**
  * Admin Monitor: Platform Audit Logs
  */
 export const getAdminAuditLogsApi = async (params = {}) => {
   const { data } = await api.get('/admin/audit-logs', { params });
+  return data;
+};
+
+export const updateAdminAuditLogApi = async (logId, dataPayload) => {
+  const { data } = await api.patch(`/admin/audit-logs/${logId}`, dataPayload);
   return data;
 };
 
@@ -188,6 +220,11 @@ export const updateStationApi = async (stationId, stationData) => {
   return data;
 };
 
+export const updateAdminTicketStatusApi = async (ticketId, status) => {
+  const { data } = await api.patch(`/admin/tickets/${ticketId}/status`, { status });
+  return data;
+};
+
 export const deleteStationApi = async (stationId) => {
   const { data } = await api.delete(`/admin/stations/${stationId}`);
   return data;
@@ -208,11 +245,17 @@ export default {
   getRolesApi,
   getPermissionsApi,
   getAdminBusesApi,
+  updateAdminBusStatusApi,
   getAdminRoutesApi,
+  updateAdminRouteStatusApi,
   getAdminTripsApi,
+  updateAdminTripStatusApi,
   getAdminBookingsApi,
+  updateAdminBookingStatusApi,
   getAdminPaymentsApi,
+  updateAdminPaymentStatusApi,
   getAdminAuditLogsApi,
+  updateAdminAuditLogApi,
   getAdminReportsApi,
   getAdminStationsApi,
   getActiveStationsApi,
@@ -220,4 +263,5 @@ export default {
   createStationApi,
   updateStationApi,
   deleteStationApi,
+  updateAdminTicketStatusApi,
 };

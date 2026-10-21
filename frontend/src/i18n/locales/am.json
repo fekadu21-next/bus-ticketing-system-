@@ -527,7 +527,8 @@
   },
   "sidebar": {
     "overview": "አጠቃላይ እይታ እና መዳረሻ",
-    "dashboard": "ዳሽቦርድ",
+    "overviewItem": "አጠቃላይ እይታ",
+    "dashboard": "አጠቃላይ እይታ",
     "organizations": "ድርጅቶች",
     "users": "ተጠቃሚዎች እና ሚናዎች",
     "transit": "የትራንዚት መሰረተ-ልማት",
@@ -550,7 +551,8 @@
     "settings": "ቅንብሮች",
     "coreOperations": "ዋና ስራዎች",
     "fleetScheduling": "የአውቶቡሶች እና የጉዞ መርሃ-ግብር",
-    "bookingsRevenue": "ቦታ ማስያዣ እና ገቢ"
+    "bookingsRevenue": "ቦታ ማስያዣ እና ገቢ",
+    "notifications": "ማሳወቂያዎች"
   },
   "dashboardSettings": {
     "appearanceTitle": "የገጽታ እና የእይታ ቅንብሮች",
@@ -789,4 +791,3 @@
     "manageVerifiers": "አረጋጋጮችን አስተዳድር"
   }
 }
-

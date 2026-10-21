@@ -98,6 +98,7 @@ export const initialUsers = [
     email: "solomon.admin@platform.gov.et",
     phone: "+251 91 100 0001",
     role: "Admin",
+    roles: ["ADMIN"],
     organizationId: null,
     organizationName: "Platform Oversight",
     status: "ACTIVE",

@@ -1,55 +1,117 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useApp } from "../../context/AppContext";
-import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { Search, Shield, RefreshCw, Eye, CheckCircle2, AlertTriangle, Building2, User, KeyRound, Clock } from "lucide-react";
+import {
+  Search,
+  Shield,
+  RefreshCw,
+  Eye,
+  CheckCircle2,
+  AlertTriangle,
+  Building2,
+  User,
+  KeyRound,
+  Clock,
+  Power,
+} from "lucide-react";
 
 export const AdminUsersPage = () => {
-  const { users = [], organizations = [], toggleUserStatus, isLoadingData, fetchAdminData } = useApp();
+  const {
+    users = [],
+    organizations = [],
+    updateUserStatus,
+    toggleUserStatus,
+    isLoadingData,
+    fetchAdminData,
+    showToast,
+  } = useApp();
+
   const [filterRole, setFilterRole] = useState("ALL");
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUserModal, setSelectedUserModal] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   React.useEffect(() => {
     setCurrentPage(1);
   }, [filterRole, filterOrg, searchQuery]);
 
-  const filteredUsers = users.filter((u) => {
-    const roleUpper = (u.role || "").toUpperCase();
-    const matchesRole =
-      filterRole === "ALL" ||
-      roleUpper === filterRole ||
-      (filterRole === "ADMIN" && roleUpper.includes("ADMIN")) ||
-      (filterRole === "COORDINATOR" && (roleUpper.includes("COORDINATOR") || roleUpper.includes("MANAGER"))) ||
-      (filterRole === "PASSENGER" && roleUpper.includes("PASSENGER")) ||
-      (filterRole === "DRIVER" && roleUpper.includes("DRIVER")) ||
-      (filterRole === "VERIFIER" && roleUpper.includes("VERIFIER"));
+  // Deduplicate users by email to prevent duplicate accounts in the Users & Roles section
+  const uniqueUsers = useMemo(() => {
+    const seen = new Set();
+    return users.filter((u) => {
+      const emailKey = (u.email || "").toLowerCase().trim();
+      if (!emailKey) return true;
+      if (seen.has(emailKey)) return false;
+      seen.add(emailKey);
+      return true;
+    });
+  }, [users]);
 
-    const matchesOrg =
-      filterOrg === "ALL" ||
-      (filterOrg === "SYSTEM" && (!u.organizationId || u.organizationId === "" || u.organizationName === "—")) ||
-      u.organizationId === filterOrg ||
-      (organizations.find((o) => o.id === filterOrg)?.name &&
-        u.organizationName?.toLowerCase() === organizations.find((o) => o.id === filterOrg)?.name?.toLowerCase());
+  const filteredUsers = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return uniqueUsers.filter((u) => {
+      const roleUpper = (u.role || "").toUpperCase();
+      const matchesRole =
+        filterRole === "ALL" ||
+        roleUpper === filterRole ||
+        (filterRole === "ADMIN" && roleUpper.includes("ADMIN")) ||
+        (filterRole === "COORDINATOR" && (roleUpper.includes("COORDINATOR") || roleUpper.includes("MANAGER"))) ||
+        (filterRole === "PASSENGER" && roleUpper.includes("PASSENGER")) ||
+        (filterRole === "DRIVER" && roleUpper.includes("DRIVER")) ||
+        (filterRole === "VERIFIER" && roleUpper.includes("VERIFIER"));
 
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      (u.name || "").toLowerCase().includes(q) ||
-      (u.email || "").toLowerCase().includes(q) ||
-      (u.id || "").toLowerCase().includes(q) ||
-      (u.organizationName || "").toLowerCase().includes(q) ||
-      (u.phone || "").includes(q);
+      const matchesOrg =
+        filterOrg === "ALL" ||
+        (filterOrg === "SYSTEM" && (!u.organizationId || u.organizationId === "" || u.organizationName === "—")) ||
+        u.organizationId === filterOrg ||
+        (organizations.find((o) => o.id === filterOrg)?.name &&
+          u.organizationName?.toLowerCase() === organizations.find((o) => o.id === filterOrg)?.name?.toLowerCase());
 
-    return matchesRole && matchesOrg && matchesSearch;
-  });
+      const matchesSearch =
+        !q ||
+        (u.name || "").toLowerCase().includes(q) ||
+        (u.email || "").toLowerCase().includes(q) ||
+        (u.id || "").toLowerCase().includes(q) ||
+        (u.organizationName || "").toLowerCase().includes(q) ||
+        (u.phone || "").includes(q);
+
+      return matchesRole && matchesOrg && matchesSearch;
+    });
+  }, [uniqueUsers, organizations, filterRole, filterOrg, searchQuery]);
 
   const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1;
-  const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedUsers = useMemo(() => {
+    return filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [filteredUsers, currentPage, pageSize]);
+
+  const handleManualRefresh = async () => {
+    if (!fetchAdminData) return;
+    try {
+      setIsRefreshing(true);
+      await fetchAdminData();
+      if (showToast) showToast("Users directory refreshed successfully.");
+    } catch {
+      if (showToast) showToast("Failed to refresh users.", "error");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleStatusChange = (userId, newStatus) => {
+    if (updateUserStatus) {
+      updateUserStatus(userId, newStatus);
+    } else if (toggleUserStatus) {
+      toggleUserStatus(userId);
+    }
+    if (selectedUserModal && selectedUserModal.id === userId) {
+      setSelectedUserModal((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
+  };
 
   return (
     <div>
@@ -60,10 +122,13 @@ export const AdminUsersPage = () => {
         </div>
         <button
           className="btn btn-secondary"
-          onClick={() => fetchAdminData && fetchAdminData()}
+          onClick={handleManualRefresh}
+          disabled={isRefreshing || isLoadingData}
           title="Refresh Users"
+          style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
         >
-          <RefreshCw size={14} className={isLoadingData ? "spin" : ""} /> Refresh
+          <RefreshCw size={14} className={isRefreshing || isLoadingData ? "spin animate-spin" : ""} />
+          {isRefreshing ? "Refreshing..." : "Refresh"}
         </button>
       </div>
 
@@ -144,90 +209,115 @@ export const AdminUsersPage = () => {
                   </td>
                 </tr>
               ) : (
-                paginatedUsers.map((u) => (
-                  <tr key={u.id}>
-                    <td>
-                      <strong>{u.name}</strong>
-                      <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
-                        ID: {u.id?.length > 18 ? `${u.id.substring(0, 18)}...` : u.id}
-                      </div>
-                    </td>
-                    <td>
-                      <div>{u.email}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "2px" }}>
-                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{u.phone}</span>
-                        {u.emailVerified ? (
-                          <span style={{ fontSize: "0.68rem", color: "#10b981", display: "inline-flex", alignItems: "center", gap: "2px", fontWeight: 600 }}>
-                            <CheckCircle2 size={11} /> Verified
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: "0.68rem", color: "#f59e0b", display: "inline-flex", alignItems: "center", gap: "2px", fontWeight: 600 }}>
-                            <AlertTriangle size={11} /> Unverified
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "0.3rem",
-                          fontWeight: 600,
-                          fontSize: "0.78rem",
-                          padding: "2px 8px",
-                          borderRadius: "4px",
-                          background: u.role === "ADMIN" ? "rgba(239, 68, 68, 0.1)" : "rgba(37, 99, 235, 0.08)",
-                          color: u.role === "ADMIN" ? "#dc2626" : "var(--primary)",
-                        }}
-                      >
-                        <Shield size={13} /> {u.role}
-                      </span>
-                    </td>
-                    <td>
-                      {u.organizationName && u.organizationName !== "—" ? (
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
-                          <Building2 size={13} color="var(--primary)" />
-                          <span>{u.organizationName}</span>
+                paginatedUsers.map((u) => {
+                  const currentStatus = u.status || "ACTIVE";
+                  const isActive = currentStatus === "ACTIVE";
+                  return (
+                    <tr key={u.id}>
+                      <td>
+                        <strong>{u.name && u.name !== u.email ? u.name : (u.email ? u.email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Platform User')}</strong>
+                        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
+                          ID: {u.id?.length > 18 ? `${u.id.substring(0, 18)}...` : u.id}
                         </div>
-                      ) : (
-                        <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Platform System</span>
-                      )}
-                    </td>
-                    <td>
-                      <Badge status={u.status} />
-                    </td>
-                    <td>
-                      <div style={{ fontSize: "0.74rem" }}>
-                        Last login: <strong>{u.lastLoginAt || "Never"}</strong>
-                      </div>
-                      <div style={{ fontSize: "0.72rem", color: (u.failedLoginAttempts || 0) > 0 ? "var(--danger)" : "var(--text-muted)" }}>
-                        Failed attempts: <strong>{u.failedLoginAttempts || 0}</strong>
-                      </div>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: "0.78rem" }}>{u.createdAt}</span>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", gap: "0.35rem" }}>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => setSelectedUserModal(u)}
-                          title="View complete sensitive profile and credentials details"
+                      </td>
+                      <td>
+                        <div>{u.email}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "2px" }}>
+                          <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{u.phone}</span>
+                          {u.emailVerified ? (
+                            <span style={{ fontSize: "0.68rem", color: "#10b981", display: "inline-flex", alignItems: "center", gap: "2px", fontWeight: 600 }}>
+                              <CheckCircle2 size={11} /> Verified
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: "0.68rem", color: "#f59e0b", display: "inline-flex", alignItems: "center", gap: "2px", fontWeight: 600 }}>
+                              <AlertTriangle size={11} /> Unverified
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.3rem",
+                            fontWeight: 600,
+                            fontSize: "0.78rem",
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            background: u.role === "ADMIN" ? "rgba(239, 68, 68, 0.1)" : "rgba(37, 99, 235, 0.08)",
+                            color: u.role === "ADMIN" ? "#dc2626" : "var(--primary)",
+                          }}
                         >
-                          <Eye size={13} /> View
-                        </button>
-                        <button
-                          className={`btn btn-sm ${u.status === "ACTIVE" ? "btn-secondary" : "btn-success"}`}
-                          onClick={() => toggleUserStatus(u.id)}
-                          title={u.status === "ACTIVE" ? "Suspend user account" : "Re-activate user account"}
+                          <Shield size={13} /> {u.role}
+                        </span>
+                      </td>
+                      <td>
+                        {u.organizationName && u.organizationName !== "—" ? (
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
+                            <Building2 size={13} color="var(--primary)" />
+                            <span>{u.organizationName}</span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Platform System</span>
+                        )}
+                      </td>
+                      <td>
+                        {/* Active status dropdown */}
+                        <select
+                          className="status-selector"
+                          value={currentStatus}
+                          onChange={(e) => handleStatusChange(u.id, e.target.value)}
+                          title="Change user account status"
+                          style={{
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            border: "1px solid var(--border-color, #cbd5e1)",
+                            cursor: "pointer",
+                            background: isActive ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                            color: isActive ? "#059669" : "#dc2626",
+                          }}
                         >
-                          {u.status === "ACTIVE" ? "Suspend" : "Activate"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          <option value="ACTIVE">ACTIVE</option>
+                          <option value="SUSPENDED">SUSPENDED</option>
+                        </select>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: "0.74rem" }}>
+                          Last login: <strong>{u.lastLoginAt || "Never"}</strong>
+                        </div>
+                        <div style={{ fontSize: "0.72rem", color: (u.failedLoginAttempts || 0) > 0 ? "var(--danger)" : "var(--text-muted)" }}>
+                          Failed attempts: <strong>{u.failedLoginAttempts || 0}</strong>
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: "0.78rem" }}>{u.createdAt}</span>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: "0.35rem" }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setSelectedUserModal(u)}
+                            title="View complete sensitive profile and credentials details"
+                          >
+                            <Eye size={13} /> View
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${isActive ? "btn-secondary" : "btn-success"}`}
+                            onClick={() => handleStatusChange(u.id, isActive ? "SUSPENDED" : "ACTIVE")}
+                            title={isActive ? "Suspend user account" : "Re-activate user account"}
+                          >
+                            {isActive ? "Suspend" : "Activate"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -248,7 +338,7 @@ export const AdminUsersPage = () => {
       <Modal
         isOpen={Boolean(selectedUserModal)}
         onClose={() => setSelectedUserModal(null)}
-        title={`User Security & Profile Details: ${selectedUserModal?.name}`}
+        title={`User Security & Profile Details: ${selectedUserModal?.name || ""}`}
         footer={
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button className="btn btn-secondary" onClick={() => setSelectedUserModal(null)}>
@@ -258,8 +348,9 @@ export const AdminUsersPage = () => {
               className={`btn ${selectedUserModal?.status === "ACTIVE" ? "btn-danger" : "btn-success"}`}
               onClick={() => {
                 if (selectedUserModal?.id) {
-                  toggleUserStatus(selectedUserModal.id);
-                  setSelectedUserModal(null);
+                  const nextStatus = selectedUserModal.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+                  handleStatusChange(selectedUserModal.id, nextStatus);
+                  setSelectedUserModal((prev) => (prev ? { ...prev, status: nextStatus } : null));
                 }
               }}
             >
@@ -269,69 +360,74 @@ export const AdminUsersPage = () => {
         }
       >
         {selectedUserModal && (
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <div>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0 }}>{selectedUserModal.name}</h2>
-                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
-                  UUID: {selectedUserModal.id}
-                </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.75rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <div style={{ width: "42px", height: "42px", borderRadius: "50%", background: "var(--primary-bg, #eff6ff)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "1.1rem" }}>
+                  {selectedUserModal.name?.charAt(0)?.toUpperCase() || "U"}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{selectedUserModal.name && selectedUserModal.name !== selectedUserModal.email ? selectedUserModal.name : (selectedUserModal.email ? selectedUserModal.email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Platform User')}</h3>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{selectedUserModal.email}</span>
+                </div>
               </div>
-              <Badge status={selectedUserModal.status} />
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Status:</span>
+                <select
+                  value={selectedUserModal.status || "ACTIVE"}
+                  onChange={(e) => {
+                    handleStatusChange(selectedUserModal.id, e.target.value);
+                  }}
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border-color)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="SUSPENDED">SUSPENDED</option>
+                </select>
+              </div>
             </div>
 
-            <div className="form-row" style={{ marginBottom: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div className="form-row">
               <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Email & Verification</span>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.email}</div>
-                <div style={{ marginTop: "4px" }}>
-                  {selectedUserModal.emailVerified ? (
-                    <span style={{ fontSize: "0.72rem", color: "#10b981", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "3px" }}>
-                      <CheckCircle2 size={12} /> Email Verified
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: "0.72rem", color: "#f59e0b", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "3px" }}>
-                      <AlertTriangle size={12} /> Email Unverified
-                    </span>
-                  )}
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Assigned Role</span>
+                <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "0.3rem", marginTop: "2px" }}>
+                  <Shield size={14} color="var(--primary)" /> {selectedUserModal.role}
                 </div>
               </div>
               <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Phone Number</span>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.phone || "—"}</div>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Official contact on record</span>
-              </div>
-            </div>
-
-            <div className="form-row" style={{ marginBottom: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Role & Governance Scope</span>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.role}</div>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>System permission level</span>
-              </div>
-              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Affiliated Organization</span>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.organizationName || "System / Independent"}</div>
-                {selectedUserModal.organizationId && (
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
-                    Org ID: {selectedUserModal.organizationId}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="form-row" style={{ marginBottom: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Failed Login Attempts</span>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem", color: (selectedUserModal.failedLoginAttempts || 0) > 0 ? "var(--danger)" : "var(--text-main)", marginTop: "2px" }}>
-                  {selectedUserModal.failedLoginAttempts || 0} attempts
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Organization Scope</span>
+                <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "0.3rem", marginTop: "2px" }}>
+                  <Building2 size={14} color="var(--primary)" /> {selectedUserModal.organizationName || "Platform System"}
                 </div>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Threshold: 5 attempts before lock</span>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Contact Phone</span>
+                <div style={{ fontWeight: 600, marginTop: "2px" }}>{selectedUserModal.phone || "—"}</div>
               </div>
               <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block" }}>Last Login & Created</span>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem", marginTop: "2px" }}>{selectedUserModal.lastLoginAt || "Never"}</div>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Registered: {selectedUserModal.createdAt}</span>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Email Verification</span>
+                <div style={{ fontWeight: 600, marginTop: "2px", color: selectedUserModal.emailVerified ? "#10b981" : "#f59e0b" }}>
+                  {selectedUserModal.emailVerified ? "Verified Identity" : "Pending Verification"}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: "var(--bg-main, #f8fafc)", border: "1px solid var(--border-color)", padding: "0.75rem", borderRadius: "6px" }}>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Authentication & Security Audit</span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginTop: "0.4rem", fontSize: "0.8rem" }}>
+                <div>Last Recorded Login: <strong>{selectedUserModal.lastLoginAt || "Never"}</strong></div>
+                <div>Failed Login Attempts: <strong style={{ color: selectedUserModal.failedLoginAttempts > 0 ? "var(--danger)" : "inherit" }}>{selectedUserModal.failedLoginAttempts || 0}</strong></div>
+                <div>User ID: <code style={{ fontSize: "0.7rem" }}>{selectedUserModal.id}</code></div>
+                <div>Account Created: <strong>{selectedUserModal.createdAt}</strong></div>
               </div>
             </div>
           </div>
@@ -340,5 +436,4 @@ export const AdminUsersPage = () => {
     </div>
   );
 };
-
 export default AdminUsersPage;

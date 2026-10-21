@@ -60,6 +60,11 @@ export class BusService {
       updateData.plateNumber = plateNumber;
     }
 
+    if (updateData.status !== undefined && updateData.isActive === undefined) {
+      updateData.isActive = updateData.status === 'ACTIVE';
+    }
+    delete updateData.status;
+
     return busRepository.update(busId, organizationId, updateData);
   }
 

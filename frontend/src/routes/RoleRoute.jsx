@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/constants/roles';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { isUserAdmin } from '@/utils/userUtils';
 
 /**
  * Protects routes that require specific roles.
@@ -23,7 +24,7 @@ const RoleRoute = ({ allowedRoles = [], children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const isAdmin = user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes('PLATFORM_ADMIN');
+  const isAdmin = isUserAdmin(user);
   const hasRole = allowedRoles.some((role) => user?.roles?.includes(role));
 
   if (!isAdmin && !hasRole) {

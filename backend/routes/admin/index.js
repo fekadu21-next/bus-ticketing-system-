@@ -22,11 +22,17 @@ router.use(authenticate);
 router.use(authorizeRole(ROLES.ADMIN));
 
 router.get('/buses', adminOverviewController.getBuses);
+router.patch('/buses/:id/status', adminOverviewController.updateBusStatus);
 router.get('/routes', adminOverviewController.getRoutes);
+router.patch('/routes/:id/status', adminOverviewController.updateRouteStatus);
 router.get('/trips', adminOverviewController.getTrips);
+router.patch('/trips/:id/status', adminOverviewController.updateTripStatus);
 router.get('/bookings', adminOverviewController.getBookings);
+router.patch('/bookings/:id/status', adminOverviewController.updateBookingStatus);
 router.get('/payments', adminOverviewController.getPayments);
+router.patch('/payments/:id/status', adminOverviewController.updatePaymentStatus);
 router.get('/audit-logs', adminOverviewController.getAuditLogs);
+router.patch('/audit-logs/:id', adminOverviewController.updateAuditLog);
 router.get('/reports', adminOverviewController.getPlatformReports);
 
 // Stations CRUD - Note: specific routes must come before parameterized routes

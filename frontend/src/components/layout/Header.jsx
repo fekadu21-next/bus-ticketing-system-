@@ -4,12 +4,9 @@ import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
-import { formatUserFullName } from "../../utils/userUtils";
-import NotificationBell from "../ui/NotificationBell";
+import { formatUserFullName, isUserAdmin } from "../../utils/userUtils";
 import {
   Search,
-  Bell,
-  ShieldCheck,
   Building2,
   User,
   KeyRound,
@@ -28,7 +25,6 @@ export const Header = () => {
   const navigate = useNavigate();
   const {
     currentRole,
-    setCurrentRole,
     selectedOrgId,
     setSelectedOrgId,
     organizations,
@@ -38,14 +34,37 @@ export const Header = () => {
     setActivePage,
     isSidebarCollapsed,
     setIsSidebarCollapsed,
+    resetAppState,
   } = useApp();
 
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const userMenuRef = React.useRef(null);
 
-  const { theme, isDark, toggleTheme } = useTheme();
-  const { t, i18n } = useTranslation();
+  // Close dropdown on click outside or Escape
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowUserMenu(false);
+      }
+    };
+    if (showUserMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showUserMenu]);
+
+  const { isDark, toggleTheme } = useTheme();
+  const { i18n } = useTranslation();
   const isAmharic = i18n.language === "am" || i18n.language?.startsWith("am");
 
   const toggleLanguage = () => {
@@ -53,38 +72,32 @@ export const Header = () => {
     i18n.changeLanguage(nextLang);
   };
 
-  const pendingApprovalsCount = organizations.filter(
-    (o) => o.status === "PENDING"
-  ).length;
-
   const handleLogout = async () => {
     setShowUserMenu(false);
+    if (resetAppState) resetAppState();
     await logout();
     navigate("/login", { replace: true });
   };
 
-  const handleNavigate = (path) => {
-    setShowUserMenu(false);
-    navigate(path);
-  };
+  const isAdminSession = currentRole === "ADMIN" || isUserAdmin(user);
 
   const handleProfileClick = () => {
     setShowUserMenu(false);
-    const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+    const basePath = isAdminSession ? "/admin" : "/operator";
     if (setActivePage) setActivePage("profile");
     navigate(`${basePath}/profile`);
   };
 
   const handleChangePasswordClick = () => {
     setShowUserMenu(false);
-    const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+    const basePath = isAdminSession ? "/admin" : "/operator";
     if (setActivePage) setActivePage("change-password");
     navigate(`${basePath}/change-password`);
   };
 
   const displayName = formatUserFullName(
     user,
-    currentRole === "ADMIN" ? "System Admin" : "Booking Coordinator"
+    isAdminSession ? "System Admin" : "Booking Coordinator"
   );
 
   const userInitials = displayName
@@ -93,7 +106,7 @@ export const Header = () => {
     .map((n) => n[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2) || (currentRole === "ADMIN" ? "SA" : "BC");
+    .slice(0, 2) || (isAdminSession ? "SA" : "BC");
 
   const userEmail = user?.email || "";
 
@@ -146,46 +159,18 @@ export const Header = () => {
       )}
 
       {/* Right actions */}
-      <div className="header-right">
-        {/* Role Badge Indicator — strict separation without cross-role navigation buttons */}
-        <div
-          className="header-role-indicator"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "5px 12px",
-            backgroundColor: currentRole === "ADMIN" ? "rgba(239, 68, 68, 0.08)" : "rgba(37, 99, 235, 0.08)",
-            border: `1px solid ${currentRole === "ADMIN" ? "#fca5a5" : "#bfdbfe"}`,
-            borderRadius: "20px",
-            fontSize: "0.82rem",
-            fontWeight: 700,
-            color: currentRole === "ADMIN" ? "#dc2626" : "#2563eb",
-          }}
-        >
-          {currentRole === "ADMIN" ? (
-            <>
-              <ShieldCheck size={14} />
-              <span>Platform Admin</span>
-            </>
-          ) : (
-            <>
-              <Building2 size={14} />
-              <span>Booking Coordinator</span>
-            </>
-          )}
-        </div>
-
-        {/* Organization Scope */}
+      <div className="header-right" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        {/* Organization Scope Selector */}
         {currentRole === "ADMIN" ? (
-          /* Platform Admin gets Organization Selector Dropdown to inspect any company */
-          <div className="org-selector-wrap">
+          <div className="org-selector-wrap" style={{ maxWidth: "230px" }}>
             <select
               className="org-selector-select"
               value={selectedOrgId}
               onChange={(e) => setSelectedOrgId(e.target.value)}
+              style={{ fontSize: "0.82rem", padding: "5px 10px" }}
+              title="Filter platform view by operator"
             >
-              <option value="ALL">All Organizations (System-wide)</option>
+              <option value="ALL">🏢 All Organizations</option>
               {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
                   {org.name}
@@ -194,7 +179,6 @@ export const Header = () => {
             </select>
           </div>
         ) : (
-          /* Operational Manager is strictly locked to their assigned organization */
           <div
             className="org-locked-badge"
             style={{
@@ -237,16 +221,24 @@ export const Header = () => {
           {isDark ? <Sun size={16} style={{ color: "#fbbf24" }} /> : <Moon size={16} />}
         </button>
 
-        {/* Bell / Notifications */}
-        <NotificationBell variant="header" />
-
-        {/* User profile */}
-        <div style={{ position: "relative" }}>
+        {/* User profile dropdown */}
+        <div style={{ position: "relative" }} ref={userMenuRef}>
           <div
+            id="user-profile-button"
             className="user-profile-btn"
+            role="button"
+            tabIndex={0}
+            aria-haspopup="menu"
+            aria-expanded={showUserMenu}
+            aria-label="User Account Menu"
             onClick={() => {
               setShowUserMenu(!showUserMenu);
-              setShowNotifications(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowUserMenu(!showUserMenu);
+              }
             }}
           >
             <div className="avatar">{userInitials}</div>
@@ -262,7 +254,7 @@ export const Header = () => {
           </div>
 
           {showUserMenu && (
-            <div className="dropdown-panel user-panel">
+            <div className="dropdown-panel user-panel" role="menu" aria-labelledby="user-profile-button">
               <div style={{ padding: "0.65rem 1rem", borderBottom: "1px solid var(--border-color)" }}>
                 <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>{displayName}</div>
                 <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{userEmail}</div>
@@ -303,29 +295,49 @@ export const Header = () => {
                   type="button"
                   onClick={toggleLanguage}
                   style={{
-                    padding: "3px 8px",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    borderRadius: "4px",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
                     border: "1px solid var(--border-color)",
                     background: "var(--bg-main)",
                     color: "var(--text-main)",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
                   }}
                 >
                   {isAmharic ? "English" : "አማርኛ"}
                 </button>
               </div>
 
-              <button className="dropdown-btn" onClick={handleProfileClick}>
-                <User size={14} /> Profile & Account
-              </button>
-              <button className="dropdown-btn" onClick={handleChangePasswordClick}>
-                <KeyRound size={14} /> Change Password
-              </button>
-              <button className="dropdown-btn danger-btn" onClick={handleLogout}>
-                <LogOut size={14} /> Sign Out
-              </button>
+              <div style={{ padding: "4px 0" }}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dropdown-item"
+                  onClick={handleProfileClick}
+                >
+                  <User size={16} />
+                  <span>My Profile</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dropdown-item"
+                  onClick={handleChangePasswordClick}
+                >
+                  <KeyRound size={16} />
+                  <span>Change Password</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dropdown-item text-danger"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

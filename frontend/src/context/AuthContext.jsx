@@ -11,6 +11,7 @@ import {
 import { setAccessToken, clearAccessToken, getAccessToken, setAuthFailureHandler } from '@/services/api';
 import { ROLES } from '@/constants/roles';
 import { loadAuthSession, saveAuthSession, clearAuthSession, checkSessionMismatch } from '@/utils/authStorage';
+import { extractUserRoles, isUserAdmin, isUserOperator, isUserPassenger } from '@/utils/userUtils';
 
 const AuthContext = createContext(null);
 
@@ -59,17 +60,10 @@ export const AuthProvider = ({ children }) => {
   /** Helper to get dashboard route dynamically based on user role */
   const getDashboardPath = useCallback((targetUser) => {
     const u = targetUser || user;
-    const roles = Array.isArray(u?.roles) ? u.roles : [];
-    if (roles.includes(ROLES.ADMIN) || roles.includes('ADMIN') || roles.includes('PLATFORM_ADMIN')) {
+    if (isUserAdmin(u)) {
       return '/admin';
     }
-    if (
-      roles.includes(ROLES.BOOKING_COORDINATOR) ||
-      roles.includes('BOOKING_COORDINATOR') ||
-      roles.includes('OPERATIONAL_MANAGER') ||
-      roles.includes('OPERATOR') ||
-      Boolean(u?.organizationContext?.length)
-    ) {
+    if (isUserOperator(u)) {
       return '/operator';
     }
     return '/my-bookings';
@@ -116,7 +110,11 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
     
-    const nextUser = attachCachedAvatar(userData);
+    const normalizedUser = {
+      ...userData,
+      roles: extractUserRoles(userData),
+    };
+    const nextUser = attachCachedAvatar(normalizedUser);
     setAccessToken(token);
     setTokenState(token);
     setUser(nextUser);
@@ -177,14 +175,11 @@ export const AuthProvider = ({ children }) => {
         resetAuthState();
       }
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        // Backend explicitly rejected or has no active session: wipe local session state cleanly
-        resetAuthState();
+      // If we already have a valid session in memory or storage, do not log the user out
+      if (keepExistingSession()) {
+        console.log('Preserved existing valid session despite background refresh notice');
       } else {
-        console.warn('Auth refresh notice:', err.message, err.response?.data);
-        if (!keepExistingSession()) {
-          resetAuthState();
-        }
+        resetAuthState();
       }
     } finally {
       setIsLoading(false);
@@ -314,9 +309,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await logoutApi();
+      // 1.5s timeout for API call so UI never hangs if network / backend delays
+      await Promise.race([
+        logoutApi(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Logout timeout')), 1500))
+      ]);
     } catch {
-      // Ignore network errors on logout — always clear local state
+      // Ignore network errors or timeouts on logout — always clear local state
     } finally {
       if (user?.id) {
         try {
@@ -357,31 +356,18 @@ export const AuthProvider = ({ children }) => {
     return user.permissions.includes(permission);
   };
 
-  const isAdmin = () => {
-    const roles = Array.isArray(user?.roles) ? user.roles : [];
-    return roles.includes(ROLES.ADMIN) || roles.includes('ADMIN') || roles.includes('PLATFORM_ADMIN');
-  };
+  const isAdmin = () => isUserAdmin(user);
 
-  const isOperator = () => {
-    const roles = Array.isArray(user?.roles) ? user.roles : [];
-    return (
-      roles.includes(ROLES.BOOKING_COORDINATOR) ||
-      roles.includes('BOOKING_COORDINATOR') ||
-      roles.includes('OPERATIONAL_MANAGER') ||
-      roles.includes('OPERATOR') ||
-      Boolean(user?.organizationContext?.length)
-    );
-  };
+  const isOperator = () => isUserOperator(user);
 
   const isBookingCoordinator = isOperator;
   const isOperationalManager = isOperator;
-  const isTicketVerifier = () => user?.roles?.includes(ROLES.TICKET_VERIFIER) || false;
-
-  const isPassenger = () => {
-    if (isAdmin() || isOperator()) return false;
-    const roles = Array.isArray(user?.roles) ? user.roles : [];
-    return roles.includes(ROLES.PASSENGER) || roles.includes('PASSENGER') || roles.length === 0;
+  const isTicketVerifier = () => {
+    const roles = extractUserRoles(user);
+    return roles.includes('TICKET_VERIFIER') || roles.includes(ROLES.TICKET_VERIFIER);
   };
+
+  const isPassenger = () => isUserPassenger(user);
 
   // Backwards-compatible aliases
   const isPlatformAdmin = isAdmin;

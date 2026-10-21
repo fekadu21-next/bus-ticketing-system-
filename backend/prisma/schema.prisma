@@ -102,6 +102,7 @@ model users {
   ticket_verifications      ticket_verifications[]  @relation("VerifierVerifications")
   feedbacks                 feedbacks[]             @relation("PassengerFeedbacks")
   driven_trips              trips[]                 @relation("DriverTrips")
+  assigned_verifier_trips   trips[]                 @relation("VerifierTrips")
   driver_problems           trip_problem_reports[]  @relation("DriverProblems")
   resolved_problems         trip_problem_reports[]  @relation("ResolvedProblems")
   notifications             notifications[]
@@ -230,12 +231,14 @@ model trips {
   fare            Decimal       @db.Decimal(10, 2)
   status          String        @default("SCHEDULED") @db.VarChar(30)
   driver_id       String?       @db.Uuid
+  verifier_id     String?       @db.Uuid
   created_at      DateTime      @default(now()) @db.Timestamptz(6)
   updated_at      DateTime      @default(now()) @db.Timestamptz(6)
   organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   buses           buses         @relation(fields: [bus_id], references: [id], onDelete: Restrict)
   routes          routes        @relation(fields: [route_id], references: [id], onDelete: Restrict)
   driver          users?        @relation("DriverTrips", fields: [driver_id], references: [id], onDelete: SetNull)
+  verifier        users?        @relation("VerifierTrips", fields: [verifier_id], references: [id], onDelete: SetNull)
   seats           seats[]
   bookings        bookings[]
   tickets         tickets[]
@@ -247,6 +250,7 @@ model trips {
   @@index([bus_id])
   @@index([route_id])
   @@index([driver_id])
+  @@index([verifier_id])
   @@index([departure_time])
   @@index([status])
 }

@@ -95,6 +95,32 @@ export class TripController {
     });
   });
 
+  deleteTrip = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    await tripService.deleteTrip(tripId, req.organizationId, req.user, {
+      clientIp: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+    res.status(200).json({
+      success: true,
+      message: 'Trip deleted successfully.',
+    });
+  });
+
+  assignVerifier = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    const { verifierId } = req.body;
+    const trip = await tripService.assignVerifier(tripId, req.organizationId, verifierId, req.user, {
+      clientIp: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+    res.status(200).json({
+      success: true,
+      message: verifierId ? 'Ticket verifier assigned to trip successfully.' : 'Ticket verifier unassigned from trip.',
+      data: { trip },
+    });
+  });
+
   // Seat endpoints
   getTripSeats = asyncHandler(async (req, res) => {
     const { tripId } = req.params;

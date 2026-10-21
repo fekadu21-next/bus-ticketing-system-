@@ -196,6 +196,73 @@ export class PassengerBookingRepository {
 
     return booking;
   }
+
+  async cancelBookingAtomic(bookingId, passengerId) {
+    return prisma.$transaction(async (tx) => {
+      const booking = await tx.bookings.findFirst({
+        where: { id: bookingId, passenger_id: passengerId },
+        include: {
+          trips: true,
+          seats: true,
+          tickets: true,
+        },
+      });
+
+      if (!booking) {
+        throw new ApiError(404, 'Booking not found or does not belong to you.');
+      }
+
+      if (['CANCELLED', 'REFUNDED'].includes(booking.status)) {
+        throw new ApiError(400, `Booking is already ${booking.status.toLowerCase()}.`);
+      }
+
+      if (booking.trips?.departure_time && new Date(booking.trips.departure_time) <= new Date()) {
+        throw new ApiError(400, 'Cannot cancel a booking for a trip that has already departed.');
+      }
+
+      // 1. Update booking status
+      const updatedBooking = await tx.bookings.update({
+        where: { id: bookingId },
+        data: {
+          status: 'CANCELLED',
+          updated_at: new Date(),
+        },
+        include: {
+          trips: {
+            include: {
+              routes: true,
+              buses: true,
+            },
+          },
+          users: true,
+          organizations: true,
+          payments: true,
+          tickets: true,
+        },
+      });
+
+      // 2. Release seat back to AVAILABLE
+      if (booking.seat_id) {
+        await tx.seats.update({
+          where: { id: booking.seat_id },
+          data: { status: 'AVAILABLE', updated_at: new Date() },
+        });
+      } else if (booking.trip_id && booking.seat_number) {
+        await tx.seats.updateMany({
+          where: { trip_id: booking.trip_id, seat_number: booking.seat_number },
+          data: { status: 'AVAILABLE', updated_at: new Date() },
+        });
+      }
+
+      // 3. Mark ticket as CANCELLED
+      await tx.tickets.updateMany({
+        where: { booking_id: bookingId },
+        data: { status: 'CANCELLED', updated_at: new Date() },
+      });
+
+      return updatedBooking;
+    });
+  }
 }
 
 export const passengerBookingRepository = new PassengerBookingRepository();

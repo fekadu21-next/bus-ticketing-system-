@@ -8,10 +8,11 @@ import { MapPin, Plus, Search, Edit2, RefreshCw, Trash2, Power } from "lucide-re
 
 export const AdminStationsPage = () => {
   const {
-    stations,
+    stations = [],
     addStation,
     updateStation,
     deleteStation,
+    updateStationStatus,
     toggleStationStatus,
     fetchAdminData,
     isLoadingData,
@@ -146,7 +147,12 @@ export const AdminStationsPage = () => {
 
   const handleToggleStatus = async (station) => {
     try {
-      await toggleStationStatus(station);
+      const nextActive = !station.is_active;
+      if (updateStationStatus) {
+        await updateStationStatus(station.id, nextActive);
+      } else {
+        await toggleStationStatus(station);
+      }
     } catch (error) {
       alert(error.response?.data?.message || error.message || "Failed to toggle station status.");
     }
@@ -256,7 +262,31 @@ export const AdminStationsPage = () => {
                         {totalRoutes} routes
                       </span>
                     </td>
-                    <td><Badge status={isActive ? "ACTIVE" : "INACTIVE"} /></td>
+                    <td>
+                      <select
+                        className="status-selector"
+                        value={isActive ? "ACTIVE" : "INACTIVE"}
+                        onChange={(e) => {
+                          const nextActive = e.target.value === "ACTIVE";
+                          if (updateStationStatus) updateStationStatus(s.id, nextActive);
+                          else toggleStationStatus(s);
+                        }}
+                        title="Change station operational status"
+                        style={{
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          border: "1px solid var(--border-color, #cbd5e1)",
+                          cursor: "pointer",
+                          background: isActive ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                          color: isActive ? "#059669" : "#dc2626",
+                        }}
+                      >
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="INACTIVE">INACTIVE</option>
+                      </select>
+                    </td>
                     <td>{s.created_at ? new Date(s.created_at).toLocaleDateString() : "—"}</td>
                     <td>
                       <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>

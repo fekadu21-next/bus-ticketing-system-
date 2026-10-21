@@ -1,7 +1,7 @@
 import prisma from '../../Config/db.js';
 
 export class TripRepository {
-  async create({ organizationId, busId, routeId, departureTime, arrivalTime, fare, capacity, driverId = null }) {
+  async create({ organizationId, busId, routeId, departureTime, arrivalTime, fare, capacity, driverId = null, verifierId = null }) {
     return prisma.$transaction(async (tx) => {
       const trip = await tx.trips.create({
         data: {
@@ -9,6 +9,7 @@ export class TripRepository {
           bus_id: busId,
           route_id: routeId,
           driver_id: driverId || null,
+          verifier_id: verifierId || null,
           departure_time: new Date(departureTime),
           arrival_time: arrivalTime ? new Date(arrivalTime) : null,
           fare,
@@ -35,7 +36,7 @@ export class TripRepository {
         data: seatData,
       });
 
-      // Manually fetch driver information if assigned
+      // Manually fetch driver & verifier information if assigned
       let driver = null;
       if (trip.driver_id) {
         driver = await tx.users.findUnique({
@@ -44,14 +45,26 @@ export class TripRepository {
         });
       }
 
+      let verifier = null;
+      if (trip.verifier_id) {
+        verifier = await tx.users.findUnique({
+          where: { id: trip.verifier_id },
+          select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+        });
+      }
+
       return {
         ...trip,
         driver,
+        verifier,
       };
     }, { timeout: 30000, maxWait: 10000 });
   }
 
   async findById(tripId, organizationId = null) {
+    if (!tripId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tripId)) {
+      return null;
+    }
     const where = { id: tripId };
     if (organizationId) {
       where.organization_id = organizationId;
@@ -86,7 +99,7 @@ export class TripRepository {
 
     if (!trip) return null;
 
-    // Manually fetch driver information
+    // Manually fetch driver and verifier information
     let driver = null;
     if (trip.driver_id) {
       driver = await prisma.users.findUnique({
@@ -95,9 +108,18 @@ export class TripRepository {
       });
     }
 
+    let verifier = null;
+    if (trip.verifier_id) {
+      verifier = await prisma.users.findUnique({
+        where: { id: trip.verifier_id },
+        select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+      });
+    }
+
     return {
       ...trip,
       driver,
+      verifier,
     };
   }
 
@@ -159,13 +181,21 @@ export class TripRepository {
       }),
     ]);
 
-    // Manually fetch driver information to avoid relation issues
-    const tripsWithDrivers = await Promise.all(
+    // Manually fetch driver and verifier information to avoid relation issues
+    const tripsWithStaff = await Promise.all(
       trips.map(async (trip) => {
         let driver = null;
         if (trip.driver_id) {
           driver = await prisma.users.findUnique({
             where: { id: trip.driver_id },
+            select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+          });
+        }
+
+        let verifier = null;
+        if (trip.verifier_id) {
+          verifier = await prisma.users.findUnique({
+            where: { id: trip.verifier_id },
             select: { id: true, first_name: true, last_name: true, email: true, phone: true },
           });
         }
@@ -180,6 +210,7 @@ export class TripRepository {
         return {
           ...trip,
           driver,
+          verifier,
           availableSeatsCount: availableCount,
           bookedSeatsCount: Math.max(bookedCount, activeBookingsCount),
           blockedSeatsCount: blockedCount,
@@ -188,7 +219,7 @@ export class TripRepository {
       })
     );
 
-    return { total, page, limit, trips: tripsWithDrivers };
+    return { total, page, limit, trips: tripsWithStaff };
   }
 
   async update(tripId, organizationId, updateData) {
@@ -213,6 +244,10 @@ export class TripRepository {
       data.driver_id = data.driverId || null;
       delete data.driverId;
     }
+    if (data.verifierId !== undefined) {
+      data.verifier_id = data.verifierId || null;
+      delete data.verifierId;
+    }
 
     const trip = await prisma.trips.update({
       where: { id: tripId, organization_id: organizationId },
@@ -223,7 +258,7 @@ export class TripRepository {
       },
     });
 
-    // Manually fetch driver information
+    // Manually fetch driver and verifier information
     let driver = null;
     if (trip.driver_id) {
       driver = await prisma.users.findUnique({
@@ -232,9 +267,18 @@ export class TripRepository {
       });
     }
 
+    let verifier = null;
+    if (trip.verifier_id) {
+      verifier = await prisma.users.findUnique({
+        where: { id: trip.verifier_id },
+        select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+      });
+    }
+
     return {
       ...trip,
       driver,
+      verifier,
     };
   }
 
@@ -260,10 +304,75 @@ export class TripRepository {
       });
     }
 
+    let verifier = null;
+    if (trip.verifier_id) {
+      verifier = await prisma.users.findUnique({
+        where: { id: trip.verifier_id },
+        select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+      });
+    }
+
     return {
       ...trip,
       driver,
+      verifier,
     };
+  }
+
+  async assignVerifier(tripId, organizationId, verifierId) {
+    const trip = await prisma.trips.update({
+      where: { id: tripId, organization_id: organizationId },
+      data: {
+        verifier_id: verifierId || null,
+        updated_at: new Date(),
+      },
+      include: {
+        buses: true,
+        routes: true,
+      },
+    });
+
+    let driver = null;
+    if (trip.driver_id) {
+      driver = await prisma.users.findUnique({
+        where: { id: trip.driver_id },
+        select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+      });
+    }
+
+    let verifier = null;
+    if (trip.verifier_id) {
+      verifier = await prisma.users.findUnique({
+        where: { id: trip.verifier_id },
+        select: { id: true, first_name: true, last_name: true, email: true, phone: true },
+      });
+    }
+
+    return {
+      ...trip,
+      driver,
+      verifier,
+    };
+  }
+
+  async delete(tripId, organizationId) {
+    return prisma.$transaction(async (tx) => {
+      await tx.seats.deleteMany({
+        where: { trip_id: tripId },
+      });
+      return tx.trips.delete({
+        where: { id: tripId, organization_id: organizationId },
+      });
+    });
+  }
+
+  async countActiveBookings(tripId) {
+    return prisma.bookings.count({
+      where: {
+        trip_id: tripId,
+        status: { in: ['CONFIRMED', 'PENDING'] },
+      },
+    });
   }
 
   async findDriverConflictingTrip(driverId, departureTime, arrivalTime, excludeTripId = null) {

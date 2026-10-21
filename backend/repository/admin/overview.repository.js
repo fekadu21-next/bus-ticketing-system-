@@ -61,6 +61,8 @@ export class AdminOverviewRepository {
           organizations: {
             select: { id: true, name: true },
           },
+          origin_station: { select: { id: true, name: true, city: true } },
+          destination_station: { select: { id: true, name: true, city: true } },
         },
       }),
     ]);
@@ -71,12 +73,21 @@ export class AdminOverviewRepository {
   /**
    * Get all trips platform-wide
    */
-  async getAllTrips({ page = 1, limit = 50, organizationId = null, search = '', status = null } = {}) {
+  async getAllTrips({ page = 1, limit = 50, organizationId = null, search = '', status = null, upcoming = false } = {}) {
     const skip = (page - 1) * limit;
     const where = {};
 
     if (organizationId) where.organization_id = organizationId;
-    if (status) where.status = status;
+    if (status) {
+      where.status = status;
+    } else if (upcoming) {
+      where.status = { notIn: ['COMPLETED', 'CANCELLED'] };
+    }
+
+    if (upcoming) {
+      where.departure_time = { gte: new Date() };
+    }
+
     if (search) {
       where.OR = [
         { routes: { origin: { contains: search, mode: 'insensitive' } } },
@@ -91,11 +102,23 @@ export class AdminOverviewRepository {
         where,
         skip,
         take: limit,
-        orderBy: { departure_time: 'desc' },
+        orderBy: upcoming ? { departure_time: 'asc' } : { departure_time: 'desc' },
         include: {
           organizations: { select: { id: true, name: true } },
-          buses: { select: { id: true, plate_number: true, model: true, capacity: true } },
-          routes: { select: { id: true, origin: true, destination: true, distance_km: true } },
+          buses: { select: { id: true, plate_number: true, model: true, capacity: true, is_active: true } },
+          routes: {
+            select: {
+              id: true,
+              origin: true,
+              destination: true,
+              distance_km: true,
+              is_active: true,
+              origin_station: { select: { id: true, name: true, city: true } },
+              destination_station: { select: { id: true, name: true, city: true } },
+            },
+          },
+          driver: { select: { id: true, first_name: true, last_name: true, phone: true } },
+          verifier: { select: { id: true, first_name: true, last_name: true, phone: true } },
           _count: {
             select: {
               seats: true,
@@ -300,6 +323,104 @@ export class AdminOverviewRepository {
     }));
 
     return { total: stations.length, stations };
+  }
+
+  async updateBusStatus(id, { status, isActive }) {
+    const is_active = isActive !== undefined ? isActive : status === 'ACTIVE';
+    return prisma.buses.update({
+      where: { id },
+      data: { is_active },
+      include: { organizations: { select: { id: true, name: true } } },
+    });
+  }
+
+  async updateRouteStatus(id, { status, isActive }) {
+    const is_active = isActive !== undefined ? isActive : status === 'ACTIVE';
+    return prisma.routes.update({
+      where: { id },
+      data: { is_active },
+      include: { organizations: { select: { id: true, name: true } } },
+    });
+  }
+
+  async updateTripStatus(id, { status }) {
+    return prisma.trips.update({
+      where: { id },
+      data: { status },
+      include: {
+        organizations: { select: { id: true, name: true } },
+        buses: { select: { plate_number: true } },
+        routes: { select: { origin: true, destination: true } },
+      },
+    });
+  }
+
+  async updateBookingStatus(id, { status, paymentStatus }) {
+    const data = {};
+    if (status) data.status = status;
+    const updatedBooking = await prisma.bookings.update({
+      where: { id },
+      data,
+      include: {
+        payments: true,
+        users: { select: { first_name: true, last_name: true, email: true } },
+        trips: { select: { id: true } },
+      },
+    });
+    if (paymentStatus && updatedBooking.payments?.id) {
+      await prisma.payments.update({
+        where: { id: updatedBooking.payments.id },
+        data: { status: paymentStatus === 'SUCCESS' ? 'COMPLETED' : paymentStatus },
+      });
+    }
+    return updatedBooking;
+  }
+
+  async updatePaymentStatus(id, { status }) {
+    const pyStatus = status === 'SUCCESS' ? 'COMPLETED' : status;
+    return prisma.payments.update({
+      where: { id },
+      data: { status: pyStatus },
+      include: {
+        organizations: { select: { id: true, name: true } },
+        bookings: true,
+      },
+    });
+  }
+
+  async updateTicketStatus(id, { status }) {
+    return prisma.tickets.update({
+      where: { id },
+      data: { status },
+      include: {
+        passenger: { select: { first_name: true, last_name: true, email: true } },
+        trips: true,
+      },
+    });
+  }
+
+  async updateAuditLog(id, { action, details, ip_address, ipAddress, oldValues, newValues, entityType, entityId }) {
+    const logData = {};
+    if (action) logData.action = action;
+    if (ip_address || ipAddress) logData.ip_address = ip_address || ipAddress;
+    if (details) {
+      logData.details = details;
+    } else if (oldValues !== undefined || newValues !== undefined || entityType) {
+      const existing = await prisma.audit_logs.findUnique({ where: { id } });
+      const currentDetails = existing?.details || {};
+      logData.details = {
+        ...currentDetails,
+        ...(entityType ? { entityType } : {}),
+        ...(entityId ? { entityId } : {}),
+        ...(oldValues !== undefined ? { oldValues } : {}),
+        ...(newValues !== undefined ? { newValues } : {}),
+      };
+    }
+    return prisma.audit_logs.update({
+      where: { id },
+      data: logData,
+      include: { users: { select: { first_name: true, last_name: true, email: true } } },
+    });
   }
 }
 

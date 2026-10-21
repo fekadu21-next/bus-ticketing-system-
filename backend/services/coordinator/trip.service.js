@@ -85,11 +85,16 @@ export class TripService {
       await this.validateDriverAssignment(tripData.driverId, organizationId, departure, tripData.arrivalTime);
     }
 
+    if (tripData.verifierId) {
+      await this.validateVerifierAssignment(tripData.verifierId, organizationId);
+    }
+
     const trip = await tripRepository.create({
       organizationId,
       busId,
       routeId,
       driverId: tripData.driverId,
+      verifierId: tripData.verifierId,
       departureTime: departure,
       arrivalTime: tripData.arrivalTime,
       fare,
@@ -102,6 +107,7 @@ export class TripService {
       busId: trip.bus_id,
       routeId: trip.route_id,
       driverId: trip.driver_id,
+      verifierId: trip.verifier_id,
       origin: route.origin_station?.name || 'Unknown',
       destination: route.destination_station?.name || 'Unknown',
       originStationId: route.origin_station_id,
@@ -125,8 +131,38 @@ export class TripService {
         estimatedDurationHours: route.estimated_duration_hours,
       },
       driver: trip.driver || null,
+      verifier: trip.verifier || null,
       createdAt: trip.created_at,
     };
+  }
+
+  async validateVerifierAssignment(verifierId, organizationId) {
+    if (!verifierId) return null;
+
+    const assignment = await prisma.user_roles.findFirst({
+      where: {
+        user_id: verifierId,
+        organization_id: organizationId,
+      },
+      include: {
+        users: true,
+        roles: true,
+      },
+    });
+
+    if (!assignment) {
+      throw new ApiError(404, 'Ticket verifier not found in your organization.');
+    }
+
+    if (assignment.roles?.name !== ROLES.TICKET_VERIFIER) {
+      throw new ApiError(400, 'Assigned user does not hold the TICKET_VERIFIER role.');
+    }
+
+    if (!assignment.users?.is_active) {
+      throw new ApiError(400, 'Cannot assign an inactive ticket verifier to a trip.');
+    }
+
+    return assignment.users;
   }
 
   async validateDriverAssignment(driverId, organizationId, departureTime, arrivalTime, excludeTripId = null) {
@@ -219,11 +255,35 @@ export class TripService {
       }
     }
 
+    if (updateData.status && updateData.status !== trip.status) {
+      const allowedStatuses = ['DRAFT', 'SCHEDULED', 'BOARDING', 'IN_TRANSIT', 'COMPLETED', 'CANCELLED'];
+      if (!allowedStatuses.includes(updateData.status)) {
+        throw new ApiError(400, `Invalid trip status '${updateData.status}'. Allowed: ${allowedStatuses.join(', ')}.`);
+      }
+
+      // Business transition rules
+      if (updateData.status === 'DRAFT') {
+        const activeBookings = await tripRepository.countActiveBookings(tripId);
+        if (activeBookings > 0) {
+          throw new ApiError(400, 'Cannot revert trip to DRAFT when active bookings exist.');
+        }
+      }
+      if (updateData.status === 'COMPLETED' && !['BOARDING', 'IN_TRANSIT', 'SCHEDULED'].includes(trip.status)) {
+        throw new ApiError(400, `Cannot mark trip as COMPLETED from status '${trip.status}'.`);
+      }
+    }
+
     if (updateData.driverId !== undefined) {
       const depTime = updateData.departureTime ? new Date(updateData.departureTime) : trip.departure_time;
       const arrTime = updateData.arrivalTime !== undefined ? (updateData.arrivalTime ? new Date(updateData.arrivalTime) : null) : trip.arrival_time;
       if (updateData.driverId) {
         await this.validateDriverAssignment(updateData.driverId, organizationId, depTime, arrTime, tripId);
+      }
+    }
+
+    if (updateData.verifierId !== undefined) {
+      if (updateData.verifierId) {
+        await this.validateVerifierAssignment(updateData.verifierId, organizationId);
       }
     }
 
@@ -250,6 +310,67 @@ export class TripService {
     return updated;
   }
 
+  async deleteTrip(tripId, organizationId, user = null, reqMeta = {}) {
+    const trip = await this.getTripById(tripId, organizationId);
+
+    // Business check: cannot delete trips with active bookings
+    const activeBookingsCount = await tripRepository.countActiveBookings(tripId);
+    if (activeBookingsCount > 0) {
+      throw new ApiError(400, `Cannot delete trip with ${activeBookingsCount} active booking(s). Please cancel the trip instead.`);
+    }
+
+    await tripRepository.delete(tripId, organizationId);
+
+    if (user) {
+      await logAuditEvent({
+        userId: user.id,
+        action: 'TRIP_DELETED',
+        details: { tripId, organizationId },
+        ipAddress: reqMeta.clientIp,
+        userAgent: reqMeta.userAgent,
+      });
+    }
+
+    return { id: tripId, deleted: true };
+  }
+
+  async assignVerifier(tripId, organizationId, verifierId, managerUser = null, reqMeta = {}) {
+    const trip = await this.getTripById(tripId, organizationId);
+    if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
+      throw new ApiError(400, `Cannot assign ticket verifier to trip with status '${trip.status}'.`);
+    }
+
+    if (verifierId) {
+      await this.validateVerifierAssignment(verifierId, organizationId);
+    }
+
+    const updated = await tripRepository.assignVerifier(tripId, organizationId, verifierId);
+
+    if (managerUser) {
+      await logAuditEvent({
+        userId: managerUser.id,
+        action: 'VERIFIER_ASSIGNED_TO_TRIP',
+        details: { tripId, verifierId, organizationId },
+        ipAddress: reqMeta.clientIp,
+        userAgent: reqMeta.userAgent,
+      });
+    }
+
+    if (verifierId && verifierId !== trip.verifier_id) {
+      const routeName = trip.routes ? `${trip.routes.origin} to ${trip.routes.destination}` : 'trip';
+      const depDate = trip.departure_time ? new Date(trip.departure_time).toLocaleDateString() : '';
+      await notificationService.safeCreateNotification({
+        userId: verifierId,
+        type: NOTIFICATION_TYPES.TRIP_UPDATED,
+        priority: NOTIFICATION_PRIORITIES.NORMAL,
+        title: 'New Trip Verification Assignment',
+        message: `You have been assigned as the ticket verifier for trip ${routeName} departing on ${depDate}.`,
+        metadata: { tripId, organizationId },
+      });
+    }
+
+    return updated;
+  }
 
   async assignDriver(tripId, organizationId, driverId, managerUser = null, reqMeta = {}) {
     const trip = await this.getTripById(tripId, organizationId);

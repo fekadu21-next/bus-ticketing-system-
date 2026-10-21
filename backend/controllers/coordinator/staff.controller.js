@@ -578,6 +578,78 @@ export class CoordinatorStaffController {
       },
     });
   });
+
+  deleteStaff = asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+    const staffId = req.params.staffId || req.params.driverId || req.params.id;
+
+    const assignment = await prisma.user_roles.findFirst({
+      where: { user_id: staffId, organization_id: orgId },
+      include: { users: true, roles: true },
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Staff member not found in your organization.',
+      });
+    }
+
+    const roleName = assignment.roles.name;
+
+    // Check if staff has active assigned trips
+    if (roleName === ROLES.DRIVER) {
+      const activeTripsCount = await prisma.trips.count({
+        where: {
+          driver_id: staffId,
+          organization_id: orgId,
+          status: { in: ['SCHEDULED', 'BOARDING', 'IN_TRANSIT'] },
+        },
+      });
+      if (activeTripsCount > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot delete driver with ${activeTripsCount} active or upcoming assigned trip(s). Reassign or cancel those trips first.`,
+        });
+      }
+    } else if (roleName === ROLES.TICKET_VERIFIER) {
+      const activeTripsCount = await prisma.trips.count({
+        where: {
+          verifier_id: staffId,
+          organization_id: orgId,
+          status: { in: ['SCHEDULED', 'BOARDING', 'IN_TRANSIT'] },
+        },
+      });
+      if (activeTripsCount > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot delete ticket verifier assigned to ${activeTripsCount} upcoming trip(s). Reassign those trips first.`,
+        });
+      }
+    }
+
+    // Remove user_roles assignment for this organization
+    await prisma.user_roles.delete({
+      where: { id: assignment.id },
+    });
+
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      action: roleName === ROLES.DRIVER ? 'DRIVER_DELETED' : 'STAFF_DELETED',
+      details: { staffId, role: roleName, organizationId: orgId },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `${roleName} removed from organization successfully.`,
+    });
+  });
+
+  deleteDriver = asyncHandler(async (req, res) => {
+    return this.deleteStaff(req, res);
+  });
 }
 
 export const coordinatorStaffController = new CoordinatorStaffController();
