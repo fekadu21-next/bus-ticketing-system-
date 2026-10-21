@@ -30,6 +30,17 @@ export class PassengerBookingController {
       data: { booking },
     });
   });
+
+  cancelBooking = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const booking = await passengerBookingService.cancelBooking(id, req.user.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Booking cancelled successfully.',
+      data: { booking },
+    });
+  });
 }
 
 export const passengerBookingController = new PassengerBookingController();

@@ -25,6 +25,7 @@ router.get('/drivers/:driverId', coordinatorStaffController.getDriverById);
 router.post('/drivers', coordinatorStaffController.createDriver);
 router.patch('/drivers/:driverId', coordinatorStaffController.updateDriver);
 router.patch('/drivers/:driverId/status', coordinatorStaffController.toggleDriverStatus);
+router.delete('/drivers/:driverId', coordinatorStaffController.deleteDriver);
 
 // Assign driver to trip
 router.patch('/trips/:tripId/assign-driver', coordinatorStaffController.assignDriverToTrip);

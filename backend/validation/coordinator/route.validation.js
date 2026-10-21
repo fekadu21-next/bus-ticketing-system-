@@ -38,4 +38,5 @@ export const updateRouteSchema = z.object({
   distanceKm: z.number().positive().optional().nullable(),
   estimatedDurationHours: z.number().positive().optional().nullable(),
   isActive: z.boolean().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });

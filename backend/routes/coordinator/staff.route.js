@@ -14,6 +14,7 @@ router.get('/', coordinatorStaffController.getStaff);
 router.post('/', coordinatorStaffController.createStaff);
 router.patch('/:staffId/status', coordinatorStaffController.toggleStaffStatus);
 router.patch('/:staffId', coordinatorStaffController.updateStaff);
+router.delete('/:staffId', coordinatorStaffController.deleteStaff);
 
 // Driver-specific endpoints
 router.get('/drivers', coordinatorStaffController.getDrivers);
@@ -21,5 +22,6 @@ router.get('/drivers/:driverId', coordinatorStaffController.getDriverById);
 router.post('/drivers', coordinatorStaffController.createDriver);
 router.patch('/drivers/:driverId', coordinatorStaffController.updateDriver);
 router.patch('/drivers/:driverId/status', coordinatorStaffController.toggleDriverStatus);
+router.delete('/drivers/:driverId', coordinatorStaffController.deleteDriver);
 
 export default router;

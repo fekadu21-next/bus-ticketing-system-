@@ -69,6 +69,7 @@ router.get('/:orgId/staff', requireCoordinator, coordinatorStaffController.getSt
 router.post('/:orgId/staff', requireCoordinator, coordinatorStaffController.createStaff);
 router.patch('/:orgId/staff/:staffId/status', requireCoordinator, coordinatorStaffController.toggleStaffStatus);
 router.patch('/:orgId/staff/:staffId', requireCoordinator, coordinatorStaffController.updateStaff);
+router.delete('/:orgId/staff/:staffId', requireCoordinator, coordinatorStaffController.deleteStaff);
 
 // Dedicated Driver management endpoints
 router.get('/:orgId/drivers', requireCoordinator, coordinatorStaffController.getDrivers);
@@ -76,6 +77,7 @@ router.post('/:orgId/drivers', requireCoordinator, coordinatorStaffController.cr
 router.get('/:orgId/drivers/:driverId', requireCoordinator, coordinatorStaffController.getDriverById);
 router.patch('/:orgId/drivers/:driverId', requireCoordinator, coordinatorStaffController.updateDriver);
 router.patch('/:orgId/drivers/:driverId/status', requireCoordinator, coordinatorStaffController.toggleDriverStatus);
+router.delete('/:orgId/drivers/:driverId', requireCoordinator, coordinatorStaffController.deleteDriver);
 
 // Also support /staff/drivers alias routes
 router.get('/:orgId/staff/drivers', requireCoordinator, coordinatorStaffController.getDrivers);
@@ -83,6 +85,11 @@ router.post('/:orgId/staff/drivers', requireCoordinator, coordinatorStaffControl
 router.get('/:orgId/staff/drivers/:driverId', requireCoordinator, coordinatorStaffController.getDriverById);
 router.patch('/:orgId/staff/drivers/:driverId', requireCoordinator, coordinatorStaffController.updateDriver);
 router.patch('/:orgId/staff/drivers/:driverId/status', requireCoordinator, coordinatorStaffController.toggleDriverStatus);
+router.delete('/:orgId/staff/drivers/:driverId', requireCoordinator, coordinatorStaffController.deleteDriver);
+
+// Verifiers alias routes
+router.delete('/:orgId/verifiers/:verifierId', requireCoordinator, coordinatorStaffController.deleteStaff);
+router.delete('/:orgId/staff/verifiers/:verifierId', requireCoordinator, coordinatorStaffController.deleteStaff);
 
 // Organization Problem Reports
 router.get('/:orgId/problems', requireCoordinator, driverController.getOrganizationProblems);

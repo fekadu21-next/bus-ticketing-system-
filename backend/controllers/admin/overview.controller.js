@@ -25,8 +25,9 @@ export class AdminOverviewController {
     const page = parseInt(req.query.page || '1', 10);
     const limit = parseInt(req.query.limit || '50', 10);
     const { organizationId, search, status } = req.query;
+    const upcoming = req.query.upcoming === 'true';
 
-    const result = await adminOverviewService.getAllTrips({ page, limit, organizationId, search, status });
+    const result = await adminOverviewService.getAllTrips({ page, limit, organizationId, search, status, upcoming });
     res.status(200).json({ success: true, data: result });
   });
 

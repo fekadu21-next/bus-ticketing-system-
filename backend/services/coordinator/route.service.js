@@ -7,18 +7,27 @@ export class RouteService {
       throw new ApiError(400, 'Organization context is required.');
     }
 
-    if (!routeData.originStationId || !routeData.destinationStationId) {
-      throw new ApiError(400, 'Origin station and destination station are required.');
+    const origin = routeData.origin?.trim();
+    const destination = routeData.destination?.trim();
+    const originStationId = routeData.originStationId || null;
+    const destinationStationId = routeData.destinationStationId || null;
+
+    if (!originStationId && !destinationStationId && (!origin || !destination)) {
+      throw new ApiError(400, 'Origin and destination are required.');
     }
 
-    if (routeData.originStationId === routeData.destinationStationId) {
+    if (originStationId && destinationStationId && originStationId === destinationStationId) {
       throw new ApiError(400, 'Origin and destination stations cannot be the same.');
+    }
+
+    if (origin && destination && origin.toLowerCase() === destination.toLowerCase()) {
+      throw new ApiError(400, 'Origin and destination cannot be the same.');
     }
 
     const existing = await routeRepository.findDuplicate(
       organizationId,
-      routeData.originStationId,
-      routeData.destinationStationId
+      originStationId || origin,
+      destinationStationId || destination
     );
     if (existing) {
       throw new ApiError(409, 'Route between these stations already exists in your organization.');
@@ -26,10 +35,10 @@ export class RouteService {
 
     return routeRepository.create({
       organizationId,
-      origin: routeData.origin,
-      destination: routeData.destination,
-      originStationId: routeData.originStationId,
-      destinationStationId: routeData.destinationStationId,
+      origin: origin || 'Origin Terminal',
+      destination: destination || 'Destination Terminal',
+      originStationId,
+      destinationStationId,
       distanceKm: routeData.distanceKm,
       estimatedDurationHours: routeData.estimatedDurationHours,
       isActive: routeData.isActive ?? true,
@@ -62,7 +71,7 @@ export class RouteService {
     const newOriginStationId = updateData.originStationId || route.origin_station_id;
     const newDestinationStationId = updateData.destinationStationId || route.destination_station_id;
 
-    if (newOriginStationId === newDestinationStationId) {
+    if (newOriginStationId && newDestinationStationId && newOriginStationId === newDestinationStationId) {
       throw new ApiError(400, 'Origin and destination stations cannot be the same.');
     }
 
@@ -72,6 +81,11 @@ export class RouteService {
         throw new ApiError(409, 'Route between these stations already exists in your organization.');
       }
     }
+
+    if (updateData.status !== undefined && updateData.isActive === undefined) {
+      updateData.isActive = updateData.status === 'ACTIVE';
+    }
+    delete updateData.status;
 
     return routeRepository.update(routeId, organizationId, updateData);
   }

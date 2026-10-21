@@ -19,5 +19,7 @@ router.route('/')
 
 
 router.get('/:id', validate(bookingIdParamSchema, 'params'), passengerBookingController.getBookingById);
+router.post('/:id/cancel', validate(bookingIdParamSchema, 'params'), passengerBookingController.cancelBooking);
+router.delete('/:id', validate(bookingIdParamSchema, 'params'), passengerBookingController.cancelBooking);
 
 export default router;

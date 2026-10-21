@@ -3,7 +3,8 @@ import asyncHandler from '../../utils/asyncHandler.js';
 
 export class AdminDashboardController {
   getDashboard = asyncHandler(async (req, res) => {
-    const summary = await adminDashboardService.getDashboardSummary();
+    const { organizationId } = req.query;
+    const summary = await adminDashboardService.getDashboardSummary({ organizationId });
     res.status(200).json({
       success: true,
       data: summary,

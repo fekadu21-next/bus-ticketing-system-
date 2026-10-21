@@ -40,6 +40,9 @@ export class RouteRepository {
   }
 
   async findById(routeId, organizationId = null) {
+    if (!routeId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(routeId)) {
+      return null;
+    }
     const where = { id: routeId };
     if (organizationId) {
       where.organization_id = organizationId;
@@ -60,12 +63,28 @@ export class RouteRepository {
     });
   }
 
-  async findDuplicate(organizationId, originStationId, destinationStationId) {
+  async findDuplicate(organizationId, originOrStation1, destOrStation2) {
+    if (!originOrStation1 || !destOrStation2) return null;
+    const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+    const orConditions = [
+      {
+        origin: { equals: originOrStation1, mode: 'insensitive' },
+        destination: { equals: destOrStation2, mode: 'insensitive' },
+      },
+    ];
+
+    if (isUuid(originOrStation1) && isUuid(destOrStation2)) {
+      orConditions.push({
+        origin_station_id: originOrStation1,
+        destination_station_id: destOrStation2,
+      });
+    }
+
     return prisma.routes.findFirst({
       where: {
         organization_id: organizationId,
-        origin_station_id: originStationId,
-        destination_station_id: destinationStationId,
+        OR: orConditions,
       },
     });
   }
@@ -80,6 +99,8 @@ export class RouteRepository {
 
     if (search) {
       where.OR = [
+        { origin: { contains: search, mode: 'insensitive' } },
+        { destination: { contains: search, mode: 'insensitive' } },
         { origin_station: { name: { contains: search, mode: 'insensitive' } } },
         { origin_station: { city: { contains: search, mode: 'insensitive' } } },
         { destination_station: { name: { contains: search, mode: 'insensitive' } } },

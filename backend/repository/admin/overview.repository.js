@@ -61,6 +61,8 @@ export class AdminOverviewRepository {
           organizations: {
             select: { id: true, name: true },
           },
+          origin_station: { select: { id: true, name: true, city: true } },
+          destination_station: { select: { id: true, name: true, city: true } },
         },
       }),
     ]);
@@ -71,12 +73,21 @@ export class AdminOverviewRepository {
   /**
    * Get all trips platform-wide
    */
-  async getAllTrips({ page = 1, limit = 50, organizationId = null, search = '', status = null } = {}) {
+  async getAllTrips({ page = 1, limit = 50, organizationId = null, search = '', status = null, upcoming = false } = {}) {
     const skip = (page - 1) * limit;
     const where = {};
 
     if (organizationId) where.organization_id = organizationId;
-    if (status) where.status = status;
+    if (status) {
+      where.status = status;
+    } else if (upcoming) {
+      where.status = { notIn: ['COMPLETED', 'CANCELLED'] };
+    }
+
+    if (upcoming) {
+      where.departure_time = { gte: new Date() };
+    }
+
     if (search) {
       where.OR = [
         { routes: { origin: { contains: search, mode: 'insensitive' } } },
@@ -91,11 +102,23 @@ export class AdminOverviewRepository {
         where,
         skip,
         take: limit,
-        orderBy: { departure_time: 'desc' },
+        orderBy: upcoming ? { departure_time: 'asc' } : { departure_time: 'desc' },
         include: {
           organizations: { select: { id: true, name: true } },
-          buses: { select: { id: true, plate_number: true, model: true, capacity: true } },
-          routes: { select: { id: true, origin: true, destination: true, distance_km: true } },
+          buses: { select: { id: true, plate_number: true, model: true, capacity: true, is_active: true } },
+          routes: {
+            select: {
+              id: true,
+              origin: true,
+              destination: true,
+              distance_km: true,
+              is_active: true,
+              origin_station: { select: { id: true, name: true, city: true } },
+              destination_station: { select: { id: true, name: true, city: true } },
+            },
+          },
+          driver: { select: { id: true, first_name: true, last_name: true, phone: true } },
+          verifier: { select: { id: true, first_name: true, last_name: true, phone: true } },
           _count: {
             select: {
               seats: true,
