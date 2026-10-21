@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
+import { isUserAdmin, isUserOperator, isUserPassenger } from "@/utils/userUtils";
 
 // Public Pages
 import HomePage from '@/pages/HomePage';
@@ -75,12 +76,8 @@ export const ManagementConsole = () => {
   } = useApp();
 
   const userRoles = Array.isArray(user?.roles) ? user.roles : [];
-  const isAdmin = userRoles.includes("ADMIN") || userRoles.includes("PLATFORM_ADMIN");
-  const isCoordinator =
-    userRoles.includes("BOOKING_COORDINATOR") ||
-    userRoles.includes("OPERATIONAL_MANAGER") ||
-    userRoles.includes("OPERATOR") ||
-    Boolean(user?.organizationContext?.length);
+  const isAdmin = isUserAdmin(user);
+  const isCoordinator = isUserOperator(user);
 
   const isOperatorRoute = location.pathname.startsWith("/operator");
   const isAdminRoute = location.pathname.startsWith("/admin");
@@ -133,6 +130,17 @@ export const ManagementConsole = () => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Generic /dashboard entrypoint redirect to specific portal
+  if (location.pathname === "/dashboard" || location.pathname === "/dashboard/") {
+    if (isAdmin) {
+      return <Navigate to="/admin" replace />;
+    }
+    if (isCoordinator) {
+      return <Navigate to="/operator" replace />;
+    }
+    return <Navigate to="/my-bookings" replace />;
   }
 
   // Operator cannot access platform Admin console
@@ -227,16 +235,22 @@ export const ManagementConsole = () => {
 };
 
 export const AppRoutes = () => {
-  const { isAuthenticated, isLoading, isAdmin, isOperator } = useAuth();
+  const { user, isAuthenticated, isLoading, isAdmin, isOperator } = useAuth();
   const location = useLocation();
 
   const getAuthenticatedHome = () => {
     const fromPath = location.state?.from?.pathname;
+    const adminUser = isUserAdmin(user) || (typeof isAdmin === "function" && isAdmin());
+    const operatorUser = isUserOperator(user) || (typeof isOperator === "function" && isOperator());
+
     if (fromPath && fromPath !== "/login" && fromPath !== "/register") {
+      if (adminUser && (fromPath.startsWith("/operator") || fromPath.startsWith("/manager"))) {
+        return "/admin";
+      }
       return fromPath;
     }
-    if (isAdmin()) return "/admin";
-    if (isOperator()) return "/operator";
+    if (adminUser) return "/admin";
+    if (operatorUser) return "/operator";
     return "/my-bookings";
   };
 

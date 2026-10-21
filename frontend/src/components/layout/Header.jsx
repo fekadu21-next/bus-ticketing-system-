@@ -4,7 +4,7 @@ import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
-import { formatUserFullName } from "../../utils/userUtils";
+import { formatUserFullName, isUserAdmin } from "../../utils/userUtils";
 import {
   Search,
   Building2,
@@ -79,23 +79,25 @@ export const Header = () => {
     navigate("/login", { replace: true });
   };
 
+  const isAdminSession = currentRole === "ADMIN" || isUserAdmin(user);
+
   const handleProfileClick = () => {
     setShowUserMenu(false);
-    const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+    const basePath = isAdminSession ? "/admin" : "/operator";
     if (setActivePage) setActivePage("profile");
     navigate(`${basePath}/profile`);
   };
 
   const handleChangePasswordClick = () => {
     setShowUserMenu(false);
-    const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+    const basePath = isAdminSession ? "/admin" : "/operator";
     if (setActivePage) setActivePage("change-password");
     navigate(`${basePath}/change-password`);
   };
 
   const displayName = formatUserFullName(
     user,
-    currentRole === "ADMIN" ? "System Admin" : "Booking Coordinator"
+    isAdminSession ? "System Admin" : "Booking Coordinator"
   );
 
   const userInitials = displayName
@@ -104,7 +106,7 @@ export const Header = () => {
     .map((n) => n[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2) || (currentRole === "ADMIN" ? "SA" : "BC");
+    .slice(0, 2) || (isAdminSession ? "SA" : "BC");
 
   const userEmail = user?.email || "";
 

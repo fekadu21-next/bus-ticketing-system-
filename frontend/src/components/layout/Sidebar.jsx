@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
+import { isUserAdmin } from "../../utils/userUtils";
 import {
   LayoutDashboard,
   Building2,
@@ -66,7 +67,7 @@ export const Sidebar = () => {
     resetAppState,
   } = useApp();
 
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { t } = useTranslation();
 
   const handleLogout = async () => {
@@ -585,7 +586,8 @@ export const Sidebar = () => {
     },
   ];
 
-  const navGroups = currentRole === "ADMIN" ? adminNavGroups : managerNavGroups;
+  const isAdminSession = currentRole === "ADMIN" || isUserAdmin(user);
+  const navGroups = isAdminSession ? adminNavGroups : managerNavGroups;
 
   // Total active unread badge count across all groups
   const totalActiveBadges = navGroups.reduce(
@@ -601,7 +603,7 @@ export const Sidebar = () => {
 
     markItemAsSeen(item.id);
     setActivePage(item.id);
-    const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+    const basePath = isAdminSession ? "/admin" : "/operator";
     const targetUrl = item.id === "dashboard" ? basePath : `${basePath}/${item.id}`;
     if (location.pathname !== targetUrl) {
       navigate(targetUrl);
@@ -617,7 +619,7 @@ export const Sidebar = () => {
     setShowNotificationsDrawer(false);
     if (notif.targetPage) {
       setActivePage(notif.targetPage);
-      const basePath = currentRole === "ADMIN" ? "/admin" : "/operator";
+      const basePath = isAdminSession ? "/admin" : "/operator";
       const targetUrl = `${basePath}/${notif.targetPage}`;
       navigate(targetUrl);
     }

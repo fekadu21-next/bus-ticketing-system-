@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
-import { formatUserFullName } from '@/utils/userUtils';
+import { formatUserFullName, isUserAdmin, isUserOperator, isUserPassenger } from '@/utils/userUtils';
 import {
   User,
   LogOut,
@@ -34,14 +34,9 @@ export const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  const userIsAdmin = isAdmin ? isAdmin() : (user?.roles?.includes('ADMIN') || user?.roles?.includes('PLATFORM_ADMIN'));
-  const userIsOperator = isOperator ? isOperator() : (
-    user?.roles?.includes('BOOKING_COORDINATOR') ||
-    user?.roles?.includes('OPERATIONAL_MANAGER') ||
-    user?.roles?.includes('OPERATOR') ||
-    Boolean(user?.organizationContext?.length)
-  );
-  const userIsPassenger = isPassenger ? isPassenger() : (!userIsAdmin && !userIsOperator);
+  const userIsAdmin = isUserAdmin(user);
+  const userIsOperator = isUserOperator(user);
+  const userIsPassenger = isUserPassenger(user);
 
   // Close mobile drawer and user dropdown whenever location changes
   useEffect(() => {
@@ -252,6 +247,16 @@ export const Navbar = () => {
               )}
 
               
+              {userIsAdmin && (
+                <Link
+                  to="/admin"
+                  className="px-3.5 py-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+                >
+                  <Shield size={14} />
+                  Platform Admin
+                </Link>
+              )}
+
               {userIsOperator && (
                 <Link
                   to="/operator"
@@ -313,6 +318,17 @@ export const Navbar = () => {
                     </div>
 
                     
+                    {userIsAdmin && (
+                      <Link
+                        to="/admin"
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <Shield size={16} />
+                        Admin Dashboard
+                      </Link>
+                    )}
+
                     {userIsOperator && (
                       <Link
                         to="/operator"

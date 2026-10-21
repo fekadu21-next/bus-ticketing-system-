@@ -81,6 +81,7 @@ import {
   initialVerifiers,
   initialAuditLogs,
 } from "../data/mockData";
+import { isUserAdmin, isUserOperator, isUserPassenger } from "../utils/userUtils";
 
 const AppContext = createContext();
 
@@ -129,8 +130,8 @@ const getInitialConsolePage = () => {
 const getInitialConsoleRole = () => {
   if (typeof window === "undefined") return null;
   const path = window.location.pathname;
-  if (path.startsWith("/operator") || path.startsWith("/manager")) return "MANAGER";
   if (path.startsWith("/admin")) return "ADMIN";
+  if (path.startsWith("/operator") || path.startsWith("/manager")) return "MANAGER";
   return null;
 };
 
@@ -808,29 +809,23 @@ export const AppProvider = ({ children }) => {
       return;
     }
 
-    const roles = Array.isArray(user.roles) ? user.roles : [];
-
-    if (roles.includes("ADMIN") || roles.includes("PLATFORM_ADMIN")) {
+    if (isUserAdmin(user)) {
       setCurrentRole("ADMIN");
       fetchAdminData({ silent: false });
-    } else if (roles.includes("DRIVER")) {
-      setCurrentRole("DRIVER");
-    } else if (
-      roles.includes("BOOKING_COORDINATOR") ||
-      roles.includes("OPERATIONAL_MANAGER") ||
-      roles.includes("OPERATOR") ||
-      Boolean(user.organizationContext?.length)
-    ) {
+    } else if (isUserOperator(user)) {
       setCurrentRole("MANAGER");
       const targetOrgId = getCoordinatorOrgId();
       if (targetOrgId) {
         setSelectedOrgId((prev) => (prev === targetOrgId ? prev : targetOrgId));
         fetchCoordinatorData(targetOrgId, { silent: false });
       }
-    } else if (roles.includes("PASSENGER")) {
-      setCurrentRole("PASSENGER");
     } else {
-      setCurrentRole(null);
+      const roles = Array.isArray(user.roles) ? user.roles : [];
+      if (roles.includes("DRIVER")) {
+        setCurrentRole("DRIVER");
+      } else {
+        setCurrentRole("PASSENGER");
+      }
     }
   }, [isAuthenticated, user, getCoordinatorOrgId]);
 
