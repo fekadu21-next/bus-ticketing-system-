@@ -344,30 +344,39 @@ export const AppProvider = ({ children }) => {
         if (Array.isArray(rawUsers) && rawUsers.length > 0) {
           const mappedUsers = rawUsers.map((u) => {
             const userRole = u.user_roles?.[0];
-            const roleName = userRole?.roles?.name || (u.roles && u.roles[0]) || "PASSENGER";
+            const roleName = userRole?.roles?.name || (u.roles && u.roles[0]) || (u.role && typeof u.role === "string" ? u.role : "PASSENGER");
             const orgObj = userRole?.organizations || u.organizations;
             const orgName = orgObj?.name || u.organizationName || u.organization_name || "—";
             const orgId = orgObj?.id || userRole?.organization_id || u.organization_id || "";
 
-            const fullName = [u.first_name, u.last_name].filter(Boolean).join(" ").trim();
+            const fullName = [u.firstName || u.first_name, u.lastName || u.last_name].filter(Boolean).join(" ").trim();
             const resolvedName = fullName || (u.name && u.name !== u.email ? u.name : (u.email ? u.email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Platform User"));
+
+            const isUserActive =
+              u.isActive !== undefined
+                ? Boolean(u.isActive)
+                : u.is_active !== undefined
+                ? Boolean(u.is_active)
+                : u.status
+                ? u.status === "ACTIVE"
+                : true;
 
             return {
               id: u.id,
               name: resolvedName,
-              firstName: u.first_name || "",
-              lastName: u.last_name || "",
+              firstName: u.firstName || u.first_name || "",
+              lastName: u.lastName || u.last_name || "",
               email: u.email,
               phone: u.phone || "—",
               role: roleName,
               organizationId: orgId,
               organizationName: orgName,
-              status: u.is_active ? "ACTIVE" : "SUSPENDED",
-              isActive: u.is_active ?? true,
-              emailVerified: u.email_verified ?? false,
-              failedLoginAttempts: u.failed_login_attempts ?? 0,
-              lastLoginAt: u.last_login_at ? u.last_login_at.split("T")[0] : "Never",
-              createdAt: u.created_at ? u.created_at.split("T")[0] : new Date().toISOString().split("T")[0]
+              status: isUserActive ? "ACTIVE" : "SUSPENDED",
+              isActive: isUserActive,
+              emailVerified: u.emailVerified ?? u.email_verified ?? false,
+              failedLoginAttempts: u.failedLoginAttempts ?? u.failed_login_attempts ?? 0,
+              lastLoginAt: (u.lastLoginAt || u.last_login_at) ? (u.lastLoginAt || u.last_login_at).split("T")[0] : "Never",
+              createdAt: (u.createdAt || u.created_at) ? (u.createdAt || u.created_at).split("T")[0] : new Date().toISOString().split("T")[0]
             };
           });
           setUsers(mappedUsers);
@@ -1030,10 +1039,12 @@ export const AppProvider = ({ children }) => {
     addAuditLog("UPDATE_USER_STATUS", "User", userId, `Status: ${oldStatus}`, `Status: ${newStatus}`, targetUser?.organizationName);
 
     try {
-      await toggleUserStatusApi(userId, isActive);
-      notifyStatusChange({ entity: "USER", id: userId, status: newStatus });
+      if (userId && userId.length === 36) {
+        await toggleUserStatusApi(userId, isActive);
+      }
+      notifyStatusChange({ entity: "USER", id: userId, status: newStatus, isActive });
       showToast(`User "${targetUser?.name || userId}" status updated to ${newStatus}.`);
-      await fetchAdminData();
+      await fetchAdminData({ silent: true });
     } catch (err) {
       console.warn("Backend user status update notice:", err.message);
       showToast(`User status set to ${newStatus}.`);

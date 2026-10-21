@@ -277,44 +277,7 @@ export const AdminOrganizationsPage = () => {
                         <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.activeTrips || 0} active trips</div>
                       </td>
                       <td>
-                        {/* Interactive Current Status Dropdown */}
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
-                          <select
-                            className="status-selector"
-                            value={currentStatus}
-                            onChange={(e) => handleStatusSelectChange(org.id, e.target.value)}
-                            title="Change organization status"
-                            style={{
-                              fontSize: "0.75rem",
-                              fontWeight: 700,
-                              padding: "4px 8px",
-                              borderRadius: "6px",
-                              border: "1px solid var(--border-color, #cbd5e1)",
-                              cursor: "pointer",
-                              background:
-                                currentStatus === "APPROVED"
-                                  ? "rgba(16, 185, 129, 0.12)"
-                                  : currentStatus === "PENDING"
-                                  ? "rgba(245, 158, 11, 0.12)"
-                                  : currentStatus === "SUSPENDED"
-                                  ? "rgba(239, 68, 68, 0.12)"
-                                  : "rgba(100, 116, 139, 0.12)",
-                              color:
-                                currentStatus === "APPROVED"
-                                  ? "#059669"
-                                  : currentStatus === "PENDING"
-                                  ? "#d97706"
-                                  : currentStatus === "SUSPENDED"
-                                  ? "#dc2626"
-                                  : "#475569",
-                            }}
-                          >
-                            <option value="APPROVED">APPROVED</option>
-                            <option value="PENDING">PENDING</option>
-                            <option value="SUSPENDED">SUSPENDED</option>
-                            <option value="REJECTED">REJECTED</option>
-                          </select>
-                        </div>
+                        <Badge status={currentStatus} />
                       </td>
                       <td>{org.createdAt}</td>
                       <td>
@@ -476,23 +439,7 @@ export const AdminOrganizationsPage = () => {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <span style={{ fontSize: "0.78rem", fontWeight: 600 }}>Status:</span>
-                <select
-                  value={selectedOrg.status || "APPROVED"}
-                  onChange={(e) => handleStatusSelectChange(selectedOrg.id, e.target.value)}
-                  style={{
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    padding: "4px 10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--border-color)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <option value="APPROVED">APPROVED</option>
-                  <option value="PENDING">PENDING</option>
-                  <option value="SUSPENDED">SUSPENDED</option>
-                  <option value="REJECTED">REJECTED</option>
-                </select>
+                <Badge status={selectedOrg.status || "APPROVED"} />
               </div>
             </div>
 
