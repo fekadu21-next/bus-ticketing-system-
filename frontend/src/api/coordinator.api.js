@@ -82,6 +82,11 @@ export const updateDriverApi = async (orgId, driverId, payload) => {
   return data;
 };
 
+export const deleteDriverApi = async (orgId, driverId) => {
+  const { data } = await api.delete(`/organizations/${orgId}/staff/drivers/${driverId}`);
+  return data;
+};
+
 export const toggleDriverStatusApi = async (orgId, driverId, isActive) => {
   const { data } = await api.patch(`/organizations/${orgId}/staff/drivers/${driverId}/status`, { isActive });
   return data;
@@ -89,6 +94,11 @@ export const toggleDriverStatusApi = async (orgId, driverId, isActive) => {
 
 export const assignDriverToTripApi = async (orgId, tripId, driverId) => {
   const { data } = await api.patch(`/organizations/${orgId}/trips/${tripId}/assign-driver`, { driverId });
+  return data;
+};
+
+export const assignVerifierToTripApi = async (orgId, tripId, verifierId) => {
+  const { data } = await api.patch(`/organizations/${orgId}/trips/${tripId}/assign-verifier`, { verifierId });
   return data;
 };
 
@@ -111,6 +121,11 @@ export const createTripApi = async (orgId, payload) => {
 
 export const updateTripApi = async (orgId, tripId, payload) => {
   const { data } = await api.patch(`/organizations/${orgId}/trips/${tripId}`, payload);
+  return data;
+};
+
+export const deleteTripApi = async (orgId, tripId) => {
+  const { data } = await api.delete(`/organizations/${orgId}/trips/${tripId}`);
   return data;
 };
 
@@ -209,6 +224,15 @@ export const updateStaffApi = async (orgId, staffId, payload) => {
   return data;
 };
 
+export const deleteStaffApi = async (orgId, staffId) => {
+  const { data } = await api.delete(`/organizations/${orgId}/staff/${staffId}`);
+  return data;
+};
+
+export const deleteVerifierApi = async (orgId, verifierId) => {
+  return deleteStaffApi(orgId, verifierId);
+};
+
 // ─── Organization Profile & Management ────────────────────────────────────────
 
 export const getOrganizationDetailsApi = async (orgId) => {
@@ -247,6 +271,11 @@ export default {
   createBusApi,
   updateBusApi,
   deleteBusApi,
+  deleteTripApi,
+  assignVerifierToTripApi,
+  deleteDriverApi,
+  deleteStaffApi,
+  deleteVerifierApi,
   getRoutesApi,
   getRouteByIdApi,
   createRouteApi,

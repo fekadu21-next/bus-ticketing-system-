@@ -3,8 +3,8 @@ import api from '@/services/api';
 /**
  * Platform Admin Dashboard Statistics
  */
-export const getAdminDashboardStatsApi = async () => {
-  const { data } = await api.get('/admin/dashboard');
+export const getAdminDashboardStatsApi = async (params = {}) => {
+  const { data } = await api.get('/admin/dashboard', { params });
   return data;
 };
 
