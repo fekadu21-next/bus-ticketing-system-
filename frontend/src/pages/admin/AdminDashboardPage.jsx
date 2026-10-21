@@ -1,15 +1,15 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 import { StatCard } from "../../components/ui/StatCard";
 import { Badge } from "../../components/ui/Badge";
+import Modal from "../../components/ui/Modal";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import {
   Building2,
   CalendarDays,
   Ticket,
   CreditCard,
-  QrCode,
   DollarSign,
   ArrowRight,
   ShieldAlert,
@@ -19,8 +19,11 @@ import {
   Calendar,
   TrendingUp,
   BarChart3,
-  MapPin,
-  Route as RouteIcon,
+  CheckCircle2,
+  Eye,
+  AlertTriangle,
+  Clock,
+  Bus,
 } from "lucide-react";
 
 export const AdminDashboardPage = () => {
@@ -44,15 +47,21 @@ export const AdminDashboardPage = () => {
     showToast,
   } = useApp();
 
-  const [dateFilter, setDateFilter] = React.useState("ALL"); // ALL, THIS_YEAR, THIS_MONTH, THIS_WEEK, TODAY, CUSTOM
-  const [customDate, setCustomDate] = React.useState("");
-  const [operatorSearch, setOperatorSearch] = React.useState("");
-  const [categoryFilter, setCategoryFilter] = React.useState("ALL");
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const [tripSearch, setTripSearch] = React.useState("");
-  const [tripStatusFilter, setTripStatusFilter] = React.useState("ALL");
-  const [tripPage, setTripPage] = React.useState(1);
+  const [dateFilter, setDateFilter] = useState("ALL"); // ALL, THIS_YEAR, THIS_MONTH, THIS_WEEK, TODAY, CUSTOM
+  const [customDate, setCustomDate] = useState("");
+  const [operatorSearch, setOperatorSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [tripSearch, setTripSearch] = useState("");
+  const [tripStatusFilter, setTripStatusFilter] = useState("ALL");
+  const [tripPage, setTripPage] = useState(1);
   const tripPageSize = 10;
+
+  // Modals state
+  const [selectedOrgModal, setSelectedOrgModal] = useState(null);
+  const [selectedTripModal, setSelectedTripModal] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [showRejectInput, setShowRejectInput] = useState(false);
 
   const commissionPercent = Number(settings?.platformFeePercent ?? 5.0);
   const commissionRate = commissionPercent / 100;
@@ -68,37 +77,7 @@ export const AdminDashboardPage = () => {
     const now = new Date();
 
     if (dateFilter === "TODAY") {
-      // Upcoming Trips Computation
-  const filteredUpcomingTrips = React.useMemo(() => {
-    const q = tripSearch.toLowerCase().trim();
-    return scopedTrips
-      .filter((t) => {
-        const matchesStatus = tripStatusFilter === "ALL" || t.status === tripStatusFilter;
-        const matchesDate = matchesDateFilter(t.departureDate);
-        const matchesSearch =
-          !q ||
-          (t.tripCode || "").toLowerCase().includes(q) ||
-          (t.organizationName || "").toLowerCase().includes(q) ||
-          (t.routeName || "").toLowerCase().includes(q) ||
-          (t.originStation || "").toLowerCase().includes(q) ||
-          (t.destinationStation || "").toLowerCase().includes(q) ||
-          (t.busPlateNumber || "").toLowerCase().includes(q) ||
-          (t.driverName || "").toLowerCase().includes(q);
-        return matchesStatus && matchesDate && matchesSearch;
-      })
-      .sort((a, b) => {
-        const dateA = new Date(`${a.departureDate} ${a.departureTime || '00:00'}`).getTime();
-        const dateB = new Date(`${b.departureDate} ${b.departureTime || '00:00'}`).getTime();
-        return dateA - dateB;
-      });
-  }, [scopedTrips, tripSearch, tripStatusFilter, dateFilter, customDate]);
-
-  const totalTripPages = Math.ceil(filteredUpcomingTrips.length / tripPageSize) || 1;
-  const paginatedUpcomingTrips = React.useMemo(() => {
-    return filteredUpcomingTrips.slice((tripPage - 1) * tripPageSize, tripPage * tripPageSize);
-  }, [filteredUpcomingTrips, tripPage, tripPageSize]);
-
-  return (
+      return (
         d.getFullYear() === now.getFullYear() &&
         d.getMonth() === now.getMonth() &&
         d.getDate() === now.getDate()
@@ -208,6 +187,48 @@ export const AdminDashboardPage = () => {
     ? verifications
     : verifications.filter((v) => targetOrgIds.has(v.organizationId));
 
+  // Upcoming Trips Computation - strictly upcoming scheduled departures
+  const filteredUpcomingTrips = useMemo(() => {
+    const q = tripSearch.toLowerCase().trim();
+    const now = new Date();
+    return scopedTrips
+      .filter((t) => {
+        // Exclude completed, cancelled, departed trips
+        if (t.status === "COMPLETED" || t.status === "CANCELLED") return false;
+
+        // Use actual scheduled departure date and time to verify it is upcoming
+        const depDate = t.departureDate || (t.departure_time ? t.departure_time.split("T")[0] : "");
+        const depTime = t.departureTime || "00:00";
+        const depDateTime = new Date(`${depDate} ${depTime}`);
+        if (!isNaN(depDateTime.getTime()) && depDateTime < now && !isTodayDate(depDate)) {
+          return false;
+        }
+
+        const matchesStatus = tripStatusFilter === "ALL" || t.status === tripStatusFilter;
+        const matchesDate = matchesDateFilter(depDate || t.departure_time);
+        const matchesSearch =
+          !q ||
+          (t.tripCode || "").toLowerCase().includes(q) ||
+          (t.organizationName || "").toLowerCase().includes(q) ||
+          (t.routeName || "").toLowerCase().includes(q) ||
+          (t.originStation || "").toLowerCase().includes(q) ||
+          (t.destinationStation || "").toLowerCase().includes(q) ||
+          (t.busPlateNumber || "").toLowerCase().includes(q) ||
+          (t.driverName || "").toLowerCase().includes(q);
+        return matchesStatus && matchesDate && matchesSearch;
+      })
+      .sort((a, b) => {
+        const depA = new Date(`${a.departureDate || a.departure_time || ""} ${a.departureTime || "00:00"}`).getTime();
+        const depB = new Date(`${b.departureDate || b.departure_time || ""} ${b.departureTime || "00:00"}`).getTime();
+        return depA - depB;
+      });
+  }, [scopedTrips, tripSearch, tripStatusFilter, dateFilter, customDate]);
+
+  const totalTripPages = Math.ceil(filteredUpcomingTrips.length / tripPageSize) || 1;
+  const paginatedUpcomingTrips = React.useMemo(() => {
+    return filteredUpcomingTrips.slice((tripPage - 1) * tripPageSize, tripPage * tripPageSize);
+  }, [filteredUpcomingTrips, tripPage, tripPageSize]);
+
   // Base platform counts
   const totalOrgs = isSingleOrg ? 1 : targetOrganizations.length;
   const pendingOrgs = targetOrganizations.filter((o) => o.status === "PENDING");
@@ -255,42 +276,6 @@ export const AdminDashboardPage = () => {
     TODAY: "Today",
     CUSTOM: customDate ? `Date: ${customDate}` : "Custom Date",
   }[dateFilter] || "All Time";
-
-  // Per-Operator breakdown data
-  const operatorBreakdown = targetOrganizations.map((org) => {
-    const orgBookings = bookings.filter((b) => b.organizationId === org.id || b.organization_id === org.id);
-    const orgFilteredBookings = orgBookings.filter((b) => matchesDateFilter(b.bookingDate || b.created_at));
-    const orgTodayBookings = orgBookings.filter((b) => isTodayDate(b.bookingDate || b.created_at));
-
-    const orgPayments = completedPayments.filter((p) => p.organizationId === org.id || p.organization_id === org.id);
-    const orgFilteredPayments = orgPayments.filter((p) => matchesDateFilter(p.createdAt || p.created_at || p.paidAt));
-    const orgTodayPayments = orgPayments.filter((p) => isTodayDate(p.createdAt || p.created_at || p.paidAt));
-
-    const gross = orgFilteredPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
-    const commission = gross * commissionRate;
-    const netPayout = gross * (1 - commissionRate);
-
-    const todayGross = orgTodayPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
-    const todayCommission = todayGross * commissionRate;
-
-    return {
-      ...org,
-      totalBookings: orgFilteredBookings.length,
-      allTimeBookings: orgBookings.length,
-      todayBookings: orgTodayBookings.length,
-      grossPayments: gross,
-      platformCommission: commission,
-      netPayout,
-      todayGross,
-      todayCommission,
-    };
-  }).filter((org) => {
-    if (!operatorSearch) return true;
-    return (
-      (org.name && org.name.toLowerCase().includes(operatorSearch.toLowerCase())) ||
-      (org.type && org.type.toLowerCase().includes(operatorSearch.toLowerCase()))
-    );
-  });
 
   return (
     <div>
@@ -469,8 +454,22 @@ export const AdminDashboardPage = () => {
           title={isSingleOrg ? "Assigned Operator" : (categoryFilter !== "ALL" ? `Operators (${categoryFilter})` : "Total Organizations")}
           value={isSingleOrg ? selectedOrg.name : totalOrgs}
           icon={Building2}
-          subtitle={isSingleOrg ? `${selectedOrg.type} • Status: ${selectedOrg.status}` : `${activeOrgs} active, ${pendingOrgsCount} pending`}
+          subtitle={isSingleOrg ? `${selectedOrg.type} • Status: ${selectedOrg.status}` : `${activeOrgs} active operators`}
           onClick={() => handleNavigate("organizations")}
+        />
+        <StatCard
+          title="Organizations Awaiting Approval"
+          value={pendingOrgsCount}
+          icon={ShieldAlert}
+          subtitle={pendingOrgsCount > 0 ? "Requires administrative review" : "All operators verified & active"}
+          onClick={() => handleNavigate("organizations")}
+        />
+        <StatCard
+          title="Upcoming Departures"
+          value={filteredUpcomingTrips.length}
+          icon={CalendarDays}
+          subtitle="Scheduled upcoming platform trips"
+          onClick={() => handleNavigate("trips")}
         />
         <StatCard
           title={isSingleOrg ? "Operator Staff" : "Platform Users"}
@@ -480,87 +479,107 @@ export const AdminDashboardPage = () => {
           onClick={() => handleNavigate("users")}
         />
         <StatCard
-          title="Today's Departures"
-          value={todayTrips}
-          icon={CalendarDays}
-          subtitle={isSingleOrg ? `Scheduled for ${selectedOrg.name}` : "Scheduled operational departures"}
-          onClick={() => handleNavigate("trips")}
-        />
-        <StatCard
           title={isFiltered ? `Bookings (${dateFilterLabel})` : "Total Bookings"}
           value={displayBookingsCount}
           icon={Ticket}
           subtitle={isFiltered ? `Bookings within ${dateFilterLabel.toLowerCase()}` : (isSingleOrg ? `Bookings on ${selectedOrg.name}` : `${todayBookingsCount} created today`)}
           onClick={() => handleNavigate("bookings")}
         />
-        <StatCard
-          title="Tickets Verified"
-          value={validScans}
-          icon={QrCode}
-          subtitle="QR boarding verification events"
-          onClick={() => handleNavigate("tickets")}
-        />
       </div>
 
-      {/* Pending Approvals Alert Banner */}
-      {pendingOrgs.length > 0 && (
-        <div className="card-table-wrapper" style={{ borderLeft: "4px solid var(--warning)", marginBottom: "1.5rem" }}>
-          <div className="card-header-toolbar" style={{ background: "var(--warning-bg)" }}>
-            <div className="card-title">
-              <h3 style={{ color: "var(--warning-text)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <ShieldAlert size={18} /> Pending Operator Approvals ({pendingOrgs.length})
-              </h3>
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => handleNavigate("organizations")}>
-              View All in Organizations <ArrowRight size={14} />
-            </button>
+      {/* Organizations Awaiting Approval Dedicated Section */}
+      <div className="card-table-wrapper" style={{ borderLeft: pendingOrgs.length > 0 ? "4px solid #f59e0b" : "4px solid #10b981", marginBottom: "1.5rem" }}>
+        <div className="card-header-toolbar" style={{ background: pendingOrgs.length > 0 ? "rgba(245, 158, 11, 0.08)" : "rgba(16, 185, 129, 0.05)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div className="card-title">
+            <h3 style={{ color: pendingOrgs.length > 0 ? "#b45309" : "var(--text-main)", display: "flex", alignItems: "center", gap: "0.5rem", margin: 0, fontSize: "1rem", fontWeight: 700 }}>
+              {pendingOrgs.length > 0 ? <ShieldAlert size={18} color="#f59e0b" /> : <Building2 size={18} color="#10b981" />}
+              Organizations Awaiting Approval ({pendingOrgs.length})
+            </h3>
           </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Organization</th>
-                <th>Type</th>
-                <th>Reg. Ref</th>
-                <th>Contact</th>
-                <th>Applied Date</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingOrgs.map((org) => (
-                <tr key={org.id}>
-                  <td>
-                    <strong>{org.name}</strong>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.address}</div>
-                  </td>
-                  <td>{org.type}</td>
-                  <td><code>{org.registrationNumber}</code></td>
-                  <td>{org.contactName} ({org.phone})</td>
-                  <td>{org.createdAt}</td>
-                  <td>
-                    <div style={{ display: "flex", gap: "0.4rem" }}>
-                      <button
-                        className="btn btn-success btn-sm"
-                        onClick={() => approveOrganization(org.id)}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => rejectOrganization(org.id, "Documents non-compliant")}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <button className="btn btn-secondary btn-sm" onClick={() => handleNavigate("organizations")} title="View all organizations in catalog">
+            View All Organizations <ArrowRight size={13} />
+          </button>
         </div>
-      )}
 
-            {/* Upcoming Platform Trips Section */}
+        {pendingOrgs.length === 0 ? (
+          <div style={{ padding: "2.5rem 1.5rem", textAlign: "center", color: "var(--text-muted)" }}>
+            <CheckCircle2 size={36} color="#10b981" style={{ margin: "0 auto 0.5rem", display: "block" }} />
+            <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-main)" }}>All Organizations Approved</div>
+            <p style={{ margin: "4px 0 0", fontSize: "0.82rem" }}>
+              All registered transport operators have been reviewed and approved. New registrations will appear here for administrative verification.
+            </p>
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "900px" }}>
+              <thead>
+                <tr>
+                  <th>Organization</th>
+                  <th>Type</th>
+                  <th>Reg. Ref</th>
+                  <th>Contact Person</th>
+                  <th>Applied Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingOrgs.map((org) => (
+                  <tr key={org.id}>
+                    <td>
+                      <strong>{org.name}</strong>
+                      <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.address}</div>
+                    </td>
+                    <td>{org.type}</td>
+                    <td><code>{org.registrationNumber}</code></td>
+                    <td>
+                      <div>{org.contactName}</div>
+                      <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{org.phone}</div>
+                    </td>
+                    <td>{org.createdAt}</td>
+                    <td>
+                      <Badge status={org.status} />
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => setSelectedOrgModal(org)}
+                          title="View registration and licensing details"
+                        >
+                          <Eye size={13} /> Details
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-success btn-sm"
+                          onClick={() => approveOrganization(org.id)}
+                          title="Approve operator registration"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => {
+                            setSelectedOrgModal(org);
+                            setShowRejectInput(true);
+                          }}
+                          title="Reject operator registration"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Upcoming Platform Trips Section */}
       <div className="card-table-wrapper" style={{ marginBottom: "1.5rem" }}>
         <div className="card-header-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
@@ -568,7 +587,7 @@ export const AdminDashboardPage = () => {
               <CalendarDays size={18} color="var(--primary)" /> Upcoming Platform Trips & Scheduled Departures
             </h3>
             <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-              Live schedules, passenger occupancy, vehicle assignments, and departure readiness across transport operators.
+              Upcoming intercity schedules sorted by earliest departure time. Completed and cancelled trips are excluded.
               {isFiltered && <span style={{ marginLeft: "0.4rem", fontWeight: 700, color: "var(--primary)" }}>Filtered by: {dateFilterLabel}</span>}
             </p>
           </div>
@@ -593,14 +612,12 @@ export const AdminDashboardPage = () => {
                 setTripPage(1);
               }}
               style={{ fontSize: "0.8rem", padding: "5px 10px" }}
-              title="Filter by trip status"
+              title="Filter by upcoming trip status"
             >
-              <option value="ALL">All Statuses</option>
+              <option value="ALL">All Upcoming Statuses</option>
               <option value="PUBLISHED">PUBLISHED</option>
               <option value="SCHEDULED">SCHEDULED</option>
               <option value="DRAFT">DRAFT</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="CANCELLED">CANCELLED</option>
             </select>
             <button
               className="btn btn-secondary btn-sm"
@@ -686,11 +703,12 @@ export const AdminDashboardPage = () => {
                       </td>
                       <td>
                         <button
+                          type="button"
                           className="btn btn-secondary btn-sm"
-                          onClick={() => handleNavigate("trips")}
-                          title="Inspect trip schedule and seats"
+                          onClick={() => setSelectedTripModal(trp)}
+                          title="Inspect trip schedule, vehicle, and seat occupancy"
                         >
-                          View Details
+                          <Eye size={13} /> View
                         </button>
                       </td>
                     </tr>
@@ -727,6 +745,204 @@ export const AdminDashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Organization Details Modal */}
+      {selectedOrgModal && (
+        <Modal
+          isOpen={Boolean(selectedOrgModal)}
+          onClose={() => {
+            setSelectedOrgModal(null);
+            setShowRejectInput(false);
+            setRejectReason("");
+          }}
+          title={`Operator Details: ${selectedOrgModal.name}`}
+          footer={
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: "0.5rem" }}>
+              <div>
+                {selectedOrgModal.status === "PENDING" && (
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button
+                      type="button"
+                      className="btn btn-success"
+                      onClick={() => {
+                        approveOrganization(selectedOrgModal.id);
+                        setSelectedOrgModal(null);
+                      }}
+                    >
+                      Approve Organization
+                    </button>
+                    {!showRejectInput ? (
+                      <button
+                        type="button"
+                        className="btn btn-danger"
+                        onClick={() => setShowRejectInput(true)}
+                      >
+                        Reject...
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setSelectedOrgModal(null);
+                  setShowRejectInput(false);
+                  setRejectReason("");
+                }}
+              >
+                Close
+              </button>
+            </div>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.75rem" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>{selectedOrgModal.name}</h3>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{selectedOrgModal.type}</span>
+              </div>
+              <Badge status={selectedOrgModal.status} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Registration Ref</span>
+                <div style={{ fontWeight: 600, marginTop: "2px" }}><code>{selectedOrgModal.registrationNumber}</code></div>
+              </div>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Submission Date</span>
+                <div style={{ fontWeight: 600, marginTop: "2px" }}>{selectedOrgModal.createdAt}</div>
+              </div>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Contact Representative</span>
+                <div style={{ fontWeight: 600, marginTop: "2px" }}>{selectedOrgModal.contactName}</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{selectedOrgModal.phone}</div>
+              </div>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Official Email & Location</span>
+                <div style={{ fontWeight: 600, marginTop: "2px" }}>{selectedOrgModal.email}</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{selectedOrgModal.address}</div>
+              </div>
+            </div>
+
+            {selectedOrgModal.notes && (
+              <div style={{ background: "rgba(59, 130, 246, 0.05)", border: "1px solid rgba(59, 130, 246, 0.2)", padding: "0.75rem", borderRadius: "8px" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--primary)", fontWeight: 700 }}>Verification / Documentation Notes</span>
+                <p style={{ margin: "4px 0 0", fontSize: "0.82rem" }}>{selectedOrgModal.notes}</p>
+              </div>
+            )}
+
+            {showRejectInput && selectedOrgModal.status === "PENDING" && (
+              <div style={{ background: "rgba(239, 68, 68, 0.06)", border: "1px solid rgba(239, 68, 68, 0.2)", padding: "0.75rem", borderRadius: "8px" }}>
+                <span style={{ fontSize: "0.75rem", color: "#dc2626", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+                  <AlertTriangle size={14} /> Specify Reason for Rejection
+                </span>
+                <textarea
+                  rows={2}
+                  style={{ width: "100%", marginTop: "6px", padding: "6px 8px", fontSize: "0.82rem", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+                  placeholder="e.g. Incomplete commercial transport licensing documentation..."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "6px", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      setShowRejectInput(false);
+                      setRejectReason("");
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={() => {
+                      rejectOrganization(selectedOrgModal.id, rejectReason || "Documentation non-compliant");
+                      setSelectedOrgModal(null);
+                      setShowRejectInput(false);
+                      setRejectReason("");
+                    }}
+                  >
+                    Confirm Rejection
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Trip Details Modal */}
+      {selectedTripModal && (
+        <Modal
+          isOpen={Boolean(selectedTripModal)}
+          onClose={() => setSelectedTripModal(null)}
+          title={`Upcoming Trip: ${selectedTripModal.tripCode}`}
+          footer={
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: "0.5rem" }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setSelectedTripModal(null);
+                  handleNavigate("trips");
+                }}
+              >
+                Open in Trips & Schedules <ArrowRight size={13} />
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setSelectedTripModal(null)}
+              >
+                Close
+              </button>
+            </div>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.75rem" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>{selectedTripModal.tripCode}</h3>
+                <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>{selectedTripModal.routeName}</span>
+              </div>
+              <Badge status={selectedTripModal.status} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Transport Operator</span>
+                <div style={{ fontWeight: 600, marginTop: "2px" }}>{selectedTripModal.organizationName}</div>
+              </div>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Route Corridor</span>
+                <div style={{ fontWeight: 600, marginTop: "2px" }}>{selectedTripModal.originStation} ➔ {selectedTripModal.destinationStation}</div>
+              </div>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Scheduled Departure</span>
+                <div style={{ fontWeight: 700, color: "var(--primary)", marginTop: "2px" }}>{selectedTripModal.departureDate} at {selectedTripModal.departureTime}</div>
+              </div>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Vehicle & Driver</span>
+                <div style={{ fontWeight: 600, marginTop: "2px" }}>{selectedTripModal.busPlateNumber || "Plate Pending"}</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Driver: {selectedTripModal.driverName || "Unassigned"}</div>
+              </div>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Seat Occupancy</span>
+                <div style={{ fontWeight: 700, marginTop: "2px" }}>{selectedTripModal.bookedSeatsCount || 0} / {selectedTripModal.totalSeats || 50} Booked</div>
+              </div>
+              <div style={{ background: "var(--bg-main, #f8fafc)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Passenger Fare</span>
+                <div style={{ fontWeight: 700, marginTop: "2px" }}>{Number(selectedTripModal.fareAmount || 0).toLocaleString()} ETB</div>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
 
     </div>
   );

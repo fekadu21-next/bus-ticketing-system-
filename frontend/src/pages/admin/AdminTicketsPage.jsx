@@ -11,7 +11,9 @@ export const AdminTicketsPage = () => {
     tickets = [],
     verifications = [],
     organizations = [],
+    stations = [],
     updateTicketStatus,
+    verifyTicket,
     isLoadingData,
     fetchAdminData,
     showToast,
@@ -27,6 +29,14 @@ export const AdminTicketsPage = () => {
   const [currentPageVerif, setCurrentPageVerif] = useState(1);
   const [pageSizeVerif, setPageSizeVerif] = useState(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Live Ticket Verification Testing Terminal State
+  const [showTestVerifyModal, setShowTestVerifyModal] = useState(false);
+  const [testTicketInput, setTestTicketInput] = useState(tickets[0]?.ticketNumber || "ET-TKT-9001");
+  const [testStationName, setTestStationName] = useState(stations[0]?.name || "Addis Ababa Intercity Terminal");
+  const [testVerifierName, setTestVerifierName] = useState("Platform Auditor");
+  const [verificationResult, setVerificationResult] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   React.useEffect(() => {
     setCurrentPageTickets(1);
@@ -104,6 +114,32 @@ export const AdminTicketsPage = () => {
     }
   };
 
+  const handleTestVerifyAction = async (overrideCode = null) => {
+    const code = overrideCode || testTicketInput;
+    if (!code || !code.trim()) {
+      if (showToast) showToast("Please enter or select a ticket code to test.", "error");
+      return;
+    }
+    setIsVerifying(true);
+    setVerificationResult(null);
+    try {
+      const result = await verifyTicket({
+        ticketNumber: code.trim(),
+        stationName: testStationName || stations[0]?.name || "Addis Ababa Intercity Terminal",
+        verifierName: testVerifierName || "Platform Auditor",
+      });
+      setVerificationResult(result);
+    } catch (err) {
+      setVerificationResult({
+        valid: false,
+        status: "ERROR",
+        message: err.message || "Verification failed.",
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   const handleStatusChange = (ticketId, newStatus) => {
     if (updateTicketStatus) {
       updateTicketStatus(ticketId, newStatus);
@@ -120,16 +156,26 @@ export const AdminTicketsPage = () => {
           <h1>Tickets & QR Verification Inspector</h1>
           <p>Monitor digital ticket issuance, passenger QR validity, and live QR code verification scans conducted by terminal staff.</p>
         </div>
-        <button
-          className="btn btn-secondary"
-          onClick={handleManualRefresh}
-          disabled={isRefreshing || isLoadingData}
-          title="Refresh Tickets"
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
-        >
-          <RefreshCw size={14} className={isRefreshing || isLoadingData ? "spin animate-spin" : ""} />
-          {isRefreshing ? "Refreshing..." : "Refresh"}
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing || isLoadingData}
+            title="Refresh Tickets"
+            style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+          >
+            <RefreshCw size={14} className={isRefreshing || isLoadingData ? "spin animate-spin" : ""} />
+            {isRefreshing ? "Refreshing..." : "Refresh"}
+          </button>
+          <button
+            className="btn btn-primary"
+            style={{ background: "#059669", borderColor: "#059669", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+            onClick={() => { setVerificationResult(null); setShowTestVerifyModal(true); }}
+            title="Launch Interactive Ticket Verification Simulator"
+          >
+            <QrCode size={15} /> Test Ticket Verification
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -458,6 +504,184 @@ export const AdminTicketsPage = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Admin Test Ticket Verification & QR Inspection Simulator Modal */}
+      <Modal
+        isOpen={showTestVerifyModal}
+        onClose={() => { setShowTestVerifyModal(false); setVerificationResult(null); }}
+        title="Platform Ticket Verification & QR Audit Simulator"
+        footer={
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              Inspector: <strong>Platform Auditor</strong>
+            </span>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => { setShowTestVerifyModal(false); setVerificationResult(null); }}
+              >
+                Close Inspector
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ background: "#059669", borderColor: "#059669" }}
+                onClick={() => handleTestVerifyAction()}
+                disabled={isVerifying || !testTicketInput.trim()}
+              >
+                {isVerifying ? "Verifying Token..." : "Verify & Validate Ticket"}
+              </button>
+            </div>
+          </div>
+        }
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <div style={{ background: "rgba(5, 150, 105, 0.08)", border: "1px solid rgba(5, 150, 105, 0.2)", borderRadius: "8px", padding: "0.85rem", fontSize: "0.85rem", color: "var(--text-main)" }}>
+            <strong>Platform Verifier Simulator:</strong> Test barcode and QR token validation against all registered carrier trips. Validate boarding status, test duplicate scan prevention, and verify immediate status synchronization.
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 700 }}>Inspection Terminal / Station</label>
+              <select
+                className="form-control"
+                value={testStationName}
+                onChange={(e) => setTestStationName(e.target.value)}
+              >
+                {stations.map((st) => (
+                  <option key={st.id} value={st.name}>{st.name} ({st.city})</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 700 }}>Verifier / Inspector Identity</label>
+              <input
+                type="text"
+                className="form-control"
+                value={testVerifierName}
+                onChange={(e) => setTestVerifierName(e.target.value)}
+                placeholder="e.g. Platform Auditor"
+              />
+            </div>
+          </div>
+
+          {/* Quick Ticket Selector Bar */}
+          <div>
+            <label className="form-label" style={{ fontWeight: 700, marginBottom: "0.4rem" }}>
+              Select Active Issued Ticket to Verify:
+            </label>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {tickets.slice(0, 5).map((tk) => (
+                <button
+                  key={tk.id}
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    fontSize: "0.75rem",
+                    borderColor: testTicketInput === tk.ticketNumber ? "var(--primary)" : undefined,
+                    background: testTicketInput === tk.ticketNumber ? "rgba(37, 99, 235, 0.1)" : undefined
+                  }}
+                  onClick={() => {
+                    setTestTicketInput(tk.ticketNumber);
+                    handleTestVerifyAction(tk.ticketNumber);
+                  }}
+                >
+                  <code>{tk.ticketNumber}</code> ({tk.passengerName?.split(" ")[0]} - {tk.status})
+                </button>
+              ))}
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: "0.75rem", color: "#ef4444", borderColor: "#fca5a5" }}
+                onClick={() => {
+                  setTestTicketInput("ET-INVALID-9999");
+                  handleTestVerifyAction("ET-INVALID-9999");
+                }}
+              >
+                <code>ET-INVALID-9999</code> (Test Invalid)
+              </button>
+            </div>
+          </div>
+
+          {/* Manual Input */}
+          <div className="form-group">
+            <label className="form-label" style={{ fontWeight: 700 }}>Or Enter Ticket Code / Scan Payload:</label>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. ET-TKT-9001 or booking reference"
+                value={testTicketInput}
+                onChange={(e) => setTestTicketInput(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ background: "#059669", borderColor: "#059669" }}
+                onClick={() => handleTestVerifyAction()}
+                disabled={isVerifying}
+              >
+                <QrCode size={16} /> Verify
+              </button>
+            </div>
+          </div>
+
+          {/* Verification Result Banner */}
+          {verificationResult && (
+            <div
+              style={{
+                borderRadius: "10px",
+                padding: "1rem",
+                border: "1px solid",
+                borderColor:
+                  verificationResult.status === "VALID"
+                    ? "#10b981"
+                    : verificationResult.status === "ALREADY_USED"
+                    ? "#f59e0b"
+                    : "#ef4444",
+                background:
+                  verificationResult.status === "VALID"
+                    ? "rgba(16, 185, 129, 0.08)"
+                    : verificationResult.status === "ALREADY_USED"
+                    ? "rgba(245, 158, 11, 0.08)"
+                    : "rgba(239, 68, 68, 0.08)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.5rem" }}>
+                <span
+                  style={{
+                    padding: "0.25rem 0.65rem",
+                    borderRadius: "6px",
+                    fontWeight: 800,
+                    fontSize: "0.8rem",
+                    color: "#ffffff",
+                    background:
+                      verificationResult.status === "VALID"
+                        ? "#10b981"
+                        : verificationResult.status === "ALREADY_USED"
+                        ? "#f59e0b"
+                        : "#ef4444",
+                  }}
+                >
+                  {verificationResult.status}
+                </span>
+                <strong style={{ fontSize: "0.95rem" }}>{verificationResult.message}</strong>
+              </div>
+
+              {verificationResult.ticket && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginTop: "0.75rem", fontSize: "0.82rem", background: "var(--bg-card, #ffffff)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color, #e2e8f0)" }}>
+                  <div><strong>Passenger:</strong> {verificationResult.ticket.passengerName}</div>
+                  <div><strong>Seat Number:</strong> Seat #{verificationResult.ticket.seatNumber}</div>
+                  <div><strong>Trip Code:</strong> {verificationResult.ticket.tripCode}</div>
+                  <div><strong>Ticket Code:</strong> <code>{verificationResult.ticket.ticketNumber}</code></div>
+                  <div><strong>Route:</strong> {verificationResult.ticket.departureStation} → {verificationResult.ticket.arrivalStation}</div>
+                  <div><strong>Boarding Status:</strong> <span style={{ color: "#10b981", fontWeight: 700 }}>BOARDED / CLEARED</span></div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );

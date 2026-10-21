@@ -4,14 +4,26 @@ import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { CalendarDays, Search, RefreshCw, Eye, CheckCircle2, XCircle, Building2, Bus, User, MapPin } from "lucide-react";
+import { CalendarDays, Search, RefreshCw, Eye, CheckCircle2, XCircle, Building2, Bus, User, MapPin, Armchair, Clock, Lock } from "lucide-react";
 
 export const AdminTripsPage = () => {
-  const { trips = [], organizations = [], updateTripStatus, isLoadingData, fetchAdminData, showToast } = useApp();
+  const {
+    trips = [],
+    organizations = [],
+    bookings = [],
+    updateTripStatus,
+    reserveSeatForPassenger,
+    releaseSeatReservation,
+    changeSeatStatus,
+    isLoadingData,
+    fetchAdminData,
+    showToast,
+  } = useApp();
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTrip, setSelectedTrip] = useState(null);
+  const [seatModalTrip, setSeatModalTrip] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -189,6 +201,15 @@ export const AdminTripsPage = () => {
                           >
                             <Eye size={13} /> View
                           </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
+                            onClick={() => setSeatModalTrip(t)}
+                            title="Inspect and manage coach seat reservations"
+                          >
+                            <Armchair size={13} /> Seats
+                          </button>
                           </div>
                       </td>
                     </tr>
@@ -263,6 +284,112 @@ export const AdminTripsPage = () => {
               <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Assigned Commercial Driver</span>
               <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "0.3rem", marginTop: "2px" }}>
                 <User size={14} color="var(--primary)" /> {selectedTrip.driverName || "Scheduled Fleet Driver"}
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Admin Coach Seats Layout & Reservation Inspection Modal */}
+      <Modal
+        isOpen={Boolean(seatModalTrip)}
+        onClose={() => setSeatModalTrip(null)}
+        title={`Seat Inventory & Coach Map: ${seatModalTrip?.tripCode || ""}`}
+        footer={
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              Carrier: <strong>{seatModalTrip?.organizationName}</strong> • {seatModalTrip?.bookedSeatsCount || 0}/{seatModalTrip?.totalSeats || 45} Booked
+            </span>
+            <button className="btn btn-secondary" onClick={() => setSeatModalTrip(null)}>
+              Close
+            </button>
+          </div>
+        }
+      >
+        {seatModalTrip && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-main, #f8fafc)", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-color)", flexWrap: "wrap", gap: "0.5rem" }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: "0.95rem" }}>{seatModalTrip.routeName}</h4>
+                <p style={{ margin: "2px 0 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  Bus: {seatModalTrip.busPlateNumber} • Departs: {seatModalTrip.departureDate} at {seatModalTrip.departureTime}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={async () => {
+                  const cap = seatModalTrip.totalSeats || 45;
+                  const firstAvail = Array.from({ length: cap }, (_, i) => i + 1).find((n) => {
+                    const bk = bookings.find(b => (b.tripId === seatModalTrip.id || b.tripCode === seatModalTrip.tripCode) && Number(b.seatNumber) === n && b.status === "CONFIRMED");
+                    return !bk;
+                  });
+                  if (firstAvail) {
+                    await reserveSeatForPassenger(seatModalTrip.id, firstAvail, {
+                      name: `Admin Passenger (${firstAvail})`,
+                      phone: "+251911998877",
+                      fare: seatModalTrip.fareAmount || 500,
+                    });
+                  }
+                }}
+              >
+                <Armchair size={13} /> Quick Test Reserve
+              </button>
+            </div>
+
+            {/* Coach Interior Map */}
+            <div style={{ maxWidth: "420px", margin: "0 auto", border: "2px solid var(--border-color, #cbd5e1)", borderRadius: "16px", padding: "1.25rem", background: "var(--bg-card, #ffffff)" }}>
+              <div style={{ textAlign: "center", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "0.75rem", paddingBottom: "0.5rem", borderBottom: "1px dashed var(--border-color)" }}>
+                🚌 FRONT OF BUS • DRIVER CABIN
+              </div>
+
+              <div className="seat-grid-container" style={{ margin: 0, maxWidth: "100%" }}>
+                {Array.from({ length: seatModalTrip.totalSeats || 45 }, (_, i) => i + 1).map((seatNum) => {
+                  const existingBooking = bookings.find(
+                    (b) => (b.tripId === seatModalTrip.id || b.tripCode === seatModalTrip.tripCode) && Number(b.seatNumber) === seatNum && b.status === "CONFIRMED"
+                  );
+                  const state = existingBooking ? "BOOKED" : (seatNum === 3 || seatNum === 4 ? "HELD" : seatNum === 40 ? "BLOCKED" : "AVAILABLE");
+
+                  return (
+                    <div
+                      key={seatNum}
+                      className={`seat-item seat-${state.toLowerCase()}`}
+                      style={{ cursor: "pointer" }}
+                      onClick={async () => {
+                        if (state === "BOOKED") {
+                          if (window.confirm(`Seat #${seatNum} is booked by "${existingBooking?.passengerName}". Cancel and release to Available?`)) {
+                            await releaseSeatReservation(seatModalTrip.id, seatNum);
+                          }
+                        } else if (state === "AVAILABLE") {
+                          const name = window.prompt(`Enter passenger name to reserve Seat #${seatNum}:`, "Passenger " + seatNum);
+                          if (name) {
+                            await reserveSeatForPassenger(seatModalTrip.id, seatNum, {
+                              name: name.trim(),
+                              phone: "+251911000000",
+                              fare: seatModalTrip.fareAmount || 500,
+                            });
+                          }
+                        } else if (state === "HELD") {
+                          if (window.confirm(`Seat #${seatNum} is HELD. Release back to Available?`)) {
+                            await releaseSeatReservation(seatModalTrip.id, seatNum);
+                          }
+                        } else if (state === "BLOCKED") {
+                          if (window.confirm(`Seat #${seatNum} is BLOCKED. Unblock to Available?`)) {
+                            await changeSeatStatus(seatModalTrip.id, seatNum, "AVAILABLE");
+                          }
+                        }
+                      }}
+                      title={`Seat #${seatNum} (${state}) - Click to manage`}
+                    >
+                      <span>{seatNum < 10 ? `0${seatNum}` : seatNum}</span>
+                      <span style={{ fontSize: "0.6rem" }}>{state.substring(0, 4)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ textAlign: "center", fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--border-color)" }}>
+                REAR ROW • EMERGENCY EXIT
               </div>
             </div>
           </div>
