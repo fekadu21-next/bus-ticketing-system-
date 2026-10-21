@@ -4,7 +4,7 @@ import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { QrCode, Search, Eye, ShieldCheck, RefreshCw, Building2, CheckCircle2, XCircle } from "lucide-react";
+import { QrCode, Search, ShieldCheck, RefreshCw, Building2, CheckCircle2, XCircle } from "lucide-react";
 
 export const AdminTicketsPage = () => {
   const {
@@ -12,14 +12,12 @@ export const AdminTicketsPage = () => {
     verifications = [],
     organizations = [],
     stations = [],
-    updateTicketStatus,
     verifyTicket,
     isLoadingData,
     fetchAdminData,
     showToast,
   } = useApp();
 
-  const [selectedTicket, setSelectedTicket] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOrg, setFilterOrg] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -140,15 +138,6 @@ export const AdminTicketsPage = () => {
     }
   };
 
-  const handleStatusChange = (ticketId, newStatus) => {
-    if (updateTicketStatus) {
-      updateTicketStatus(ticketId, newStatus);
-    }
-    if (selectedTicket && selectedTicket.id === ticketId) {
-      setSelectedTicket((prev) => (prev ? { ...prev, status: newStatus } : null));
-    }
-  };
-
   return (
     <div>
       <div className="page-header">
@@ -202,7 +191,7 @@ export const AdminTicketsPage = () => {
                 <Search className="search-icon" size={15} />
                 <input
                   type="text"
-                  placeholder="Search ticket # or QR token..."
+                  placeholder="Search ticket #, passenger, or trip..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -249,22 +238,20 @@ export const AdminTicketsPage = () => {
                 <th>Operator</th>
                 <th>Trip Code</th>
                 <th>Seat #</th>
-                <th>QR Token</th>
                 <th>Status</th>
                 <th>Issued At</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoadingData && tickets.length === 0 ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem" }}>
+                  <td colSpan="7" style={{ textAlign: "center", padding: "2.5rem" }}>
                     <LoadingSpinner label="Loading digital tickets..." />
                   </td>
                 </tr>
               ) : filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
+                  <td colSpan="7" style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-muted)" }}>
                     No digital tickets found matching your query.
                   </td>
                 </tr>
@@ -284,23 +271,10 @@ export const AdminTicketsPage = () => {
                       </td>
                       <td><code>{t.tripCode}</code></td>
                       <td><strong>{t.seatNumber}</strong></td>
-                      <td><code>{t.qrToken}</code></td>
                       <td>
                         <Badge status={currentStatus} />
                       </td>
                       <td>{t.issuedAt}</td>
-                      <td>
-                        <div style={{ display: "flex", gap: "0.3rem", alignItems: "center" }}>
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => setSelectedTicket(t)}
-                            title="Inspect QR Code"
-                          >
-                            <Eye size={13} /> View QR
-                          </button>
-                          </div>
-                      </td>
                     </tr>
                   );
                 })
@@ -400,111 +374,6 @@ export const AdminTicketsPage = () => {
           />
         </div>
       )}
-
-      {/* QR Inspector Modal */}
-      <Modal
-        isOpen={Boolean(selectedTicket)}
-        onClose={() => setSelectedTicket(null)}
-        title={`Digital QR Ticket: ${selectedTicket?.ticketNumber || ""}`}
-        footer={
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <button className="btn btn-secondary" onClick={() => setSelectedTicket(null)}>
-              Close
-            </button>
-            {selectedTicket?.status !== "USED" && (
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  handleStatusChange(selectedTicket.id, "USED");
-                }}
-              >
-                Mark as Boarded / Used
-              </button>
-            )}
-            {selectedTicket?.status !== "VALID" && (
-              <button
-                className="btn btn-success"
-                onClick={() => {
-                  handleStatusChange(selectedTicket.id, "VALID");
-                }}
-              >
-                Re-validate Ticket
-              </button>
-            )}
-            {selectedTicket?.status !== "CANCELLED" && (
-              <button
-                className="btn btn-danger"
-                onClick={() => {
-                  handleStatusChange(selectedTicket.id, "CANCELLED");
-                }}
-              >
-                Cancel / Invalidate
-              </button>
-            )}
-          </div>
-        }
-      >
-        {selectedTicket && (
-          <div style={{ textAlign: "center", padding: "1rem" }}>
-            <div
-              style={{
-                width: "180px",
-                height: "180px",
-                margin: "0 auto 1rem",
-                background: "#000000",
-                borderRadius: "12px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#ffffff",
-                padding: "1rem"
-              }}
-            >
-              <QrCode size={110} color="#ffffff" />
-              <span style={{ fontSize: "0.68rem", marginTop: "0.4rem", letterSpacing: "1px" }}>
-                {selectedTicket.qrToken}
-              </span>
-            </div>
-
-            <h3 style={{ fontSize: "1.1rem", fontWeight: 700, margin: "0.4rem 0" }}>{selectedTicket.passengerName}</h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
-              {selectedTicket.routeName} | Seat <strong>{selectedTicket.seatNumber}</strong>
-            </p>
-
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", margin: "0.5rem 0" }}><Badge status={selectedTicket.status || "VALID"} /></div>
-
-            <div
-              style={{
-                background: "var(--bg-main, #f8fafc)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "6px",
-                padding: "0.75rem",
-                marginTop: "1rem",
-                textAlign: "left",
-                fontSize: "0.78rem"
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
-                <span style={{ color: "var(--text-muted)" }}>Operating Carrier:</span>
-                <strong>{selectedTicket.organizationName}</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
-                <span style={{ color: "var(--text-muted)" }}>Trip Code:</span>
-                <code>{selectedTicket.tripCode}</code>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
-                <span style={{ color: "var(--text-muted)" }}>Seat Number:</span>
-                <strong>{selectedTicket.seatNumber}</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "var(--text-muted)" }}>Issued Date:</span>
-                <strong>{selectedTicket.issuedAt}</strong>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* Admin Test Ticket Verification & QR Inspection Simulator Modal */}
       <Modal
