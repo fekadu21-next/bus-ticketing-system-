@@ -279,19 +279,7 @@ export const ManagerRoutesPage = () => {
                     <td><strong>{r.distanceKm} km</strong></td>
                     <td>{r.estimatedDuration}</td>
                     <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                        <Badge status={r.status} />
-                        <select
-                          className="org-selector-select"
-                          value={r.status}
-                          onChange={(e) => updateRouteStatus(r.id, e.target.value)}
-                          title="Change corridor operational status"
-                          style={{ fontSize: "0.75rem", padding: "0.2rem 0.35rem" }}
-                        >
-                          <option value="ACTIVE">ACTIVE</option>
-                          <option value="INACTIVE">INACTIVE</option>
-                        </select>
-                      </div>
+                      <Badge status={r.status} />
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <div style={{ display: "inline-flex", gap: "0.35rem", alignItems: "center" }}>
@@ -308,6 +296,14 @@ export const ManagerRoutesPage = () => {
                           title="Edit route corridor"
                         >
                           <Pencil size={13} /> {t("common.edit", "Edit")}
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${r.status === "ACTIVE" ? "btn-secondary" : "btn-success"}`}
+                          onClick={() => updateRouteStatus(r.id, r.status === "ACTIVE" ? "INACTIVE" : "ACTIVE")}
+                          title={r.status === "ACTIVE" ? "Deactivate route corridor" : "Activate route corridor"}
+                        >
+                          {r.status === "ACTIVE" ? t("common.deactivate", "Deactivate") : t("common.activate", "Activate")}
                         </button>
                         <button
                           className="btn btn-danger btn-sm"
@@ -505,14 +501,9 @@ export const ManagerRoutesPage = () => {
 
           <div className="form-group">
             <label className="form-label">{t("managerBuses.tableStatus", "Operational Status")}</label>
-            <select
-              className="form-control"
-              value={editStatus}
-              onChange={(e) => setEditStatus(e.target.value)}
-            >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-            </select>
+            <div style={{ padding: "0.25rem 0" }}>
+              <Badge status={editStatus} />
+            </div>
           </div>
         </form>
       </Modal>

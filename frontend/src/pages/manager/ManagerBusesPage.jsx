@@ -282,20 +282,7 @@ export const ManagerBusesPage = () => {
                     <td><span style={{ fontWeight: 700 }}>{b.capacity} {t("managerBuses.seatsSuffix", "Seats")}</span></td>
                     <td>{b.manufactureYear}</td>
                     <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                        <Badge status={b.status} />
-                        <select
-                          className="org-selector-select"
-                          value={b.status}
-                          onChange={(e) => updateBusStatus(b.id, e.target.value)}
-                          title="Change operational status"
-                          style={{ fontSize: "0.75rem", padding: "0.2rem 0.35rem" }}
-                        >
-                          <option value="ACTIVE">ACTIVE</option>
-                          <option value="INACTIVE">INACTIVE</option>
-                          <option value="MAINTENANCE">MAINTENANCE</option>
-                        </select>
-                      </div>
+                      <Badge status={b.status} />
                     </td>
                     <td>{b.lastMaintenance || "—"}</td>
                     <td style={{ textAlign: "right" }}>
@@ -314,6 +301,35 @@ export const ManagerBusesPage = () => {
                         >
                           <Pencil size={13} /> {t("common.edit", "Edit")}
                         </button>
+                        {b.status === "ACTIVE" ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => updateBusStatus(b.id, "INACTIVE")}
+                              title="Deactivate bus"
+                            >
+                              {t("common.deactivate", "Deactivate")}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => updateBusStatus(b.id, "MAINTENANCE")}
+                              title="Send bus to maintenance"
+                            >
+                              Maintenance
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-success btn-sm"
+                            onClick={() => updateBusStatus(b.id, "ACTIVE")}
+                            title="Activate bus for operations"
+                          >
+                            {t("common.activate", "Activate")}
+                          </button>
+                        )}
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => handleOpenDelete(b)}
@@ -521,15 +537,9 @@ export const ManagerBusesPage = () => {
 
           <div className="form-group">
             <label className="form-label">{t("managerBuses.tableStatus", "Operational Status")}</label>
-            <select
-              className="form-control"
-              value={editStatus}
-              onChange={(e) => setEditStatus(e.target.value)}
-            >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-              <option value="MAINTENANCE">MAINTENANCE</option>
-            </select>
+            <div style={{ padding: "0.25rem 0" }}>
+              <Badge status={editStatus} />
+            </div>
           </div>
         </form>
       </Modal>
