@@ -435,8 +435,28 @@ export class PassengerPaymentService {
             bookingId: payment.booking_id,
             transactionReference: payment.transaction_reference,
             amount: Number(payment.amount),
+            idempotencyKey: `payment_failed_${payment.id}`,
           },
+          sendEmail: true,
         });
+      }
+      if (payment.organization_id) {
+        await notificationService.notifyOrganizationStaff(
+          payment.organization_id,
+          ['BOOKING_COORDINATOR', 'OPERATIONAL_MANAGER'],
+          {
+            type: NOTIFICATION_TYPES.PAYMENT_STATUS_CHANGED,
+            priority: NOTIFICATION_PRIORITIES.NORMAL,
+            title: 'Payment Failed',
+            message: `A payment attempt of ${Number(payment.amount)} ETB failed for transaction ${payment.transaction_reference || ''}.`,
+            metadata: {
+              paymentId: payment.id,
+              status: 'FAILED',
+              transactionReference: payment.transaction_reference,
+              idempotencyKey: `org_pay_failed_${payment.id}`,
+            },
+          }
+        ).catch(() => {});
       }
       throw new ApiError(400, 'Payment verification failed. Transaction not completed.');
     }
@@ -487,6 +507,101 @@ export class PassengerPaymentService {
     });
 
     const allSeatNumbers = fullBookings.map((b) => b.seat_number);
+
+    // 1. Notify Passenger: Booking Confirmed, Payment Success, and QR Ticket Issuance
+    if (primaryBooking.passenger_id) {
+      const routeDesc = route ? `${route.origin} to ${route.destination}` : 'your journey';
+      const seatList = allSeatNumbers.join(', ');
+
+      // A. Booking Confirmed
+      notificationService.safeCreateNotification({
+        userId: primaryBooking.passenger_id,
+        type: NOTIFICATION_TYPES.BOOKING_CONFIRMED,
+        priority: NOTIFICATION_PRIORITIES.HIGH,
+        title: 'Booking Confirmed!',
+        message: `Your booking for ${routeDesc} (Seat ${seatList}) has been confirmed.`,
+        metadata: {
+          bookingId: primaryBooking.id,
+          tripId: trip?.id,
+          seatNumbers: allSeatNumbers,
+          idempotencyKey: `booking_confirmed_${primaryBooking.id}`,
+        },
+        sendEmail: true,
+      });
+
+      // B. Payment Success
+      notificationService.safeCreateNotification({
+        userId: primaryBooking.passenger_id,
+        type: NOTIFICATION_TYPES.PAYMENT_SUCCESS,
+        priority: NOTIFICATION_PRIORITIES.NORMAL,
+        title: 'Payment Successful',
+        message: `Your payment of ${result.payment.amount} ${result.payment.currency} was processed successfully.`,
+        metadata: {
+          paymentId: result.payment.id,
+          amount: Number(result.payment.amount),
+          transactionReference: result.payment.transaction_reference,
+          idempotencyKey: `payment_success_${result.payment.id}`,
+        },
+        sendEmail: false,
+      });
+
+      // C. QR Ticket Issuance
+      notificationService.safeCreateNotification({
+        userId: primaryBooking.passenger_id,
+        type: NOTIFICATION_TYPES.QR_TICKET_ISSUED,
+        priority: NOTIFICATION_PRIORITIES.HIGH,
+        title: 'Digital QR Ticket Issued',
+        message: `Your digital boarding ticket(s) are ready. Have your QR code ready at departure.`,
+        metadata: {
+          bookingId: primaryBooking.id,
+          tickets: formattedTickets.map((t) => ({ id: t.id, ticketNumber: t.ticketNumber, seatNumber: t.seatNumber })),
+          idempotencyKey: `qr_issued_${primaryBooking.id}`,
+        },
+        sendEmail: true,
+      });
+    }
+
+    // 2. Notify Operator / Booking Coordinator of new booking & completed payment
+    if (primaryBooking.organization_id) {
+      const routeDesc = route ? `${route.origin} to ${route.destination}` : 'Trip';
+      notificationService.notifyOrganizationStaff(
+        primaryBooking.organization_id,
+        ['BOOKING_COORDINATOR', 'OPERATIONAL_MANAGER'],
+        {
+          type: NOTIFICATION_TYPES.NEW_BOOKING,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'New Booking Confirmed',
+          message: `New booking confirmed on ${routeDesc} for seat(s): ${allSeatNumbers.join(', ')}.`,
+          metadata: {
+            bookingId: primaryBooking.id,
+            tripId: trip?.id,
+            passengerId: primaryBooking.passenger_id,
+            seatNumbers: allSeatNumbers,
+            totalFare: Number(primaryBooking.total_fare),
+            idempotencyKey: `org_new_booking_${primaryBooking.id}`,
+          },
+          sendEmail: false,
+        }
+      ).catch(() => {});
+
+      notificationService.notifyOrganizationStaff(
+        primaryBooking.organization_id,
+        ['BOOKING_COORDINATOR', 'OPERATIONAL_MANAGER'],
+        {
+          type: NOTIFICATION_TYPES.PAYMENT_STATUS_CHANGED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Payment Status Changed: COMPLETED',
+          message: `Payment of ${result.payment.amount} ${result.payment.currency} verified for transaction ${result.payment.transaction_reference}.`,
+          metadata: {
+            paymentId: result.payment.id,
+            status: 'COMPLETED',
+            amount: Number(result.payment.amount),
+            idempotencyKey: `org_pay_completed_${result.payment.id}`,
+          },
+          sendEmail: false,
+        }
+      ).catch(() => {});
+    }
 
     return {
       status: 'SUCCESS',
