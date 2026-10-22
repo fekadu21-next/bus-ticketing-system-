@@ -3,6 +3,7 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AppProvider } from '@/context/AppContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -44,9 +45,11 @@ function App() {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <AppProvider>
-            <MainLayout />
-          </AppProvider>
+          <NotificationProvider>
+            <AppProvider>
+              <MainLayout />
+            </AppProvider>
+          </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

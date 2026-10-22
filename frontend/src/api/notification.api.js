@@ -36,6 +36,38 @@ export const notificationApi = {
     const response = await api.patch('/notifications/read-all');
     return response.data?.data || response.data;
   },
+
+  /**
+   * Get user notification preferences
+   */
+  getPreferences: async () => {
+    const response = await api.get('/notifications/preferences');
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Update user notification preferences
+   */
+  updatePreferences: async (preferences) => {
+    const response = await api.put('/notifications/preferences', preferences);
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Register FCM push device token
+   */
+  registerDeviceToken: async (token, deviceType = 'web') => {
+    const response = await api.post('/notifications/device-token', { token, deviceType });
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Unregister FCM device token
+   */
+  unregisterDeviceToken: async (token) => {
+    const response = await api.delete('/notifications/device-token', { data: { token } });
+    return response.data?.data || response.data;
+  },
 };
 
 export default notificationApi;
