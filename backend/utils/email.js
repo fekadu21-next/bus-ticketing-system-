@@ -27,6 +27,10 @@ export async function sendVerificationEmail(email, firstName, token) {
   console.log(`\n📧 [EMAIL DISPATCH] Verification link for ${email} (${firstName}):`);
   console.log(`🔗 ${verificationUrl}\n`);
 
+  if (process.env.NODE_ENV === 'test' || env.nodeEnv === 'test') {
+    return { success: true, mocked: true };
+  }
+
   const mailClient = getTransporter();
   if (mailClient) {
     try {
@@ -63,6 +67,10 @@ export async function sendPasswordResetEmail(email, firstName, token) {
   console.log(`\n🔑 [EMAIL DISPATCH] Password reset link for ${email} (${firstName}):`);
   console.log(`🔗 ${resetUrl}\n`);
 
+  if (process.env.NODE_ENV === 'test' || env.nodeEnv === 'test') {
+    return { success: true, mocked: true };
+  }
+
   const mailClient = getTransporter();
   if (mailClient) {
     try {
@@ -88,7 +96,58 @@ export async function sendPasswordResetEmail(email, firstName, token) {
   }
 }
 
+/**
+ * Send role-specific notification email with graceful fallback and logging
+ */
+export async function sendNotificationEmail(email, recipientName, { title, message, details = {}, actionUrl, actionLabel }) {
+  console.log(`\n📧 [EMAIL NOTIFICATION] To: ${email} (${recipientName || 'User'})`);
+  console.log(`📌 Subject: ${title}`);
+  console.log(`💬 Message: ${message}`);
+  if (actionUrl) console.log(`🔗 Action URL: ${actionUrl}`);
+
+  if (process.env.NODE_ENV === 'test' || env.nodeEnv === 'test') {
+    return { success: true, mocked: true };
+  }
+
+  const mailClient = getTransporter();
+  if (mailClient) {
+    try {
+      const detailsRows = Object.entries(details || {})
+        .filter(([_, v]) => v !== undefined && v !== null && v !== '')
+        .map(([k, v]) => `<tr><td style="padding: 6px 10px; font-weight: bold; color: #475569; width: 35%;">${k}</td><td style="padding: 6px 10px; color: #1e293b;">${v}</td></tr>`)
+        .join('');
+
+      await mailClient.sendMail({
+        from: `Bus Ticketing Platform <${env.email.from || env.email.user}>`,
+        to: email,
+        subject: title,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px; color: #1e293b;">
+            <div style="border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 16px;">
+              <h2 style="color: #1e3a8a; margin: 0; font-size: 20px;">Bus Ticketing System</h2>
+            </div>
+            <h3 style="color: #0f172a; margin-top: 0; font-size: 18px;">${title}</h3>
+            <p style="font-size: 15px; line-height: 1.5; color: #334155;">Hi ${recipientName || 'there'},</p>
+            <p style="font-size: 15px; line-height: 1.5; color: #334155;">${message}</p>
+            ${detailsRows ? `<table style="width: 100%; border-collapse: collapse; margin: 18px 0; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">${detailsRows}</table>` : ''}
+            ${actionUrl ? `<p style="margin: 24px 0;"><a href="${actionUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">${actionLabel || 'View Details'}</a></p>` : ''}
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated notification. Please do not reply directly to this message.</p>
+          </div>
+        `,
+      });
+      return { success: true };
+    } catch (err) {
+      console.warn('⚠️ Notification email send error:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  return { success: true, bypassed: true };
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetEmail,
+  sendNotificationEmail,
 };

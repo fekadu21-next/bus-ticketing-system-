@@ -18,3 +18,15 @@ export const getNotificationsQuerySchema = z.object({
 export const notificationIdParamSchema = z.object({
   id: z.string({ required_error: 'Notification ID is required' }).regex(uuidRegex, 'Invalid notification UUID format'),
 });
+
+export const updatePreferencesSchema = z.object({
+  emailEnabled: z.boolean().optional(),
+  pushEnabled: z.boolean().optional(),
+  inAppEnabled: z.boolean().optional(),
+  channelPreferences: z.record(z.any()).optional().nullable(),
+});
+
+export const deviceTokenSchema = z.object({
+  token: z.string({ required_error: 'FCM device token is required' }).min(1, 'Token cannot be empty'),
+  deviceType: z.enum(['web', 'android', 'ios']).default('web').optional(),
+});
