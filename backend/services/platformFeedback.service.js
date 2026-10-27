@@ -106,3 +106,4 @@ export class PlatformFeedbackService {
 
 export const platformFeedbackService = new PlatformFeedbackService();
 export default platformFeedbackService;
+

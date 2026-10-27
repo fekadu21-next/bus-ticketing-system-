@@ -250,3 +250,4 @@ export const RateTripModal = ({
 };
 
 export default RateTripModal;
+

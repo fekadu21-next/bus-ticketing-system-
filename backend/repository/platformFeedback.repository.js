@@ -235,3 +235,4 @@ export class PlatformFeedbackRepository {
 
 export const platformFeedbackRepository = new PlatformFeedbackRepository();
 export default platformFeedbackRepository;
+

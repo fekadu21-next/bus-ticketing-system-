@@ -40,3 +40,4 @@ export class PlatformFeedbackController {
 
 export const platformFeedbackController = new PlatformFeedbackController();
 export default platformFeedbackController;
+
