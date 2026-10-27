@@ -49,6 +49,7 @@ import tripRoutes from './coordinator/trip.route.js';
 import bookingRoutes from './coordinator/booking.route.js';
 import paymentRoutes from './coordinator/payment.route.js';
 import reportRoutes from './coordinator/report.route.js';
+import feedbackRoutes from './coordinator/feedback.route.js';
 
 // Coordinator sub-routes scoped to organization
 const requireCoordinator = authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER], (req) => req.params.orgId);
@@ -62,6 +63,7 @@ router.use('/:orgId/trips', requireCoordinator, requireApprovedOrganization, tri
 router.use('/:orgId/bookings', requireCoordinator, requireApprovedOrganization, bookingRoutes);
 router.use('/:orgId/payments', requireCoordinator, paymentRoutes);
 router.use('/:orgId/reports', requireCoordinator, reportRoutes);
+router.use('/:orgId/feedback', requireCoordinator, feedbackRoutes);
 router.use('/:orgId/coordinator', requireCoordinator, requireApprovedOrganization, coordinatorRouter);
 
 // Staff management

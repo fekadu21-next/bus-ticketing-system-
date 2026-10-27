@@ -54,6 +54,14 @@ export class PassengerFeedbackService {
 
     return passengerFeedbackRepository.findPassengerFeedbacks(passengerId);
   }
+
+  async getTripFeedback(passengerId, tripId) {
+    if (!passengerId) {
+      throw new ApiError(401, 'User authentication required.');
+    }
+
+    return passengerFeedbackRepository.findExistingFeedback(tripId, passengerId);
+  }
 }
 
 export const passengerFeedbackService = new PassengerFeedbackService();
