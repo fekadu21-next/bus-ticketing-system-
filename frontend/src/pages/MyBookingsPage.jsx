@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MapPin, Calendar, Clock, Ticket, CheckCircle, XCircle, ArrowRight, Download, X, User, Phone, Mail, Loader2, ShieldCheck, Star, MessageSquareQuote, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getMyBookingsApi } from '@/api/trip.api';
@@ -28,6 +29,7 @@ const formatPrettyDate = (dateStr) => {
 };
 
 export const MyBookingsPage = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, user } = useAuth();
   const [filter, setFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -446,6 +448,15 @@ export const MyBookingsPage = () => {
               >
                 Cancelled
               </button>
+              <button
+                type="button"
+                onClick={() => setShowPlatformFeedback(true)}
+                className="px-4 py-2 rounded-xl text-[12px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200/80 dark:border-blue-800 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                title={t('myBookingsFeedback.giveFeedbackBtn', 'Give Feedback')}
+              >
+                <MessageSquareQuote size={13} />
+                <span>{t('myBookingsFeedback.giveFeedbackBtn', 'Give Feedback')}</span>
+              </button>
             </div>
           </div>
 
@@ -547,20 +558,20 @@ export const MyBookingsPage = () => {
                                 type="button"
                                 onClick={() => handleViewReview(b, existingReview)}
                                 className="h-10 px-3.5 rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
-                                title="View your submitted trip rating"
+                                title={t('tripRating.titleView', 'View your submitted trip rating')}
                               >
                                 <Star size={13} className="fill-amber-400 text-amber-400" />
-                                <span>Rated {existingReview.rating}★</span>
+                                <span>{t('myBookingsFeedback.ratedTripBtn', 'Rated')} {existingReview.rating}★</span>
                               </button>
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => handleRateTrip(b)}
                                 className="h-10 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-sm shadow-amber-500/20 transition-all hover:scale-102"
-                                title="Rate the bus, driver, and trip service"
+                                title={t('tripRating.title', 'Rate Trip & Service Quality')}
                               >
                                 <Star size={13} className="fill-white text-white" />
-                                <span>Rate Trip</span>
+                                <span>{t('myBookingsFeedback.rateTripBtn', 'Rate Trip')}</span>
                               </button>
                             )
                           )}
@@ -600,27 +611,25 @@ export const MyBookingsPage = () => {
           )}
 
           {/* Platform Feedback Suggestion Banner */}
-          <div className="mt-8 p-5 rounded-3xl bg-gradient-to-r from-blue-50/80 via-indigo-50/60 to-purple-50/80 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-blue-200/80 dark:border-blue-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/25">
-                <MessageSquareQuote size={22} />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Have feedback or ideas for our platform?
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Report a bug, suggest features, or share your overall experience with our booking system.
-                </p>
-              </div>
+          <div className="mt-8 p-6 rounded-3xl bg-gradient-to-br from-blue-50/90 via-indigo-50/70 to-purple-50/90 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-blue-200/80 dark:border-blue-900/50 max-w-2xl mx-auto flex flex-col items-center justify-center text-center gap-3.5 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25">
+              <MessageSquareQuote size={24} />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                {t('myBookingsFeedback.feedbackBannerTitle', 'Have feedback or ideas for our platform?')}
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                {t('myBookingsFeedback.feedbackBannerDesc', 'Report a bug, suggest features, or share your overall experience with our booking system.')}
+              </p>
             </div>
             <button
               type="button"
               onClick={() => setShowPlatformFeedback(true)}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 inline-flex items-center gap-2 cursor-pointer shrink-0"
+              className="mt-1 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 inline-flex items-center gap-2 cursor-pointer"
             >
               <Sparkles size={14} />
-              <span>Give Platform Feedback</span>
+              <span>{t('myBookingsFeedback.feedbackBannerBtn', 'Give Platform Feedback')}</span>
             </button>
           </div>
         </div>

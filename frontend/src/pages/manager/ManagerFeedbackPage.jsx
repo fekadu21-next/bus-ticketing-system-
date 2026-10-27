@@ -120,14 +120,13 @@ export const ManagerFeedbackPage = () => {
         <div className="page-title">
           <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
             <Star className="text-amber-500 fill-amber-400" size={26} />
-            Passenger Trip Reviews & Quality Ratings
+            {t("managerFeedback.title", "Passenger Trip Reviews & Quality Ratings")}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Examine passenger feedback and driver service ratings for completed trips operated by{" "}
-            <span className="font-semibold text-slate-700 dark:text-slate-200">
-              {activeOrg?.name || "your organization"}
-            </span>
-            .
+            {t("managerFeedback.subtitle", {
+              organization: activeOrg?.name || "your organization",
+              defaultValue: `Examine passenger feedback and driver service ratings for completed trips operated by ${activeOrg?.name || "your organization"}.`,
+            })}
           </p>
         </div>
 
@@ -139,7 +138,7 @@ export const ManagerFeedbackPage = () => {
             disabled={isRefreshing || loading}
           >
             <RefreshCw size={14} className={isRefreshing ? "spin animate-spin" : ""} />
-            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+            <span>{isRefreshing ? t("common.loading", "Refreshing...") : t("common.refresh", "Refresh")}</span>
           </button>
           <button
             type="button"
@@ -147,7 +146,7 @@ export const ManagerFeedbackPage = () => {
             onClick={() => setShowPlatformFeedbackModal(true)}
           >
             <MessageSquareQuote size={15} />
-            <span>Write Feedback</span>
+            <span>{t("managerFeedback.writeFeedbackBtn", "Write Feedback")}</span>
           </button>
         </div>
       </div>
@@ -157,7 +156,7 @@ export const ManagerFeedbackPage = () => {
         <Info className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" size={18} />
         <div className="text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
           <span className="font-bold">Authentic Passenger Governance: </span>
-          Trip reviews are submitted exclusively by verified passengers who completed their scheduled journey. To protect integrity and passenger trust, reviews cannot be edited or deleted by operational managers.
+          {t("managerFeedback.noReviewsDesc", "Trip reviews are submitted exclusively by verified passengers who completed their scheduled journey. To protect integrity and passenger trust, reviews cannot be edited or deleted by operational managers.")}
         </div>
       </div>
 
@@ -167,7 +166,7 @@ export const ManagerFeedbackPage = () => {
         <div className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Average Rating
+              {t("managerFeedback.avgRating", "Average Rating")}
             </span>
             <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center">
               <Star size={18} className="fill-amber-400 text-amber-400" />
@@ -188,7 +187,7 @@ export const ManagerFeedbackPage = () => {
         <div className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Total Reviews
+              {t("managerFeedback.totalReviews", "Total Reviews")}
             </span>
             <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <MessageSquare size={18} />
@@ -198,7 +197,7 @@ export const ManagerFeedbackPage = () => {
             {Number(stats.totalReviews || 0).toLocaleString()}
           </div>
           <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-            Submitted passenger evaluations
+            {t("managerFeedback.totalReviews", "Submitted passenger evaluations")}
           </div>
         </div>
 
@@ -206,7 +205,7 @@ export const ManagerFeedbackPage = () => {
         <div className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-              Completed Trips Rated
+              {t("managerFeedback.colRoute", "Completed Trips Rated")}
             </span>
             <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <CheckCircle2 size={18} />
@@ -224,7 +223,7 @@ export const ManagerFeedbackPage = () => {
         <div className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-              5-Star Excellence
+              {t("managerFeedback.fiveStarRatio", "5-Star Excellence")}
             </span>
             <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               <TrendingUp size={18} />
@@ -282,7 +281,7 @@ export const ManagerFeedbackPage = () => {
               <Search className="search-icon absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
               <input
                 type="text"
-                placeholder="Search route corridor, comments..."
+                placeholder={t("managerFeedback.searchPlaceholder", "Search route corridor, comments...")}
                 value={searchQuery}
                 onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -295,7 +294,7 @@ export const ManagerFeedbackPage = () => {
               value={ratingFilter}
               onChange={(e) => handleFilterChange(setRatingFilter, e.target.value)}
             >
-              <option value="ALL">All Star Ratings</option>
+              <option value="ALL">{t("managerFeedback.allRatings", "All Star Ratings")}</option>
               <option value="5">5 Stars ★★★★★</option>
               <option value="4">4 Stars ★★★★☆</option>
               <option value="3">3 Stars ★★★☆☆</option>
@@ -312,14 +311,16 @@ export const ManagerFeedbackPage = () => {
         {/* Reviews List */}
         {loading ? (
           <div className="py-20 text-center">
-            <LoadingSpinner label="Loading trip reviews..." />
+            <LoadingSpinner label={t("common.loading", "Loading trip reviews...")} />
           </div>
         ) : feedbacks.length === 0 ? (
           <div className="py-20 text-center">
             <Star size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-            <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">No trip reviews found</h3>
+            <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">
+              {t("managerFeedback.noReviewsTitle", "No trip reviews found")}
+            </h3>
             <p className="text-xs text-slate-400 mt-1">
-              Once passengers complete their journeys and rate your trips, their reviews will appear here.
+              {t("managerFeedback.noReviewsDesc", "Once passengers complete their journeys and rate your trips, their reviews will appear here.")}
             </p>
           </div>
         ) : (
@@ -327,12 +328,12 @@ export const ManagerFeedbackPage = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200/80 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/40 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  <th className="px-5 py-3.5">Trip & Route</th>
-                  <th className="px-5 py-3.5">Bus Fleet</th>
-                  <th className="px-5 py-3.5">Passenger</th>
-                  <th className="px-5 py-3.5">Rating</th>
-                  <th className="px-5 py-3.5">Passenger Review</th>
-                  <th className="px-5 py-3.5">Reviewed Date</th>
+                  <th className="px-5 py-3.5">{t("managerFeedback.colRoute", "Trip & Route")}</th>
+                  <th className="px-5 py-3.5">{t("managerFeedback.colBus", "Bus Fleet")}</th>
+                  <th className="px-5 py-3.5">{t("managerFeedback.colPassenger", "Passenger")}</th>
+                  <th className="px-5 py-3.5">{t("managerFeedback.colRating", "Rating")}</th>
+                  <th className="px-5 py-3.5">{t("managerFeedback.colReview", "Passenger Review")}</th>
+                  <th className="px-5 py-3.5">{t("managerFeedback.colDate", "Reviewed Date")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
@@ -343,7 +344,7 @@ export const ManagerFeedbackPage = () => {
                         day: "numeric",
                         year: "numeric",
                       })
-                    : "Recent";
+                    : t("feedback.recent", "Recent");
 
                   return (
                     <tr
@@ -398,7 +399,7 @@ export const ManagerFeedbackPage = () => {
                             "{fb.comment}"
                           </p>
                         ) : (
-                          <span className="text-slate-400 italic">No written comment provided</span>
+                          <span className="text-slate-400 italic">{t("managerFeedback.noComment", "No written comment provided")}</span>
                         )}
                       </td>
 

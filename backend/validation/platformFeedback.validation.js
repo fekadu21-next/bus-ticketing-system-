@@ -10,7 +10,8 @@ export const submitPlatformFeedbackSchema = z.object({
     .enum(['BUG_REPORT', 'USABILITY', 'FEATURE_REQUEST', 'PERFORMANCE', 'OTHER'], {
       errorMap: () => ({ message: 'Category must be BUG_REPORT, USABILITY, FEATURE_REQUEST, PERFORMANCE, or OTHER' }),
     })
-    .default('OTHER'),
+    .default('OTHER')
+    .optional(),
   comment: z
     .string({ required_error: 'Feedback comment is required' })
     .trim()

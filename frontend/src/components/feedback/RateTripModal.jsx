@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Modal } from "../ui/Modal";
 import { Star, MapPin, Bus, Calendar, Clock, Ticket, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { submitPassengerTripFeedbackApi } from "../../api/feedback.api";
@@ -10,6 +11,7 @@ export const RateTripModal = ({
   existingReview = null,
   onSubmitSuccess,
 }) => {
+  const { t } = useTranslation();
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -42,15 +44,15 @@ export const RateTripModal = ({
   const getRatingLabel = (val) => {
     switch (val) {
       case 1:
-        return "Poor Service";
+        return t("tripRating.rate1", "Poor Service");
       case 2:
-        return "Fair / Needs Improvement";
+        return t("tripRating.rate2", "Fair / Needs Improvement");
       case 3:
-        return "Good Experience";
+        return t("tripRating.rate3", "Good Experience");
       case 4:
-        return "Very Good Journey";
+        return t("tripRating.rate4", "Very Good Journey");
       case 5:
-        return "Excellent Service";
+        return t("tripRating.rate5", "Excellent Service");
       default:
         return "";
     }
@@ -64,7 +66,7 @@ export const RateTripModal = ({
     }
 
     if (!rating || rating < 1 || rating > 5) {
-      setErrorMsg("Please select a rating between 1 and 5 stars.");
+      setErrorMsg(t("feedback.errorRating", "Please select a rating between 1 and 5 stars."));
       return;
     }
 
@@ -82,7 +84,7 @@ export const RateTripModal = ({
         comment: comment.trim(),
       });
 
-      setSuccessMsg("Thank you! Your trip review has been recorded.");
+      setSuccessMsg(t("tripRating.success", "Thank you! Your trip review has been recorded."));
       if (onSubmitSuccess && res?.data?.feedback) {
         onSubmitSuccess(res.data.feedback);
       }
@@ -106,7 +108,11 @@ export const RateTripModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isViewOnly ? "Your Trip Rating & Review" : "Rate Trip & Service Quality"}
+      title={
+        isViewOnly
+          ? t("tripRating.titleView", "Your Trip Rating & Review")
+          : t("tripRating.title", "Rate Trip & Service Quality")
+      }
       maxWidth="520px"
       footer={
         <div className="flex items-center justify-end gap-2.5 w-full">
@@ -116,7 +122,7 @@ export const RateTripModal = ({
             onClick={onClose}
             disabled={submitting}
           >
-            {isViewOnly ? "Close" : "Cancel"}
+            {isViewOnly ? t("common.cancel", "Close") : t("common.cancel", "Cancel")}
           </button>
           {!isViewOnly && (
             <button
@@ -128,17 +134,17 @@ export const RateTripModal = ({
               {submitting ? (
                 <>
                   <Loader2 size={14} className="animate-spin" />
-                  <span>Submitting...</span>
+                  <span>{t("tripRating.submitting", "Submitting...")}</span>
                 </>
               ) : successMsg ? (
                 <>
                   <CheckCircle2 size={14} />
-                  <span>Submitted</span>
+                  <span>{t("tripRating.submitted", "Submitted")}</span>
                 </>
               ) : (
                 <>
                   <Star size={14} />
-                  <span>Submit Review</span>
+                  <span>{t("tripRating.submit", "Submit Review")}</span>
                 </>
               )}
             </button>
@@ -147,6 +153,23 @@ export const RateTripModal = ({
       }
     >
       <div className="space-y-4">
+        {/* Centered Header */}
+        <div className="text-center pt-1 pb-1">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/70 text-amber-500 flex items-center justify-center mx-auto mb-2 border border-amber-100 dark:border-amber-900/60 shadow-xs">
+            <Star size={24} className="fill-amber-400 text-amber-400" />
+          </div>
+          <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+            {isViewOnly
+              ? t("tripRating.titleView", "Your Trip Rating & Review")
+              : t("tripRating.title", "Rate Trip & Service Quality")}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-sm mx-auto">
+            {isViewOnly
+              ? t("tripRating.subtitleView", "Here is the feedback you submitted for this completed journey.")
+              : t("tripRating.subtitle", "Share your experience with the driver, bus comfort, and punctuality.")}
+          </p>
+        </div>
+
         {/* Trip Overview Pill */}
         <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800">
           <div className="flex items-center gap-2 mb-1.5">
@@ -159,7 +182,7 @@ export const RateTripModal = ({
             <span className="font-semibold text-slate-700 dark:text-slate-300">
               {operatorName}
             </span>
-            <span>Seat: {seats}</span>
+            <span>{t("tripRating.seat", "Seat")}: {seats}</span>
           </div>
         </div>
 
@@ -180,7 +203,9 @@ export const RateTripModal = ({
         {/* Star Rating Section */}
         <div className="text-center py-2">
           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-            {isViewOnly ? "Your Rating" : "How was your trip experience?"}
+            {isViewOnly
+              ? t("tripRating.yourRating", "Your Rating")
+              : t("tripRating.rateQuestion", "How was your trip experience?")}
           </label>
           <div className="flex items-center justify-center gap-2.5">
             {[1, 2, 3, 4, 5].map((star) => {
@@ -221,11 +246,13 @@ export const RateTripModal = ({
         {/* Comment Section */}
         <div>
           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-            {isViewOnly ? "Your Review Comment" : "Write a Review (Optional)"}
+            {isViewOnly
+              ? t("tripRating.reviewComments", "Your Review Comment")
+              : t("tripRating.reviewComments", "Write a Review (Optional)")}
           </label>
           {isViewOnly ? (
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 italic">
-              {existingReview.comment ? `"${existingReview.comment}"` : "No written review comment provided."}
+              {existingReview.comment ? `"${existingReview.comment}"` : t("managerFeedback.noComment", "No written review comment provided.")}
             </div>
           ) : (
             <>
@@ -233,12 +260,12 @@ export const RateTripModal = ({
                 rows={4}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Tell us about the driver's driving, bus comfort, cleanliness, AC, punctuality, or customer service..."
+                placeholder={t("tripRating.placeholder", "Tell us about the driver's driving, bus comfort, cleanliness, AC, punctuality, or customer service...")}
                 className="w-full p-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 maxLength={500}
               />
               <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1">
-                <span>Your review helps other passengers choose trusted transport operators.</span>
+                <span>{t("managerFeedback.noReviewsDesc", "Your review helps other passengers choose trusted transport operators.")}</span>
                 <span>{comment.length}/500</span>
               </div>
             </>
@@ -250,4 +277,3 @@ export const RateTripModal = ({
 };
 
 export default RateTripModal;
-

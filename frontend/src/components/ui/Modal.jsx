@@ -26,11 +26,23 @@ export const Modal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2.5 sm:p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-[2px] transition-opacity duration-200" />
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+      }}
+      onClick={onClose}
+    >
+      <div className="fixed inset-0 bg-slate-950/60 dark:bg-black/80 backdrop-blur-[2px] transition-opacity duration-200" />
       <div
-        className="modal-content relative bg-white dark:bg-[#131d33] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-2xl dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] w-full max-h-[94vh] sm:max-h-[90vh] overflow-hidden flex flex-col z-10 transition-colors"
-        style={{ maxWidth: `min(100%, ${maxWidth})` }}
+        className="relative bg-white dark:bg-[#131d33] border border-slate-200 dark:border-slate-700/80 rounded-2xl sm:rounded-3xl shadow-2xl dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] w-full max-h-[92vh] overflow-hidden flex flex-col z-10 transition-colors"
+        style={{
+          maxWidth: `min(100%, ${maxWidth})`,
+          margin: "auto",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#131d33]">

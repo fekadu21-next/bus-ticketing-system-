@@ -21,6 +21,7 @@ import AboutPage from '@/pages/AboutPage';
 import ContactPage from '@/pages/ContactPage';
 import PartnerRegisterPage from '@/pages/PartnerRegisterPage';
 import NotificationsPage from '@/pages/NotificationsPage';
+import FeedbackPage from '@/pages/FeedbackPage';
 
 
 // Auth Pages
@@ -271,6 +272,7 @@ export const AppRoutes = () => {
 
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/feedback" element={<FeedbackPage />} />
       <Route path="/partner-register" element={<PartnerRegisterPage />} />
       <Route path="/partner" element={<Navigate to="/partner-register" replace />} />
 
