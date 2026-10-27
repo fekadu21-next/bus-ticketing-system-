@@ -3,6 +3,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import bcrypt from 'bcryptjs';
 import { logAuditEvent } from '../../utils/auditLogger.js';
 import { ROLES } from '../../constants/index.js';
+import { assertApprovedOrganization } from '../../utils/organizationUtils.js';
 
 export class CoordinatorStaffController {
   /**
@@ -65,6 +66,7 @@ export class CoordinatorStaffController {
    */
   createStaff = asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
+    await assertApprovedOrganization(orgId);
     const { name, firstName, lastName, email, phone, password, role = 'TICKET_VERIFIER', assignedStation } = req.body;
 
     const splitFirst = firstName || (name ? name.split(' ')[0] : 'Staff');
@@ -169,6 +171,7 @@ export class CoordinatorStaffController {
    */
   toggleStaffStatus = asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
+    await assertApprovedOrganization(orgId);
     const { staffId } = req.params;
     const { isActive } = req.body;
 
@@ -212,6 +215,7 @@ export class CoordinatorStaffController {
    */
   updateStaff = asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
+    await assertApprovedOrganization(orgId);
     const { staffId } = req.params;
     const { name, firstName, lastName, phone, role } = req.body;
 
@@ -385,6 +389,7 @@ export class CoordinatorStaffController {
 
   updateDriver = asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
+    await assertApprovedOrganization(orgId);
     const driverId = req.params.driverId || req.params.staffId || req.params.id;
 
     const assignment = await prisma.user_roles.findFirst({
@@ -449,6 +454,7 @@ export class CoordinatorStaffController {
 
   toggleDriverStatus = asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
+    await assertApprovedOrganization(orgId);
     const driverId = req.params.driverId || req.params.staffId || req.params.id;
     const { isActive } = req.body;
 
@@ -501,6 +507,7 @@ export class CoordinatorStaffController {
 
   assignDriverToTrip = asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
+    await assertApprovedOrganization(orgId);
     const tripId = req.params.tripId;
     const { driverId } = req.body;
 
@@ -581,6 +588,7 @@ export class CoordinatorStaffController {
 
   deleteStaff = asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
+    await assertApprovedOrganization(orgId);
     const staffId = req.params.staffId || req.params.driverId || req.params.id;
 
     const assignment = await prisma.user_roles.findFirst({

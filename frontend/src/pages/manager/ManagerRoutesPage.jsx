@@ -5,10 +5,12 @@ import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import { Route as RouteIcon, Plus, Search, RefreshCw, AlertCircle, Eye, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { OrgApprovalBanner } from "../../components/common/OrgApprovalBanner";
 
 export const ManagerRoutesPage = () => {
   const { t } = useTranslation();
   const {
+    activeOrg,
     routes,
     stations,
     selectedOrgId,
@@ -19,6 +21,8 @@ export const ManagerRoutesPage = () => {
     fetchCoordinatorData,
     isLoadingData
   } = useApp();
+
+  const isApproved = activeOrg?.status === "APPROVED" && activeOrg?.isActive !== false && activeOrg?.is_active !== false;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -192,6 +196,8 @@ export const ManagerRoutesPage = () => {
 
   return (
     <div>
+      <OrgApprovalBanner />
+
       <div className="page-header">
         <div className="page-title">
           <h1>{t("managerRoutes.title", "Routes & Corridors")}</h1>
@@ -205,7 +211,12 @@ export const ManagerRoutesPage = () => {
           >
             <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> {t("common.refresh", "Refresh")}
           </button>
-          <button className="btn btn-primary" onClick={openAddModal}>
+          <button
+            className="btn btn-primary"
+            onClick={openAddModal}
+            disabled={!isApproved}
+            title={!isApproved ? "Organization approval required to create routes" : ""}
+          >
             <Plus size={16} /> {t("managerRoutes.createBtn", "Create Operating Route")}
           </button>
         </div>

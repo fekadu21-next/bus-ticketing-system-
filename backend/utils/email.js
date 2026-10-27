@@ -112,8 +112,9 @@ export async function sendNotificationEmail(email, recipientName, { title, messa
   const mailClient = getTransporter();
   if (mailClient) {
     try {
-      const detailsRows = Object.entries(details || {})
-        .filter(([_, v]) => v !== undefined && v !== null && v !== '')
+      const detailsMap = details?.details && typeof details.details === 'object' ? details.details : details;
+      const detailsRows = Object.entries(detailsMap || {})
+        .filter(([k, v]) => v !== undefined && v !== null && v !== '' && typeof v !== 'object')
         .map(([k, v]) => `<tr><td style="padding: 6px 10px; font-weight: bold; color: #475569; width: 35%;">${k}</td><td style="padding: 6px 10px; color: #1e293b;">${v}</td></tr>`)
         .join('');
 

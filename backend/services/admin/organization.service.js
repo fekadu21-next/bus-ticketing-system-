@@ -168,18 +168,36 @@ export class AdminOrganizationService {
     });
 
     // Notify organization coordinators and operational managers
-    notificationService.notifyOrganizationStaff(
-      id,
-      [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER],
-      {
-        type: NOTIFICATION_TYPES.ORGANIZATION_APPROVED,
-        priority: NOTIFICATION_PRIORITIES.HIGH,
-        title: 'Organization Approved',
-        message: `Your organization "${org.name}" has been approved by the platform administrator.`,
-        metadata: { organizationId: id, status: ORGANIZATION_STATUS.APPROVED },
-        sendEmail: true,
-      }
-    ).catch((err) => console.warn('Failed to notify staff of approval:', err.message));
+    try {
+      await notificationService.notifyOrganizationStaff(
+        id,
+        [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER, 'OPERATOR', 'MANAGER'],
+        {
+          type: NOTIFICATION_TYPES.ORGANIZATION_APPROVED,
+          priority: NOTIFICATION_PRIORITIES.HIGH,
+          title: 'Organization Approved',
+          message: `Your organization "${org.name}" has been approved by the platform administrator. You now have full operational access to create and manage trips, routes, buses, and staff.`,
+          metadata: {
+            idempotencyKey: `org_approved_${id}`,
+            organizationId: id,
+            organizationName: org.name,
+            status: ORGANIZATION_STATUS.APPROVED,
+            approvedAt: new Date().toISOString(),
+            actionUrl: '/manager/dashboard',
+            actionLabel: 'Go to Dashboard',
+            details: {
+              'Organization Name': org.name,
+              'Status': 'Approved',
+              'Approval Date': new Date().toLocaleString(),
+              'Operational Access': 'Full Access Enabled',
+            },
+          },
+          sendEmail: true,
+        }
+      );
+    } catch (err) {
+      console.warn('Failed to notify staff of approval:', err.message);
+    }
 
     return {
       id: updated.id,
@@ -232,18 +250,36 @@ export class AdminOrganizationService {
     });
 
     // Notify organization coordinators and operational managers of rejection
-    notificationService.notifyOrganizationStaff(
-      id,
-      [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER],
-      {
-        type: NOTIFICATION_TYPES.ORGANIZATION_REJECTED,
-        priority: NOTIFICATION_PRIORITIES.HIGH,
-        title: 'Organization Application Rejected',
-        message: `Your organization "${org.name}" application was rejected: ${reason || 'Application rejected by platform administrator'}.`,
-        metadata: { organizationId: id, status: ORGANIZATION_STATUS.REJECTED, reason },
-        sendEmail: true,
-      }
-    ).catch((err) => console.warn('Failed to notify staff of rejection:', err.message));
+    try {
+      await notificationService.notifyOrganizationStaff(
+        id,
+        [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER, 'OPERATOR', 'MANAGER'],
+        {
+          type: NOTIFICATION_TYPES.ORGANIZATION_REJECTED,
+          priority: NOTIFICATION_PRIORITIES.HIGH,
+          title: 'Organization Application Rejected',
+          message: `Your organization "${org.name}" application was rejected.${reason ? ` Reason: ${reason}` : ''}`,
+          metadata: {
+            idempotencyKey: `org_rejected_${id}`,
+            organizationId: id,
+            organizationName: org.name,
+            status: ORGANIZATION_STATUS.REJECTED,
+            reason: reason || 'Application rejected by platform administrator',
+            rejectionReason: reason || null,
+            reviewedAt: new Date().toISOString(),
+            details: {
+              'Organization Name': org.name,
+              'Status': 'Rejected',
+              'Reason': reason || 'Application rejected by platform administrator',
+              'Review Date': new Date().toLocaleString(),
+            },
+          },
+          sendEmail: true,
+        }
+      );
+    } catch (err) {
+      console.warn('Failed to notify staff of rejection:', err.message);
+    }
 
     return {
       id: updated.id,

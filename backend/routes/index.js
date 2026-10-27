@@ -12,7 +12,7 @@ import driverRoutes from './driver/index.js';
 import notificationRoutes from './notification.route.js';
 import authenticate from '../middleware/authenticate.middleware.js';
 import { authorizeRole, authorizePermission } from '../middleware/authorize.middleware.js';
-import { authorizeOrgRole } from '../middleware/organization.middleware.js';
+import { authorizeOrgRole, requireApprovedOrganization } from '../middleware/organization.middleware.js';
 import { ROLES, PERMISSIONS } from '../constants/index.js';
 import stationsController from '../controllers/admin/stations.controller.js';
 
@@ -66,7 +66,7 @@ router.use('/notifications', notificationRoutes);
 router.get('/stations', authenticate, stationsController.getStations);
 router.get('/stations/active', authenticate, stationsController.getActiveStations);
 
-router.use('/coordinator', authenticate, authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]), coordinatorRoutes);
+router.use('/coordinator', authenticate, authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]), requireApprovedOrganization, coordinatorRoutes);
 // Public passenger routes (trip search, trip details, trip seats) - no auth required
 router.use('/passenger/trips', passengerTripRoutes);
 // Public passenger payment initialization route - no auth required for initial payment flow

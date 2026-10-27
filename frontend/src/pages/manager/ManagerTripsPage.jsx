@@ -22,10 +22,12 @@ import {
   ShieldCheck,
   Users
 } from "lucide-react";
+import { OrgApprovalBanner } from "../../components/common/OrgApprovalBanner";
 
 export const ManagerTripsPage = () => {
   const { t } = useTranslation();
   const {
+    activeOrg,
     trips,
     routes,
     buses,
@@ -43,6 +45,8 @@ export const ManagerTripsPage = () => {
     fetchCoordinatorData,
     isLoadingData
   } = useApp();
+
+  const isApproved = activeOrg?.status === "APPROVED" && activeOrg?.isActive !== false && activeOrg?.is_active !== false;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -293,6 +297,8 @@ export const ManagerTripsPage = () => {
 
   return (
     <div>
+      <OrgApprovalBanner />
+
       <div className="page-header">
         <div className="page-title">
           <h1>{t("managerTrips.title", "Trips & Schedules")}</h1>
@@ -306,7 +312,12 @@ export const ManagerTripsPage = () => {
           >
             <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> {t("common.refresh", "Refresh")}
           </button>
-          <button className="btn btn-primary" onClick={openWizard}>
+          <button
+            className="btn btn-primary"
+            onClick={openWizard}
+            disabled={!isApproved}
+            title={!isApproved ? "Organization approval required to schedule trips" : ""}
+          >
             <Plus size={16} /> {t("managerTrips.scheduleBtn", "Schedule New Trip")}
           </button>
         </div>

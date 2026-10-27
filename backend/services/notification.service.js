@@ -234,7 +234,7 @@ export class NotificationService {
     if (!organizationId) return [];
 
     const targetRoles = Array.isArray(roles) ? roles : [roles];
-    const userRoles = await client.user_roles.findMany({
+    let userRoles = await client.user_roles.findMany({
       where: {
         organization_id: organizationId,
         roles: {
@@ -247,21 +247,79 @@ export class NotificationService {
       distinct: ['user_id'],
     });
 
+    if (userRoles.length === 0) {
+      // Fallback: notify any staff member associated with this organization
+      userRoles = await client.user_roles.findMany({
+        where: {
+          organization_id: organizationId,
+        },
+        select: {
+          user_id: true,
+        },
+        distinct: ['user_id'],
+      });
+    }
+
     if (userRoles.length === 0) return [];
 
-    const notifications = userRoles.map((ur) => ({
+    const idempotencyKey = metadata?.idempotencyKey || (organizationId ? `${type}:${organizationId}` : null);
+    const enrichedMetadata = {
+      ...(metadata || {}),
+      organizationId,
+      ...(idempotencyKey ? { idempotencyKey } : {}),
+    };
+
+    // Duplicate prevention: filter out users who already received this notification for this event/org
+    let recipientsToNotify = userRoles;
+    if (organizationId || idempotencyKey) {
+      try {
+        const existingNotifications = await client.notifications.findMany({
+          where: {
+            user_id: { in: userRoles.map((ur) => ur.user_id) },
+            type,
+          },
+          select: {
+            id: true,
+            user_id: true,
+            metadata: true,
+          },
+        });
+
+        const alreadyNotifiedUserIds = new Set(
+          existingNotifications
+            .filter((n) => {
+              if (!n.metadata) return false;
+              const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+              if (idempotencyKey && (meta.idempotencyKey === idempotencyKey || meta.eventId === idempotencyKey)) return true;
+              if (organizationId && meta.organizationId === organizationId) return true;
+              return false;
+            })
+            .map((n) => n.user_id)
+        );
+
+        recipientsToNotify = userRoles.filter((ur) => !alreadyNotifiedUserIds.has(ur.user_id));
+      } catch (checkErr) {
+        console.warn('Idempotency check warning in notifyOrganizationStaff:', checkErr.message);
+      }
+    }
+
+    if (recipientsToNotify.length === 0) {
+      return [];
+    }
+
+    const notifications = recipientsToNotify.map((ur) => ({
       userId: ur.user_id,
       type,
       priority,
       title,
       message,
-      metadata: { ...metadata, organizationId },
+      metadata: enrichedMetadata,
     }));
 
     await notificationRepository.createMany(notifications, client);
 
     // Multi-channel dispatch for each staff member asynchronously
-    userRoles.forEach((ur) => {
+    recipientsToNotify.forEach((ur) => {
       this.dispatchExternalChannels(
         {
           user_id: ur.user_id,
@@ -269,7 +327,7 @@ export class NotificationService {
           priority,
           title,
           message,
-          metadata: { ...metadata, organizationId },
+          metadata: enrichedMetadata,
           created_at: new Date(),
         },
         {
@@ -278,7 +336,7 @@ export class NotificationService {
           priority,
           title,
           message,
-          metadata: { ...metadata, organizationId },
+          metadata: enrichedMetadata,
           sendEmail,
         }
       ).catch((err) => console.warn('Staff notification dispatch error:', err.message));
@@ -308,13 +366,58 @@ export class NotificationService {
 
     if (adminRoles.length === 0) return [];
 
-    const notifications = adminRoles.map((ur) => ({
+    const organizationId = metadata?.organizationId;
+    const idempotencyKey = metadata?.idempotencyKey || (organizationId ? `${type}:${organizationId}` : null);
+    const enrichedMetadata = {
+      ...(metadata || {}),
+      ...(idempotencyKey ? { idempotencyKey } : {}),
+    };
+
+    // Duplicate prevention: filter out admins who already received this notification for this event/org
+    let recipientsToNotify = adminRoles;
+    if (organizationId || idempotencyKey) {
+      try {
+        const existingNotifications = await client.notifications.findMany({
+          where: {
+            user_id: { in: adminRoles.map((ur) => ur.user_id) },
+            type,
+          },
+          select: {
+            id: true,
+            user_id: true,
+            metadata: true,
+          },
+        });
+
+        const alreadyNotifiedUserIds = new Set(
+          existingNotifications
+            .filter((n) => {
+              if (!n.metadata) return false;
+              const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+              if (idempotencyKey && (meta.idempotencyKey === idempotencyKey || meta.eventId === idempotencyKey)) return true;
+              if (organizationId && meta.organizationId === organizationId) return true;
+              return false;
+            })
+            .map((n) => n.user_id)
+        );
+
+        recipientsToNotify = adminRoles.filter((ur) => !alreadyNotifiedUserIds.has(ur.user_id));
+      } catch (checkErr) {
+        console.warn('Idempotency check warning in notifyAdmins:', checkErr.message);
+      }
+    }
+
+    if (recipientsToNotify.length === 0) {
+      return [];
+    }
+
+    const notifications = recipientsToNotify.map((ur) => ({
       userId: ur.user_id,
       type,
       priority,
       title,
       message,
-      metadata,
+      metadata: enrichedMetadata,
     }));
 
     await notificationRepository.createMany(notifications, client);
@@ -326,7 +429,7 @@ export class NotificationService {
         priority,
         title,
         message,
-        metadata,
+        metadata: enrichedMetadata,
         createdAt: new Date(),
       });
     } catch (e) {
@@ -334,7 +437,7 @@ export class NotificationService {
     }
 
     // Multi-channel dispatch for each admin
-    adminRoles.forEach((ur) => {
+    recipientsToNotify.forEach((ur) => {
       this.dispatchExternalChannels(
         {
           user_id: ur.user_id,
@@ -342,7 +445,7 @@ export class NotificationService {
           priority,
           title,
           message,
-          metadata,
+          metadata: enrichedMetadata,
           created_at: new Date(),
         },
         {
@@ -351,7 +454,7 @@ export class NotificationService {
           priority,
           title,
           message,
-          metadata,
+          metadata: enrichedMetadata,
           sendEmail,
         }
       ).catch((err) => console.warn('Admin notification dispatch error:', err.message));

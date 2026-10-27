@@ -5,10 +5,12 @@ import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import { Bus, Plus, Search, AlertCircle, RefreshCw, Eye, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { OrgApprovalBanner } from "../../components/common/OrgApprovalBanner";
 
 export const ManagerBusesPage = () => {
   const { t } = useTranslation();
   const {
+    activeOrg,
     buses,
     selectedOrgId,
     addBus,
@@ -18,6 +20,8 @@ export const ManagerBusesPage = () => {
     fetchCoordinatorData,
     isLoadingData
   } = useApp();
+
+  const isApproved = activeOrg?.status === "APPROVED" && activeOrg?.isActive !== false && activeOrg?.is_active !== false;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -193,6 +197,8 @@ export const ManagerBusesPage = () => {
 
   return (
     <div>
+      <OrgApprovalBanner />
+
       <div className="page-header">
         <div className="page-title">
           <h1>{t("managerBuses.title", "Fleet & Buses")}</h1>
@@ -206,7 +212,12 @@ export const ManagerBusesPage = () => {
           >
             <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> {t("common.refresh", "Refresh")}
           </button>
-          <button className="btn btn-primary" onClick={() => { setFormError(""); setShowAddModal(true); }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => { setFormError(""); setShowAddModal(true); }}
+            disabled={!isApproved}
+            title={!isApproved ? "Organization approval required to register buses" : ""}
+          >
             <Plus size={16} /> {t("managerBuses.registerBtn", "Register New Bus")}
           </button>
         </div>

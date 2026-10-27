@@ -1,11 +1,10 @@
 import routeRepository from '../../repository/coordinator/route.repository.js';
 import ApiError from '../../utils/apiError.js';
+import { assertApprovedOrganization } from '../../utils/organizationUtils.js';
 
 export class RouteService {
   async createRoute(organizationId, routeData) {
-    if (!organizationId) {
-      throw new ApiError(400, 'Organization context is required.');
-    }
+    await assertApprovedOrganization(organizationId);
 
     const origin = routeData.origin?.trim();
     const destination = routeData.destination?.trim();
@@ -66,6 +65,7 @@ export class RouteService {
   }
 
   async updateRoute(routeId, organizationId, updateData) {
+    await assertApprovedOrganization(organizationId);
     const route = await this.getRouteById(routeId, organizationId);
 
     const newOriginStationId = updateData.originStationId || route.origin_station_id;
@@ -91,6 +91,7 @@ export class RouteService {
   }
 
   async deleteRoute(routeId, organizationId) {
+    await assertApprovedOrganization(organizationId);
     await this.getRouteById(routeId, organizationId);
 
     const activeTripsCount = await routeRepository.countActiveTrips(routeId);

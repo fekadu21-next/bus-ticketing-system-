@@ -7,12 +7,11 @@ import { ROLES } from '../../constants/index.js';
 import { logAuditEvent } from '../../utils/auditLogger.js';
 import notificationService from '../notification.service.js';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
+import { assertApprovedOrganization } from '../../utils/organizationUtils.js';
 
 export class TripService {
   async createTrip(organizationId, tripData) {
-    if (!organizationId) {
-      throw new ApiError(400, 'Organization context is required.');
-    }
+    await assertApprovedOrganization(organizationId);
 
     let busId = tripData.busId;
     let routeId = tripData.routeId;
@@ -229,6 +228,7 @@ export class TripService {
   }
 
   async updateTrip(tripId, organizationId, updateData) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
 
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
@@ -377,6 +377,7 @@ export class TripService {
   }
 
   async deleteTrip(tripId, organizationId, user = null, reqMeta = {}) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
 
     // Business check: cannot delete trips with active bookings
@@ -401,6 +402,7 @@ export class TripService {
   }
 
   async assignVerifier(tripId, organizationId, verifierId, managerUser = null, reqMeta = {}) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
       throw new ApiError(400, `Cannot assign ticket verifier to trip with status '${trip.status}'.`);
@@ -453,6 +455,7 @@ export class TripService {
   }
 
   async assignDriver(tripId, organizationId, driverId, managerUser = null, reqMeta = {}) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
       throw new ApiError(400, `Cannot assign driver to trip with status '${trip.status}'.`);
@@ -505,6 +508,7 @@ export class TripService {
   }
 
   async cancelTrip(tripId, organizationId) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
 
     if (trip.status === 'CANCELLED') {
@@ -571,6 +575,7 @@ export class TripService {
   }
 
   async publishTrip(tripId, organizationId) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
       throw new ApiError(400, `Cannot publish trip with status '${trip.status}'.`);
@@ -580,6 +585,7 @@ export class TripService {
   }
 
   async unpublishTrip(tripId, organizationId) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
       throw new ApiError(400, `Cannot unpublish trip with status '${trip.status}'.`);
@@ -595,6 +601,7 @@ export class TripService {
   }
 
   async updateSeatStatus(tripId, seatId, organizationId, status) {
+    await assertApprovedOrganization(organizationId);
     await this.getTripById(tripId, organizationId);
 
     const seat = await tripRepository.findSeatById(seatId, tripId);
@@ -610,6 +617,7 @@ export class TripService {
   }
 
   async batchUpdateSeats(tripId, organizationId, seatNumbers, status) {
+    await assertApprovedOrganization(organizationId);
     await this.getTripById(tripId, organizationId);
     return tripRepository.updateSeatsBatch(tripId, seatNumbers, status);
   }
