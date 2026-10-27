@@ -5,10 +5,12 @@ import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import { QrCode, Plus, Search, ShieldCheck, RefreshCw, Eye, Pencil, Trash2, AlertCircle, AlertTriangle } from "lucide-react";
+import { OrgApprovalBanner } from "../../components/common/OrgApprovalBanner";
 
 export const ManagerVerifiersPage = () => {
   const { t } = useTranslation();
   const {
+    activeOrg,
     verifiers,
     stations,
     tickets,
@@ -23,6 +25,8 @@ export const ManagerVerifiersPage = () => {
     isLoadingData,
     showToast,
   } = useApp();
+
+  const isApproved = activeOrg?.status === "APPROVED" && activeOrg?.isActive !== false && activeOrg?.is_active !== false;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -57,14 +61,6 @@ export const ManagerVerifiersPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
-
-  // Live Ticket Verification Testing Terminal State
-  const [showTestVerifyModal, setShowTestVerifyModal] = useState(false);
-  const [testTicketInput, setTestTicketInput] = useState(tickets[0]?.ticketNumber || "ET-TKT-9001");
-  const [testStationName, setTestStationName] = useState(stations[0]?.name || "Addis Ababa Autobus Terra");
-  const [testVerifierName, setTestVerifierName] = useState("");
-  const [verificationResult, setVerificationResult] = useState(null);
-  const [isVerifying, setIsVerifying] = useState(false);
 
   React.useEffect(() => {
     setCurrentPage(1);
@@ -105,49 +101,6 @@ export const ManagerVerifiersPage = () => {
       currentPage * pageSize
     );
   }, [filteredVerifiers, currentPage, pageSize]);
-
-  const handleTestVerifyAction = async (overrideCode = null) => {
-    const code = overrideCode || testTicketInput;
-    if (!code || !code.trim()) {
-      showToast("Please enter or select a ticket code to test.", "error");
-      return;
-    }
-    setIsVerifying(true);
-    setVerificationResult(null);
-    try {
-      const activeVerifier = testVerifierName || orgVerifiers[0]?.name || "Hiwot Berhanu";
-      const result = await verifyTicket({
-        ticketNumber: code.trim(),
-        stationName: testStationName || stations[0]?.name || "Addis Ababa Autobus Terra",
-        verifierName: activeVerifier,
-      });
-      setVerificationResult(result);
-    } catch (err) {
-      setVerificationResult({
-        valid: false,
-        status: "ERROR",
-        message: err.message || "Verification failed.",
-      });
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleQuickTestAdd = async () => {
-    const testNames = ["Tsedey Alemu", "Kassahun Desta", "Bethel Worku", "Yohannes Hailu", "Rahel Girma"];
-    const randomName = testNames[Math.floor(Math.random() * testNames.length)] + ` (${Math.floor(10 + Math.random() * 90)})`;
-    try {
-      await addVerifier({
-        name: randomName,
-        phone: "+25191" + Math.floor(1000000 + Math.random() * 9000000),
-        email: `${randomName.toLowerCase().replace(/[^a-z]/g, "")}@operator.et`,
-        password: "Verifier@123456",
-        assignedStation: stations[0]?.name || "Addis Ababa Autobus Terra",
-      });
-    } catch {
-      // toast handled
-    }
-  };
 
   const handleAddVerifier = async (e) => {
     if (e) e.preventDefault();
@@ -238,6 +191,8 @@ export const ManagerVerifiersPage = () => {
 
   return (
     <div>
+      <OrgApprovalBanner />
+
       <div className="page-header">
         <div className="page-title">
           <h1>{t("managerVerifiers.title", "Ticket Verifiers")}</h1>
@@ -252,22 +207,11 @@ export const ManagerVerifiersPage = () => {
             <RefreshCw size={15} className={isLoadingData ? "spin" : ""} /> {t("common.refresh", "Refresh")}
           </button>
           <button
-            className="btn btn-secondary"
-            style={{ borderColor: "var(--primary)", color: "var(--primary)", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
-            onClick={handleQuickTestAdd}
-            title="Quickly register a test ticket verifier"
-          >
-            <ShieldCheck size={15} /> Test Add Verifier
-          </button>
-          <button
             className="btn btn-primary"
-            style={{ background: "#059669", borderColor: "#059669", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
-            onClick={() => { setVerificationResult(null); setShowTestVerifyModal(true); }}
-            title="Open Interactive Ticket Verification & QR Scanning Terminal"
+            onClick={() => { resetForm(); setShowAddModal(true); }}
+            disabled={!isApproved}
+            title={!isApproved ? "Organization approval required to register ticket verifiers" : ""}
           >
-            <QrCode size={15} /> Test Ticket Verification
-          </button>
-          <button className="btn btn-primary" onClick={() => { resetForm(); setShowAddModal(true); }}>
             <Plus size={16} /> {t("managerVerifiers.registerBtn", "Register Ticket Verifier")}
           </button>
         </div>
@@ -537,212 +481,7 @@ export const ManagerVerifiersPage = () => {
         </form>
       </Modal>
 
-      {/* Interactive Ticket Verification & QR Scanning Terminal Modal */}
-      <Modal
-        isOpen={showTestVerifyModal}
-        onClose={() => { setShowTestVerifyModal(false); setVerificationResult(null); }}
-        title="Live Ticket Verification & QR Inspection Terminal"
-        footer={
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-              Terminal Officer: <strong>{testVerifierName || orgVerifiers[0]?.name || "Station Verifier"}</strong>
-            </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button
-                className="btn btn-secondary"
-                onClick={() => { setShowTestVerifyModal(false); setVerificationResult(null); }}
-              >
-                Close Terminal
-              </button>
-              <button
-                className="btn btn-primary"
-                style={{ background: "#059669", borderColor: "#059669" }}
-                onClick={() => handleTestVerifyAction()}
-                disabled={isVerifying || !testTicketInput.trim()}
-              >
-                {isVerifying ? "Verifying Token..." : "Verify & Check-in Ticket"}
-              </button>
-            </div>
-          </div>
-        }
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          <div style={{ background: "rgba(5, 150, 105, 0.08)", border: "1px solid rgba(5, 150, 105, 0.2)", borderRadius: "8px", padding: "0.85rem", fontSize: "0.85rem", color: "var(--text-main)" }}>
-            <strong>Operational Verifier Scanner:</strong> Test barcode and QR code payloads against issued passenger tickets in real time. Validate passenger boarding, detect duplicates, and record verifiable verification audits.
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 700 }}>Select Active Station / Terminal</label>
-              <select
-                className="form-control"
-                value={testStationName}
-                onChange={(e) => setTestStationName(e.target.value)}
-              >
-                {stations.map((st) => (
-                  <option key={st.id} value={st.name}>{st.name} ({st.city})</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 700 }}>Authorized Verifier Officer</label>
-              <select
-                className="form-control"
-                value={testVerifierName}
-                onChange={(e) => setTestVerifierName(e.target.value)}
-              >
-                {orgVerifiers.map((v) => (
-                  <option key={v.id} value={v.name}>{v.name} ({v.status})</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Quick Ticket Selector Bar */}
-          <div>
-            <label className="form-label" style={{ fontWeight: 700, marginBottom: "0.4rem" }}>
-              Quick Select Sample Ticket to Test:
-            </label>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              {tickets.slice(0, 4).map((tk) => (
-                <button
-                  key={tk.id}
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  style={{
-                    fontSize: "0.75rem",
-                    borderColor: testTicketInput === tk.ticketNumber ? "var(--primary)" : undefined,
-                    background: testTicketInput === tk.ticketNumber ? "rgba(37, 99, 235, 0.1)" : undefined
-                  }}
-                  onClick={() => {
-                    setTestTicketInput(tk.ticketNumber);
-                    handleTestVerifyAction(tk.ticketNumber);
-                  }}
-                >
-                  <code>{tk.ticketNumber}</code> ({tk.passengerName?.split(" ")[0]} - {tk.status})
-                </button>
-              ))}
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                style={{ fontSize: "0.75rem", color: "#ef4444", borderColor: "#fca5a5" }}
-                onClick={() => {
-                  setTestTicketInput("ET-INVALID-9999");
-                  handleTestVerifyAction("ET-INVALID-9999");
-                }}
-              >
-                <code>ET-INVALID-9999</code> (Test Invalid)
-              </button>
-            </div>
-          </div>
-
-          {/* Manual Input */}
-          <div className="form-group">
-            <label className="form-label" style={{ fontWeight: 700 }}>Or Enter Ticket Code / Scan Payload:</label>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. ET-TKT-9001 or booking reference"
-                value={testTicketInput}
-                onChange={(e) => setTestTicketInput(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn btn-primary"
-                style={{ background: "#059669", borderColor: "#059669" }}
-                onClick={() => handleTestVerifyAction()}
-                disabled={isVerifying}
-              >
-                <QrCode size={16} /> Verify
-              </button>
-            </div>
-          </div>
-
-          {/* Verification Result Banner */}
-          {verificationResult && (
-            <div
-              style={{
-                borderRadius: "10px",
-                padding: "1rem",
-                border: "1px solid",
-                borderColor:
-                  verificationResult.status === "VALID"
-                    ? "#10b981"
-                    : verificationResult.status === "ALREADY_USED"
-                    ? "#f59e0b"
-                    : "#ef4444",
-                background:
-                  verificationResult.status === "VALID"
-                    ? "rgba(16, 185, 129, 0.08)"
-                    : verificationResult.status === "ALREADY_USED"
-                    ? "rgba(245, 158, 11, 0.08)"
-                    : "rgba(239, 68, 68, 0.08)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.5rem" }}>
-                <span
-                  style={{
-                    padding: "0.25rem 0.65rem",
-                    borderRadius: "6px",
-                    fontWeight: 800,
-                    fontSize: "0.8rem",
-                    color: "#ffffff",
-                    background:
-                      verificationResult.status === "VALID"
-                        ? "#10b981"
-                        : verificationResult.status === "ALREADY_USED"
-                        ? "#f59e0b"
-                        : "#ef4444",
-                  }}
-                >
-                  {verificationResult.status}
-                </span>
-                <strong style={{ fontSize: "0.95rem" }}>{verificationResult.message}</strong>
-              </div>
-
-              {verificationResult.ticket && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginTop: "0.75rem", fontSize: "0.82rem", background: "var(--bg-card, #ffffff)", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-color, #e2e8f0)" }}>
-                  <div><strong>Passenger:</strong> {verificationResult.ticket.passengerName}</div>
-                  <div><strong>Seat Number:</strong> Seat #{verificationResult.ticket.seatNumber}</div>
-                  <div><strong>Trip Code:</strong> {verificationResult.ticket.tripCode}</div>
-                  <div><strong>Ticket Code:</strong> <code>{verificationResult.ticket.ticketNumber}</code></div>
-                  <div><strong>Route:</strong> {verificationResult.ticket.departureStation} → {verificationResult.ticket.arrivalStation}</div>
-                  <div><strong>Boarding Status:</strong> <span style={{ color: "#10b981", fontWeight: 700 }}>BOARDED / CLEARED</span></div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Recent Verifications Log preview */}
-          <div>
-            <h4 style={{ margin: "0 0 0.5rem", fontSize: "0.85rem", fontWeight: 700 }}>Recent Terminal Verifications ({verifications.length}):</h4>
-            <div style={{ maxHeight: "160px", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
-              <table className="data-table" style={{ fontSize: "0.78rem" }}>
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Ticket #</th>
-                    <th>Passenger</th>
-                    <th>Result</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {verifications.slice(0, 5).map((v) => (
-                    <tr key={v.id}>
-                      <td>{v.scannedAt}</td>
-                      <td><code>{v.ticketNumber}</code></td>
-                      <td>{v.passengerName}</td>
-                      <td><Badge status={v.status} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      
 
       {/* Delete Verifier Confirmation Modal */}
       <Modal
