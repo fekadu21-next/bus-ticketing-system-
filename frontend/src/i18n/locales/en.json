@@ -548,6 +548,8 @@
     "analytics": "Analytics & Settings",
     "reports": "Reports & KPIs",
     "audit": "Audit Logs",
+    "platformFeedback": "Platform Feedback",
+    "tripFeedback": "Trip Reviews",
     "settings": "Settings",
     "coreOperations": "Core Operations",
     "fleetScheduling": "Fleet & Scheduling",

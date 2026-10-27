@@ -48,6 +48,7 @@ import { AdminPaymentsPage } from "../pages/admin/AdminPaymentsPage";
 import { AdminReportsPage } from "../pages/admin/AdminReportsPage";
 import { AdminAuditLogsPage } from "../pages/admin/AdminAuditLogsPage";
 import { AdminSettingsPage } from "../pages/admin/AdminSettingsPage";
+import { AdminFeedbackPage } from "../pages/admin/AdminFeedbackPage";
 
 // Manager Pages
 import { ManagerDashboardPage } from "../pages/manager/ManagerDashboardPage";
@@ -59,6 +60,7 @@ import { ManagerBookingsPage } from "../pages/manager/ManagerBookingsPage";
 import { ManagerPaymentsPage } from "../pages/manager/ManagerPaymentsPage";
 import { ManagerDriversPage } from "../pages/manager/ManagerDriversPage";
 import { ManagerVerifiersPage } from "../pages/manager/ManagerVerifiersPage";
+import { ManagerFeedbackPage } from "../pages/manager/ManagerFeedbackPage";
 import { ManagerReportsPage } from "../pages/manager/ManagerReportsPage";
 import { ManagerSettingsPage } from "../pages/manager/ManagerSettingsPage";
 
@@ -180,6 +182,8 @@ export const ManagementConsole = () => {
         return <AdminReportsPage />;
       case "audit":
         return <AdminAuditLogsPage />;
+      case "feedback":
+        return <AdminFeedbackPage />;
       case "settings":
         return <AdminSettingsPage />;
       default:
@@ -211,6 +215,8 @@ export const ManagementConsole = () => {
         return <ManagerDriversPage />;
       case "verifiers":
         return <ManagerVerifiersPage />;
+      case "feedback":
+        return <ManagerFeedbackPage />;
       case "reports":
         return <ManagerReportsPage />;
       case "settings":

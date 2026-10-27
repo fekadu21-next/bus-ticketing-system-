@@ -32,6 +32,8 @@ import {
   AlertTriangle,
   Info,
   LogOut,
+  MessageSquareQuote,
+  Star,
 } from "lucide-react";
 
 import logoImg from "../../assets/logo.png";
@@ -269,6 +271,7 @@ export const Sidebar = () => {
       audit: true,
       drivers: true,
       verifiers: true,
+      feedback: true,
       notifications: true,
     };
     setSeenBadges(allSeen);
@@ -492,6 +495,7 @@ export const Sidebar = () => {
     },
     { id: "reports", label: t("sidebar.reports", "Reports & KPIs"), icon: BarChart3 },
     { id: "audit", label: t("sidebar.audit", "Audit Logs"), icon: FileSpreadsheet },
+    { id: "feedback", label: t("sidebar.platformFeedback", "Platform Feedback"), icon: MessageSquareQuote },
     { id: "settings", label: t("sidebar.settings", "Settings"), icon: Settings },
   ];
 
@@ -540,6 +544,7 @@ export const Sidebar = () => {
     },
     { id: "drivers", label: t("sidebar.drivers", "Drivers"), icon: UserCheck, notifCategory: "STAFF" },
     { id: "verifiers", label: t("sidebar.verifiers", "Ticket Verifiers"), icon: QrCode, notifCategory: "STAFF" },
+    { id: "feedback", label: t("sidebar.tripFeedback", "Trip Reviews"), icon: Star },
     { id: "reports", label: t("sidebar.reports", "Reports & KPIs"), icon: BarChart3 },
     { id: "settings", label: t("sidebar.settings", "Settings"), icon: Settings },
   ];
