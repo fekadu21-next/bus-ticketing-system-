@@ -4,11 +4,13 @@ import { useApp } from "../../context/AppContext";
 import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { getCoordinatorTripFeedbackApi } from "../../api/feedback.api";
+import { PlatformFeedbackModal } from "../../components/feedback/PlatformFeedbackModal";
 import {
   Star,
   Search,
   RefreshCw,
   MessageSquare,
+  MessageSquareQuote,
   ShieldAlert,
   Calendar,
   Bus,
@@ -40,6 +42,7 @@ export const ManagerFeedbackPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [showPlatformFeedbackModal, setShowPlatformFeedbackModal] = useState(false);
   const pageSize = 10;
 
   const fetchReviews = useCallback(
@@ -111,7 +114,7 @@ export const ManagerFeedbackPage = () => {
   }, [stats]);
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-6xl mx-auto space-y-6">
       {/* Page Header */}
       <div className="page-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="page-title">
@@ -128,14 +131,25 @@ export const ManagerFeedbackPage = () => {
           </p>
         </div>
 
-        <button
-          className="btn btn-secondary inline-flex items-center gap-2 self-start sm:self-auto"
-          onClick={() => fetchReviews(true)}
-          disabled={isRefreshing || loading}
-        >
-          <RefreshCw size={14} className={isRefreshing ? "spin animate-spin" : ""} />
-          <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
+          <button
+            type="button"
+            className="btn btn-secondary inline-flex items-center gap-2"
+            onClick={() => fetchReviews(true)}
+            disabled={isRefreshing || loading}
+          >
+            <RefreshCw size={14} className={isRefreshing ? "spin animate-spin" : ""} />
+            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary inline-flex items-center gap-2 shadow-sm"
+            onClick={() => setShowPlatformFeedbackModal(true)}
+          >
+            <MessageSquareQuote size={15} />
+            <span>Write Feedback</span>
+          </button>
+        </div>
       </div>
 
       {/* Security & Read-Only Notice */}
@@ -411,8 +425,15 @@ export const ManagerFeedbackPage = () => {
           </div>
         )}
       </div>
+
+      {/* Platform Feedback Modal for Manager */}
+      <PlatformFeedbackModal
+        isOpen={showPlatformFeedbackModal}
+        onClose={() => setShowPlatformFeedbackModal(false)}
+      />
     </div>
   );
 };
 
 export default ManagerFeedbackPage;
+
