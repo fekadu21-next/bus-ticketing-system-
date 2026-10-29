@@ -123,7 +123,7 @@ export default function MyTripsScreen() {
 
         <TouchableOpacity
           style={styles.detailsButton}
-          onPress={() => router.push(`/trips/${item.id}` as any)}
+          onPress={() => router.push(`/driver/trip/${item.id}` as any)}
           activeOpacity={0.8}
         >
           <Text style={styles.detailsButtonText}>VIEW DETAILS</Text>

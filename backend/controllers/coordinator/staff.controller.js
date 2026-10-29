@@ -69,7 +69,7 @@ export class CoordinatorStaffController {
 
     const splitFirst = firstName || (name ? name.split(' ')[0] : 'Staff');
     const splitLast = lastName || (name ? name.split(' ').slice(1).join(' ') : 'Member');
-    const safeEmail = email || `${splitFirst.toLowerCase()}.${Date.now()}@operator.et`;
+    const safeEmail = (email || `${splitFirst.toLowerCase()}.${Date.now()}@operator.et`).trim().toLowerCase();
 
     // Check or find role
     const targetRole = await prisma.roles.findFirst({
@@ -84,29 +84,44 @@ export class CoordinatorStaffController {
     }
 
     // Check if user already exists
-    let user = await prisma.users.findUnique({
-      where: { email: safeEmail },
+    let user = await prisma.users.findFirst({
+      where: { email: { equals: safeEmail, mode: 'insensitive' } },
     });
 
     if (user) {
+      const updatePayload = {
+        is_active: true,
+        email_verified: true,
+      };
+      if (password) {
+        updatePayload.password_hash = await bcrypt.hash(password, 10);
+      }
+      if (phone) {
+        updatePayload.phone = phone;
+      }
+      user = await prisma.users.update({
+        where: { id: user.id },
+        data: updatePayload,
+      });
+
       const existingAssignment = await prisma.user_roles.findFirst({
         where: { user_id: user.id, organization_id: orgId },
       });
 
-      if (existingAssignment) {
-        return res.status(409).json({
-          success: false,
-          message: 'User is already assigned to this organization.',
+      if (!existingAssignment) {
+        await prisma.user_roles.create({
+          data: {
+            user_id: user.id,
+            role_id: targetRole.id,
+            organization_id: orgId,
+          },
+        });
+      } else if (existingAssignment.role_id !== targetRole.id) {
+        await prisma.user_roles.update({
+          where: { id: existingAssignment.id },
+          data: { role_id: targetRole.id },
         });
       }
-
-      await prisma.user_roles.create({
-        data: {
-          user_id: user.id,
-          role_id: targetRole.id,
-          organization_id: orgId,
-        },
-      });
     } else {
       const passwordToHash = password || 'Staff@123456';
       const defaultPasswordHash = await bcrypt.hash(passwordToHash, 10);

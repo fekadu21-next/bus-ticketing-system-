@@ -22,15 +22,15 @@ export default function DriverTabBar() {
     ]);
   };
 
-  const isDashboard = pathname === '/dashboard' || pathname === '/';
-  const isTrips = pathname.startsWith('/trips');
-  const isProfile = pathname === '/profile';
+  const isDashboard = pathname === '/driver' || pathname === '/dashboard' || pathname === '/';
+  const isTrips = pathname.startsWith('/driver/trips') || pathname.startsWith('/trips');
+  const isProfile = pathname.startsWith('/driver/profile') || pathname === '/profile';
 
   return (
     <View style={styles.tabBar}>
       <TouchableOpacity
         style={[styles.tabItem, isDashboard && styles.activeTabItem]}
-        onPress={() => router.replace('/dashboard')}
+        onPress={() => router.replace('/driver' as any)}
         activeOpacity={0.7}
       >
         <Text style={styles.tabIcon}>🏠</Text>
@@ -39,7 +39,7 @@ export default function DriverTabBar() {
 
       <TouchableOpacity
         style={[styles.tabItem, isTrips && styles.activeTabItem]}
-        onPress={() => router.replace('/trips')}
+        onPress={() => router.replace('/driver/trips' as any)}
         activeOpacity={0.7}
       >
         <Text style={styles.tabIcon}>🚌</Text>
@@ -48,7 +48,7 @@ export default function DriverTabBar() {
 
       <TouchableOpacity
         style={[styles.tabItem, isProfile && styles.activeTabItem]}
-        onPress={() => router.replace('/profile')}
+        onPress={() => router.replace('/driver/profile' as any)}
         activeOpacity={0.7}
       >
         <Text style={styles.tabIcon}>👤</Text>

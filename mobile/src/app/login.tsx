@@ -1,14 +1,28 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  StatusBar,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { KeyboardScreen } from '@/components/keyboard-screen';
 import { useAuth } from '@/context/AuthContext';
-import { MOCK_DRIVER_USER } from '@/data/mockDriverData';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, error, clearError } = useAuth();
+
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,253 +35,324 @@ export default function LoginPage() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.email.trim() || !formData.password) {
-      setFormError('Driver email and password are required');
+    const trimmedEmail = formData.email.trim();
+    if (!trimmedEmail || !formData.password) {
+      setFormError('Please enter your email and password');
       return;
     }
 
     setIsSubmitting(true);
-    const result = await login(formData.email.trim(), formData.password);
+    const result = await login(trimmedEmail, formData.password);
     setIsSubmitting(false);
 
-    if (result.success) {
-      router.replace('/dashboard');
+    if (result.success && result.user) {
+      const roles = result.user.roles || [];
+      if (roles.includes('TICKET_VERIFIER') && !roles.includes('DRIVER')) {
+        router.replace('/verifier/dashboard');
+      } else if (roles.includes('DRIVER')) {
+        router.replace('/driver' as any);
+      } else {
+        // Passengers land on their home booking dashboard
+        router.replace('/passenger/home');
+      }
     }
-  };
-
-  const handleQuickDemoFill = () => {
-    setFormData({
-      email: MOCK_DRIVER_USER.email,
-      password: 'password123',
-    });
-    setFormError('');
   };
 
   const displayError = formError || error;
 
   return (
-    <KeyboardScreen>
-      <View style={styles.header}>
-        <View style={styles.iconCircle}>
-          <Text style={styles.logo}>🚌</Text>
-        </View>
-        <Text style={styles.title}>Driver Sign In</Text>
-        <Text style={styles.subtitle}>Log in to access your assigned trips & route terminal</Text>
-      </View>
+    <KeyboardScreen style={styles.root}>
+      <StatusBar barStyle="light-content" />
 
-      <View style={styles.form}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Driver Email / Username</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="driver@example.com"
-            placeholderTextColor="#94a3b8"
-            value={formData.email}
-            onChangeText={(value) => handleChange('email', value)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            textContentType="emailAddress"
-            editable={!isSubmitting}
-            returnKeyType="next"
-          />
-        </View>
+      {/* Background gradient */}
+      <LinearGradient
+        colors={['#0a1628', '#0f2744', '#0a3d2e']}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
 
-        <View style={styles.inputGroup}>
-          <View style={styles.passwordHeader}>
-            <Text style={styles.label}>Password</Text>
-            <TouchableOpacity onPress={() => router.push('/forgot-password')}>
-              <Text style={styles.forgotPassword}>Forgot password?</Text>
-            </TouchableOpacity>
+      {/* Decorative blobs */}
+      <View style={styles.blob1} />
+      <View style={styles.blob2} />
+
+      <Animated.View entering={FadeIn.duration(500)} style={styles.container}>
+        {/* Branding */}
+        <Animated.View entering={FadeInDown.duration(600)} style={styles.brandBlock}>
+          <View style={styles.logoWrap}>
+            <Text style={styles.logoIcon}>🚌</Text>
           </View>
-          <View style={styles.inputWrapper}>
+          <Text style={styles.appName}>EthioRide</Text>
+          <Text style={styles.tagline}>Intercity Bus Ticketing</Text>
+        </Animated.View>
+
+        {/* Glass Card */}
+        <Animated.View entering={FadeInUp.duration(600).delay(150)} style={styles.card}>
+          <Text style={styles.cardTitle}>Welcome back</Text>
+          <Text style={styles.cardSubtitle}>Sign in to continue</Text>
+
+          {/* Email */}
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputIcon}>✉</Text>
             <TextInput
-              style={[styles.input, styles.passwordInput]}
-              placeholder="••••••••"
-              placeholderTextColor="#94a3b8"
+              style={styles.input}
+              placeholder="Email address"
+              placeholderTextColor="#6b7280"
+              value={formData.email}
+              onChangeText={(v) => handleChange('email', v)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="emailAddress"
+              editable={!isSubmitting}
+            />
+          </View>
+
+          {/* Password */}
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputIcon}>🔒</Text>
+            <TextInput
+              style={[styles.input, { paddingRight: 56 }]}
+              placeholder="Password"
+              placeholderTextColor="#6b7280"
               value={formData.password}
-              onChangeText={(value) => handleChange('password', value)}
+              onChangeText={(v) => handleChange('password', v)}
               secureTextEntry={!showPassword}
-              autoComplete="password"
               textContentType="password"
               editable={!isSubmitting}
-              returnKeyType="done"
-              onSubmitEditing={() => void handleSubmit()}
             />
-            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
-              <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
+            <TouchableOpacity
+              style={styles.eyeBtn}
+              onPress={() => setShowPassword((p) => !p)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.eyeTxt}>{showPassword ? 'Hide' : 'Show'}</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {displayError ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>⚠️ {displayError}</Text>
+          {/* Forgot */}
+          <TouchableOpacity
+            style={styles.forgotRow}
+            onPress={() => router.push('/forgot-password')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.forgotTxt}>Forgot password?</Text>
+          </TouchableOpacity>
+
+          {/* Error */}
+          {displayError ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorTxt}>⚠  {displayError}</Text>
+            </View>
+          ) : null}
+
+          {/* Sign In */}
+          <TouchableOpacity
+            style={[styles.signInBtn, isSubmitting && styles.signInBtnDisabled]}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+            activeOpacity={0.88}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.signInTxt}>Sign In</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Register */}
+          <View style={styles.registerRow}>
+            <Text style={styles.registerRowTxt}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => router.push('/register')} activeOpacity={0.7}>
+              <Text style={styles.registerLink}>Create Account</Text>
+            </TouchableOpacity>
           </View>
-        ) : null}
+        </Animated.View>
 
-        {/* Quick Demo Fill Button */}
-        <TouchableOpacity
-          style={styles.demoFillBtn}
-          onPress={handleQuickDemoFill}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.demoFillBtnText}>⚡ Fill Demo Driver Credentials</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-          onPress={() => void handleSubmit()}
-          disabled={isSubmitting}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.submitButtonText}>
-            {isSubmitting ? 'Signing in...' : 'Sign In as Driver'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>← Back to Welcome</Text>
-      </TouchableOpacity>
+        {/* Guest */}
+        <Animated.View entering={FadeIn.duration(600).delay(300)} style={styles.guestRow}>
+          <TouchableOpacity onPress={() => router.replace('/passenger/home')} activeOpacity={0.7}>
+            <Text style={styles.guestTxt}>Continue as Guest  →</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </Animated.View>
     </KeyboardScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    alignItems: 'center',
-    marginBottom: 28,
+  root: {
+    flex: 1,
+    backgroundColor: '#0a1628',
   },
-  iconCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: '#ccfbf1',
+  blob1: {
+    position: 'absolute',
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: 'rgba(16,118,110,0.12)',
+    top: -80,
+    right: -80,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(16,118,110,0.08)',
+    bottom: 60,
+    left: -60,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  brandBlock: {
+    alignItems: 'center',
+    marginBottom: 36,
+  },
+  logoWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(16,118,110,0.25)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(16,118,110,0.5)',
   },
-  logo: {
-    fontSize: 34,
+  logoIcon: {
+    fontSize: 36,
   },
-  title: {
-    fontSize: 26,
+  appName: {
+    fontSize: 28,
     fontWeight: '800',
-    color: '#0f172a',
-    marginBottom: 6,
+    color: '#f0fdf4',
+    letterSpacing: 0.5,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 12,
-  },
-  form: {
-    marginBottom: 20,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
+  tagline: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#334155',
-    marginBottom: 6,
+    color: '#6ee7b7',
+    marginTop: 4,
+    letterSpacing: 0.3,
+  },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#f8fafc',
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: '#94a3b8',
+    marginBottom: 24,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 14,
+    marginBottom: 14,
+    height: 52,
+  },
+  inputIcon: {
+    fontSize: 16,
+    marginRight: 10,
+    color: '#6ee7b7',
   },
   input: {
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 12,
-    padding: 14,
+    flex: 1,
     fontSize: 15,
-    color: '#0f172a',
-  },
-  passwordInput: {
-    paddingRight: 64,
-  },
-  passwordHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  inputWrapper: {
-    position: 'relative',
-    justifyContent: 'center',
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 14,
+    color: '#f1f5f9',
     height: '100%',
-    justifyContent: 'center',
   },
-  eyeText: {
-    fontSize: 13,
-    color: '#0f766e',
-    fontWeight: '700',
+  eyeBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
   },
-  forgotPassword: {
+  eyeTxt: {
     fontSize: 12,
-    color: '#0f766e',
+    fontWeight: '700',
+    color: '#6ee7b7',
+  },
+  forgotRow: {
+    alignSelf: 'flex-end',
+    marginBottom: 18,
+    marginTop: 2,
+  },
+  forgotTxt: {
+    fontSize: 12.5,
+    color: '#6ee7b7',
     fontWeight: '600',
   },
-  errorContainer: {
-    backgroundColor: '#fee2e2',
+  errorBox: {
+    backgroundColor: 'rgba(239,68,68,0.15)',
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: 'rgba(239,68,68,0.3)',
     borderRadius: 10,
-    padding: 12,
+    padding: 10,
     marginBottom: 14,
   },
-  errorText: {
-    color: '#dc2626',
-    fontSize: 13,
+  errorTxt: {
+    fontSize: 12.5,
+    color: '#fca5a5',
     fontWeight: '600',
   },
-  demoFillBtn: {
-    backgroundColor: '#f0fdf4',
-    borderWidth: 1,
-    borderColor: '#86efac',
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  demoFillBtnText: {
-    color: '#15803d',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  submitButton: {
+  signInBtn: {
     backgroundColor: '#0f766e',
-    paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 14,
+    paddingVertical: 15,
     alignItems: 'center',
     shadowColor: '#0f766e',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  submitButtonDisabled: {
+  signInBtnDisabled: {
     opacity: 0.6,
   },
-  submitButtonText: {
-    color: '#ffffff',
+  signInTxt: {
     fontSize: 16,
     fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 0.4,
   },
-  backButton: {
+  registerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
     alignItems: 'center',
-    paddingVertical: 12,
   },
-  backButtonText: {
-    fontSize: 14,
-    color: '#64748b',
+  registerRowTxt: {
+    fontSize: 13,
+    color: '#94a3b8',
+  },
+  registerLink: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#6ee7b7',
+  },
+  guestRow: {
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  guestTxt: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.45)',
     fontWeight: '600',
   },
 });

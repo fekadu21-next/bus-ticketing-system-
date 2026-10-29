@@ -1,24 +1,15 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import {
-  MOCK_DRIVER_USER,
-  getMockTrips,
-  getMockTripById,
-  startMockTrip,
-  completeMockTrip,
-} from '@/data/mockDriverData';
-import {
-  MOCK_VERIFIER_USER,
-  getMockActiveTrip,
-  getMockRecentScans,
-  getMockScanStats,
-  verifyMockToken,
-  type ActiveTripInfo,
-  type VerificationResultData,
-  type RecentScanRecord,
-  type VerificationStatus,
-} from '@/data/mockVerifierData';
+import type {
+  ActiveTripInfo,
+  VerificationResultData,
+  RecentScanRecord,
+  VerificationStatus,
+  PassengerTrip,
+  SeatInfo,
+  PassengerBooking,
+} from '@/types';
 
 const API_PORT = 5000;
 const API_PATH = '/api/v1';
@@ -80,6 +71,10 @@ function isUsableFromThisDevice(url: string): boolean {
 }
 
 export function resolveApiBaseUrl(): string {
+  if (Platform.OS === 'web') {
+    return `http://localhost:${API_PORT}${API_PATH}`;
+  }
+
   const fromEnv = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '');
   if (fromEnv && isUsableFromThisDevice(fromEnv)) {
     return fromEnv;
@@ -88,6 +83,11 @@ export function resolveApiBaseUrl(): string {
   const lanHost = getDevHost();
   if (lanHost) {
     return `http://${lanHost}:${API_PORT}${API_PATH}`;
+  }
+
+  const lanFromEnv = process.env.EXPO_PUBLIC_LAN_API_URL?.replace(/\/$/, '');
+  if (lanFromEnv && Device.isDevice) {
+    return lanFromEnv;
   }
 
   if (Platform.OS === 'android' && !Device.isDevice) {
@@ -108,6 +108,21 @@ export interface AuthUser {
   isEmailVerified: boolean;
   organizationName?: string;
   organizationId?: string;
+}
+
+export interface DriverProblemReport {
+  id: string;
+  trip_id?: string;
+  type: string;
+  description: string;
+  status: 'REPORTED' | 'IN_REVIEW' | 'RESOLVED' | 'DISMISSED';
+  notes?: string;
+  created_at: string;
+  trips?: {
+    id: string;
+    routes?: { origin?: string; destination?: string };
+    buses?: { plate_number?: string; model?: string };
+  };
 }
 
 export interface DriverTrip {
@@ -132,6 +147,7 @@ export interface DriverTrip {
   availableSeats?: number;
   seatsCount?: number;
   bookingsCount?: number;
+  problemReports?: DriverProblemReport[];
 }
 
 export interface ApiResponse<T = unknown> {
@@ -152,8 +168,6 @@ export function normalizeUser(user: Partial<AuthUser> & Record<string, unknown>)
   const lastName = String(user.lastName ?? user.last_name ?? '');
   const rawRoles = Array.isArray(user.roles) ? (user.roles as string[]) : [];
 
-  const roles = rawRoles.length > 0 ? rawRoles : ['DRIVER'];
-
   // Organization context - backend sends 'orgContexts' array (from authenticate middleware)
   let orgName: string | undefined;
   let orgId: string | undefined;
@@ -165,20 +179,23 @@ export function normalizeUser(user: Partial<AuthUser> & Record<string, unknown>)
   const contexts = orgContexts.length > 0 ? orgContexts : legacyContexts;
 
   if (contexts.length > 0) {
-    const ctx = contexts[0] as { organizationName?: string; organizationId?: string; name?: string };
-    orgName = ctx.organizationName || ctx.name;
-    orgId = ctx.organizationId;
+    // Prefer the context matching the user's primary staff role
+    const staffCtx = (contexts as { role?: string; organizationName?: string; organizationId?: string; name?: string }[]).find(
+      (c) => c.role === 'DRIVER' || c.role === 'TICKET_VERIFIER'
+    ) || contexts[0] as { organizationName?: string; organizationId?: string; name?: string };
+    orgName = staffCtx.organizationName || staffCtx.name;
+    orgId = staffCtx.organizationId;
   }
 
   return {
-    id: String(user.id ?? 'user-staff-id'),
-    firstName: firstName || 'Staff',
-    lastName: lastName || 'User',
-    email: String(user.email ?? 'staff@busticket.com'),
+    id: String(user.id ?? ''),
+    firstName: firstName || '',
+    lastName: lastName || '',
+    email: String(user.email ?? ''),
     phone: user.phone ? String(user.phone) : undefined,
-    roles,
+    roles: rawRoles,
     avatarUrl: user.avatarUrl ? String(user.avatarUrl) : undefined,
-    isEmailVerified: Boolean(user.isEmailVerified ?? user.emailVerified ?? true),
+    isEmailVerified: Boolean(user.isEmailVerified ?? user.emailVerified ?? false),
     organizationName: orgName || (user.organizationName ? String(user.organizationName) : undefined),
     organizationId: orgId || (user.organizationId ? String(user.organizationId) : undefined),
   };
@@ -259,6 +276,11 @@ function mapBackendTripToDriverTrip(raw: Record<string, unknown>): DriverTrip {
     availableSeats,
     seatsCount: counts?.seats,
     bookingsCount: bookedSeats,
+    problemReports: Array.isArray(raw.problemReports)
+      ? (raw.problemReports as DriverProblemReport[])
+      : Array.isArray(raw.trip_problem_reports)
+      ? (raw.trip_problem_reports as DriverProblemReport[])
+      : undefined,
   };
 }
 
@@ -336,7 +358,6 @@ class ApiService {
 
   // --- Authentication ---
   async login(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
-    // 1. Authenticate with central backend API
     const result = await this.request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email: email.trim(), password }),
@@ -344,66 +365,61 @@ class ApiService {
 
     if (result.success && result.data?.user) {
       const normalized = normalizeUser(result.data.user as AuthUser & Record<string, unknown>);
-
-      // Enforce Staff RBAC: Reject non-staff users (e.g. general passengers)
-      const isDriver = normalized.roles.includes('DRIVER');
-      const isVerifier = normalized.roles.includes('TICKET_VERIFIER');
-      const isAdmin = normalized.roles.includes('ADMIN');
-
-      if (!isDriver && !isVerifier && !isAdmin) {
-        return {
-          success: false,
-          error: 'Access denied: This operational mobile application is restricted to Drivers and Ticket Verifiers only.',
-        };
-      }
-
       result.data.user = normalized;
       return result;
     }
 
-    // 2. Offline / Mock Fallback ONLY if backend is truly unreachable (network error)
-    if (result.error === 'NETWORK_UNAVAILABLE') {
-      const isVerifierCred = email.toLowerCase().includes('verifier');
-      if (isVerifierCred) {
-        console.log('[ApiService] Backend unreachable — using Mock Verifier for:', email);
-        const mockUser: AuthUser = {
-          id: MOCK_VERIFIER_USER.id,
-          firstName: MOCK_VERIFIER_USER.firstName,
-          lastName: MOCK_VERIFIER_USER.lastName,
-          email: email || MOCK_VERIFIER_USER.email,
-          phone: MOCK_VERIFIER_USER.phone,
-          roles: ['TICKET_VERIFIER'],
-          isEmailVerified: true,
-          organizationName: MOCK_VERIFIER_USER.organizationName,
-        };
-        return {
-          success: true,
-          message: 'Signed in with Mock Verifier Mode (Backend Offline)',
-          data: {
-            accessToken: 'mock-verifier-token-' + Date.now(),
-            user: mockUser,
-          },
-        };
-      } else {
-        console.log('[ApiService] Backend unreachable — using Mock Driver for:', email);
-        const mockUser: AuthUser = {
-          ...MOCK_DRIVER_USER,
-          email: email || MOCK_DRIVER_USER.email,
-          roles: ['DRIVER'],
-        };
-        return {
-          success: true,
-          message: 'Signed in with Mock Driver Mode (Backend Offline)',
-          data: {
-            accessToken: 'mock-driver-token-' + Date.now(),
-            user: mockUser,
-          },
-        };
-      }
-    }
-
-    // 3. Auth failure (wrong credentials, account inactive, etc.) — return actual error
     return result;
+  }
+
+  async register(data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    password: string;
+    confirmPassword: string;
+  }): Promise<ApiResponse<{ user: AuthUser; accessToken?: string }>> {
+    return this.request<{ user: AuthUser; accessToken?: string }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword?: string
+  ): Promise<ApiResponse> {
+    return this.request('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword, confirmPassword: confirmPassword || newPassword }),
+    });
+  }
+
+  async forgotPassword(email: string): Promise<ApiResponse> {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resendVerification(email: string): Promise<ApiResponse> {
+    return this.request('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<ApiResponse> {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword, confirmPassword }),
+    });
   }
 
   async logout(): Promise<ApiResponse> {
@@ -438,11 +454,6 @@ class ApiService {
         success: true,
         data: { trips: mappedTrips },
       };
-    }
-
-    // Mock fallback ONLY if backend is unreachable
-    if (result.error === 'NETWORK_UNAVAILABLE') {
-      return { success: true, data: { trips: getMockTrips(status) } };
     }
 
     return {
@@ -487,23 +498,30 @@ class ApiService {
       };
     }
 
-    // Fallback from getDriverTrips (network available but dashboard endpoint fails)
+    // Fallback by computing dashboard from real driver trips endpoint
     const tripsRes = await this.getDriverTrips();
-    const trips = tripsRes.data?.trips || [];
-    const active = trips.find((t) => t.status === 'IN_PROGRESS') || trips[0] || null;
-    return {
-      success: true,
-      data: {
-        driver: null,
-        activeTrip: active,
-        todayTrips: trips,
-        upcomingTrips: trips.filter((t) => t.status === 'SCHEDULED' || t.status === 'PUBLISHED'),
-        stats: {
-          totalAssigned: trips.length,
-          completed: trips.filter((t) => t.status === 'COMPLETED').length,
-          inProgress: trips.filter((t) => t.status === 'IN_PROGRESS').length,
+    if (tripsRes.success && tripsRes.data) {
+      const trips = tripsRes.data.trips || [];
+      const active = trips.find((t) => t.status === 'IN_PROGRESS') || null;
+      return {
+        success: true,
+        data: {
+          driver: null,
+          activeTrip: active,
+          todayTrips: trips,
+          upcomingTrips: trips.filter((t) => t.status === 'SCHEDULED' || t.status === 'PUBLISHED'),
+          stats: {
+            totalAssigned: trips.length,
+            completed: trips.filter((t) => t.status === 'COMPLETED').length,
+            inProgress: trips.filter((t) => t.status === 'IN_PROGRESS').length,
+          },
         },
-      },
+      };
+    }
+
+    return {
+      success: false,
+      error: result.error || tripsRes.error || 'Failed to load driver dashboard',
     };
   }
 
@@ -514,21 +532,12 @@ class ApiService {
     }
 
     if (result.success && result.data) {
-      // Backend may return { trip: {...} } or the trip object directly
       const tripData = result.data.trip || (result.data as unknown as Record<string, unknown>);
       if (tripData && typeof tripData === 'object' && 'id' in tripData) {
         return {
           success: true,
           data: { trip: mapBackendTripToDriverTrip(tripData as Record<string, unknown>) },
         };
-      }
-    }
-
-    // Mock fallback only if network unavailable
-    if (result.error === 'NETWORK_UNAVAILABLE') {
-      const mockTrip = getMockTripById(tripId) || getMockTrips()[0];
-      if (mockTrip) {
-        return { success: true, data: { trip: mockTrip } };
       }
     }
 
@@ -552,18 +561,7 @@ class ApiService {
       }
     }
 
-    // Real error from backend (not network)
-    if (result.error && result.error !== 'NETWORK_UNAVAILABLE') {
-      return { success: false, error: result.error };
-    }
-
-    // Mock fallback only if offline
-    try {
-      const updated = startMockTrip(tripId);
-      return { success: true, message: 'Trip started (Mock Mode)', data: { trip: updated } };
-    } catch {
-      return { success: false, error: 'Failed to start trip' };
-    }
+    return { success: false, error: result.error || 'Failed to start trip' };
   }
 
   async completeTrip(tripId: string): Promise<ApiResponse<{ trip: DriverTrip }>> {
@@ -583,18 +581,7 @@ class ApiService {
       }
     }
 
-    // Real error from backend
-    if (result.error && result.error !== 'NETWORK_UNAVAILABLE') {
-      return { success: false, error: result.error };
-    }
-
-    // Mock fallback only if offline
-    try {
-      const updated = completeMockTrip(tripId);
-      return { success: true, message: 'Trip completed (Mock Mode)', data: { trip: updated } };
-    } catch {
-      return { success: false, error: 'Failed to complete trip' };
-    }
+    return { success: false, error: result.error || 'Failed to complete trip' };
   }
 
   async reportProblem(
@@ -607,50 +594,127 @@ class ApiService {
     });
   }
 
+  async getTripProblems(tripId: string): Promise<ApiResponse<{ reports: DriverProblemReport[] }>> {
+    return this.request<{ reports: DriverProblemReport[] }>(`/driver/trips/${encodeURIComponent(tripId)}/problems`);
+  }
+
+  async getDriverProblems(): Promise<ApiResponse<{ reports: DriverProblemReport[] }>> {
+    return this.request<{ reports: DriverProblemReport[] }>('/driver/problems');
+  }
+
+  async getDriverProfile(): Promise<ApiResponse<{ driver: unknown; user: unknown }>> {
+    return this.request<{ driver: unknown; user: unknown }>('/driver/me');
+  }
+
   // --- Ticket Verifier Methods ---
-  async getActiveTrip(): Promise<ApiResponse<{ trip: ActiveTripInfo }>> {
-    // 1. Try real verifier trips endpoint
-    // Backend returns { total, page, limit, trips } wrapped in data
+  async getActiveTrip(): Promise<ApiResponse<{ trip: ActiveTripInfo | null }>> {
+    // 1. Fetch real verifier trips endpoint
     const res = await this.request<{ total?: number; page?: number; limit?: number; trips: Record<string, unknown>[] }>('/verifier/trips');
     if (res.success && res.data) {
-      const tripsArr = res.data.trips || [];
+      const tripsArr = res.data.trips || (Array.isArray(res.data) ? (res.data as unknown as Record<string, unknown>[]) : []);
       if (tripsArr.length > 0) {
-        // Find the active/in-progress trip, otherwise use first
-        const trip = tripsArr.find((t) => t.status === 'IN_TRANSIT' || t.status === 'IN_PROGRESS') || tripsArr[0];
-        const routes = trip.routes as { origin?: string; destination?: string } | undefined;
-        const buses = trip.buses as { plate_number?: string; model?: string; capacity?: number } | undefined;
+        // Find active/in-progress trip, or scheduled/first
+        const trip = tripsArr.find((t) => t.status === 'IN_TRANSIT' || t.status === 'IN_PROGRESS') ||
+          tripsArr.find((t) => t.status === 'SCHEDULED' || t.status === 'PUBLISHED') ||
+          tripsArr[0];
+
+        const routes = (trip.route || trip.routes) as { origin?: string; destination?: string } | undefined;
+        const buses = (trip.bus || trip.buses) as { plate_number?: string; plateNumber?: string; model?: string; capacity?: number } | undefined;
+        const summary = trip.verificationSummary as { totalTickets?: number; verifiedTickets?: number; unverifiedTickets?: number } | undefined;
         const counts = trip._count as { seats?: number; tickets?: number; bookings?: number } | undefined;
 
-        const origin = routes?.origin || String(trip.origin || 'Addis Ababa');
-        const destination = routes?.destination || String(trip.destination || 'Regional Terminal');
-        const totalSeats = Number(buses?.capacity || trip.total_seats || 50);
-        const verifiedCount = Number(counts?.tickets || trip.verified_count || 0);
+        const origin = String(routes?.origin || trip.origin || 'Addis Ababa');
+        const destination = String(routes?.destination || trip.destination || 'Regional Station');
+        const totalSeats = Number(buses?.capacity || trip.capacity || trip.total_seats || 50);
+        const verifiedCount = Number(summary?.verifiedTickets ?? counts?.tickets ?? trip.verified_count ?? 0);
+        const remainingCount = Number(summary?.unverifiedTickets ?? Math.max(0, totalSeats - verifiedCount));
+
+        const rawDep = trip.departureTime || trip.departure_time;
+        const departureTime = rawDep
+          ? new Date(String(rawDep)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : '06:00 AM';
+
+        const rawStatus = String(trip.status || 'SCHEDULED');
+        const status = rawStatus === 'IN_TRANSIT' ? 'IN_PROGRESS' : (rawStatus as ActiveTripInfo['status']);
 
         const activeTripInfo: ActiveTripInfo = {
           id: String(trip.id),
           origin,
           destination,
           route: `${origin} → ${destination}`,
-          departureTime: trip.departure_time ? new Date(String(trip.departure_time)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '06:00 AM',
-          busPlate: buses?.plate_number || String(trip.bus_plate || 'ET-3-12345'),
-          busModel: buses?.model || String(trip.bus_model || 'Scania Touring'),
-          status: (trip.status as ActiveTripInfo['status']) || 'IN_PROGRESS',
+          departureTime,
+          busPlate: buses?.plate_number || buses?.plateNumber || String(trip.bus_plate || 'ET-3-BUS'),
+          busModel: buses?.model || String(trip.bus_model || 'Standard Coach'),
+          status: status || 'IN_PROGRESS',
           totalSeats,
           verifiedCount,
-          remainingCount: Math.max(0, totalSeats - verifiedCount),
+          remainingCount,
         };
 
         return { success: true, data: { trip: activeTripInfo } };
       }
+      return { success: true, data: { trip: null } };
     }
 
-    // Fallback to mock active trip only if network unavailable
-    if (res.error === 'NETWORK_UNAVAILABLE') {
-      return { success: true, data: { trip: getMockActiveTrip() } };
+    return { success: false, error: res.error || 'Failed to load active trip' };
+  }
+
+  async getVerifierTrips(): Promise<ApiResponse<{ trips: ActiveTripInfo[] }>> {
+    const res = await this.request<{ total?: number; page?: number; limit?: number; trips: Record<string, unknown>[] }>('/verifier/trips');
+    if (res.success && res.data) {
+      const tripsArr = res.data.trips || (Array.isArray(res.data) ? (res.data as unknown as Record<string, unknown>[]) : []);
+      const mapped = tripsArr.map((trip) => {
+        const routes = (trip.route || trip.routes) as { origin?: string; destination?: string } | undefined;
+        const buses = (trip.bus || trip.buses) as { plate_number?: string; plateNumber?: string; model?: string; capacity?: number } | undefined;
+        const summary = trip.verificationSummary as { totalTickets?: number; verifiedTickets?: number; unverifiedTickets?: number } | undefined;
+        const counts = trip._count as { seats?: number; tickets?: number; bookings?: number } | undefined;
+
+        const origin = String(routes?.origin || trip.origin || 'Addis Ababa');
+        const destination = String(routes?.destination || trip.destination || 'Station');
+        const totalSeats = Number(buses?.capacity || trip.capacity || 50);
+        const verifiedCount = Number(summary?.verifiedTickets ?? counts?.tickets ?? 0);
+        const remainingCount = Number(summary?.unverifiedTickets ?? Math.max(0, totalSeats - verifiedCount));
+        const rawDep = trip.departureTime || trip.departure_time;
+        const departureTime = rawDep
+          ? new Date(String(rawDep)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : '06:00 AM';
+        const rawStatus = String(trip.status || 'SCHEDULED');
+        const status = rawStatus === 'IN_TRANSIT' ? 'IN_PROGRESS' : (rawStatus as ActiveTripInfo['status']);
+
+        return {
+          id: String(trip.id),
+          origin,
+          destination,
+          route: `${origin} → ${destination}`,
+          departureTime,
+          busPlate: buses?.plate_number || buses?.plateNumber || 'ETH-BUS',
+          busModel: buses?.model || 'Standard Coach',
+          status,
+          totalSeats,
+          verifiedCount,
+          remainingCount,
+        };
+      });
+
+      return { success: true, data: { trips: mapped } };
     }
 
-    // No trips assigned — return mock for empty state
-    return { success: true, data: { trip: getMockActiveTrip() } };
+    return { success: false, error: res.error || 'Failed to load trips' };
+  }
+
+  async getTripManifest(tripId: string): Promise<ApiResponse<{
+    trip: Record<string, unknown>;
+    passengerManifest: {
+      ticketId: string;
+      ticketNumber: string;
+      seatNumber: number;
+      status: string;
+      passengerName: string;
+      phone?: string;
+      verifiedAt?: string;
+    }[];
+  }>> {
+    return this.request(`/verifier/trips/${encodeURIComponent(tripId)}`);
   }
 
   async verifyTicket(
@@ -671,9 +735,18 @@ class ApiService {
       message: string;
       ticket?: {
         id: string;
-        ticketNumber: string;
-        seatNumber: number | string;
-        passenger?: { firstName?: string; lastName?: string };
+        ticketNumber?: string;
+        ticket_number?: string;
+        seatNumber?: number | string;
+        seat_number?: number | string;
+        seat?: string;
+        passenger?: { firstName?: string; lastName?: string; name?: string; first_name?: string; last_name?: string };
+      };
+      data?: {
+        valid?: boolean;
+        status?: VerificationStatus;
+        message?: string;
+        ticket?: Record<string, unknown>;
       };
     }>('/verifier/tickets/verify', {
       method: 'POST',
@@ -688,24 +761,39 @@ class ApiService {
       });
     }
 
-    if (res.data && (res.data.status || typeof res.data.valid === 'boolean')) {
-      const status = (res.data.status || (res.data.valid ? 'VALID' : 'INVALID')) as VerificationStatus;
-      const allowed = res.data.valid ?? (status === 'VALID');
-      const ticket = res.data.ticket;
+    const payload = res.data?.data || res.data;
+    if (payload && (payload.status || typeof payload.valid === 'boolean')) {
+      const status = (payload.status || (payload.valid ? 'VALID' : 'INVALID')) as VerificationStatus;
+      const allowed = payload.valid ?? (status === 'VALID');
+      const ticket = (payload.ticket || (res.data as Record<string, unknown>)?.ticket) as {
+        id?: string;
+        ticketNumber?: string;
+        ticket_number?: string;
+        seatNumber?: number | string;
+        seat_number?: number | string;
+        seat?: string;
+        passenger?: { firstName?: string; lastName?: string; name?: string; first_name?: string; last_name?: string };
+      } | undefined;
+
       const passenger = ticket?.passenger;
-      const passengerName = passenger
-        ? `${passenger.firstName || ''} ${passenger.lastName || ''}`.trim()
-        : 'Abebe Kebede';
+      const passengerName =
+        passenger?.name ||
+        [passenger?.firstName || passenger?.first_name, passenger?.lastName || passenger?.last_name]
+          .filter(Boolean)
+          .join(' ') ||
+        'Passenger';
+
+      const seatNumber = ticket?.seat ?? ticket?.seatNumber ?? ticket?.seat_number ?? 1;
 
       const verificationResult: VerificationResultData = {
         status,
         allowed,
         passengerName: passengerName || 'Passenger',
-        ticketNumber: ticket?.ticketNumber || qrToken,
-        route: 'Addis Ababa → Destination',
-        seatNumber: ticket?.seatNumber ?? 12,
+        ticketNumber: ticket?.ticketNumber || ticket?.ticket_number || qrToken,
+        route: 'Verified Passenger Trip',
+        seatNumber,
         verifiedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        message: res.data.message || (allowed ? 'TICKET VALID — BOARDING ALLOWED' : 'BOARDING NOT ALLOWED'),
+        message: payload.message || res.message || (allowed ? 'TICKET VALID — BOARDING ALLOWED' : 'BOARDING NOT ALLOWED'),
       };
 
       return {
@@ -714,11 +802,9 @@ class ApiService {
       };
     }
 
-    // 2. Fallback to mock verification engine
-    const mockResult = verifyMockToken(qrToken, targetTripId);
     return {
-      success: true,
-      data: { result: mockResult },
+      success: false,
+      error: res.error || 'Verification failed: invalid ticket or server error',
     };
   }
 
@@ -769,30 +855,423 @@ class ApiService {
 
     return {
       success: true,
-      data: { scans: getMockRecentScans() },
+      data: { scans: [] },
     };
   }
 
   async getScanStats(): Promise<ApiResponse<{ total: number; valid: number; rejected: number }>> {
     const recent = await this.getRecentScans();
     const scans = recent.data?.scans || [];
-    if (scans.length > 0) {
-      const valid = scans.filter((s) => s.status === 'VALID').length;
-      const rejected = scans.length - valid;
-      return {
-        success: true,
-        data: { total: scans.length, valid, rejected },
-      };
+    const valid = scans.filter((s) => s.status === 'VALID').length;
+    const rejected = scans.length - valid;
+    return {
+      success: true,
+      data: { total: scans.length, valid, rejected },
+    };
+  }
+
+  // ================= PASSENGER API METHODS =================
+
+  async searchPassengerTrips(params?: {
+    origin?: string;
+    destination?: string;
+    date?: string;
+    limit?: number;
+    operatorId?: string;
+  }): Promise<ApiResponse<{ trips: PassengerTrip[]; total?: number }>> {
+    const queryParts: string[] = [];
+    if (params?.origin && params.origin !== 'All' && params.origin !== 'All Cities') {
+      queryParts.push(`origin=${encodeURIComponent(params.origin)}`);
+    }
+    if (params?.destination && params.destination !== 'All' && params.destination !== 'All Destinations') {
+      queryParts.push(`destination=${encodeURIComponent(params.destination)}`);
+    }
+    if (params?.date && params.date !== 'today' && params.date !== 'tomorrow' && params.date !== 'weekend' && params.date !== 'all') {
+      queryParts.push(`date=${encodeURIComponent(params.date)}`);
+    } else if (params?.date === 'tomorrow') {
+      const d = new Date(); d.setDate(d.getDate() + 1);
+      queryParts.push(`date=${d.toISOString().split('T')[0]}`);
+    } else if (params?.date === 'weekend') {
+      const d = new Date();
+      const day = d.getDay();
+      const daysUntilSat = (6 - day + 7) % 7 || 7;
+      d.setDate(d.getDate() + daysUntilSat);
+      queryParts.push(`date=${d.toISOString().split('T')[0]}`);
+    }
+    if (params?.limit) queryParts.push(`limit=${params.limit}`);
+    if (params?.operatorId) queryParts.push(`operatorId=${encodeURIComponent(params.operatorId)}`);
+    const qs = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+
+    const res = await this.request<{ trips: Record<string, unknown>[]; total?: number }>(`/passenger/trips${qs}`);
+    if (res.success && res.data) {
+      const rawTrips = res.data.trips || [];
+      const mapped: PassengerTrip[] = rawTrips.map((raw) => {
+        const routes = (raw.route || raw.routes) as { origin?: string; destination?: string; distance_km?: number; estimated_duration_hours?: number } | undefined;
+        const buses = (raw.bus || raw.buses) as { plate_number?: string; plateNumber?: string; model?: string; capacity?: number } | undefined;
+        const operator = (raw.operator || raw.organizations) as { id?: string; name?: string; type?: string } | undefined;
+        const origin = String(routes?.origin || raw.origin || 'Addis Ababa');
+        const destination = String(routes?.destination || raw.destination || 'Hawassa');
+        const totalSeats = Number(buses?.capacity || raw.totalSeats || 50);
+        const availableSeats = Number(raw.availableSeats ?? raw.availableSeatsCount ?? Math.max(0, totalSeats - Number(raw.bookedSeatsCount || 0)));
+        const rawDep = raw.departureTime || raw.departure_time;
+        const depDateObj = rawDep ? new Date(String(rawDep)) : new Date();
+        const departureTime = rawDep
+          ? depDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+          : '02:01 AM';
+        const rawArr = raw.arrivalTime || raw.arrival_time;
+        const arrDateObj = rawArr ? new Date(String(rawArr)) : null;
+        const arrivalTime = arrDateObj
+          ? arrDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+          : '03:01 AM';
+
+        const durationHrs = routes?.estimated_duration_hours;
+        const duration = durationHrs
+          ? `${Math.floor(Number(durationHrs))}h ${Math.round((Number(durationHrs) % 1) * 60)}m`
+          : raw.duration ? String(raw.duration) : '5h 30m';
+        const departureDate = rawDep ? String(rawDep).split('T')[0] : new Date().toISOString().split('T')[0];
+
+        // Period calculation
+        const depHour = depDateObj.getHours();
+        let period: 'morning' | 'afternoon' | 'evening' = 'morning';
+        if (depHour >= 6 && depHour < 12) period = 'morning';
+        else if (depHour >= 12 && depHour < 17) period = 'afternoon';
+        else period = 'evening';
+
+        const operatorName = operator?.name || String(raw.operatorName || 'Selam Bus Line');
+        const opTypeStr = String(operator?.type || raw.orgType || '');
+        const orgType =
+          opTypeStr === 'ASSOCIATION' || operatorName.toLowerCase().includes('association') || operatorName.toLowerCase().includes('assoc')
+            ? 'Transport Association'
+            : 'Private Bus Company';
+
+        const initials = operatorName
+          .split(' ')
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((w) => w[0].toUpperCase())
+          .join('') || 'SB';
+
+        const fare = Number(raw.fare || raw.price || 850);
+
+        return {
+          id: String(raw.id),
+          origin,
+          destination,
+          route: `${origin} → ${destination}`,
+          departureTime,
+          departureDate,
+          arrivalTime,
+          duration,
+          operatorName,
+          operatorId: operator?.id || String(raw.operatorId || ''),
+          orgType,
+          period,
+          logoBg: '#0f766e',
+          logoText: initials,
+          badge: fare <= 1150 ? 'Best Price' : undefined,
+          rating: 4.6,
+          reviews: 94,
+          busPlate: buses?.plate_number || buses?.plateNumber || String(raw.busPlate || 'ETH-5263'),
+          busType: buses?.model || String(raw.busType || 'Standard Coach'),
+          price: fare,
+          availableSeats,
+          totalSeats,
+          status: String(raw.status || 'SCHEDULED'),
+          terminal: String(raw.terminal || `${origin} Terminal`),
+          amenities: ['AC', 'WiFi', 'Reclining Seats', 'TV'],
+        };
+      });
+
+      return { success: true, data: { trips: mapped, total: res.data.total } };
+    }
+
+    return { success: false, error: res.error || 'Failed to load trips' };
+  }
+
+  // Get all active bus companies / operators (public endpoint)
+  async getCompanies(): Promise<ApiResponse<{ companies: Array<{ id: string; name: string; type: string; tripCount?: number }> }>> {
+    const res = await this.request<{ data: { organizations?: Record<string, unknown>[] }; organizations?: Record<string, unknown>[] }>('/organizations/public?isActive=true&limit=50');
+    if (res.success && res.data) {
+      const raw = res.data.data?.organizations || (res.data as unknown as { organizations?: Record<string, unknown>[] }).organizations || [];
+      const companies = (raw as Record<string, unknown>[]).map((org) => {
+        const opTypeStr = String(org.type || '');
+        const type =
+          opTypeStr === 'ASSOCIATION' || String(org.name || '').toLowerCase().includes('association') || String(org.name || '').toLowerCase().includes('assoc')
+            ? 'Transport Association'
+            : 'Private Bus Company';
+
+        return {
+          id: String(org.id),
+          name: String(org.name || 'Unknown Operator'),
+          type,
+          tripCount: Number(org.tripCount || org._count || 0),
+        };
+      });
+      return { success: true, data: { companies } };
     }
 
     return {
       success: true,
-      data: getMockScanStats(),
+      data: { companies: [] },
     };
+  }
+
+  async getPassengerTripDetails(
+    tripId: string
+  ): Promise<ApiResponse<{ trip: PassengerTrip; seats: SeatInfo[] }>> {
+    const res = await this.request<{ trip: Record<string, unknown>; seats?: Record<string, unknown>[] }>(
+      `/passenger/trips/${encodeURIComponent(tripId)}`
+    );
+
+    if (res.success && res.data?.trip) {
+      const raw = res.data.trip;
+      const routes = (raw.route || raw.routes) as { origin?: string; destination?: string } | undefined;
+      const buses = (raw.bus || raw.buses) as { plate_number?: string; plateNumber?: string; model?: string; capacity?: number } | undefined;
+      const operator = (raw.operator || raw.organizations) as { name?: string } | undefined;
+      const origin = String(routes?.origin || raw.origin || 'Addis Ababa');
+      const destination = String(routes?.destination || raw.destination || 'Destination');
+      const totalSeats = Number(buses?.capacity || raw.totalSeats || 50);
+      const bookedCount = Number(raw.bookedSeatsCount || 0);
+
+      const trip: PassengerTrip = {
+        id: String(raw.id),
+        origin,
+        destination,
+        route: `${origin} → ${destination}`,
+        departureTime: raw.departureTime ? new Date(String(raw.departureTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '06:00 AM',
+        departureDate: raw.departureTime ? String(raw.departureTime).split('T')[0] : new Date().toISOString().split('T')[0],
+        arrivalTime: raw.arrivalTime ? new Date(String(raw.arrivalTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '02:30 PM',
+        duration: raw.duration ? String(raw.duration) : '5h 30m',
+        operatorName: operator?.name || String(raw.operatorName || 'Bus Line'),
+        busPlate: buses?.plate_number || buses?.plateNumber || 'ETH-BUS',
+        busType: buses?.model || 'Standard Coach',
+        price: Number(raw.fare || raw.price || 850),
+        availableSeats: Math.max(0, totalSeats - bookedCount),
+        totalSeats,
+        status: String(raw.status || 'SCHEDULED'),
+        terminal: String(raw.terminal || `${origin} Main Terminal`),
+        amenities: ['AC', 'WiFi', 'USB Charging', 'Reclining Seats'],
+      };
+
+      // Generate or map seats (1 to totalSeats)
+      const bookedSet = new Set<number>();
+      if (Array.isArray(res.data.seats)) {
+        res.data.seats.forEach((s) => {
+          if (s.is_booked || s.isBooked || s.status === 'BOOKED' || s.status === 'OCCUPIED') {
+            bookedSet.add(Number(s.seat_number || s.seatNumber));
+          }
+        });
+      }
+
+      const seats: SeatInfo[] = Array.from({ length: totalSeats }, (_, i) => {
+        const seatNum = i + 1;
+        const isBooked = bookedSet.has(seatNum);
+        return {
+          id: `seat-${seatNum}`,
+          seatNumber: seatNum,
+          isBooked,
+          status: isBooked ? 'OCCUPIED' : 'AVAILABLE',
+          price: trip.price,
+        };
+      });
+
+      return { success: true, data: { trip, seats } };
+    }
+
+    return {
+      success: false,
+      error: res.error || 'Failed to load trip details from server',
+    };
+  }
+
+  // In-memory passenger bookings cache for responsive updates
+  private localBookings: PassengerBooking[] = [];
+
+  async createPassengerBooking(data: {
+    tripId: string;
+    seatNumber: number;
+    passengerName?: string;
+    phone?: string;
+  }): Promise<ApiResponse<{ booking: PassengerBooking }>> {
+    const res = await this.request<{ booking: Record<string, unknown> }>('/passenger/bookings', {
+      method: 'POST',
+      body: JSON.stringify({
+        tripId: data.tripId,
+        seatNumber: data.seatNumber,
+      }),
+    });
+
+    if (res.success && res.data?.booking) {
+      const b = res.data.booking;
+      const t = (b.trips || b.trip) as Record<string, unknown> | undefined;
+      const r = (t?.routes || t?.route) as { origin?: string; destination?: string } | undefined;
+      const op = (t?.organizations || t?.operator) as { name?: string } | undefined;
+      const tk = (Array.isArray(b.tickets) ? b.tickets[0] : b.ticket) as Record<string, unknown> | undefined;
+
+      const origin = String(b.origin || b.from || r?.origin || 'Addis Ababa');
+      const destination = String(b.destination || b.to || r?.destination || 'Destination');
+      const departureTime = b.departureTime
+        ? String(b.departureTime)
+        : t?.departure_time
+        ? new Date(String(t.departure_time)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '06:00 AM';
+
+      const createdBooking: PassengerBooking = {
+        id: String(b.id),
+        bookingNumber: String(b.bookingNumber || b.booking_number || `BKG-${String(b.id).slice(0, 6)}`),
+        status: 'CONFIRMED',
+        totalAmount: Number(b.totalFare || b.price || b.total_fare || b.total_amount || 0),
+        createdAt: String(b.created_at || b.createdAt || new Date().toISOString()),
+        passengerName: data.passengerName || String(b.passengerName || 'Passenger'),
+        phone: data.phone || String(b.phone || ''),
+        seatNumber: data.seatNumber,
+        trip: {
+          id: data.tripId,
+          origin,
+          destination,
+          departureTime,
+          departureDate: String(b.departureDate || b.date || new Date().toISOString().split('T')[0]),
+          operatorName: op?.name || String(b.operatorName || b.operator || 'Selam Bus Line'),
+          busPlate: String(b.busPlateNumber || b.busPlate || 'ETH-BUS'),
+          busType: String(b.busModel || b.busType || 'Standard Coach'),
+          terminal: `${origin} Main Terminal`,
+        },
+        ticket: {
+          id: String(tk?.id || `tkt-${b.id}`),
+          ticketNumber: String(tk?.ticket_number || tk?.ticketNumber || b.ticketNumber || `TKT-${String(b.id).slice(0, 8).toUpperCase()}`),
+          status: 'ACTIVE',
+          qrToken: String(tk?.qr_token || tk?.qrToken || tk?.id || `TKT-${b.id}`),
+        },
+      };
+
+      // Prepend to local bookings so it shows immediately in list
+      this.localBookings = [
+        createdBooking,
+        ...this.localBookings.filter((x) => x.id !== createdBooking.id),
+      ];
+      return { success: true, data: { booking: createdBooking } };
+    }
+
+    return { success: false, error: res.error || 'Failed to create booking on server' };
+  }
+
+  async initializePassengerPayment(data: {
+    bookingId: string;
+    amount: number;
+    paymentMethod: string;
+    phoneNumber?: string;
+  }): Promise<ApiResponse<{ paymentUrl?: string; reference?: string; status: string }>> {
+    const res = await this.request<{ paymentUrl?: string; reference?: string; status: string }>(
+      '/passenger/payments/initialize',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+
+    return res;
+  }
+
+  async getPassengerBookings(): Promise<ApiResponse<{ bookings: PassengerBooking[] }>> {
+    const res = await this.request<{ bookings: Record<string, unknown>[] }>('/passenger/bookings');
+
+    if (res.success && Array.isArray(res.data?.bookings)) {
+      const mapped: PassengerBooking[] = res.data.bookings.map((b) => {
+        const t = (b.trip || b.trips) as Record<string, unknown> | undefined;
+        const r = (t?.route || t?.routes) as { origin?: string; destination?: string } | undefined;
+        const op = (t?.operator || t?.organizations) as { name?: string } | undefined;
+        const tk = (Array.isArray(b.tickets) ? b.tickets[0] : b.ticket) as Record<string, unknown> | undefined;
+
+        const origin = String(b.origin || b.from || r?.origin || 'Addis Ababa');
+        const destination = String(b.destination || b.to || r?.destination || 'Destination');
+        const departureTime = b.departureTime
+          ? String(b.departureTime)
+          : t?.departure_time
+          ? new Date(String(t.departure_time)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : '06:00 AM';
+
+        const rawStat = String(b.rawStatus || b.status || '').toUpperCase();
+        let status: PassengerBooking['status'] = 'CONFIRMED';
+        if (rawStat === 'CANCELLED' || rawStat === 'CANCELED') {
+          status = 'CANCELLED';
+        } else if (rawStat === 'COMPLETED' || rawStat === 'TRAVELLED') {
+          status = 'COMPLETED';
+        } else if (rawStat === 'PENDING') {
+          status = 'PENDING';
+        } else {
+          status = 'CONFIRMED';
+        }
+
+        const seatNum = Number(b.seatNumber || b.seat_number || (Array.isArray(b.seats) ? b.seats[0] : 1) || 1);
+
+        return {
+          id: String(b.id),
+          bookingNumber: String(b.bookingNumber || b.booking_number || `BKG-${String(b.id).slice(0, 6)}`),
+          status,
+          totalAmount: Number(b.totalFare || b.price || b.amount || b.total_fare || b.total_amount || 0),
+          createdAt: String(b.createdAt || b.bookingDate || b.created_at || new Date().toISOString()),
+          passengerName: String(b.passengerName || 'Passenger'),
+          phone: String(b.phone || b.passengerPhone || ''),
+          seatNumber: seatNum,
+          trip: {
+            id: String(t?.id || b.tripId || ''),
+            origin,
+            destination,
+            departureTime,
+            departureDate: String(b.departureDate || b.date || (t?.departure_time ? String(t.departure_time).split('T')[0] : new Date().toISOString().split('T')[0])),
+            operatorName: String(b.operatorName || b.operator || op?.name || 'Selam Bus Line'),
+            busPlate: String(b.busPlateNumber || b.busPlate || t?.plate_number || 'ETH-BUS'),
+            busType: String(b.busModel || b.busType || t?.busType || 'Standard Coach'),
+            terminal: `${origin} Main Terminal`,
+          },
+          ticket: {
+            id: String(tk?.id || b.ticketId || `tkt-${b.id}`),
+            ticketNumber: String(tk?.ticket_number || tk?.ticketNumber || b.ticketNumber || `TKT-${String(b.id).slice(0, 8).toUpperCase()}`),
+            status: String(tk?.status || (status === 'CONFIRMED' ? 'ACTIVE' : status)),
+            qrToken: String(tk?.qr_token || tk?.qrToken || b.qrToken || `TKT-${b.id}-${seatNum}`),
+          },
+        };
+      });
+
+      this.localBookings = mapped;
+      return { success: true, data: { bookings: mapped } };
+    }
+
+    if (res.error) {
+      return { success: false, error: res.error };
+    }
+
+    return {
+      success: true,
+      data: { bookings: this.localBookings },
+    };
+  }
+
+  async cancelPassengerBooking(bookingId: string): Promise<ApiResponse> {
+    const res = await this.request(`/passenger/bookings/${encodeURIComponent(bookingId)}/cancel`, {
+      method: 'POST',
+    });
+
+    if (res.success) {
+      this.localBookings = this.localBookings.map((b) =>
+        b.id === bookingId ? { ...b, status: 'CANCELLED' as const } : b
+      );
+      return res;
+    }
+
+    return res;
   }
 }
 
 export const apiService = new ApiService();
 export default apiService;
-export * from '@/data/mockVerifierData';
-export * from '@/data/mockDriverData';
+export type {
+  ActiveTripInfo,
+  VerificationResultData,
+  RecentScanRecord,
+  VerificationStatus,
+  PassengerTrip,
+  SeatInfo,
+  PassengerBooking,
+};
+

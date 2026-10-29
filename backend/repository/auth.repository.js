@@ -7,25 +7,37 @@ export class AuthRepository {
    * @param {string} email
    */
   async findUserByEmail(email) {
-    return prisma.users.findUnique({
-      where: { email: email.toLowerCase() },
-      include: {
-        user_roles: {
-          include: {
-            roles: {
-              include: {
-                role_permissions: {
-                  include: {
-                    permissions: true,
-                  },
+    const normalized = (email || '').trim().toLowerCase();
+    const includeConfig = {
+      user_roles: {
+        include: {
+          roles: {
+            include: {
+              role_permissions: {
+                include: {
+                  permissions: true,
                 },
               },
             },
-            organizations: true,
           },
+          organizations: true,
         },
       },
+    };
+
+    let user = await prisma.users.findUnique({
+      where: { email: normalized },
+      include: includeConfig,
     });
+
+    if (!user) {
+      user = await prisma.users.findFirst({
+        where: { email: { equals: normalized, mode: 'insensitive' } },
+        include: includeConfig,
+      });
+    }
+
+    return user;
   }
 
   /**

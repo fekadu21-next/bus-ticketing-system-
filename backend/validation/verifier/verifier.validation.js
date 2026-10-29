@@ -13,5 +13,6 @@ export const tripIdParamSchema = z.object({
 
 export const verifyTicketSchema = z.object({
   qrToken: z.string().min(1, 'QR token is required'),
-  tripId: z.string().uuid('Invalid trip ID format'),
+  tripId: z.string().uuid('Invalid trip ID format').optional(),
 });
+

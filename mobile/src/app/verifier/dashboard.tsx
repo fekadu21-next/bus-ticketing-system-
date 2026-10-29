@@ -20,7 +20,7 @@ export default function VerifierDashboardPage() {
   const { user, loading: authLoading } = useAuth();
 
   const [activeTrip, setActiveTrip] = useState<ActiveTripInfo | null>(null);
-  const [stats, setStats] = useState({ total: 37, valid: 35, rejected: 2 });
+  const [stats, setStats] = useState({ total: 0, valid: 0, rejected: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -66,8 +66,19 @@ export default function VerifierDashboardPage() {
     return <Redirect href="/login" />;
   }
 
+  // If logged in as Driver only, automatically redirect to driver portal
+  if (
+    user.roles?.includes('DRIVER') &&
+    !user.roles?.includes('TICKET_VERIFIER') &&
+    !user.roles?.includes('ADMIN')
+  ) {
+    return <Redirect href="/dashboard" />;
+  }
+
   const displayName =
-    [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || 'Samuel';
+    [user.firstName, user.lastName].filter(Boolean).join(' ').trim() ||
+    (user.email ? user.email.split('@')[0] : 'Verifier');
+  const orgName = user.organizationName || 'Station Operations';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -91,7 +102,12 @@ export default function VerifierDashboardPage() {
         {/* Verifier Greeting */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.heroSection}>
           <Text style={styles.greeting}>Hello, {displayName} 👋</Text>
-          <Text style={styles.roleTag}>Ticket Verification Staff</Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+            <Text style={styles.roleTag}>Ticket Verification Staff</Text>
+            <Text style={[styles.roleTag, { backgroundColor: '#e0f2fe', color: '#0369a1' }]}>
+              🏢 {orgName}
+            </Text>
+          </View>
         </Animated.View>
 
         {/* ACTIVE TRIP CARD */}
@@ -144,7 +160,15 @@ export default function VerifierDashboardPage() {
                 </View>
               </View>
             </TouchableOpacity>
-          ) : null}
+          ) : (
+            <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', marginVertical: 8 }}>
+              <Text style={{ fontSize: 24, marginBottom: 6 }}>📋</Text>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#1e293b' }}>No Active Trip Assigned</Text>
+              <Text style={{ fontSize: 13, color: '#64748b', textAlign: 'center', marginTop: 4 }}>
+                Trips assigned to your verification station will appear here once scheduled.
+              </Text>
+            </View>
+          )}
         </Animated.View>
 
         {/* LARGE DOMINANT SCAN TICKET BUTTON */}

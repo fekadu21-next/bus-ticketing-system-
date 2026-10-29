@@ -1,12 +1,24 @@
 import { z } from 'zod';
 
+// Convert empty string to null for nullable UUID fields
+const uuidOrNull = z.preprocess(
+  (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
+  z.string().uuid().optional().nullable()
+);
+
+// Coerce string numbers to number for numeric fields
+const positiveNumberOrNull = z.preprocess(
+  (val) => (val !== undefined && val !== null && val !== '' ? Number(val) : undefined),
+  z.number().positive().optional().nullable()
+);
+
 export const createRouteSchema = z.object({
   origin: z.string().trim().min(2).max(100).optional(),
   destination: z.string().trim().min(2).max(100).optional(),
-  originStationId: z.string().uuid().optional().nullable(),
-  destinationStationId: z.string().uuid().optional().nullable(),
-  distanceKm: z.number().positive('Distance must be greater than 0').optional().nullable(),
-  estimatedDurationHours: z.number().positive('Duration must be greater than 0').optional().nullable(),
+  originStationId: uuidOrNull,
+  destinationStationId: uuidOrNull,
+  distanceKm: positiveNumberOrNull,
+  estimatedDurationHours: positiveNumberOrNull,
   isActive: z.boolean().optional().default(true),
 }).refine(
   (data) => Boolean((data.origin && data.destination) || (data.originStationId && data.destinationStationId)),
@@ -33,10 +45,10 @@ export const createRouteSchema = z.object({
 export const updateRouteSchema = z.object({
   origin: z.string().trim().min(2).max(100).optional(),
   destination: z.string().trim().min(2).max(100).optional(),
-  originStationId: z.string().uuid().optional().nullable(),
-  destinationStationId: z.string().uuid().optional().nullable(),
-  distanceKm: z.number().positive().optional().nullable(),
-  estimatedDurationHours: z.number().positive().optional().nullable(),
+  originStationId: uuidOrNull,
+  destinationStationId: uuidOrNull,
+  distanceKm: positiveNumberOrNull,
+  estimatedDurationHours: positiveNumberOrNull,
   isActive: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });

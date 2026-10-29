@@ -9,7 +9,7 @@ export class DriverRepository {
 
     // Strict security check: Driver can only view trips assigned to them (or org trips if unassigned)
     const tripRows = await prisma.$queryRawUnsafe(
-      `SELECT id FROM trips WHERE (driver_id = $1::uuid OR (driver_id IS NULL AND organization_id = $2::uuid)) AND organization_id = $2::uuid`,
+      `SELECT id FROM trips WHERE driver_id = $1::uuid AND organization_id = $2::uuid`,
       driverId,
       organizationId
     );
@@ -77,7 +77,7 @@ export class DriverRepository {
    */
   async findAssignedTripById(tripId, driverId, organizationId) {
     const tripRows = await prisma.$queryRawUnsafe(
-      `SELECT id FROM trips WHERE id = $1::uuid AND (driver_id = $2::uuid OR (driver_id IS NULL AND organization_id = $3::uuid)) AND organization_id = $3::uuid`,
+      `SELECT id FROM trips WHERE id = $1::uuid AND driver_id = $2::uuid AND organization_id = $3::uuid`,
       tripId,
       driverId,
       organizationId
@@ -144,7 +144,9 @@ export class DriverRepository {
       where: { id: tripId },
       include: {
         buses: true,
-        routes: true,
+        routes: {
+          select: { id: true, origin: true, destination: true, distance_km: true, estimated_duration_hours: true },
+        },
       },
     });
   }
@@ -166,7 +168,9 @@ export class DriverRepository {
       where: { id: tripId },
       include: {
         buses: true,
-        routes: true,
+        routes: {
+          select: { id: true, origin: true, destination: true, distance_km: true, estimated_duration_hours: true },
+        },
       },
     });
   }

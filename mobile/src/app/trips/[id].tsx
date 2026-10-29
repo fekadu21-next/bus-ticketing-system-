@@ -2,9 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -12,6 +14,15 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { apiService, type DriverTrip } from '@/services/api';
+
+const PROBLEM_TYPES = [
+  { value: 'VEHICLE_PROBLEM', label: '🚗 Vehicle / Mechanical Issue' },
+  { value: 'DELAY', label: '⏱️ Heavy Traffic / Terminal Delay' },
+  { value: 'ROUTE_PROBLEM', label: '🚧 Road Closure / Route Diversion' },
+  { value: 'ACCIDENT', label: '⚠️ Road Collision / Accident' },
+  { value: 'PASSENGER_ISSUE', label: '👥 Passenger Emergency / Medical' },
+  { value: 'OTHER', label: '📝 Other Operational Issue' },
+];
 
 export default function TripDetailsScreen() {
   const router = useRouter();
@@ -21,6 +32,12 @@ export default function TripDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Problem report modal state
+  const [problemModalVisible, setProblemModalVisible] = useState(false);
+  const [problemType, setProblemType] = useState('VEHICLE_PROBLEM');
+  const [problemDescription, setProblemDescription] = useState('');
+  const [problemSubmitting, setProblemSubmitting] = useState(false);
 
   const fetchTripDetails = useCallback(async () => {
     if (!id) return;
@@ -105,13 +122,40 @@ export default function TripDetailsScreen() {
     );
   };
 
+  const handleReportProblem = async () => {
+    if (!id) return;
+    if (problemDescription.trim().length < 3) {
+      Alert.alert('Required', 'Please enter a description (at least 3 characters).');
+      return;
+    }
+
+    setProblemSubmitting(true);
+    try {
+      const res = await apiService.reportProblem(id, {
+        type: problemType,
+        description: problemDescription.trim(),
+      });
+      if (res.success) {
+        Alert.alert('Report Sent', 'Your problem report has been submitted to Operations.');
+        setProblemModalVisible(false);
+        setProblemDescription('');
+      } else {
+        Alert.alert('Submission Error', res.error || 'Failed to submit problem report.');
+      }
+    } catch {
+      Alert.alert('Error', 'Network error submitting problem report.');
+    } finally {
+      setProblemSubmitting(false);
+    }
+  };
+
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'IN_PROGRESS':
         return { label: 'IN PROGRESS', bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' };
       case 'PUBLISHED':
       case 'SCHEDULED':
-        return { label: 'PUBLISHED', bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' };
+        return { label: 'SCHEDULED', bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' };
       case 'COMPLETED':
         return { label: 'COMPLETED', bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' };
       case 'CANCELLED':
@@ -163,7 +207,12 @@ export default function TripDetailsScreen() {
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>TRIP DETAILS</Text>
-        <View style={styles.headerRightPlaceholder} />
+        <TouchableOpacity
+          style={styles.problemIconBtn}
+          onPress={() => setProblemModalVisible(true)}
+        >
+          <Text style={styles.problemIcon}>⚠️</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -171,7 +220,7 @@ export default function TripDetailsScreen() {
         <Animated.View entering={FadeIn.duration(400)} style={styles.bannerCard}>
           <View style={styles.bannerRow}>
             <View style={styles.routeHeader}>
-              <Text style={styles.routeLabel}>Route</Text>
+              <Text style={styles.routeLabel}>ASSIGNED ROUTE</Text>
               <Text style={styles.routeOrigin}>{trip.origin}</Text>
               <Text style={styles.bannerArrow}> ↓ </Text>
               <Text style={styles.routeDestination}>{trip.destination}</Text>
@@ -203,22 +252,32 @@ export default function TripDetailsScreen() {
               {actionLoading ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
-                <Text style={styles.primaryActionText}>START TRIP</Text>
+                <Text style={styles.primaryActionText}>START TRIP (DEPART)</Text>
               )}
             </TouchableOpacity>
           ) : trip.status === 'IN_PROGRESS' ? (
-            <TouchableOpacity
-              style={[styles.primaryActionBtn, styles.completeBtn]}
-              onPress={handleCompleteTrip}
-              disabled={actionLoading}
-              activeOpacity={0.85}
-            >
-              {actionLoading ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.primaryActionText}>COMPLETE TRIP</Text>
-              )}
-            </TouchableOpacity>
+            <View style={{ gap: 10 }}>
+              <TouchableOpacity
+                style={[styles.primaryActionBtn, styles.completeBtn]}
+                onPress={handleCompleteTrip}
+                disabled={actionLoading}
+                activeOpacity={0.85}
+              >
+                {actionLoading ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.primaryActionText}>COMPLETE TRIP (ARRIVE)</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.reportProblemBtn}
+                onPress={() => setProblemModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.reportProblemBtnText}>⚠️ Report Route Problem / Delay</Text>
+              </TouchableOpacity>
+            </View>
           ) : trip.status === 'COMPLETED' ? (
             <View style={styles.completedNotice}>
               <Text style={styles.completedNoticeIcon}>✅</Text>
@@ -240,7 +299,7 @@ export default function TripDetailsScreen() {
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <View>
-                <Text style={styles.infoLabel}>Departure</Text>
+                <Text style={styles.infoLabel}>Scheduled Departure</Text>
                 <Text style={styles.infoValue}>{dep.date}</Text>
               </View>
               <Text style={styles.timeHighlight}>{dep.time}</Text>
@@ -258,32 +317,129 @@ export default function TripDetailsScreen() {
 
         {/* Bus Information */}
         <Animated.View entering={FadeInDown.duration(400).delay(300)} style={styles.section}>
-          <Text style={styles.sectionTitle}>Bus Information</Text>
+          <Text style={styles.sectionTitle}>Assigned Vehicle</Text>
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Model</Text>
-              <Text style={styles.infoValue}>{trip.bus?.model || 'Toyota / XYZ Coach'}</Text>
+              <Text style={styles.infoLabel}>Bus Model</Text>
+              <Text style={styles.infoValue}>{trip.bus?.model || 'Standard Coach'}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Plate Number</Text>
               <View style={styles.plateTag}>
-                <Text style={styles.plateText}>{trip.bus?.plateNumber || 'ET-1234'}</Text>
+                <Text style={styles.plateText}>{trip.bus?.plateNumber || 'ETH-BUS'}</Text>
               </View>
             </View>
             <View style={styles.divider} />
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Capacity</Text>
-              <Text style={styles.infoValue}>{trip.totalSeats || trip.bus?.capacity || 49} seats</Text>
+              <Text style={styles.infoValue}>{trip.totalSeats || trip.bus?.capacity || 50} seats</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Trip Status</Text>
-              <Text style={styles.statusValueText}>{trip.status}</Text>
+              <Text style={styles.infoLabel}>Booked Passengers</Text>
+              <Text style={styles.infoValueHighlight}>{trip.bookedSeats || 0} / {trip.totalSeats || 50} Booked</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Fare per Seat</Text>
+              <Text style={styles.infoValueHighlight}>{trip.fare} ETB</Text>
             </View>
           </View>
         </Animated.View>
+
+        {/* Existing Problem Reports for this trip */}
+        {trip.problemReports && trip.problemReports.length > 0 && (
+          <Animated.View entering={FadeInDown.duration(400).delay(350)} style={styles.section}>
+            <Text style={styles.sectionTitle}>Logged Trip Incidents</Text>
+            {trip.problemReports.map((p) => (
+              <View key={p.id} style={styles.tripProblemItem}>
+                <View style={styles.tripProblemHeader}>
+                  <Text style={styles.tripProblemType}>{p.type.replace(/_/g, ' ')}</Text>
+                  <Text style={styles.tripProblemStatus}>{p.status}</Text>
+                </View>
+                <Text style={styles.tripProblemDesc}>{p.description}</Text>
+                {p.notes ? (
+                  <Text style={styles.tripProblemNotes}>Dispatch: {p.notes}</Text>
+                ) : null}
+              </View>
+            ))}
+          </Animated.View>
+        )}
+
+        {/* Incident Button (Always accessible) */}
+        <TouchableOpacity
+          style={styles.secondaryProblemBtn}
+          onPress={() => setProblemModalVisible(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.secondaryProblemText}>📢 Report Incident to Fleet Operations</Text>
+        </TouchableOpacity>
       </ScrollView>
+
+      {/* Problem Reporting Modal */}
+      <Modal
+        visible={problemModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setProblemModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Report Trip Incident</Text>
+              <TouchableOpacity onPress={() => setProblemModalVisible(false)}>
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.modalLabel}>Select Issue Type:</Text>
+              <View style={styles.typeSelector}>
+                {PROBLEM_TYPES.map((pt) => {
+                  const isSelected = problemType === pt.value;
+                  return (
+                    <TouchableOpacity
+                      key={pt.value}
+                      style={[styles.typeOption, isSelected && styles.typeOptionSelected]}
+                      onPress={() => setProblemType(pt.value)}
+                    >
+                      <Text style={[styles.typeOptionText, isSelected && styles.typeOptionTextSelected]}>
+                        {pt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={styles.modalLabel}>Detailed Description:</Text>
+              <TextInput
+                style={styles.problemInput}
+                placeholder="Describe current location, vehicle condition or reason for delay..."
+                placeholderTextColor="#94a3b8"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                value={problemDescription}
+                onChangeText={setProblemDescription}
+                editable={!problemSubmitting}
+              />
+
+              <TouchableOpacity
+                style={[styles.submitProblemBtn, problemSubmitting && styles.submitProblemBtnDisabled]}
+                onPress={handleReportProblem}
+                disabled={problemSubmitting}
+              >
+                {problemSubmitting ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.submitProblemBtnText}>SUBMIT REPORT TO OPERATIONS</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -292,6 +448,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  errorIcon: {
+    fontSize: 36,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#dc2626',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#0f766e',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
   header: {
     flexDirection: 'row',
@@ -312,27 +500,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0f172a',
+    letterSpacing: 0.5,
   },
-  headerRightPlaceholder: {
-    width: 32,
+  problemIconBtn: {
+    padding: 6,
+  },
+  problemIcon: {
+    fontSize: 20,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
+    padding: 20,
+    paddingBottom: 36,
   },
   bannerCard: {
-    backgroundColor: '#0f766e',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#0f766e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 16,
   },
   bannerRow: {
     flexDirection: 'row',
@@ -343,69 +532,83 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   routeLabel: {
-    fontSize: 12,
-    color: '#99f6e4',
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0f766e',
+    letterSpacing: 0.8,
     marginBottom: 4,
   },
   routeOrigin: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
-    color: '#ffffff',
+    color: '#0f172a',
   },
   bannerArrow: {
-    fontSize: 18,
-    color: '#99f6e4',
+    fontSize: 14,
+    color: '#94a3b8',
     marginVertical: 2,
-    fontWeight: 'bold',
   },
   routeDestination: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
-    color: '#ffffff',
+    color: '#0f172a',
   },
   statusBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 5,
+    borderRadius: 8,
     borderWidth: 1,
   },
   statusText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 10,
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#475569',
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   primaryActionBtn: {
-    paddingVertical: 18,
-    borderRadius: 14,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
     elevation: 3,
   },
   startBtn: {
-    backgroundColor: '#0284c7',
+    backgroundColor: '#0f766e',
+    shadowColor: '#0f766e',
   },
   completeBtn: {
-    backgroundColor: '#16a34a',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
   },
   primaryActionText: {
     color: '#ffffff',
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
+  },
+  reportProblemBtn: {
+    backgroundColor: '#fff1f2',
+    borderWidth: 1,
+    borderColor: '#fecdd3',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  reportProblemBtnText: {
+    color: '#e11d48',
+    fontSize: 13,
+    fontWeight: '700',
   },
   completedNotice: {
     backgroundColor: '#f0fdf4',
@@ -417,22 +620,24 @@ const styles = StyleSheet.create({
   },
   completedNoticeIcon: {
     fontSize: 28,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   completedNoticeTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: '#15803d',
     marginBottom: 2,
   },
   completedNoticeSub: {
     fontSize: 12,
-    color: '#166534',
+    color: '#64748b',
   },
   cancelledNotice: {
     backgroundColor: '#fef2f2',
-    padding: 14,
+    borderWidth: 1,
+    borderColor: '#fecaca',
     borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
   },
   infoCard: {
@@ -448,14 +653,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
   },
+  divider: {
+    height: 1,
+    backgroundColor: '#f1f5f9',
+  },
   infoLabel: {
     fontSize: 13,
     color: '#64748b',
+    fontWeight: '500',
   },
   infoValue: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#0f172a',
+  },
+  infoValueHighlight: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0f766e',
   },
   timeHighlight: {
     fontSize: 16,
@@ -464,57 +679,153 @@ const styles = StyleSheet.create({
   },
   plateTag: {
     backgroundColor: '#f1f5f9',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#cbd5e1',
   },
   plateText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  secondaryProblemBtn: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  secondaryProblemText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  modalCloseText: {
+    fontSize: 20,
+    color: '#64748b',
+    fontWeight: 'bold',
+  },
+  modalBody: {
+    marginBottom: 20,
+  },
+  modalLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#334155',
+    marginBottom: 8,
+  },
+  typeSelector: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  typeOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+  },
+  typeOptionSelected: {
+    borderColor: '#0f766e',
+    backgroundColor: '#f0fdfa',
+  },
+  typeOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  typeOptionTextSelected: {
+    color: '#0f766e',
+    fontWeight: '700',
+  },
+  problemInput: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 10,
+    padding: 12,
     fontSize: 14,
+    color: '#0f172a',
+    minHeight: 90,
+    marginBottom: 20,
+  },
+  submitProblemBtn: {
+    backgroundColor: '#e11d48',
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  submitProblemBtnDisabled: {
+    opacity: 0.6,
+  },
+  submitProblemBtnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  tripProblemItem: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 8,
+  },
+  tripProblemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  tripProblemType: {
+    fontSize: 12,
     fontWeight: '700',
     color: '#0f172a',
   },
-  statusValueText: {
-    fontSize: 13,
-    fontWeight: '700',
+  tripProblemStatus: {
+    fontSize: 10,
+    fontWeight: '800',
     color: '#0f766e',
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#f1f5f9',
-    marginVertical: 6,
+  tripProblemDesc: {
+    fontSize: 12,
+    color: '#475569',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#f8fafc',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#64748b',
-  },
-  errorIcon: {
-    fontSize: 40,
-    marginBottom: 10,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#dc2626',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: '#0f766e',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
+  tripProblemNotes: {
+    fontSize: 11,
+    color: '#16a34a',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });

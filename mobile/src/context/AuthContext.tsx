@@ -9,7 +9,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   clearError: () => void;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: AuthUser }>;
   register: (data: {
     firstName: string;
     lastName: string;
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await apiService.login(email.trim(), password);
       if (result.success && result.data?.accessToken && result.data.user) {
         await persistSession(result.data.accessToken, result.data.user);
-        return { success: true };
+        return { success: true, user: result.data.user };
       }
       const nextError = result.error || 'Login failed';
       setError(nextError);

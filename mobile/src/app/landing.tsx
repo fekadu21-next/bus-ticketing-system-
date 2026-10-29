@@ -28,6 +28,13 @@ export default function LandingPage() {
           >
             <Text style={styles.secondaryButtonText}>Create Account</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.guestButton}
+            onPress={() => router.push('/passenger/home')}
+          >
+            <Text style={styles.guestButtonText}>Browse Buses as Guest →</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.footerText}>Ethiopia&apos;s #1 Bus Ticketing Platform</Text>
@@ -98,6 +105,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#ffffff',
+  },
+  guestButton: {
+    padding: 12,
+    alignItems: 'center',
+  },
+  guestButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textDecorationLine: 'underline',
   },
   footerText: {
     fontSize: 12,

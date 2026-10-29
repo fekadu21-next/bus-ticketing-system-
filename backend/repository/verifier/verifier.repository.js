@@ -103,7 +103,9 @@ export class VerifierRepository {
         organizations: {
           select: { id: true, name: true, type: true },
         },
-        routes: true,
+        routes: {
+          select: { id: true, origin: true, destination: true, distance_km: true, estimated_duration_hours: true },
+        },
         buses: true,
         tickets: {
           include: {
@@ -128,7 +130,9 @@ export class VerifierRepository {
         },
         trips: {
           include: {
-            routes: true,
+            routes: {
+              select: { id: true, origin: true, destination: true, distance_km: true, estimated_duration_hours: true },
+            },
             buses: true,
             organizations: true,
           },
@@ -155,7 +159,9 @@ export class VerifierRepository {
         },
         trips: {
           include: {
-            routes: true,
+            routes: {
+              select: { id: true, origin: true, destination: true, distance_km: true, estimated_duration_hours: true },
+            },
             buses: true,
             organizations: true,
           },

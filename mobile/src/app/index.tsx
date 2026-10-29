@@ -15,13 +15,16 @@ export default function IndexScreen() {
   }
 
   if (user) {
-    if (user.roles?.includes('TICKET_VERIFIER')) {
+    if (user.roles?.includes('TICKET_VERIFIER') && !user.roles?.includes('DRIVER')) {
       return <Redirect href="/verifier/dashboard" />;
     }
-    return <Redirect href="/dashboard" />;
+    if (user.roles?.includes('DRIVER')) {
+      return <Redirect href="/driver" />;
+    }
+    return <Redirect href="/passenger/home" />;
   }
 
-  return <Redirect href="/login" />;
+  return <Redirect href="/passenger/home" />;
 }
 
 const styles = StyleSheet.create({

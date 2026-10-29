@@ -9,7 +9,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
-import { type VerificationResultData } from '@/data/mockVerifierData';
+import { type VerificationResultData } from '@/types';
 
 export default function VerificationResultScreen() {
   const router = useRouter();
@@ -20,22 +20,19 @@ export default function VerificationResultScreen() {
     result = params.resultData
       ? JSON.parse(params.resultData)
       : {
-          status: 'VALID',
-          allowed: true,
-          passengerName: 'Abebe Kebede',
-          ticketNumber: 'TKT-000123',
-          route: 'Addis Ababa → Bahir Dar',
-          seatNumber: 12,
-          verifiedAt: '06:12 AM',
-          message: 'TICKET VALID — BOARDING ALLOWED',
+          status: 'INVALID',
+          allowed: false,
+          ticketNumber: 'N/A',
+          verifiedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          message: 'No scan data received',
         };
   } catch {
     result = {
       status: 'INVALID',
       allowed: false,
       ticketNumber: 'UNKNOWN',
-      verifiedAt: 'Now',
-      message: 'INVALID TICKET',
+      verifiedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      message: 'Failed to parse verification result',
     };
   }
 

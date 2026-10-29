@@ -1,12 +1,17 @@
 import prisma from '../../Config/db.js';
 import { ORGANIZATION_STATUS } from '../../constants/organization.js';
 
+/** Returns true only for strings that look like a real UUID */
+const isValidUUID = (val) =>
+  typeof val === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
 export class AdminDashboardRepository {
   /**
    * Aggregate real organization counts by lifecycle status
    */
   async getOrganizationStats({ organizationId = null } = {}) {
-    const where = organizationId && organizationId !== 'ALL' ? { id: organizationId } : {};
+    const where = isValidUUID(organizationId) ? { id: organizationId } : {};
     const [total, pending, approved, rejected, suspended] = await Promise.all([
       prisma.organizations.count({ where }),
       prisma.organizations.count({ where: { ...where, status: ORGANIZATION_STATUS.PENDING } }),
@@ -28,7 +33,7 @@ export class AdminDashboardRepository {
    * Aggregate real user platform statistics supported by existing schema
    */
   async getUserStats({ organizationId = null } = {}) {
-    const where = organizationId && organizationId !== 'ALL'
+    const where = isValidUUID(organizationId)
       ? { user_roles: { some: { organization_id: organizationId } } }
       : {};
     const [total, active, emailVerified] = await Promise.all([
@@ -48,7 +53,7 @@ export class AdminDashboardRepository {
    * Real fleet statistics
    */
   async getFleetStats({ organizationId = null } = {}) {
-    const where = organizationId && organizationId !== 'ALL' ? { organization_id: organizationId } : {};
+    const where = isValidUUID(organizationId) ? { organization_id: organizationId } : {};
     const [total, active] = await Promise.all([
       prisma.buses.count({ where }),
       prisma.buses.count({ where: { ...where, is_active: true } }),
@@ -60,7 +65,7 @@ export class AdminDashboardRepository {
    * Real trip statistics
    */
   async getTripStats({ organizationId = null } = {}) {
-    const where = organizationId && organizationId !== 'ALL' ? { organization_id: organizationId } : {};
+    const where = isValidUUID(organizationId) ? { organization_id: organizationId } : {};
     const now = new Date();
     const [total, scheduled, inTransit, completed, cancelled, upcoming, draft] = await Promise.all([
       prisma.trips.count({ where }),
@@ -84,7 +89,7 @@ export class AdminDashboardRepository {
    * Real booking statistics
    */
   async getBookingStats({ organizationId = null } = {}) {
-    const where = organizationId && organizationId !== 'ALL' ? { organization_id: organizationId } : {};
+    const where = isValidUUID(organizationId) ? { organization_id: organizationId } : {};
     const [total, confirmed, pending, cancelled] = await Promise.all([
       prisma.bookings.count({ where }),
       prisma.bookings.count({ where: { ...where, status: 'CONFIRMED' } }),
@@ -98,7 +103,7 @@ export class AdminDashboardRepository {
    * Real financial statistics
    */
   async getFinancialStats({ organizationId = null } = {}) {
-    const where = organizationId && organizationId !== 'ALL' ? { organization_id: organizationId } : {};
+    const where = isValidUUID(organizationId) ? { organization_id: organizationId } : {};
     const [aggregate, pendingTransactions] = await Promise.all([
       prisma.payments.aggregate({
         where: { ...where, status: 'COMPLETED' },

@@ -76,7 +76,7 @@ export default function RegisterPage() {
 
     if (result.success) {
       if (result.data?.accessToken) {
-        router.replace('/dashboard');
+        router.replace('/passenger/home');
       } else {
         setSuccessMessage(
           result.message || 'Account created! Please check your email for verification.'

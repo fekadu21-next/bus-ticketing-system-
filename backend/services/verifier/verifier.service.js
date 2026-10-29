@@ -67,18 +67,7 @@ export class VerifierService {
   async verifyTicket(user, { qrToken, tripId }) {
     const orgId = this.resolveVerifierOrg(user);
 
-    // 1. Verify trip exists and belongs to the verifier's organization
-    const trip = await verifierRepository.findTripById(tripId, orgId);
-    if (!trip) {
-      // Check if trip exists under another organization to enforce strict organization isolation
-      const anyTrip = await verifierRepository.findTripById(tripId, null);
-      if (anyTrip && anyTrip.organization_id !== orgId) {
-        throw new ApiError(403, 'Forbidden: You cannot verify tickets for an organization you do not belong to.');
-      }
-      throw new ApiError(404, 'Trip not found.');
-    }
-
-    // 2. Decode and validate QR token
+    // 1. Decode and validate QR token
     let ticket = null;
     let decodedToken = null;
 
@@ -94,12 +83,12 @@ export class VerifierService {
       ticket = await verifierRepository.findTicketByToken(qrToken);
     }
 
-    // 3. INVALID: If ticket is not found in database or invalid QR
+    // 2. INVALID: If ticket is not found in database or invalid QR
     if (!ticket) {
       await verifierRepository.createVerificationAuditRecord({
         ticketId: null,
         bookingId: null,
-        tripId,
+        tripId: tripId || null,
         verifierId: user.id,
         organizationId: orgId,
         result: 'INVALID',
@@ -113,12 +102,25 @@ export class VerifierService {
       };
     }
 
+    const effectiveTripId = tripId || ticket.trip_id;
+
+    // 3. Verify trip exists and belongs to the verifier's organization
+    const trip = await verifierRepository.findTripById(effectiveTripId, orgId);
+    if (!trip) {
+      // Check if trip exists under another organization to enforce strict organization isolation
+      const anyTrip = await verifierRepository.findTripById(effectiveTripId, null);
+      if (anyTrip && anyTrip.organization_id !== orgId) {
+        throw new ApiError(403, 'Forbidden: You cannot verify tickets for an organization you do not belong to.');
+      }
+      throw new ApiError(404, 'Trip not found.');
+    }
+
     // 4. Organization boundary check: Ticket belongs to another operator
     if (ticket.organization_id !== orgId) {
       await verifierRepository.createVerificationAuditRecord({
         ticketId: ticket.id,
         bookingId: ticket.booking_id,
-        tripId,
+        tripId: effectiveTripId,
         verifierId: user.id,
         organizationId: orgId,
         result: 'INVALID',
@@ -133,7 +135,7 @@ export class VerifierService {
     }
 
     // 5. WRONG_TRIP: Ticket is valid, but for a different trip
-    if (ticket.trip_id !== tripId) {
+    if (tripId && ticket.trip_id !== tripId) {
       await verifierRepository.createVerificationAuditRecord({
         ticketId: ticket.id,
         bookingId: ticket.booking_id,
@@ -161,7 +163,7 @@ export class VerifierService {
       await verifierRepository.createVerificationAuditRecord({
         ticketId: ticket.id,
         bookingId: ticket.booking_id,
-        tripId,
+        tripId: effectiveTripId,
         verifierId: user.id,
         organizationId: orgId,
         result: 'CANCELLED',
@@ -180,7 +182,7 @@ export class VerifierService {
       await verifierRepository.createVerificationAuditRecord({
         ticketId: ticket.id,
         bookingId: ticket.booking_id,
-        tripId,
+        tripId: effectiveTripId,
         verifierId: user.id,
         organizationId: orgId,
         result: 'ALREADY_USED',
@@ -202,7 +204,7 @@ export class VerifierService {
       await verifierRepository.createVerificationAuditRecord({
         ticketId: ticket.id,
         bookingId: ticket.booking_id,
-        tripId,
+        tripId: effectiveTripId,
         verifierId: user.id,
         organizationId: orgId,
         result: 'ALREADY_USED',
@@ -220,7 +222,7 @@ export class VerifierService {
     await verifierRepository.createVerificationAuditRecord({
       ticketId: ticket.id,
       bookingId: ticket.booking_id,
-      tripId,
+      tripId: effectiveTripId,
       verifierId: user.id,
       organizationId: orgId,
       result: 'VALID',
@@ -237,7 +239,7 @@ export class VerifierService {
         metadata: {
           ticketId: ticket.id,
           ticketNumber: ticket.ticket_number,
-          tripId,
+          tripId: effectiveTripId,
           bookingId: ticket.booking_id,
           seatNumber: ticket.seat_number,
           idempotencyKey: `ticket-verify-${ticket.id}`,

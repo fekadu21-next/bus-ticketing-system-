@@ -12,11 +12,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 type KeyboardScreenProps = {
   children: ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle>;
 };
 
-export function KeyboardScreen({ children, contentContainerStyle }: KeyboardScreenProps) {
+export function KeyboardScreen({ children, contentContainerStyle, style }: KeyboardScreenProps) {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, style]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}

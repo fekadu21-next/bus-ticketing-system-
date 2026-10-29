@@ -16,7 +16,7 @@ export class TripService {
 
     let busId = tripData.busId;
     let routeId = tripData.routeId;
-    const fare = tripData.fare ?? tripData.price;
+    const fare = tripData.fare ?? tripData.price ?? tripData.fareAmount;
 
     // Support route resolution via origin & destination if routeId omitted
     if (!routeId && tripData.origin && tripData.destination) {
