@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import notificationApi from '../../api/notification.api';
 import {
   Bell,
@@ -17,10 +18,19 @@ import {
   Ticket,
   ChevronRight,
   ExternalLink,
+  Building,
+  Bus,
+  Navigation,
 } from 'lucide-react';
 
 export const NotificationBell = ({ variant = 'default' }) => {
   const { isAuthenticated, user, isPassenger, isAdmin, isOperator } = useAuth();
+  const {
+    unreadCount: contextUnreadCount,
+    isSocketConnected,
+    markAsRead: contextMarkAsRead,
+    markAllAsRead: contextMarkAllAsRead,
+  } = useNotifications();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -28,6 +38,13 @@ export const NotificationBell = ({ variant = 'default' }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'unread'
   const dropdownRef = useRef(null);
+
+  // Sync with real-time Socket.IO context unread count
+  useEffect(() => {
+    if (typeof contextUnreadCount === 'number') {
+      setUnreadCount(contextUnreadCount);
+    }
+  }, [contextUnreadCount]);
 
   // Helper for relative timestamps
   const formatTimeAgo = (dateString) => {
@@ -50,23 +67,47 @@ export const NotificationBell = ({ variant = 'default' }) => {
   const getIconForType = (type) => {
     switch (type) {
       case 'BOOKING_CONFIRMED':
+      case 'NEW_BOOKING':
         return <Ticket className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
+      case 'QR_TICKET_ISSUED':
+        return <Ticket className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
       case 'BOOKING_CANCELLED':
         return <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
       case 'PAYMENT_CONFIRMED':
+      case 'PAYMENT_SUCCESS':
         return <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
       case 'PAYMENT_FAILED':
+      case 'PAYMENT_STATUS_CHANGED':
         return <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
       case 'TRIP_CANCELLED':
         return <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
       case 'TRIP_DELAYED':
+      case 'TRIP_RESCHEDULED':
+      case 'TRIP_SCHEDULE_CHANGED':
         return <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
       case 'TRIP_UPDATED':
-        return <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
+      case 'TRIP_ASSIGNED':
+      case 'TRIP_REASSIGNED':
+      case 'VERIFIER_TRIP_ASSIGNED':
+      case 'VERIFIER_TRIP_REASSIGNED':
+        return <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
+      case 'BUS_CHANGED':
+        return <Bus className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case 'ROUTE_CHANGED':
+        return <Navigation className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />;
       case 'TICKET_VERIFIED':
+      case 'VERIFICATION_UPDATE':
         return <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
+      case 'NEW_ORGANIZATION_REGISTRATION':
+      case 'ORGANIZATION_APPROVAL_REQUEST':
+      case 'ORGANIZATION_APPROVED':
+        return <Building className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
+      case 'ORGANIZATION_REJECTED':
+        return <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
       case 'TRIP_PROBLEM_REPORTED':
-        return <AlertOctagon className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case 'DRIVER_PROBLEM_REPORT':
+      case 'CRITICAL_PLATFORM_ISSUE':
+        return <AlertOctagon className="w-4 h-4 text-red-600 dark:text-red-400" />;
       case 'ACCOUNT_SECURITY':
         return <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
       default:

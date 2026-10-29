@@ -7,5 +7,6 @@ const router = Router();
 
 router.post('/', validate(submitFeedbackSchema), passengerFeedbackController.submitFeedback);
 router.get('/', passengerFeedbackController.getMyFeedbacks);
+router.get('/trips/:tripId', passengerFeedbackController.getTripFeedback);
 
 export default router;

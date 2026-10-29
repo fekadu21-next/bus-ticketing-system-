@@ -32,6 +32,8 @@ import {
   AlertTriangle,
   Info,
   LogOut,
+  MessageSquareQuote,
+  Star,
 } from "lucide-react";
 
 import logoImg from "../../assets/logo.png";
@@ -186,11 +188,11 @@ export const Sidebar = () => {
           title: isDuplicate ? "Duplicate QR Scan Flagged" : "Invalid Ticket Scan Rejected",
           message: `Boarding attempt rejected for ticket #${v.ticketNumber} at terminal "${v.stationName || 'Autobus Terra'}".`,
           timestamp: v.scannedAt || "Recently",
-          targetPage: "tickets",
+          targetPage: "bookings",
           icon: ShieldCheck,
           color: "#ef4444",
           badge: isDuplicate ? "Duplicate Scan" : "Security Alert",
-          actionText: "View QR Log",
+          actionText: "View Bookings",
         });
       });
 
@@ -265,11 +267,11 @@ export const Sidebar = () => {
       trips: true,
       bookings: true,
       payments: true,
-      tickets: true,
       reports: true,
       audit: true,
       drivers: true,
       verifiers: true,
+      feedback: true,
       notifications: true,
     };
     setSeenBadges(allSeen);
@@ -357,8 +359,6 @@ export const Sidebar = () => {
         return pendingBookingsCount;
       case "payments":
         return pendingPaymentsCount;
-      case "tickets":
-        return securityAlertsCount;
       default:
         return 0;
     }
@@ -434,166 +434,136 @@ export const Sidebar = () => {
     return count > 99 ? "99+" : String(count);
   };
 
-  const adminNavGroups = [
+  const adminNavItems = [
+    { id: "dashboard", label: t("sidebar.overviewItem", "Overview"), icon: LayoutDashboard },
     {
-      group: t("sidebar.overview", "Overview & Access"),
-      items: [
-        { id: "dashboard", label: t("sidebar.overviewItem", "Overview"), icon: LayoutDashboard },
-        {
-          id: "organizations",
-          label: t("sidebar.organizations", "Organizations"),
-          icon: Building2,
-          badge: formatBadge(pendingApprovalsCount, "organizations"),
-          badgeType: "warning",
-          notifCategory: "ORG",
-        },
-        {
-          id: "users",
-          label: t("sidebar.users", "Users & Roles"),
-          icon: Users,
-          badge: formatBadge(attentionUsersCount, "users"),
-          badgeType: "primary",
-          notifCategory: "USER",
-        },
-      ],
+      id: "organizations",
+      label: t("sidebar.organizations", "Organizations"),
+      icon: Building2,
+      badge: formatBadge(pendingApprovalsCount, "organizations"),
+      badgeType: "warning",
+      notifCategory: "ORG",
     },
     {
-      group: t("sidebar.transit", "Transit Infrastructure"),
-      items: [
-        { id: "stations", label: t("sidebar.stations", "Stations"), icon: MapPin },
-        {
-          id: "buses",
-          label: t("sidebar.buses", "Fleet Buses"),
-          icon: Bus,
-          badge: formatBadge(attentionBusesCount, "buses"),
-          badgeType: "warning",
-          notifCategory: "FLEET",
-        },
-        {
-          id: "routes",
-          label: t("sidebar.routes", "Routes & Corridors"),
-          icon: RouteIcon,
-          badge: formatBadge(attentionRoutesCount, "routes"),
-          badgeType: "primary",
-          notifCategory: "ROUTE",
-        },
-        {
-          id: "trips",
-          label: t("sidebar.trips", "Trips & Schedules"),
-          icon: CalendarDays,
-          badge: formatBadge(pendingTripsCount, "trips"),
-          badgeType: "primary",
-          notifCategory: "TRIP",
-        },
-      ],
+      id: "users",
+      label: t("sidebar.users", "Users & Roles"),
+      icon: Users,
+      badge: formatBadge(attentionUsersCount, "users"),
+      badgeType: "primary",
+      notifCategory: "USER",
+    },
+    { id: "stations", label: t("sidebar.stations", "Stations"), icon: MapPin },
+    {
+      id: "buses",
+      label: t("sidebar.buses", "Fleet Buses"),
+      icon: Bus,
+      badge: formatBadge(attentionBusesCount, "buses"),
+      badgeType: "warning",
+      notifCategory: "FLEET",
     },
     {
-      group: t("sidebar.ticketing", "Ticketing & Finance"),
-      items: [
-        {
-          id: "bookings",
-          label: t("sidebar.bookings", "Bookings"),
-          icon: Ticket,
-          badge: formatBadge(pendingBookingsCount, "bookings"),
-          badgeType: "warning",
-          notifCategory: "BOOKING",
-        },
-        {
-          id: "payments",
-          label: t("sidebar.payments", "Payments & Revenue"),
-          icon: CreditCard,
-          badge: formatBadge(pendingPaymentsCount, "payments"),
-          badgeType: "primary",
-          notifCategory: "PAYMENT",
-        },
-        {
-          id: "tickets",
-          label: t("sidebar.tickets", "Tickets & QR"),
-          icon: QrCode,
-          badge: formatBadge(securityAlertsCount, "tickets"),
-          badgeType: "danger",
-          notifCategory: "SECURITY",
-        },
-      ],
+      id: "routes",
+      label: t("sidebar.routes", "Routes & Corridors"),
+      icon: RouteIcon,
+      badge: formatBadge(attentionRoutesCount, "routes"),
+      badgeType: "primary",
+      notifCategory: "ROUTE",
     },
     {
-      group: t("sidebar.governance", "Governance & System"),
-      items: [
-        { id: "reports", label: t("sidebar.reports", "Reports & KPIs"), icon: BarChart3 },
-        { id: "audit", label: t("sidebar.audit", "Audit Logs"), icon: FileSpreadsheet },
-        { id: "settings", label: t("sidebar.settings", "Settings"), icon: Settings },
-      ],
+      id: "trips",
+      label: t("sidebar.trips", "Trips & Schedules"),
+      icon: CalendarDays,
+      badge: formatBadge(pendingTripsCount, "trips"),
+      badgeType: "primary",
+      notifCategory: "TRIP",
     },
+    {
+      id: "bookings",
+      label: t("sidebar.bookings", "Bookings"),
+      icon: Ticket,
+      badge: formatBadge(pendingBookingsCount, "bookings"),
+      badgeType: "warning",
+      notifCategory: "BOOKING",
+    },
+    {
+      id: "payments",
+      label: t("sidebar.payments", "Payments & Revenue"),
+      icon: CreditCard,
+      badge: formatBadge(pendingPaymentsCount, "payments"),
+      badgeType: "primary",
+      notifCategory: "PAYMENT",
+    },
+    { id: "reports", label: t("sidebar.reports", "Reports & KPIs"), icon: BarChart3 },
+    { id: "audit", label: t("sidebar.audit", "Audit Logs"), icon: FileSpreadsheet },
+    { id: "feedback", label: t("sidebar.platformFeedback", "Platform Feedback"), icon: MessageSquareQuote },
+    { id: "settings", label: t("sidebar.settings", "Settings"), icon: Settings },
   ];
 
-  const managerNavGroups = [
+  const managerNavItems = [
+    { id: "dashboard", label: t("sidebar.overviewItem", "Overview"), icon: LayoutDashboard },
     {
-      group: t("sidebar.coreOperations", "Core Operations"),
-      items: [
-        { id: "dashboard", label: t("sidebar.overviewItem", "Overview"), icon: LayoutDashboard },
-      ],
+      id: "buses",
+      label: t("sidebar.buses", "Fleet & Buses"),
+      icon: Bus,
+      badge: formatBadge(attentionBusesCount, "buses"),
+      badgeType: "warning",
+      notifCategory: "FLEET",
     },
     {
-      group: t("sidebar.fleetScheduling", "Fleet & Scheduling"),
-      items: [
-        { id: "buses", label: t("sidebar.buses", "Fleet & Buses"), icon: Bus, badge: formatBadge(attentionBusesCount, "buses"), badgeType: "warning", notifCategory: "FLEET" },
-        { id: "routes", label: t("sidebar.routes", "Routes & Corridors"), icon: RouteIcon, badge: formatBadge(attentionRoutesCount, "routes"), badgeType: "primary", notifCategory: "ROUTE" },
-        {
-          id: "trips",
-          label: t("sidebar.trips", "Trips & Schedules"),
-          icon: CalendarDays,
-          badge: formatBadge(pendingTripsCount, "trips"),
-          badgeType: "primary",
-          notifCategory: "TRIP",
-        },
-        { id: "seats", label: t("sidebar.seats", "Seat Allocations"), icon: Grid3X3 },
-      ],
+      id: "routes",
+      label: t("sidebar.routes", "Routes & Corridors"),
+      icon: RouteIcon,
+      badge: formatBadge(attentionRoutesCount, "routes"),
+      badgeType: "primary",
+      notifCategory: "ROUTE",
     },
     {
-      group: t("sidebar.bookingsRevenue", "Bookings & Revenue"),
-      items: [
-        {
-          id: "bookings",
-          label: t("sidebar.bookings", "Bookings"),
-          icon: Ticket,
-          badge: formatBadge(pendingBookingsCount, "bookings"),
-          badgeType: "warning",
-          notifCategory: "BOOKING",
-        },
-        {
-          id: "payments",
-          label: t("sidebar.payments", "Payments & Revenue"),
-          icon: CreditCard,
-          badge: formatBadge(pendingPaymentsCount, "payments"),
-          badgeType: "primary",
-          notifCategory: "PAYMENT",
-        },
-      ],
+      id: "trips",
+      label: t("sidebar.trips", "Trips & Schedules"),
+      icon: CalendarDays,
+      badge: formatBadge(pendingTripsCount, "trips"),
+      badgeType: "primary",
+      notifCategory: "TRIP",
+    },
+    { id: "seats", label: t("sidebar.seats", "Seat Allocations"), icon: Grid3X3 },
+    {
+      id: "bookings",
+      label: t("sidebar.bookings", "Bookings"),
+      icon: Ticket,
+      badge: formatBadge(pendingBookingsCount, "bookings"),
+      badgeType: "warning",
+      notifCategory: "BOOKING",
     },
     {
-      group: t("sidebar.personnel", "Personnel & Verification"),
-      items: [
-        { id: "drivers", label: t("sidebar.drivers", "Drivers"), icon: UserCheck, notifCategory: "STAFF" },
-        { id: "verifiers", label: t("sidebar.verifiers", "Ticket Verifiers"), icon: QrCode, notifCategory: "STAFF" },
-      ],
+      id: "payments",
+      label: t("sidebar.payments", "Payments & Revenue"),
+      icon: CreditCard,
+      badge: formatBadge(pendingPaymentsCount, "payments"),
+      badgeType: "primary",
+      notifCategory: "PAYMENT",
     },
-    {
-      group: t("sidebar.analytics", "Analytics & Settings"),
-      items: [
-        { id: "reports", label: t("sidebar.reports", "Reports & KPIs"), icon: BarChart3 },
-        { id: "settings", label: t("sidebar.settings", "Settings"), icon: Settings },
-      ],
-    },
+    { id: "drivers", label: t("sidebar.drivers", "Drivers"), icon: UserCheck, notifCategory: "STAFF" },
+    { id: "verifiers", label: t("sidebar.verifiers", "Ticket Verifiers"), icon: QrCode, notifCategory: "STAFF" },
+    { id: "feedback", label: t("sidebar.tripFeedback", "Trip Reviews"), icon: Star },
+    { id: "reports", label: t("sidebar.reports", "Reports & KPIs"), icon: BarChart3 },
+    { id: "settings", label: t("sidebar.settings", "Settings"), icon: Settings },
   ];
 
   const isAdminSession = currentRole === "ADMIN" || isUserAdmin(user);
-  const navGroups = isAdminSession ? adminNavGroups : managerNavGroups;
+  const navItems = isAdminSession ? adminNavItems : managerNavItems;
 
-  // Total active unread badge count across all groups
-  const totalActiveBadges = navGroups.reduce(
-    (acc, group) => acc + group.items.filter((item) => Boolean(item.badge)).length,
-    0
-  );
+  // Determine if a specific item is currently active
+  const isItemActive = (itemId) => {
+    if (activePage === itemId) return true;
+    const basePath = isAdminSession ? "/admin" : "/operator";
+    if (itemId === "dashboard") {
+      return location.pathname === basePath || location.pathname === `${basePath}/`;
+    }
+    return location.pathname === `${basePath}/${itemId}` || location.pathname.startsWith(`${basePath}/${itemId}/`);
+  };
+
+  // Total active unread badge count across all items
+  const totalActiveBadges = navItems.filter((item) => Boolean(item.badge)).length;
 
   const handleNavClick = (item) => {
     if (item.isNotificationTrigger || item.id === "notifications") {
@@ -656,9 +626,9 @@ export const Sidebar = () => {
               <div className="brand-text">
                 <h2>InterCityBus</h2>
                 <span>
-                  {currentRole === "ADMIN"
+                  {isAdminSession
                     ? "Platform Admin Console"
-                    : `${activeOrg?.name || "Operator"} Portal`}
+                    : `${activeOrg?.name || "Operations"} Portal`}
                 </span>
               </div>
             )}
@@ -702,6 +672,7 @@ export const Sidebar = () => {
             >
               <span>🔔 {totalActiveBadges} active alert{totalActiveBadges > 1 ? "s" : ""}</span>
               <button
+                type="button"
                 onClick={resetAllBadges}
                 style={{
                   background: "transparent",
@@ -723,35 +694,59 @@ export const Sidebar = () => {
             </div>
           )}
 
-          {navGroups.map((group, gIdx) => (
-            <div key={group.group || gIdx} style={{ marginBottom: "0.5rem" }}>
-              {!isSidebarCollapsed && (
-                <div className="nav-group-title">{group.group}</div>
-              )}
-
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = activePage === item.id;
-                return (
-                  <div
-                    key={item.id}
-                    className={`nav-item ${isActive ? "active" : ""}`}
-                    onClick={() => handleNavClick(item)}
-                    onContextMenu={(e) => handleItemContextMenu(e, item)}
-                    title={isSidebarCollapsed ? item.label : undefined}
-                  >
-                    <div className="nav-link-content">
-                      <Icon size={isSidebarCollapsed ? 20 : 17} />
-                      {!isSidebarCollapsed && <span>{item.label}</span>}
-                    </div>
-                    {item.badge && (
-                      <span
-                        className={
-                          isSidebarCollapsed
-                            ? "badge-dot"
-                            : `badge-count ${item.badgeType ? `badge-${item.badgeType}` : ""}`
+          <div className="nav-items-list">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = isItemActive(item.id);
+              return (
+                <div
+                  key={item.id}
+                  className={`nav-item ${isActive ? "active" : ""}`}
+                  onClick={() => handleNavClick(item)}
+                  onContextMenu={(e) => handleItemContextMenu(e, item)}
+                  title={isSidebarCollapsed ? item.label : undefined}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleNavClick(item);
+                    }
+                  }}
+                >
+                  <div className="nav-link-content">
+                    <Icon size={isSidebarCollapsed ? 20 : 18} />
+                    {!isSidebarCollapsed && <span>{item.label}</span>}
+                  </div>
+                  {item.badge && (
+                    <span
+                      className={
+                        isSidebarCollapsed
+                          ? "badge-dot"
+                          : `badge-count ${item.badgeType ? `badge-${item.badgeType}` : ""}`
+                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (item.notifCategory) {
+                          setNotifCategoryFilter(item.notifCategory);
+                          setShowNotificationsDrawer(true);
+                        } else {
+                          handleNavClick(item);
                         }
-                        onClick={(e) => {
+                      }}
+                      onContextMenu={(e) => {
+                        e.stopPropagation();
+                        handleItemContextMenu(e, item);
+                      }}
+                      title={
+                        isSidebarCollapsed
+                          ? `${item.badge} notifications for ${item.label}`
+                          : `View ${item.badge} notifications for ${item.label}`
+                      }
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
                           e.stopPropagation();
                           if (item.notifCategory) {
                             setNotifCategoryFilter(item.notifCategory);
@@ -759,34 +754,16 @@ export const Sidebar = () => {
                           } else {
                             handleNavClick(item);
                           }
-                        }}
-                        onContextMenu={(e) => {
-                          e.stopPropagation();
-                          handleItemContextMenu(e, item);
-                        }}
-                        title={isSidebarCollapsed ? `${item.badge} notifications for ${item.label}` : `View ${item.badge} notifications for ${item.label}`}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.stopPropagation();
-                            if (item.notifCategory) {
-                              setNotifCategoryFilter(item.notifCategory);
-                              setShowNotificationsDrawer(true);
-                            } else {
-                              handleNavClick(item);
-                            }
-                          }
-                        }}
-                      >
-                        {isSidebarCollapsed ? "" : item.badge}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                        }
+                      }}
+                    >
+                      {isSidebarCollapsed ? "" : item.badge}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </nav>
 
         {/* Footer */}
@@ -796,16 +773,16 @@ export const Sidebar = () => {
               <ShieldCheck size={16} />
               {!isSidebarCollapsed && (
                 <span>
-                  {currentRole === "ADMIN" ? "Platform Admin" : "Bus Operator"}
+                  {isAdminSession ? "Platform Admin" : "Operational Manager"}
                 </span>
               )}
             </div>
             {!isSidebarCollapsed && (
               <div className="scope-name">
-                {currentRole === "ADMIN"
+                {isAdminSession
                   ? (selectedOrgId && selectedOrgId !== "ALL"
-                      ? `🏢 ${organizations.find((o) => o.id === selectedOrgId)?.name || "All Organizations"}`
-                      : "🌐 System-Wide Scope")
+                    ? `🏢 ${organizations.find((o) => o.id === selectedOrgId)?.name || "All Organizations"}`
+                    : "🌐 System-Wide Scope")
                   : `🏢 ${activeOrg?.name || "Assigned Organization"}`}
               </div>
             )}

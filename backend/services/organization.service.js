@@ -1,6 +1,8 @@
 import organizationRepository from '../repository/organization.repository.js';
 import ApiError from '../utils/apiError.js';
 import { logAuditEvent } from '../utils/auditLogger.js';
+import notificationService from './notification.service.js';
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../constants/notification.js';
 
 export class OrganizationService {
   /**
@@ -83,6 +85,16 @@ export class OrganizationService {
       ipAddress: reqMeta.clientIp,
       userAgent: reqMeta.userAgent,
     });
+
+    // Notify Platform Admins of new organization registration
+    notificationService.notifyAdmins({
+      type: NOTIFICATION_TYPES.NEW_ORGANIZATION_REGISTRATION,
+      priority: NOTIFICATION_PRIORITIES.HIGH,
+      title: 'New Organization Registered',
+      message: `Organization "${org.name}" has been registered in the platform.`,
+      metadata: { organizationId: org.id, name: org.name, type: org.type, status: org.status },
+      sendEmail: true,
+    }).catch((err) => console.warn('Failed to notify admins of org creation:', err.message));
 
     return {
       id: org.id,

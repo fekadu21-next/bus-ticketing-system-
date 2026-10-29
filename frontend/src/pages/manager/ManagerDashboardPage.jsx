@@ -4,6 +4,7 @@ import { useApp } from "../../context/AppContext";
 import { StatCard } from "../../components/ui/StatCard";
 import { Badge } from "../../components/ui/Badge";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { OrgApprovalBanner } from "../../components/common/OrgApprovalBanner";
 import {
   Bus,
   CalendarDays,
@@ -121,6 +122,8 @@ export const ManagerDashboardPage = () => {
 
   return (
     <div>
+      <OrgApprovalBanner />
+
       {/* Header */}
       <div className="page-header">
         <div className="page-title">

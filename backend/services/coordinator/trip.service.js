@@ -7,12 +7,11 @@ import { ROLES } from '../../constants/index.js';
 import { logAuditEvent } from '../../utils/auditLogger.js';
 import notificationService from '../notification.service.js';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
+import { assertApprovedOrganization } from '../../utils/organizationUtils.js';
 
 export class TripService {
   async createTrip(organizationId, tripData) {
-    if (!organizationId) {
-      throw new ApiError(400, 'Organization context is required.');
-    }
+    await assertApprovedOrganization(organizationId);
 
     let busId = tripData.busId;
     let routeId = tripData.routeId;
@@ -229,6 +228,7 @@ export class TripService {
   }
 
   async updateTrip(tripId, organizationId, updateData) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
 
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
@@ -295,22 +295,89 @@ export class TripService {
 
     const updated = await tripRepository.update(tripId, organizationId, payload);
 
+    const routeName = trip.routes ? `${trip.routes.origin} to ${trip.routes.destination}` : 'your route';
+
+    // 1. Departure time reschedule / delay
     if (updateData.departureTime && new Date(updateData.departureTime).getTime() !== new Date(trip.departure_time).getTime()) {
-      const routeName = trip.routes ? `${trip.routes.origin} to ${trip.routes.destination}` : 'your route';
       const newFormatted = new Date(updateData.departureTime).toLocaleString();
+      // Notify passengers
       notificationService.notifyTripPassengers(tripId, {
-        type: NOTIFICATION_TYPES.TRIP_DELAYED,
+        type: NOTIFICATION_TYPES.TRIP_RESCHEDULED || NOTIFICATION_TYPES.TRIP_DELAYED,
         priority: NOTIFICATION_PRIORITIES.HIGH,
         title: 'Trip Schedule Updated',
         message: `The departure time for trip ${routeName} has been rescheduled to ${newFormatted}.`,
         metadata: { tripId, organizationId, newDepartureTime: updateData.departureTime },
+        sendEmail: true,
       }).catch((err) => console.warn('Failed to notify passengers of trip delay:', err.message));
+
+      // Notify assigned driver
+      if (trip.driver_id) {
+        notificationService.safeCreateNotification({
+          userId: trip.driver_id,
+          type: NOTIFICATION_TYPES.TRIP_SCHEDULE_CHANGED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Assigned Trip Schedule Changed',
+          message: `The departure time for trip ${routeName} has been rescheduled to ${newFormatted}.`,
+          metadata: { tripId, organizationId, newDepartureTime: updateData.departureTime },
+          sendEmail: true,
+        }).catch(() => {});
+      }
+
+      // Notify assigned verifier
+      if (trip.verifier_id) {
+        notificationService.safeCreateNotification({
+          userId: trip.verifier_id,
+          type: NOTIFICATION_TYPES.TRIP_SCHEDULE_CHANGED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Trip Schedule Updated',
+          message: `The departure time for verified trip ${routeName} has been rescheduled to ${newFormatted}.`,
+          metadata: { tripId, organizationId, newDepartureTime: updateData.departureTime },
+          sendEmail: true,
+        }).catch(() => {});
+      }
+    }
+
+    // 2. Bus changed
+    if (updateData.busId && updateData.busId !== trip.bus_id && trip.driver_id) {
+      notificationService.safeCreateNotification({
+        userId: trip.driver_id,
+        type: NOTIFICATION_TYPES.BUS_CHANGED,
+        priority: NOTIFICATION_PRIORITIES.NORMAL,
+        title: 'Trip Bus Reassigned',
+        message: `The vehicle assigned to your trip ${routeName} has been updated.`,
+        metadata: { tripId, oldBusId: trip.bus_id, newBusId: updateData.busId },
+      }).catch(() => {});
+    }
+
+    // 3. Route changed
+    if (updateData.routeId && updateData.routeId !== trip.route_id) {
+      if (trip.driver_id) {
+        notificationService.safeCreateNotification({
+          userId: trip.driver_id,
+          type: NOTIFICATION_TYPES.ROUTE_CHANGED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Trip Route Updated',
+          message: `The route for your assigned trip has been changed.`,
+          metadata: { tripId, oldRouteId: trip.route_id, newRouteId: updateData.routeId },
+        }).catch(() => {});
+      }
+      if (trip.verifier_id) {
+        notificationService.safeCreateNotification({
+          userId: trip.verifier_id,
+          type: NOTIFICATION_TYPES.VERIFICATION_UPDATE,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Trip Route Updated',
+          message: `The route for your assigned verification trip has been changed.`,
+          metadata: { tripId, oldRouteId: trip.route_id, newRouteId: updateData.routeId },
+        }).catch(() => {});
+      }
     }
 
     return updated;
   }
 
   async deleteTrip(tripId, organizationId, user = null, reqMeta = {}) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
 
     // Business check: cannot delete trips with active bookings
@@ -335,6 +402,7 @@ export class TripService {
   }
 
   async assignVerifier(tripId, organizationId, verifierId, managerUser = null, reqMeta = {}) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
       throw new ApiError(400, `Cannot assign ticket verifier to trip with status '${trip.status}'.`);
@@ -359,13 +427,27 @@ export class TripService {
     if (verifierId && verifierId !== trip.verifier_id) {
       const routeName = trip.routes ? `${trip.routes.origin} to ${trip.routes.destination}` : 'trip';
       const depDate = trip.departure_time ? new Date(trip.departure_time).toLocaleDateString() : '';
+
+      // Notify previously assigned verifier if reassigned
+      if (trip.verifier_id) {
+        notificationService.safeCreateNotification({
+          userId: trip.verifier_id,
+          type: NOTIFICATION_TYPES.VERIFIER_TRIP_REASSIGNED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Trip Verification Reassigned',
+          message: `Your assignment as ticket verifier for trip ${routeName} has been reassigned.`,
+          metadata: { tripId, organizationId },
+        }).catch(() => {});
+      }
+
       await notificationService.safeCreateNotification({
         userId: verifierId,
-        type: NOTIFICATION_TYPES.TRIP_UPDATED,
+        type: NOTIFICATION_TYPES.VERIFIER_TRIP_ASSIGNED,
         priority: NOTIFICATION_PRIORITIES.NORMAL,
         title: 'New Trip Verification Assignment',
         message: `You have been assigned as the ticket verifier for trip ${routeName} departing on ${depDate}.`,
         metadata: { tripId, organizationId },
+        sendEmail: true,
       });
     }
 
@@ -373,6 +455,7 @@ export class TripService {
   }
 
   async assignDriver(tripId, organizationId, driverId, managerUser = null, reqMeta = {}) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
       throw new ApiError(400, `Cannot assign driver to trip with status '${trip.status}'.`);
@@ -397,13 +480,27 @@ export class TripService {
     if (driverId && driverId !== trip.driver_id) {
       const routeName = trip.routes ? `${trip.routes.origin} to ${trip.routes.destination}` : 'trip';
       const depDate = trip.departure_time ? new Date(trip.departure_time).toLocaleDateString() : '';
+
+      // Notify previously assigned driver if reassigned
+      if (trip.driver_id) {
+        notificationService.safeCreateNotification({
+          userId: trip.driver_id,
+          type: NOTIFICATION_TYPES.TRIP_REASSIGNED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Trip Driver Reassigned',
+          message: `Your driving assignment for trip ${routeName} departing on ${depDate} has been reassigned.`,
+          metadata: { tripId, organizationId },
+        }).catch(() => {});
+      }
+
       await notificationService.safeCreateNotification({
         userId: driverId,
-        type: NOTIFICATION_TYPES.TRIP_UPDATED,
+        type: NOTIFICATION_TYPES.TRIP_ASSIGNED,
         priority: NOTIFICATION_PRIORITIES.NORMAL,
         title: 'New Trip Assignment',
         message: `You have been assigned to drive trip ${routeName} departing on ${depDate}.`,
         metadata: { tripId, organizationId },
+        sendEmail: true,
       });
     }
 
@@ -411,6 +508,7 @@ export class TripService {
   }
 
   async cancelTrip(tripId, organizationId) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
 
     if (trip.status === 'CANCELLED') {
@@ -443,13 +541,41 @@ export class TripService {
         title: 'Assigned Trip Cancelled',
         message: `Your assigned trip for ${routeName} on ${depFormatted} has been cancelled.`,
         metadata: { tripId, organizationId },
+        sendEmail: true,
       });
     }
+
+    // Notify assigned verifier if any
+    if (trip.verifier_id) {
+      await notificationService.safeCreateNotification({
+        userId: trip.verifier_id,
+        type: NOTIFICATION_TYPES.VERIFICATION_UPDATE,
+        priority: NOTIFICATION_PRIORITIES.HIGH,
+        title: 'Assigned Verification Trip Cancelled',
+        message: `Your assigned verification trip for ${routeName} on ${depFormatted} has been cancelled.`,
+        metadata: { tripId, organizationId },
+        sendEmail: true,
+      });
+    }
+
+    // Notify organization coordinators and operational managers
+    await notificationService.notifyOrganizationStaff(
+      organizationId,
+      [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER],
+      {
+        type: NOTIFICATION_TYPES.TRIP_CANCELLED,
+        priority: NOTIFICATION_PRIORITIES.HIGH,
+        title: 'Trip Cancelled',
+        message: `Trip ${routeName} scheduled for ${depFormatted} has been cancelled.`,
+        metadata: { tripId, organizationId },
+      }
+    ).catch(() => {});
 
     return cancelledTrip;
   }
 
   async publishTrip(tripId, organizationId) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
       throw new ApiError(400, `Cannot publish trip with status '${trip.status}'.`);
@@ -459,6 +585,7 @@ export class TripService {
   }
 
   async unpublishTrip(tripId, organizationId) {
+    await assertApprovedOrganization(organizationId);
     const trip = await this.getTripById(tripId, organizationId);
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
       throw new ApiError(400, `Cannot unpublish trip with status '${trip.status}'.`);
@@ -474,6 +601,7 @@ export class TripService {
   }
 
   async updateSeatStatus(tripId, seatId, organizationId, status) {
+    await assertApprovedOrganization(organizationId);
     await this.getTripById(tripId, organizationId);
 
     const seat = await tripRepository.findSeatById(seatId, tripId);
@@ -489,6 +617,7 @@ export class TripService {
   }
 
   async batchUpdateSeats(tripId, organizationId, seatNumbers, status) {
+    await assertApprovedOrganization(organizationId);
     await this.getTripById(tripId, organizationId);
     return tripRepository.updateSeatsBatch(tripId, seatNumbers, status);
   }

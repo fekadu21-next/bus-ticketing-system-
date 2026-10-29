@@ -106,6 +106,10 @@ model users {
   driver_problems           trip_problem_reports[]  @relation("DriverProblems")
   resolved_problems         trip_problem_reports[]  @relation("ResolvedProblems")
   notifications             notifications[]
+  user_device_tokens        user_device_tokens[]
+  notification_preferences  notification_preferences?
+  platform_feedbacks          platform_feedbacks[]          @relation("UserPlatformFeedbacks")
+  platform_feedback_responses platform_feedbacks[]          @relation("AdminPlatformFeedbackResponses")
 }
 
 model refresh_tokens {
@@ -303,8 +307,11 @@ model payments {
   amount                Decimal       @db.Decimal(10, 2)
   currency              String        @default("ETB") @db.VarChar(10)
   payment_method        String        @db.VarChar(50)
+  provider              String?       @db.VarChar(50)
+  provider_transaction_id String?     @db.VarChar(150)
   transaction_reference String?       @unique @db.VarChar(100)
   status                String        @default("COMPLETED") @db.VarChar(30)
+  paid_at               DateTime?     @db.Timestamptz(6)
   created_at            DateTime      @default(now()) @db.Timestamptz(6)
   updated_at            DateTime      @default(now()) @db.Timestamptz(6)
   bookings              bookings      @relation(fields: [booking_id], references: [id], onDelete: Cascade)
@@ -376,6 +383,7 @@ model feedbacks {
   organization_id String?        @db.Uuid
   rating          Int            @db.SmallInt
   comment         String?        @db.Text
+  status          String?        @default("PENDING") @db.VarChar(30)
   created_at      DateTime       @default(now()) @db.Timestamptz(6)
   updated_at      DateTime       @default(now()) @db.Timestamptz(6)
   trips           trips          @relation(fields: [trip_id], references: [id], onDelete: Cascade)
@@ -431,4 +439,53 @@ model notifications {
   @@index([user_id, created_at])
   @@index([type])
 }
+
+model user_device_tokens {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String   @db.Uuid
+  token       String   @unique @db.VarChar(500)
+  device_type String   @default("web") @db.VarChar(50)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([token])
+}
+
+model notification_preferences {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String   @unique @db.Uuid
+  email_enabled       Boolean  @default(true)
+  push_enabled        Boolean  @default(true)
+  in_app_enabled      Boolean  @default(true)
+  channel_preferences Json?
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
+  users               users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model platform_feedbacks {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String    @db.Uuid
+  rating          Int       @db.SmallInt
+  category        String    @default("OTHER") @db.VarChar(50)
+  comment         String    @db.Text
+  status          String    @default("OPEN") @db.VarChar(30)
+  admin_response  String?   @db.Text
+  responded_by_id String?   @db.Uuid
+  responded_at    DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+  user            users     @relation("UserPlatformFeedbacks", fields: [user_id], references: [id], onDelete: Cascade)
+  admin           users?    @relation("AdminPlatformFeedbackResponses", fields: [responded_by_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([status])
+  @@index([category])
+  @@index([created_at])
+}
+
 

@@ -6,6 +6,7 @@ import bookingRoutes from './booking.route.js';
 import paymentRoutes from './payment.route.js';
 import reportRoutes from './report.route.js';
 import staffRoutes from './staff.route.js';
+import feedbackRoutes from './feedback.route.js';
 import stationsController from '../../controllers/admin/stations.controller.js';
 import { coordinatorStaffController } from '../../controllers/coordinator/staff.controller.js';
 
@@ -18,6 +19,7 @@ router.use('/bookings', bookingRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/reports', reportRoutes);
 router.use('/staff', staffRoutes);
+router.use('/feedback', feedbackRoutes);
 
 // Driver endpoints (direct path for easier access)
 router.get('/drivers', coordinatorStaffController.getDrivers);

@@ -21,6 +21,7 @@ import AboutPage from '@/pages/AboutPage';
 import ContactPage from '@/pages/ContactPage';
 import PartnerRegisterPage from '@/pages/PartnerRegisterPage';
 import NotificationsPage from '@/pages/NotificationsPage';
+import FeedbackPage from '@/pages/FeedbackPage';
 
 
 // Auth Pages
@@ -45,10 +46,10 @@ import { AdminRoutesPage } from "../pages/admin/AdminRoutesPage";
 import { AdminTripsPage } from "../pages/admin/AdminTripsPage";
 import { AdminBookingsPage } from "../pages/admin/AdminBookingsPage";
 import { AdminPaymentsPage } from "../pages/admin/AdminPaymentsPage";
-import { AdminTicketsPage } from "../pages/admin/AdminTicketsPage";
 import { AdminReportsPage } from "../pages/admin/AdminReportsPage";
 import { AdminAuditLogsPage } from "../pages/admin/AdminAuditLogsPage";
 import { AdminSettingsPage } from "../pages/admin/AdminSettingsPage";
+import { AdminFeedbackPage } from "../pages/admin/AdminFeedbackPage";
 
 // Manager Pages
 import { ManagerDashboardPage } from "../pages/manager/ManagerDashboardPage";
@@ -60,6 +61,7 @@ import { ManagerBookingsPage } from "../pages/manager/ManagerBookingsPage";
 import { ManagerPaymentsPage } from "../pages/manager/ManagerPaymentsPage";
 import { ManagerDriversPage } from "../pages/manager/ManagerDriversPage";
 import { ManagerVerifiersPage } from "../pages/manager/ManagerVerifiersPage";
+import { ManagerFeedbackPage } from "../pages/manager/ManagerFeedbackPage";
 import { ManagerReportsPage } from "../pages/manager/ManagerReportsPage";
 import { ManagerSettingsPage } from "../pages/manager/ManagerSettingsPage";
 
@@ -177,12 +179,12 @@ export const ManagementConsole = () => {
         return <AdminBookingsPage />;
       case "payments":
         return <AdminPaymentsPage />;
-      case "tickets":
-        return <AdminTicketsPage />;
       case "reports":
         return <AdminReportsPage />;
       case "audit":
         return <AdminAuditLogsPage />;
+      case "feedback":
+        return <AdminFeedbackPage />;
       case "settings":
         return <AdminSettingsPage />;
       default:
@@ -214,6 +216,8 @@ export const ManagementConsole = () => {
         return <ManagerDriversPage />;
       case "verifiers":
         return <ManagerVerifiersPage />;
+      case "feedback":
+        return <ManagerFeedbackPage />;
       case "reports":
         return <ManagerReportsPage />;
       case "settings":
@@ -268,6 +272,7 @@ export const AppRoutes = () => {
 
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/feedback" element={<FeedbackPage />} />
       <Route path="/partner-register" element={<PartnerRegisterPage />} />
       <Route path="/partner" element={<Navigate to="/partner-register" replace />} />
 

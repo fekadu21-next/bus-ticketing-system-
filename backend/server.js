@@ -1,16 +1,23 @@
+import http from 'http';
 import app from './app.js';
 import env from './Config/env.js';
 import { connectDB, disconnectDB } from './Config/db.js';
+import socketService from './services/socket.service.js';
 
 async function startServer() {
   // Connect to PostgreSQL DB via Prisma
   await connectDB();
 
+  // Create HTTP server and initialize Socket.IO
+  const httpServer = http.createServer(app);
+  socketService.init(httpServer);
+
   // Start Express HTTP Server
-  const server = app.listen(env.port, () => {
+  const server = httpServer.listen(env.port, () => {
     console.log(`🚀 Server running in ${env.nodeEnv} mode on port ${env.port}`);
     console.log(`🔗 API Endpoint: http://localhost:${env.port}/api/v1`);
     console.log(`🏥 Health Check: http://localhost:${env.port}/api/v1/health`);
+    console.log(`🔌 Socket.IO initialized on port ${env.port}`);
   });
 
   // Graceful Shutdown Logic

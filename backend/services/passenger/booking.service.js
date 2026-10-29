@@ -1,5 +1,8 @@
 import passengerBookingRepository from '../../repository/passenger/booking.repository.js';
 import ApiError from '../../utils/apiError.js';
+import notificationService from '../notification.service.js';
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
+import { ROLES } from '../../constants/roles.js';
 
 export class PassengerBookingService {
   formatBooking(booking) {
@@ -123,7 +126,45 @@ export class PassengerBookingService {
     }
 
     const booking = await passengerBookingRepository.cancelBookingAtomic(bookingId, passengerId);
-    return this.formatBooking(booking);
+    const formatted = this.formatBooking(booking);
+
+    // 1. Notify Passenger of booking cancellation
+    notificationService.safeCreateNotification({
+      userId: passengerId,
+      type: NOTIFICATION_TYPES.BOOKING_CANCELLED,
+      priority: NOTIFICATION_PRIORITIES.NORMAL,
+      title: 'Booking Cancelled',
+      message: `Your booking for ${formatted.from} to ${formatted.to} (Seat ${formatted.seatNumber}) has been cancelled.`,
+      metadata: {
+        bookingId: booking.id,
+        tripId: booking.trip_id,
+        seatNumber: booking.seat_number,
+        idempotencyKey: `booking_cancel_${booking.id}`,
+      },
+      sendEmail: true,
+    }).catch(() => {});
+
+    // 2. Notify Operator / Booking Coordinator
+    if (booking.organization_id) {
+      notificationService.notifyOrganizationStaff(
+        booking.organization_id,
+        [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER],
+        {
+          type: NOTIFICATION_TYPES.BOOKING_CANCELLED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Passenger Cancelled Booking',
+          message: `Booking ${booking.id.substring(0, 8)} for Seat ${booking.seat_number} on ${formatted.from} to ${formatted.to} has been cancelled.`,
+          metadata: {
+            bookingId: booking.id,
+            tripId: booking.trip_id,
+            passengerId,
+            seatNumber: booking.seat_number,
+          },
+        }
+      ).catch(() => {});
+    }
+
+    return formatted;
   }
 }
 

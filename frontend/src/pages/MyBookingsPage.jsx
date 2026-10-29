@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, Clock, Ticket, CheckCircle, XCircle, ArrowRight, Download, X, User, Phone, Mail, Loader2, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { MapPin, Calendar, Clock, Ticket, CheckCircle, XCircle, ArrowRight, Download, X, User, Phone, Mail, Loader2, ShieldCheck, Star, MessageSquareQuote, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getMyBookingsApi } from '@/api/trip.api';
+import { getMyPassengerFeedbacksApi } from '@/api/feedback.api';
 import { Pagination } from '@/components/ui/Pagination';
+import { RateTripModal } from '@/components/feedback/RateTripModal';
+import { PlatformFeedbackModal } from '@/components/feedback/PlatformFeedbackModal';
 import QRCode from 'qrcode';
 
 // Simple ETB formatter
@@ -25,6 +29,7 @@ const formatPrettyDate = (dateStr) => {
 };
 
 export const MyBookingsPage = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, user } = useAuth();
   const [filter, setFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,36 +40,62 @@ export const MyBookingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
 
+  // Ratings & Feedback state
+  const [ratedTrips, setRatedTrips] = useState({});
+  const [ratingModalBooking, setRatingModalBooking] = useState(null);
+  const [viewingReview, setViewingReview] = useState(null);
+  const [showPlatformFeedback, setShowPlatformFeedback] = useState(false);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [filter]);
 
-  // Fetch bookings from backend
+  // Fetch bookings and passenger's submitted feedbacks from backend
   useEffect(() => {
-    const fetchBookings = async () => {
+    const fetchData = async () => {
       if (!isAuthenticated) {
         setLoading(false);
         return;
       }
 
       try {
-        const response = await getMyBookingsApi();
-        let bookingsData = [];
-        if (response.success && response.data) {
-          bookingsData = Array.isArray(response.data) ? response.data : response.data.bookings || [];
-        } else if (Array.isArray(response)) {
-          bookingsData = response;
+        const [bookingsRes, feedbackRes] = await Promise.allSettled([
+          getMyBookingsApi(),
+          getMyPassengerFeedbacksApi(),
+        ]);
+
+        if (bookingsRes.status === 'fulfilled') {
+          const response = bookingsRes.value;
+          let bookingsData = [];
+          if (response?.success && response.data) {
+            bookingsData = Array.isArray(response.data) ? response.data : response.data.bookings || [];
+          } else if (Array.isArray(response)) {
+            bookingsData = response;
+          }
+          setBookings(bookingsData);
+        } else {
+          console.error('Error fetching bookings:', bookingsRes.reason);
+          setBookings([]);
         }
-        setBookings(bookingsData);
+
+        if (feedbackRes.status === 'fulfilled') {
+          const fRes = feedbackRes.value;
+          if (fRes?.success && fRes.data?.feedbacks) {
+            const map = {};
+            fRes.data.feedbacks.forEach((fb) => {
+              if (fb.trip_id) map[fb.trip_id] = fb;
+            });
+            setRatedTrips(map);
+          }
+        }
       } catch (err) {
-        console.error('Error fetching bookings:', err);
-        setBookings([]);
+        console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBookings();
+    fetchData();
   }, [isAuthenticated]);
 
   // Generate QR code whenever a booking modal is opened
@@ -118,6 +149,39 @@ export const MyBookingsPage = () => {
   const isCancelled = (b) => {
     const s = (b.status || b.rawStatus || '').toLowerCase();
     return s === 'cancelled';
+  };
+
+  const isTripFinished = (b) => {
+    if (isCompleted(b)) return true;
+    if (isCancelled(b)) return false;
+    const depDate = b.date || b.departureDate || b.trips?.departure_time;
+    if (depDate) {
+      const d = new Date(depDate);
+      if (!isNaN(d.getTime()) && d < new Date()) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const handleRateTrip = (booking) => {
+    setViewingReview(null);
+    setRatingModalBooking(booking);
+  };
+
+  const handleViewReview = (booking, review) => {
+    setViewingReview(review);
+    setRatingModalBooking(booking);
+  };
+
+  const handleRatingSuccess = (newFeedback) => {
+    const tid = newFeedback?.tripId || newFeedback?.trip_id;
+    if (tid) {
+      setRatedTrips((prev) => ({
+        ...prev,
+        [tid]: newFeedback,
+      }));
+    }
   };
 
   const filteredBookings = bookings.filter((booking) => {
@@ -384,6 +448,15 @@ export const MyBookingsPage = () => {
               >
                 Cancelled
               </button>
+              <button
+                type="button"
+                onClick={() => setShowPlatformFeedback(true)}
+                className="px-4 py-2 rounded-xl text-[12px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200/80 dark:border-blue-800 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                title={t('myBookingsFeedback.giveFeedbackBtn', 'Give Feedback')}
+              >
+                <MessageSquareQuote size={13} />
+                <span>{t('myBookingsFeedback.giveFeedbackBtn', 'Give Feedback')}</span>
+              </button>
             </div>
           </div>
 
@@ -421,6 +494,9 @@ export const MyBookingsPage = () => {
                 const op = b.operator || b.operatorName || b.organizationName || b.organizations?.name || 'Bus Line';
                 const totalFare = b.price || b.totalFare || b.amount || 0;
                 const isUpcomingBooking = isUpcoming(b);
+                const tripId = b.tripId || b.trip_id || b.trips?.id;
+                const existingReview = tripId ? ratedTrips[tripId] : null;
+                const tripCompleted = isTripFinished(b);
 
                 return (
                   <div
@@ -468,7 +544,7 @@ export const MyBookingsPage = () => {
                           <p className="text-[11px] font-semibold text-slate-400 uppercase">Total Fare</p>
                           <p className="text-[20px] font-black text-[#2563eb] dark:text-blue-400">{formatEtb(totalFare)}</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <button
                             type="button"
                             onClick={() => handleViewDetails(b)}
@@ -476,6 +552,29 @@ export const MyBookingsPage = () => {
                           >
                             Details & QR
                           </button>
+                          {tripCompleted && (
+                            existingReview ? (
+                              <button
+                                type="button"
+                                onClick={() => handleViewReview(b, existingReview)}
+                                className="h-10 px-3.5 rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                                title={t('tripRating.titleView', 'View your submitted trip rating')}
+                              >
+                                <Star size={13} className="fill-amber-400 text-amber-400" />
+                                <span>{t('myBookingsFeedback.ratedTripBtn', 'Rated')} {existingReview.rating}★</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleRateTrip(b)}
+                                className="h-10 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-sm shadow-amber-500/20 transition-all hover:scale-102"
+                                title={t('tripRating.title', 'Rate Trip & Service Quality')}
+                              >
+                                <Star size={13} className="fill-white text-white" />
+                                <span>{t('myBookingsFeedback.rateTripBtn', 'Rate Trip')}</span>
+                              </button>
+                            )
+                          )}
                           {isUpcomingBooking && (
                             <button
                               type="button"
@@ -510,6 +609,29 @@ export const MyBookingsPage = () => {
               </div>
             </div>
           )}
+
+          {/* Platform Feedback Suggestion Banner */}
+          <div className="mt-8 p-6 rounded-3xl bg-gradient-to-br from-blue-50/90 via-indigo-50/70 to-purple-50/90 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-blue-200/80 dark:border-blue-900/50 max-w-2xl mx-auto flex flex-col items-center justify-center text-center gap-3.5 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25">
+              <MessageSquareQuote size={24} />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                {t('myBookingsFeedback.feedbackBannerTitle', 'Have feedback or ideas for our platform?')}
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                {t('myBookingsFeedback.feedbackBannerDesc', 'Report a bug, suggest features, or share your overall experience with our booking system.')}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPlatformFeedback(true)}
+              className="mt-1 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 inline-flex items-center gap-2 cursor-pointer"
+            >
+              <Sparkles size={14} />
+              <span>{t('myBookingsFeedback.feedbackBannerBtn', 'Give Platform Feedback')}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -655,6 +777,26 @@ export const MyBookingsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Rate Trip Modal */}
+      {ratingModalBooking && (
+        <RateTripModal
+          isOpen={Boolean(ratingModalBooking)}
+          onClose={() => {
+            setRatingModalBooking(null);
+            setViewingReview(null);
+          }}
+          booking={ratingModalBooking}
+          existingReview={viewingReview}
+          onSubmitSuccess={handleRatingSuccess}
+        />
+      )}
+
+      {/* Platform Feedback Modal */}
+      <PlatformFeedbackModal
+        isOpen={showPlatformFeedback}
+        onClose={() => setShowPlatformFeedback(false)}
+      />
     </div>
   );
 };

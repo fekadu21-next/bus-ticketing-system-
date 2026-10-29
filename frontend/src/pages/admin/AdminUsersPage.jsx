@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useApp } from "../../context/AppContext";
+import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { Pagination } from "../../components/ui/Pagination";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
@@ -263,26 +264,7 @@ export const AdminUsersPage = () => {
                         )}
                       </td>
                       <td>
-                        {/* Active status dropdown */}
-                        <select
-                          className="status-selector"
-                          value={currentStatus}
-                          onChange={(e) => handleStatusChange(u.id, e.target.value)}
-                          title="Change user account status"
-                          style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            padding: "4px 8px",
-                            borderRadius: "6px",
-                            border: "1px solid var(--border-color, #cbd5e1)",
-                            cursor: "pointer",
-                            background: isActive ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
-                            color: isActive ? "#059669" : "#dc2626",
-                          }}
-                        >
-                          <option value="ACTIVE">ACTIVE</option>
-                          <option value="SUSPENDED">SUSPENDED</option>
-                        </select>
+                        <Badge status={currentStatus} />
                       </td>
                       <td>
                         <div style={{ fontSize: "0.74rem" }}>
@@ -373,23 +355,7 @@ export const AdminUsersPage = () => {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                 <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Status:</span>
-                <select
-                  value={selectedUserModal.status || "ACTIVE"}
-                  onChange={(e) => {
-                    handleStatusChange(selectedUserModal.id, e.target.value);
-                  }}
-                  style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    padding: "4px 8px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--border-color)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="SUSPENDED">SUSPENDED</option>
-                </select>
+                <Badge status={selectedUserModal.status || "ACTIVE"} />
               </div>
             </div>
 

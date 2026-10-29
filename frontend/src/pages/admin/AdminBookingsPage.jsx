@@ -365,14 +365,6 @@ export const AdminBookingsPage = () => {
                           >
                             Payment <ExternalLink size={11} />
                           </button>
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            title="Navigate to Tickets"
-                            onClick={() => handleNavigate("tickets")}
-                          >
-                            Ticket <ExternalLink size={11} />
-                          </button>
                         </div>
                       </td>
                     </tr>

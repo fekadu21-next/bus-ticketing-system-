@@ -170,6 +170,18 @@ export class VerifierService {
         notes: 'Attempted boarding with cancelled ticket',
       });
 
+      notificationService.notifyOrganizationStaff(
+        orgId,
+        [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER],
+        {
+          type: NOTIFICATION_TYPES.VERIFICATION_UPDATE,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Boarding Alert: Cancelled Ticket Scanned',
+          message: `Attempted boarding with cancelled ticket ${ticket.ticket_number} on trip.`,
+          metadata: { ticketId: ticket.id, tripId, organizationId: orgId, result: 'CANCELLED' },
+        }
+      ).catch(() => {});
+
       return {
         valid: false,
         status: 'CANCELLED',
