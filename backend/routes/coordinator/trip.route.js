@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import tripController from '../../controllers/coordinator/trip.controller.js';
 import validate from '../../middleware/validate.middleware.js';
-import { createTripSchema, updateTripSchema } from '../../validation/coordinator/trip.validation.js';
+import { createTripSchema, updateTripSchema, assignDriverSchema, assignVerifierSchema } from '../../validation/coordinator/trip.validation.js';
 import { updateSeatStatusSchema, batchUpdateSeatsSchema } from '../../validation/coordinator/seat.validation.js';
 
 const router = Router({ mergeParams: true });
@@ -12,9 +12,16 @@ router.route('/')
 
 router.route('/:tripId')
   .get(tripController.getTripById)
-  .patch(validate(updateTripSchema), tripController.updateTrip);
+  .patch(validate(updateTripSchema), tripController.updateTrip)
+  .delete(tripController.deleteTrip);
 
+router.patch('/:tripId/assign-driver', validate(assignDriverSchema), tripController.assignDriver);
+router.post('/:tripId/assign-driver', validate(assignDriverSchema), tripController.assignDriver);
+router.patch('/:tripId/assign-verifier', validate(assignVerifierSchema), tripController.assignVerifier);
+router.post('/:tripId/assign-verifier', validate(assignVerifierSchema), tripController.assignVerifier);
 router.post('/:tripId/cancel', tripController.cancelTrip);
+router.post('/:tripId/publish', tripController.publishTrip);
+router.post('/:tripId/unpublish', tripController.unpublishTrip);
 
 // Seat management sub-routes
 router.get('/:tripId/seats', tripController.getTripSeats);

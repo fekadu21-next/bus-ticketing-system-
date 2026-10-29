@@ -1,6 +1,6 @@
 /**
  * Coordinator API — wraps all /organizations/:orgId/* endpoints
- * exposed by the feature/auth backend for BOOKING_COORDINATOR role.
+ * exposed by the backend for BOOKING_COORDINATOR role.
  */
 import api from '@/services/api';
 
@@ -8,6 +8,11 @@ import api from '@/services/api';
 
 export const getBusesApi = async (orgId, params = {}) => {
   const { data } = await api.get(`/organizations/${orgId}/buses`, { params });
+  return data;
+};
+
+export const getBusByIdApi = async (orgId, busId) => {
+  const { data } = await api.get(`/organizations/${orgId}/buses/${busId}`);
   return data;
 };
 
@@ -33,6 +38,11 @@ export const getRoutesApi = async (orgId, params = {}) => {
   return data;
 };
 
+export const getRouteByIdApi = async (orgId, routeId) => {
+  const { data } = await api.get(`/organizations/${orgId}/routes/${routeId}`);
+  return data;
+};
+
 export const createRouteApi = async (orgId, payload) => {
   const { data } = await api.post(`/organizations/${orgId}/routes`, payload);
   return data;
@@ -45,6 +55,50 @@ export const updateRouteApi = async (orgId, routeId, payload) => {
 
 export const deleteRouteApi = async (orgId, routeId) => {
   const { data } = await api.delete(`/organizations/${orgId}/routes/${routeId}`);
+  return data;
+};
+
+// ─── Drivers ─────────────────────────────────────────────────────────────────
+
+// ─── Drivers ─────────────────────────────────────────────────────────────────
+
+export const getDriversApi = async (orgId, params = {}) => {
+  const { data } = await api.get(`/organizations/${orgId}/staff/drivers`, { params });
+  return data;
+};
+
+export const getDriverByIdApi = async (orgId, driverId) => {
+  const { data } = await api.get(`/organizations/${orgId}/staff/drivers/${driverId}`);
+  return data;
+};
+
+export const createDriverApi = async (orgId, payload) => {
+  const { data } = await api.post(`/organizations/${orgId}/staff/drivers`, payload);
+  return data;
+};
+
+export const updateDriverApi = async (orgId, driverId, payload) => {
+  const { data } = await api.patch(`/organizations/${orgId}/staff/drivers/${driverId}`, payload);
+  return data;
+};
+
+export const deleteDriverApi = async (orgId, driverId) => {
+  const { data } = await api.delete(`/organizations/${orgId}/staff/drivers/${driverId}`);
+  return data;
+};
+
+export const toggleDriverStatusApi = async (orgId, driverId, isActive) => {
+  const { data } = await api.patch(`/organizations/${orgId}/staff/drivers/${driverId}/status`, { isActive });
+  return data;
+};
+
+export const assignDriverToTripApi = async (orgId, tripId, driverId) => {
+  const { data } = await api.patch(`/organizations/${orgId}/trips/${tripId}/assign-driver`, { driverId });
+  return data;
+};
+
+export const assignVerifierToTripApi = async (orgId, tripId, verifierId) => {
+  const { data } = await api.patch(`/organizations/${orgId}/trips/${tripId}/assign-verifier`, { verifierId });
   return data;
 };
 
@@ -70,8 +124,24 @@ export const updateTripApi = async (orgId, tripId, payload) => {
   return data;
 };
 
-export const cancelTripApi = async (orgId, tripId) => {
+export const deleteTripApi = async (orgId, tripId) => {
   const { data } = await api.delete(`/organizations/${orgId}/trips/${tripId}`);
+  return data;
+};
+
+export const cancelTripApi = async (orgId, tripId) => {
+  // Backend route is POST /organizations/:orgId/trips/:tripId/cancel
+  const { data } = await api.post(`/organizations/${orgId}/trips/${tripId}/cancel`);
+  return data;
+};
+
+export const publishTripApi = async (orgId, tripId) => {
+  const { data } = await api.post(`/organizations/${orgId}/trips/${tripId}/publish`);
+  return data;
+};
+
+export const unpublishTripApi = async (orgId, tripId) => {
+  const { data } = await api.post(`/organizations/${orgId}/trips/${tripId}/unpublish`);
   return data;
 };
 
@@ -84,6 +154,14 @@ export const updateSeatStatusApi = async (orgId, tripId, seatId, status) => {
   const { data } = await api.patch(
     `/organizations/${orgId}/trips/${tripId}/seats/${seatId}`,
     { status }
+  );
+  return data;
+};
+
+export const batchUpdateSeatsApi = async (orgId, tripId, seatNumbers, status) => {
+  const { data } = await api.patch(
+    `/organizations/${orgId}/trips/${tripId}/seats/batch`,
+    { seatNumbers, status }
   );
   return data;
 };
@@ -112,20 +190,58 @@ export const getPaymentByIdApi = async (orgId, paymentId) => {
   return data;
 };
 
-// ─── Reports ─────────────────────────────────────────────────────────────────
+// ─── Reports & Operational Statistics ───────────────────────────────────────
 
-export const getDashboardReportApi = async (orgId, params = {}) => {
-  const { data } = await api.get(`/organizations/${orgId}/reports/dashboard`, { params });
+export const getOperationalStatsApi = async (orgId) => {
+  const { data } = await api.get(`/organizations/${orgId}/reports`);
   return data;
 };
 
-export const getRevenueReportApi = async (orgId, params = {}) => {
-  const { data } = await api.get(`/organizations/${orgId}/reports/revenue`, { params });
+// Alias for backward compatibility
+export const getDashboardReportApi = async (orgId) => {
+  return getOperationalStatsApi(orgId);
+};
+
+// ─── Staff (Drivers & Verifiers) ─────────────────────────────────────────────
+
+export const getStaffApi = async (orgId, params = {}) => {
+  const { data } = await api.get(`/organizations/${orgId}/staff`, { params });
   return data;
 };
 
-export const getTripReportApi = async (orgId, params = {}) => {
-  const { data } = await api.get(`/organizations/${orgId}/reports/trips`, { params });
+export const createStaffApi = async (orgId, payload) => {
+  const { data } = await api.post(`/organizations/${orgId}/staff`, payload);
+  return data;
+};
+
+export const toggleStaffStatusApi = async (orgId, staffId, isActive) => {
+  const { data } = await api.patch(`/organizations/${orgId}/staff/${staffId}/status`, { isActive });
+  return data;
+};
+
+export const updateStaffApi = async (orgId, staffId, payload) => {
+  const { data } = await api.patch(`/organizations/${orgId}/staff/${staffId}`, payload);
+  return data;
+};
+
+export const deleteStaffApi = async (orgId, staffId) => {
+  const { data } = await api.delete(`/organizations/${orgId}/staff/${staffId}`);
+  return data;
+};
+
+export const deleteVerifierApi = async (orgId, verifierId) => {
+  return deleteStaffApi(orgId, verifierId);
+};
+
+// ─── Organization Profile & Management ────────────────────────────────────────
+
+export const getOrganizationDetailsApi = async (orgId) => {
+  const { data } = await api.get(`/organizations/${orgId}`);
+  return data;
+};
+
+export const updateOrganizationProfileApi = async (orgId, payload) => {
+  const { data } = await api.patch(`/organizations/${orgId}`, payload);
   return data;
 };
 
@@ -136,12 +252,32 @@ export const verifyTicketApi = async (orgId, payload) => {
   return data;
 };
 
+// ─── Stations (for route creation) ─────────────────────────────────────────────
+
+export const getActiveStationsApi = async () => {
+  const { data } = await api.get('/stations/active');
+  return data;
+};
+
 export default {
+  getStaffApi,
+  createStaffApi,
+  toggleStaffStatusApi,
+  updateStaffApi,
+  getOrganizationDetailsApi,
+  updateOrganizationProfileApi,
   getBusesApi,
+  getBusByIdApi,
   createBusApi,
   updateBusApi,
   deleteBusApi,
+  deleteTripApi,
+  assignVerifierToTripApi,
+  deleteDriverApi,
+  deleteStaffApi,
+  deleteVerifierApi,
   getRoutesApi,
+  getRouteByIdApi,
   createRouteApi,
   updateRouteApi,
   deleteRouteApi,
@@ -150,14 +286,23 @@ export default {
   createTripApi,
   updateTripApi,
   cancelTripApi,
+  publishTripApi,
+  unpublishTripApi,
   getTripSeatsApi,
   updateSeatStatusApi,
+  batchUpdateSeatsApi,
   getBookingsApi,
   getBookingByIdApi,
   getPaymentsApi,
   getPaymentByIdApi,
+  getOperationalStatsApi,
   getDashboardReportApi,
-  getRevenueReportApi,
-  getTripReportApi,
   verifyTicketApi,
+  getDriversApi,
+  getDriverByIdApi,
+  createDriverApi,
+  updateDriverApi,
+  toggleDriverStatusApi,
+  assignDriverToTripApi,
+  getActiveStationsApi,
 };

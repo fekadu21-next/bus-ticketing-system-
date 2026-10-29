@@ -14,6 +14,9 @@ export class BusRepository {
   }
 
   async findById(busId, organizationId = null) {
+    if (!busId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(busId)) {
+      return null;
+    }
     const where = { id: busId };
     if (organizationId) {
       where.organization_id = organizationId;

@@ -1,0 +1,433 @@
+import prisma from '../../Config/db.js';
+
+/** Returns true only for strings that look like a real UUID */
+const isValidUUID = (val) =>
+  typeof val === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+export class AdminOverviewRepository {
+  /**
+   * Get all buses platform-wide with organization metadata
+   */
+  async getAllBuses({ page = 1, limit = 50, organizationId = null, search = '', isActive = null } = {}) {
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
+    if (isActive !== null) where.is_active = isActive;
+    if (search) {
+      where.OR = [
+        { plate_number: { contains: search, mode: 'insensitive' } },
+        { model: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, buses] = await Promise.all([
+      prisma.buses.count({ where }),
+      prisma.buses.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          organizations: {
+            select: { id: true, name: true, type: true },
+          },
+        },
+      }),
+    ]);
+
+    return { total, page, limit, buses };
+  }
+
+  /**
+   * Get all routes platform-wide
+   */
+  async getAllRoutes({ page = 1, limit = 50, organizationId = null, search = '' } = {}) {
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
+    if (search) {
+      where.OR = [
+        { origin: { contains: search, mode: 'insensitive' } },
+        { destination: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, routes] = await Promise.all([
+      prisma.routes.count({ where }),
+      prisma.routes.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          organizations: {
+            select: { id: true, name: true },
+          },
+          origin_station: { select: { id: true, name: true, city: true } },
+          destination_station: { select: { id: true, name: true, city: true } },
+        },
+      }),
+    ]);
+
+    return { total, page, limit, routes };
+  }
+
+  /**
+   * Get all trips platform-wide
+   */
+  async getAllTrips({ page = 1, limit = 50, organizationId = null, search = '', status = null, upcoming = false } = {}) {
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
+    if (status) {
+      where.status = status;
+    } else if (upcoming) {
+      where.status = { notIn: ['COMPLETED', 'CANCELLED'] };
+    }
+
+    if (upcoming) {
+      where.departure_time = { gte: new Date() };
+    }
+
+    if (search) {
+      where.OR = [
+        { routes: { origin: { contains: search, mode: 'insensitive' } } },
+        { routes: { destination: { contains: search, mode: 'insensitive' } } },
+        { buses: { plate_number: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [total, trips] = await Promise.all([
+      prisma.trips.count({ where }),
+      prisma.trips.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: upcoming ? { departure_time: 'asc' } : { departure_time: 'desc' },
+        include: {
+          organizations: { select: { id: true, name: true } },
+          buses: { select: { id: true, plate_number: true, model: true, capacity: true, is_active: true } },
+          routes: {
+            select: {
+              id: true,
+              origin: true,
+              destination: true,
+              distance_km: true,
+              is_active: true,
+              origin_station: { select: { id: true, name: true, city: true } },
+              destination_station: { select: { id: true, name: true, city: true } },
+            },
+          },
+          driver: { select: { id: true, first_name: true, last_name: true, phone: true } },
+          verifier: { select: { id: true, first_name: true, last_name: true, phone: true } },
+          _count: {
+            select: {
+              seats: true,
+              bookings: {
+                where: { status: { in: ['CONFIRMED', 'PENDING'] } },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return { total, page, limit, trips };
+  }
+
+  /**
+   * Get all bookings platform-wide
+   */
+  async getAllBookings({ page = 1, limit = 50, organizationId = null, search = '', status = null } = {}) {
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
+    if (status) where.status = status;
+    if (search) {
+      where.OR = [
+        { users: { first_name: { contains: search, mode: 'insensitive' } } },
+        { users: { last_name: { contains: search, mode: 'insensitive' } } },
+        { users: { email: { contains: search, mode: 'insensitive' } } },
+        { users: { phone: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [total, bookings] = await Promise.all([
+      prisma.bookings.count({ where }),
+      prisma.bookings.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          organizations: { select: { id: true, name: true } },
+          users: { select: { id: true, first_name: true, last_name: true, email: true, phone: true } },
+          trips: {
+            include: {
+              routes: { select: { origin: true, destination: true } },
+              buses: { select: { plate_number: true } },
+            },
+          },
+          seats: { select: { seat_number: true } },
+          payments: { select: { id: true, amount: true, currency: true, payment_method: true, status: true, transaction_reference: true } },
+        },
+      }),
+    ]);
+
+    return { total, page, limit, bookings };
+  }
+
+  /**
+   * Get all payments platform-wide
+   */
+  async getAllPayments({ page = 1, limit = 50, organizationId = null, status = null } = {}) {
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
+    if (status) where.status = status;
+
+    const [total, payments] = await Promise.all([
+      prisma.payments.count({ where }),
+      prisma.payments.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          organizations: { select: { id: true, name: true } },
+          bookings: {
+            include: {
+              users: { select: { id: true, first_name: true, last_name: true, email: true, phone: true } },
+              trips: {
+                include: {
+                  routes: { select: { origin: true, destination: true } },
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return { total, page, limit, payments };
+  }
+
+  /**
+   * Get all audit logs platform-wide
+   */
+  async getAuditLogs({ page = 1, limit = 50, search = '' } = {}) {
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { action: { contains: search, mode: 'insensitive' } },
+        { ip_address: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, logs] = await Promise.all([
+      prisma.audit_logs.count({ where }),
+      prisma.audit_logs.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          users: { select: { id: true, first_name: true, last_name: true, email: true } },
+        },
+      }),
+    ]);
+
+    return { total, page, limit, logs };
+  }
+
+  /**
+   * Platform-wide aggregated reports
+   */
+  async getPlatformReports() {
+    const [
+      totalOrgs,
+      activeOrgs,
+      totalBuses,
+      activeBuses,
+      totalRoutes,
+      totalTrips,
+      tripStatusCounts,
+      totalBookings,
+      bookingStatusCounts,
+      paymentAggregate,
+    ] = await Promise.all([
+      prisma.organizations.count(),
+      prisma.organizations.count({ where: { status: 'APPROVED' } }),
+      prisma.buses.count(),
+      prisma.buses.count({ where: { is_active: true } }),
+      prisma.routes.count(),
+      prisma.trips.count(),
+      prisma.trips.groupBy({ by: ['status'], _count: { _all: true } }),
+      prisma.bookings.count(),
+      prisma.bookings.groupBy({ by: ['status'], _count: { _all: true } }),
+      prisma.payments.aggregate({
+        where: { status: 'COMPLETED' },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const totalRevenue = Number(paymentAggregate._sum.amount || 0);
+    const platformCommission = Number((totalRevenue * 0.05).toFixed(2));
+
+    return {
+      organizations: { total: totalOrgs, active: activeOrgs },
+      fleet: { total: totalBuses, active: activeBuses },
+      routes: { total: totalRoutes },
+      trips: { total: totalTrips, byStatus: tripStatusCounts },
+      bookings: { total: totalBookings, byStatus: bookingStatusCounts },
+      financials: {
+        totalRevenue,
+        platformCommission,
+        completedTransactions: paymentAggregate._count._all || 0,
+        currency: 'ETB',
+      },
+    };
+  }
+
+  /**
+   * Aggregate active physical terminals / stations from operational routes
+   */
+  async getStations() {
+    const routes = await prisma.routes.findMany({
+      where: { is_active: true },
+      select: { origin: true, destination: true },
+    });
+
+    const stationMap = new Map();
+    routes.forEach((r) => {
+      [r.origin, r.destination].forEach((name) => {
+        if (!name) return;
+        const count = stationMap.get(name) || 0;
+        stationMap.set(name, count + 1);
+      });
+    });
+
+    const stations = Array.from(stationMap.entries()).map(([name, activeRoutesCount], idx) => ({
+      id: `stn-${idx + 1}`,
+      name: `${name} Intercity Terminal`,
+      city: name,
+      code: `${name.substring(0, 3).toUpperCase()}-01`,
+      address: `Central Bus Station, ${name}, Ethiopia`,
+      activeRoutesCount,
+      status: 'ACTIVE',
+      createdAt: '2024-01-01',
+    }));
+
+    return { total: stations.length, stations };
+  }
+
+  async updateBusStatus(id, { status, isActive }) {
+    const is_active = isActive !== undefined ? isActive : status === 'ACTIVE';
+    return prisma.buses.update({
+      where: { id },
+      data: { is_active },
+      include: { organizations: { select: { id: true, name: true } } },
+    });
+  }
+
+  async updateRouteStatus(id, { status, isActive }) {
+    const is_active = isActive !== undefined ? isActive : status === 'ACTIVE';
+    return prisma.routes.update({
+      where: { id },
+      data: { is_active },
+      include: { organizations: { select: { id: true, name: true } } },
+    });
+  }
+
+  async updateTripStatus(id, { status }) {
+    return prisma.trips.update({
+      where: { id },
+      data: { status },
+      include: {
+        organizations: { select: { id: true, name: true } },
+        buses: { select: { plate_number: true } },
+        routes: { select: { origin: true, destination: true } },
+      },
+    });
+  }
+
+  async updateBookingStatus(id, { status, paymentStatus }) {
+    const data = {};
+    if (status) data.status = status;
+    const updatedBooking = await prisma.bookings.update({
+      where: { id },
+      data,
+      include: {
+        payments: true,
+        users: { select: { first_name: true, last_name: true, email: true } },
+        trips: { select: { id: true } },
+      },
+    });
+    if (paymentStatus && updatedBooking.payments?.id) {
+      await prisma.payments.update({
+        where: { id: updatedBooking.payments.id },
+        data: { status: paymentStatus === 'SUCCESS' ? 'COMPLETED' : paymentStatus },
+      });
+    }
+    return updatedBooking;
+  }
+
+  async updatePaymentStatus(id, { status }) {
+    const pyStatus = status === 'SUCCESS' ? 'COMPLETED' : status;
+    return prisma.payments.update({
+      where: { id },
+      data: { status: pyStatus },
+      include: {
+        organizations: { select: { id: true, name: true } },
+        bookings: true,
+      },
+    });
+  }
+
+  async updateTicketStatus(id, { status }) {
+    return prisma.tickets.update({
+      where: { id },
+      data: { status },
+      include: {
+        passenger: { select: { first_name: true, last_name: true, email: true } },
+        trips: true,
+      },
+    });
+  }
+
+  async updateAuditLog(id, { action, details, ip_address, ipAddress, oldValues, newValues, entityType, entityId }) {
+    const logData = {};
+    if (action) logData.action = action;
+    if (ip_address || ipAddress) logData.ip_address = ip_address || ipAddress;
+    if (details) {
+      logData.details = details;
+    } else if (oldValues !== undefined || newValues !== undefined || entityType) {
+      const existing = await prisma.audit_logs.findUnique({ where: { id } });
+      const currentDetails = existing?.details || {};
+      logData.details = {
+        ...currentDetails,
+        ...(entityType ? { entityType } : {}),
+        ...(entityId ? { entityId } : {}),
+        ...(oldValues !== undefined ? { oldValues } : {}),
+        ...(newValues !== undefined ? { newValues } : {}),
+      };
+    }
+    return prisma.audit_logs.update({
+      where: { id },
+      data: logData,
+      include: { users: { select: { first_name: true, last_name: true, email: true } } },
+    });
+  }
+}
+
+export const adminOverviewRepository = new AdminOverviewRepository();
+export default adminOverviewRepository;

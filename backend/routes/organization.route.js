@@ -2,7 +2,7 @@ import { Router } from 'express';
 import organizationController from '../controllers/organization.controller.js';
 import authenticate from '../middleware/authenticate.middleware.js';
 import { authorizeRole } from '../middleware/authorize.middleware.js';
-import { authorizeOrganization, authorizeOrgRole } from '../middleware/organization.middleware.js';
+import { authorizeOrganization, authorizeOrgRole, requireApprovedOrganization } from '../middleware/organization.middleware.js';
 import validate from '../middleware/validate.middleware.js';
 import {
   createOrganizationSchema,
@@ -12,11 +12,12 @@ import { ROLES } from '../constants/index.js';
 
 const router = Router();
 
-// All organization routes require authentication
-router.use(authenticate);
-
-// List organizations (Any authenticated user)
+// List organizations (Public / Any user)
 router.get('/', organizationController.getOrganizations);
+router.get('/public', organizationController.getOrganizations);
+
+// Administrative & scoped organization routes require authentication
+router.use(authenticate);
 
 // Register organization (Admin only)
 router.post(
@@ -33,10 +34,10 @@ router.get(
   organizationController.getOrganizationById
 );
 
-// Update organization (Admin only)
+// Update organization (Admin or Coordinator/Manager of that org)
 router.patch(
   '/:orgId',
-  authorizeRole(ROLES.ADMIN),
+  authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER], (req) => req.params.orgId),
   validate(updateOrganizationSchema),
   organizationController.updateOrganization
 );
@@ -48,22 +49,57 @@ import tripRoutes from './coordinator/trip.route.js';
 import bookingRoutes from './coordinator/booking.route.js';
 import paymentRoutes from './coordinator/payment.route.js';
 import reportRoutes from './coordinator/report.route.js';
+import feedbackRoutes from './coordinator/feedback.route.js';
+import coordinatorStaffController from '../controllers/coordinator/staff.controller.js';
+import driverController from '../controllers/driver/driver.controller.js';
 
 // Coordinator sub-routes scoped to organization
-const requireCoordinator = authorizeOrgRole([ROLES.BOOKING_COORDINATOR], (req) => req.params.orgId);
+const requireCoordinator = authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER], (req) => req.params.orgId);
 
-router.use('/:orgId/buses', requireCoordinator, busRoutes);
-router.use('/:orgId/routes', requireCoordinator, routeRoutes);
-router.use('/:orgId/trips', requireCoordinator, tripRoutes);
-router.use('/:orgId/bookings', requireCoordinator, bookingRoutes);
+router.use('/:orgId/buses', requireCoordinator, requireApprovedOrganization, busRoutes);
+router.use('/:orgId/routes', requireCoordinator, requireApprovedOrganization, routeRoutes);
+router.use('/:orgId/trips', requireCoordinator, requireApprovedOrganization, tripRoutes);
+router.use('/:orgId/bookings', requireCoordinator, requireApprovedOrganization, bookingRoutes);
 router.use('/:orgId/payments', requireCoordinator, paymentRoutes);
 router.use('/:orgId/reports', requireCoordinator, reportRoutes);
-router.use('/:orgId/coordinator', requireCoordinator, coordinatorRouter);
+router.use('/:orgId/feedback', requireCoordinator, feedbackRoutes);
+router.use('/:orgId/coordinator', requireCoordinator, requireApprovedOrganization, coordinatorRouter);
+
+// Staff management
+router.get('/:orgId/staff', requireCoordinator, coordinatorStaffController.getStaff);
+router.post('/:orgId/staff', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.createStaff);
+router.patch('/:orgId/staff/:staffId/status', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.toggleStaffStatus);
+router.patch('/:orgId/staff/:staffId', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.updateStaff);
+router.delete('/:orgId/staff/:staffId', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.deleteStaff);
+
+// Dedicated Driver management endpoints
+router.get('/:orgId/drivers', requireCoordinator, coordinatorStaffController.getDrivers);
+router.post('/:orgId/drivers', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.createDriver);
+router.get('/:orgId/drivers/:driverId', requireCoordinator, coordinatorStaffController.getDriverById);
+router.patch('/:orgId/drivers/:driverId', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.updateDriver);
+router.patch('/:orgId/drivers/:driverId/status', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.toggleDriverStatus);
+router.delete('/:orgId/drivers/:driverId', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.deleteDriver);
+
+// Also support /staff/drivers alias routes
+router.get('/:orgId/staff/drivers', requireCoordinator, coordinatorStaffController.getDrivers);
+router.post('/:orgId/staff/drivers', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.createDriver);
+router.get('/:orgId/staff/drivers/:driverId', requireCoordinator, coordinatorStaffController.getDriverById);
+router.patch('/:orgId/staff/drivers/:driverId', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.updateDriver);
+router.patch('/:orgId/staff/drivers/:driverId/status', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.toggleDriverStatus);
+router.delete('/:orgId/staff/drivers/:driverId', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.deleteDriver);
+
+// Verifiers alias routes
+router.delete('/:orgId/verifiers/:verifierId', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.deleteStaff);
+router.delete('/:orgId/staff/verifiers/:verifierId', requireCoordinator, requireApprovedOrganization, coordinatorStaffController.deleteStaff);
+
+// Organization Problem Reports
+router.get('/:orgId/problems', requireCoordinator, driverController.getOrganizationProblems);
+router.patch('/:orgId/problems/:problemId/resolve', requireCoordinator, driverController.resolveProblem);
 
 // Verify ticket for organization (Admin, BOOKING_COORDINATOR, or TICKET_VERIFIER of that org)
 router.post(
   '/:orgId/verify-ticket',
-  authorizeOrgRole([ROLES.TICKET_VERIFIER, ROLES.BOOKING_COORDINATOR], (req) => req.params.orgId),
+  authorizeOrgRole([ROLES.TICKET_VERIFIER, ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER], (req) => req.params.orgId),
   organizationController.verifyTicket
 );
 

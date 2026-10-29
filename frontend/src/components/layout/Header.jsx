@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useTranslation } from "react-i18next";
+import { formatUserFullName, isUserAdmin } from "../../utils/userUtils";
 import {
   Search,
-  Bell,
-  ShieldCheck,
   Building2,
   User,
   KeyRound,
@@ -14,6 +15,9 @@ import {
   Menu,
   X,
   Lock,
+  Globe,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 export const Header = () => {
@@ -21,49 +25,90 @@ export const Header = () => {
   const navigate = useNavigate();
   const {
     currentRole,
-    setCurrentRole,
     selectedOrgId,
     setSelectedOrgId,
     organizations,
     globalSearchQuery,
     setGlobalSearchQuery,
     activeOrg,
+    setActivePage,
     isSidebarCollapsed,
     setIsSidebarCollapsed,
+    resetAppState,
   } = useApp();
 
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const userMenuRef = React.useRef(null);
 
-  const pendingApprovalsCount = organizations.filter(
-    (o) => o.status === "PENDING"
-  ).length;
+  // Close dropdown on click outside or Escape
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowUserMenu(false);
+      }
+    };
+    if (showUserMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showUserMenu]);
+
+  const { isDark, toggleTheme } = useTheme();
+  const { i18n } = useTranslation();
+  const isAmharic = i18n.language === "am" || i18n.language?.startsWith("am");
+
+  const toggleLanguage = () => {
+    const nextLang = isAmharic ? "en" : "am";
+    i18n.changeLanguage(nextLang);
+  };
 
   const handleLogout = async () => {
     setShowUserMenu(false);
+    if (resetAppState) resetAppState();
     await logout();
     navigate("/login", { replace: true });
   };
 
-  const handleNavigate = (path) => {
+  const isAdminSession = currentRole === "ADMIN" || isUserAdmin(user);
+
+  const handleProfileClick = () => {
     setShowUserMenu(false);
-    navigate(path);
+    const basePath = isAdminSession ? "/admin" : "/operator";
+    if (setActivePage) setActivePage("profile");
+    navigate(`${basePath}/profile`);
   };
 
-  const displayName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-    user?.name ||
-    (currentRole === "ADMIN" ? "Solomon Tekle" : "Company Manager");
+  const handleChangePasswordClick = () => {
+    setShowUserMenu(false);
+    const basePath = isAdminSession ? "/admin" : "/operator";
+    if (setActivePage) setActivePage("change-password");
+    navigate(`${basePath}/change-password`);
+  };
+
+  const displayName = formatUserFullName(
+    user,
+    isAdminSession ? "System Admin" : "Booking Coordinator"
+  );
 
   const userInitials = displayName
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2) || (currentRole === "ADMIN" ? "ST" : "CM");
+    .slice(0, 2) || (isAdminSession ? "SA" : "BC");
 
-  const userEmail = user?.email || (currentRole === "ADMIN" ? "admin@busticket.com" : "manager@busticket.com");
+  const userEmail = user?.email || "";
 
   return (
     <header className="top-header">
@@ -114,37 +159,18 @@ export const Header = () => {
       )}
 
       {/* Right actions */}
-      <div className="header-right">
-        {/* Role Switcher – only visible for Platform Admin */}
-        {user?.roles?.includes("ADMIN") && (
-          <div className="mode-switcher header-role-switcher">
-            <button
-              className={currentRole === "ADMIN" ? "active" : ""}
-              onClick={() => setCurrentRole("ADMIN")}
-            >
-              <ShieldCheck size={14} />
-              <span className="role-label">Admin</span>
-            </button>
-            <button
-              className={currentRole === "MANAGER" ? "active" : ""}
-              onClick={() => setCurrentRole("MANAGER")}
-            >
-              <Building2 size={14} />
-              <span className="role-label">Manager</span>
-            </button>
-          </div>
-        )}
-
-        {/* Organization Scope */}
+      <div className="header-right" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        {/* Organization Scope Selector */}
         {currentRole === "ADMIN" ? (
-          /* Platform Admin gets Organization Selector Dropdown to inspect any company */
-          <div className="org-selector-wrap">
+          <div className="org-selector-wrap" style={{ maxWidth: "230px" }}>
             <select
               className="org-selector-select"
               value={selectedOrgId}
               onChange={(e) => setSelectedOrgId(e.target.value)}
+              style={{ fontSize: "0.82rem", padding: "5px 10px" }}
+              title="Filter platform view by operator"
             >
-              <option value="ALL">All Organizations (System-wide)</option>
+              <option value="ALL">🏢 All Organizations</option>
               {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
                   {org.name}
@@ -153,7 +179,6 @@ export const Header = () => {
             </select>
           </div>
         ) : (
-          /* Operational Manager is strictly locked to their assigned organization */
           <div
             className="org-locked-badge"
             style={{
@@ -175,65 +200,45 @@ export const Header = () => {
           </div>
         )}
 
-        {/* Bell / Notifications */}
-        <div style={{ position: "relative" }}>
-          <button
-            className="header-icon-btn"
-            onClick={() => {
-              setShowNotifications(!showNotifications);
-              setShowUserMenu(false);
-            }}
-          >
-            <Bell size={17} />
-            {pendingApprovalsCount > 0 && (
-              <span className="header-badge">{pendingApprovalsCount}</span>
-            )}
-          </button>
+        {/* Language Switcher */}
+        <button
+          className="dashboard-lang-btn"
+          onClick={toggleLanguage}
+          title={isAmharic ? "Switch to English" : "ወደ አማርኛ ቀይር"}
+          aria-label="Toggle language"
+        >
+          <Globe size={15} />
+          <span>{isAmharic ? "EN" : "አማ"}</span>
+        </button>
 
-          {showNotifications && (
-            <div className="dropdown-panel notif-panel">
-              <div className="dropdown-header">
-                <h4>Notifications</h4>
-                <span
-                  style={{ fontSize: "0.7rem", color: "var(--primary)", fontWeight: 600, cursor: "pointer" }}
-                  onClick={() => setShowNotifications(false)}
-                >
-                  Clear all
-                </span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", padding: "0.75rem" }}>
-                {pendingApprovalsCount > 0 ? (
-                  <div className="notif-item notif-warning">
-                    <div style={{ fontSize: "0.78rem", fontWeight: 700 }}>
-                      Pending Approvals ({pendingApprovalsCount})
-                    </div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                      Operators awaiting registration review.
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", padding: "0.5rem 0" }}>
-                    No unread platform alerts.
-                  </div>
-                )}
-                <div className="notif-item">
-                  <strong style={{ display: "block", fontSize: "0.78rem" }}>Payment Log</strong>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>
-                    Telebirr TEL-98231999 pending.
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Theme Toggle (Dark / Light) */}
+        <button
+          className="header-toggle-btn"
+          onClick={toggleTheme}
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {isDark ? <Sun size={16} style={{ color: "#fbbf24" }} /> : <Moon size={16} />}
+        </button>
 
-        {/* User profile */}
-        <div style={{ position: "relative" }}>
+        {/* User profile dropdown */}
+        <div style={{ position: "relative" }} ref={userMenuRef}>
           <div
+            id="user-profile-button"
             className="user-profile-btn"
+            role="button"
+            tabIndex={0}
+            aria-haspopup="menu"
+            aria-expanded={showUserMenu}
+            aria-label="User Account Menu"
             onClick={() => {
               setShowUserMenu(!showUserMenu);
-              setShowNotifications(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowUserMenu(!showUserMenu);
+              }
             }}
           >
             <div className="avatar">{userInitials}</div>
@@ -242,27 +247,97 @@ export const Header = () => {
               <span>
                 {currentRole === "ADMIN"
                   ? "Platform Admin"
-                  : `${activeOrg?.name || "Company"} Manager`}
+                  : `${activeOrg?.name || "Company"} Booking Coordinator`}
               </span>
             </div>
             <ChevronDown size={14} color="var(--text-muted)" className="desktop-only" />
           </div>
 
           {showUserMenu && (
-            <div className="dropdown-panel user-panel">
+            <div className="dropdown-panel user-panel" role="menu" aria-labelledby="user-profile-button">
               <div style={{ padding: "0.65rem 1rem", borderBottom: "1px solid var(--border-color)" }}>
                 <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>{displayName}</div>
                 <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{userEmail}</div>
               </div>
-              <button className="dropdown-btn" onClick={() => handleNavigate("/profile")}>
-                <User size={14} /> Profile & Account
-              </button>
-              <button className="dropdown-btn" onClick={() => handleNavigate("/change-password")}>
-                <KeyRound size={14} /> Change Password
-              </button>
-              <button className="dropdown-btn danger-btn" onClick={handleLogout}>
-                <LogOut size={14} /> Sign Out
-              </button>
+
+              {/* Theme Preference Quick Switch */}
+              <div style={{ padding: "0.55rem 1rem", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  {isDark ? <Sun size={14} style={{ color: "#fbbf24" }} /> : <Moon size={14} />} Theme
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-main)",
+                    color: "var(--text-main)",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  {isDark ? <Sun size={15} style={{ color: "#fbbf24" }} /> : <Moon size={15} />}
+                </button>
+              </div>
+
+              {/* Language Preference Quick Switch */}
+              <div style={{ padding: "0.55rem 1rem", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Globe size={14} /> Language
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-main)",
+                    color: "var(--text-main)",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                  }}
+                >
+                  {isAmharic ? "English" : "አማርኛ"}
+                </button>
+              </div>
+
+              <div style={{ padding: "4px 0" }}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dropdown-item"
+                  onClick={handleProfileClick}
+                >
+                  <User size={16} />
+                  <span>My Profile</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dropdown-item"
+                  onClick={handleChangePasswordClick}
+                >
+                  <KeyRound size={16} />
+                  <span>Change Password</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dropdown-item text-danger"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

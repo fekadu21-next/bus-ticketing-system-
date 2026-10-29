@@ -6,6 +6,9 @@ import { logAuditEvent, AuditAction } from '../../utils/auditLogger.js';
 import ApiError from '../../utils/apiError.js';
 import { formatSafeUser } from './utils/formatSafeUser.js';
 import { ROLES } from '../../constants/index.js';
+import prisma from '../../Config/db.js';
+import notificationService from '../notification.service.js';
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 import { sessionService } from './session.service.js';
 import { emailVerificationService } from './email-verification.service.js';
@@ -71,6 +74,217 @@ export class AuthService {
       emailVerified: user.email_verified,
       isActive: user.is_active,
       roles: [ROLES.PASSENGER],
+    };
+  }
+
+  /**
+   * Register a new partner organization & coordinator/operator user
+   */
+  async registerPartner({
+    orgName,
+    orgType,
+    orgEmail,
+    orgPhone,
+    city,
+    regNumber,
+    address,
+    repFullName,
+    repPosition,
+    repPhone,
+    repEmail,
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    clientIp,
+    userAgent,
+  }) {
+    const normalizedEmail = (email || repEmail || orgEmail).trim().toLowerCase();
+
+    const existingUser = await authRepository.findUserByEmail(normalizedEmail);
+    if (existingUser) {
+      const isAlreadyCoordinator = existingUser.user_roles?.some(
+        (ur) => ur.organization_id && ur.roles?.name === ROLES.BOOKING_COORDINATOR
+      );
+      if (isAlreadyCoordinator) {
+        throw new ApiError(400, 'This email is already registered as an organization operator');
+      }
+    }
+
+    const trimmedOrgName = orgName.trim();
+    const existingOrg = await prisma.organizations.findFirst({
+      where: { name: { equals: trimmedOrgName, mode: 'insensitive' } },
+    });
+    if (existingOrg) {
+      throw new ApiError(400, 'An organization with this name already exists');
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    let fName = (firstName || '').trim();
+    let lName = (lastName || '').trim();
+    if (!fName && repFullName) {
+      const parts = repFullName.trim().split(' ');
+      fName = parts[0] || 'Representative';
+      lName = parts.slice(1).join(' ') || 'Manager';
+    }
+    if (!fName) fName = 'Operations';
+    if (!lName) lName = 'Manager';
+
+    let coordinatorRole = await prisma.roles.findUnique({
+      where: { name: ROLES.BOOKING_COORDINATOR },
+    });
+    if (!coordinatorRole) {
+      coordinatorRole = await prisma.roles.create({
+        data: {
+          name: ROLES.BOOKING_COORDINATOR,
+          description: 'Manager for organization bus schedules, trips, fleet, and bookings',
+        },
+      });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const organization = await tx.organizations.create({
+        data: {
+          name: trimmedOrgName,
+          type: orgType ? orgType.trim() : 'COMPANY',
+          status: 'PENDING',
+          is_active: false,
+        },
+      });
+
+      let user;
+      if (existingUser) {
+        user = await tx.users.update({
+          where: { id: existingUser.id },
+          data: {
+            password_hash: hashedPassword,
+            phone: (phone || repPhone || orgPhone) ? (phone || repPhone || orgPhone).trim() : existingUser.phone,
+            email_verified: true,
+            is_active: true,
+          },
+        });
+
+        await tx.user_roles.create({
+          data: {
+            user_id: user.id,
+            role_id: coordinatorRole.id,
+            organization_id: organization.id,
+          },
+        });
+      } else {
+        user = await tx.users.create({
+          data: {
+            first_name: fName,
+            last_name: lName,
+            email: normalizedEmail,
+            phone: (phone || repPhone || orgPhone) ? (phone || repPhone || orgPhone).trim() : null,
+            password_hash: hashedPassword,
+            is_active: true,
+            email_verified: true, // Auto-verified for seamless operator login
+            user_roles: {
+              create: {
+                role_id: coordinatorRole.id,
+                organization_id: organization.id,
+              },
+            },
+          },
+        });
+      }
+
+      return { user, organization };
+    });
+
+    await logAuditEvent({
+      userId: result.user.id,
+      action: AuditAction.REGISTER,
+      details: {
+        email: result.user.email,
+        organizationId: result.organization.id,
+        organizationName: result.organization.name,
+        role: ROLES.BOOKING_COORDINATOR,
+      },
+      ipAddress: clientIp,
+      userAgent,
+    });
+
+    const registrationDate = result.organization.created_at || new Date();
+    const formattedDate = new Date(registrationDate).toLocaleString('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const managerFullName = `${result.user.first_name} ${result.user.last_name}`.trim();
+    const managerPhone = result.user.phone || repPhone || orgPhone || 'N/A';
+    const managerPosition = repPosition || 'Operational Manager';
+    const orgLocation = [city, address].filter(Boolean).join(', ') || 'N/A';
+    const orgContact = [orgEmail, orgPhone].filter(Boolean).join(' | ') || 'N/A';
+
+    try {
+      await notificationService.notifyAdmins({
+        type: NOTIFICATION_TYPES.ORGANIZATION_APPROVAL_REQUEST,
+        priority: NOTIFICATION_PRIORITIES.HIGH,
+        title: 'New Organization Approval Required',
+        message: `New partner organization "${result.organization.name}" has registered and requires platform administrator review and approval.`,
+        metadata: {
+          idempotencyKey: `org_approval_req_${result.organization.id}`,
+          organizationId: result.organization.id,
+          organizationName: result.organization.name,
+          organizationType: result.organization.type || orgType || 'COMPANY',
+          registrationNumber: regNumber || null,
+          city: city || null,
+          address: address || null,
+          organizationPhone: orgPhone || null,
+          organizationEmail: orgEmail || null,
+          operationalManagerId: result.user.id,
+          operationalManagerName: managerFullName,
+          operationalManagerEmail: result.user.email,
+          operationalManagerPhone: managerPhone,
+          operationalManagerPosition: managerPosition,
+          registrationDate: typeof registrationDate.toISOString === 'function' ? registrationDate.toISOString() : registrationDate,
+          status: 'PENDING',
+          actionUrl: '/admin/organizations',
+          actionLabel: 'Review Organization',
+          details: {
+            'Organization Name': result.organization.name,
+            'Organization Type': result.organization.type || orgType || 'COMPANY',
+            'Registration Number': regNumber || 'N/A',
+            'Location': orgLocation,
+            'Organization Contact': orgContact,
+            'Operational Manager': managerFullName,
+            'Manager Email': result.user.email,
+            'Manager Phone': managerPhone,
+            'Manager Position': managerPosition,
+            'Registration Date': formattedDate,
+            'Status': 'Pending Approval',
+          },
+        },
+        sendEmail: true,
+      });
+    } catch (notifErr) {
+      console.warn('⚠️ Failed to dispatch registration approval notification to admins:', notifErr.message);
+    }
+
+    return {
+      user: {
+        id: result.user.id,
+        firstName: result.user.first_name,
+        lastName: result.user.last_name,
+        email: result.user.email,
+        phone: result.user.phone,
+        emailVerified: result.user.email_verified,
+        isActive: result.user.is_active,
+        roles: [ROLES.BOOKING_COORDINATOR],
+        organizationContext: [
+          {
+            organizationId: result.organization.id,
+            organizationName: result.organization.name,
+            role: ROLES.BOOKING_COORDINATOR,
+          },
+        ],
+      },
+      organization: result.organization,
     };
   }
 

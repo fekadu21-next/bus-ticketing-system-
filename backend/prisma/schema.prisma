@@ -49,8 +49,12 @@ model organizations {
   buses      buses[]
   routes     routes[]
   trips      trips[]
-  bookings   bookings[]
-  payments   payments[]
+  bookings             bookings[]
+  payments             payments[]
+  tickets              tickets[]
+  ticket_verifications ticket_verifications[]
+  feedbacks            feedbacks[]
+  trip_problem_reports trip_problem_reports[]
 
   @@index([status])
   @@index([type])
@@ -93,6 +97,19 @@ model users {
   refresh_tokens            refresh_tokens[]
   user_roles                user_roles[]
   bookings                  bookings[]
+  tickets                   tickets[]               @relation("PassengerTickets")
+  verified_tickets          tickets[]               @relation("VerifiedTickets")
+  ticket_verifications      ticket_verifications[]  @relation("VerifierVerifications")
+  feedbacks                 feedbacks[]             @relation("PassengerFeedbacks")
+  driven_trips              trips[]                 @relation("DriverTrips")
+  assigned_verifier_trips   trips[]                 @relation("VerifierTrips")
+  driver_problems           trip_problem_reports[]  @relation("DriverProblems")
+  resolved_problems         trip_problem_reports[]  @relation("ResolvedProblems")
+  notifications             notifications[]
+  user_device_tokens        user_device_tokens[]
+  notification_preferences  notification_preferences?
+  platform_feedbacks          platform_feedbacks[]          @relation("UserPlatformFeedbacks")
+  platform_feedback_responses platform_feedbacks[]          @relation("AdminPlatformFeedbackResponses")
 }
 
 model refresh_tokens {
@@ -168,20 +185,44 @@ model buses {
   @@index([organization_id])
 }
 
+model stations {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String   @db.VarChar(150)
+  city              String   @db.VarChar(100)
+  code              String   @unique @db.VarChar(20)
+  address           String?  @db.Text
+  latitude          Float?
+  longitude         Float?
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+  origin_routes     routes[] @relation("OriginStation")
+  destination_routes routes[] @relation("DestinationStation")
+
+  @@index([city])
+  @@index([is_active])
+}
+
 model routes {
   id                       String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organization_id          String        @db.Uuid
   origin                   String        @db.VarChar(100)
   destination              String        @db.VarChar(100)
+  origin_station_id       String?       @db.Uuid
+  destination_station_id  String?       @db.Uuid
   distance_km              Float?
   estimated_duration_hours Float?
   is_active                Boolean       @default(true)
   created_at               DateTime      @default(now()) @db.Timestamptz(6)
   updated_at               DateTime      @default(now()) @db.Timestamptz(6)
   organizations            organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  origin_station           stations?     @relation("OriginStation", fields: [origin_station_id], references: [id], onDelete: SetNull)
+  destination_station      stations?     @relation("DestinationStation", fields: [destination_station_id], references: [id], onDelete: SetNull)
   trips                    trips[]
 
   @@index([organization_id])
+  @@index([origin_station_id])
+  @@index([destination_station_id])
 }
 
 model trips {
@@ -193,17 +234,27 @@ model trips {
   arrival_time    DateTime?     @db.Timestamptz(6)
   fare            Decimal       @db.Decimal(10, 2)
   status          String        @default("SCHEDULED") @db.VarChar(30)
+  driver_id       String?       @db.Uuid
+  verifier_id     String?       @db.Uuid
   created_at      DateTime      @default(now()) @db.Timestamptz(6)
   updated_at      DateTime      @default(now()) @db.Timestamptz(6)
   organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   buses           buses         @relation(fields: [bus_id], references: [id], onDelete: Restrict)
   routes          routes        @relation(fields: [route_id], references: [id], onDelete: Restrict)
+  driver          users?        @relation("DriverTrips", fields: [driver_id], references: [id], onDelete: SetNull)
+  verifier        users?        @relation("VerifierTrips", fields: [verifier_id], references: [id], onDelete: SetNull)
   seats           seats[]
   bookings        bookings[]
+  tickets         tickets[]
+  ticket_verifications ticket_verifications[]
+  feedbacks       feedbacks[]
+  trip_problem_reports trip_problem_reports[]
 
   @@index([organization_id])
   @@index([bus_id])
   @@index([route_id])
+  @@index([driver_id])
+  @@index([verifier_id])
   @@index([departure_time])
   @@index([status])
 }
@@ -217,6 +268,7 @@ model seats {
   updated_at  DateTime   @default(now()) @db.Timestamptz(6)
   trips       trips      @relation(fields: [trip_id], references: [id], onDelete: Cascade)
   bookings    bookings[]
+  tickets     tickets[]
 
   @@unique([trip_id, seat_number], name: "uq_trip_seat_number")
   @@index([trip_id])
@@ -239,6 +291,8 @@ model bookings {
   users           users         @relation(fields: [passenger_id], references: [id], onDelete: Restrict)
   seats           seats?        @relation(fields: [seat_id], references: [id], onDelete: SetNull)
   payments        payments?
+  tickets         tickets?
+  feedbacks       feedbacks[]
 
   @@index([organization_id])
   @@index([trip_id])
@@ -253,8 +307,11 @@ model payments {
   amount                Decimal       @db.Decimal(10, 2)
   currency              String        @default("ETB") @db.VarChar(10)
   payment_method        String        @db.VarChar(50)
+  provider              String?       @db.VarChar(50)
+  provider_transaction_id String?     @db.VarChar(150)
   transaction_reference String?       @unique @db.VarChar(100)
   status                String        @default("COMPLETED") @db.VarChar(30)
+  paid_at               DateTime?     @db.Timestamptz(6)
   created_at            DateTime      @default(now()) @db.Timestamptz(6)
   updated_at            DateTime      @default(now()) @db.Timestamptz(6)
   bookings              bookings      @relation(fields: [booking_id], references: [id], onDelete: Cascade)
@@ -263,3 +320,172 @@ model payments {
   @@index([organization_id])
   @@index([status])
 }
+
+model tickets {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticket_number        String                 @unique @db.VarChar(50)
+  booking_id           String                 @unique @db.Uuid
+  passenger_id         String                 @db.Uuid
+  trip_id              String                 @db.Uuid
+  seat_id              String?                @db.Uuid
+  seat_number          Int
+  organization_id      String                 @db.Uuid
+  status               String                 @default("UNUSED") @db.VarChar(30)
+  qr_token             String                 @unique @db.Text
+  verified_at          DateTime?              @db.Timestamptz(6)
+  verified_by          String?                @db.Uuid
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  bookings             bookings               @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  passenger            users                  @relation("PassengerTickets", fields: [passenger_id], references: [id], onDelete: Restrict)
+  verifier             users?                 @relation("VerifiedTickets", fields: [verified_by], references: [id], onDelete: SetNull)
+  trips                trips                  @relation(fields: [trip_id], references: [id], onDelete: Restrict)
+  seats                seats?                 @relation(fields: [seat_id], references: [id], onDelete: SetNull)
+  organizations        organizations          @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  ticket_verifications ticket_verifications[]
+
+  @@index([organization_id])
+  @@index([trip_id])
+  @@index([passenger_id])
+  @@index([status])
+  @@index([ticket_number])
+  @@index([qr_token])
+}
+
+model ticket_verifications {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticket_id       String?       @db.Uuid
+  booking_id      String?       @db.Uuid
+  trip_id         String?       @db.Uuid
+  verifier_id     String        @db.Uuid
+  organization_id String        @db.Uuid
+  result          String        @db.VarChar(30)
+  notes           String?       @db.Text
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  tickets         tickets?      @relation(fields: [ticket_id], references: [id], onDelete: SetNull)
+  trips           trips?        @relation(fields: [trip_id], references: [id], onDelete: SetNull)
+  verifier        users         @relation("VerifierVerifications", fields: [verifier_id], references: [id], onDelete: Restrict)
+  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([ticket_id])
+  @@index([verifier_id])
+  @@index([trip_id])
+  @@index([organization_id])
+  @@index([result])
+  @@index([created_at])
+}
+
+model feedbacks {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trip_id         String         @db.Uuid
+  passenger_id    String         @db.Uuid
+  booking_id      String?        @db.Uuid
+  organization_id String?        @db.Uuid
+  rating          Int            @db.SmallInt
+  comment         String?        @db.Text
+  status          String?        @default("PENDING") @db.VarChar(30)
+  created_at      DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime       @default(now()) @db.Timestamptz(6)
+  trips           trips          @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  passenger       users          @relation("PassengerFeedbacks", fields: [passenger_id], references: [id], onDelete: Restrict)
+  bookings        bookings?      @relation(fields: [booking_id], references: [id], onDelete: SetNull)
+  organizations   organizations? @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@unique([trip_id, passenger_id], name: "uq_trip_passenger_feedback")
+  @@index([trip_id])
+  @@index([passenger_id])
+  @@index([organization_id])
+}
+
+model trip_problem_reports {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  trip_id         String        @db.Uuid
+  driver_id       String        @db.Uuid
+  organization_id String        @db.Uuid
+  type            String        @db.VarChar(50)
+  description     String        @db.Text
+  status          String        @default("PENDING") @db.VarChar(30)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  resolved_at     DateTime?     @db.Timestamptz(6)
+  resolved_by     String?       @db.Uuid
+
+  trips           trips         @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  driver          users         @relation("DriverProblems", fields: [driver_id], references: [id], onDelete: Restrict)
+  resolver        users?        @relation("ResolvedProblems", fields: [resolved_by], references: [id], onDelete: SetNull)
+  organizations   organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([trip_id])
+  @@index([driver_id])
+  @@index([organization_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+model notifications {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  type       String    @db.VarChar(50)
+  priority   String    @default("NORMAL") @db.VarChar(20)
+  title      String    @db.VarChar(200)
+  message    String    @db.Text
+  metadata   Json?
+  read_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([user_id, read_at])
+  @@index([user_id, created_at])
+  @@index([type])
+}
+
+model user_device_tokens {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String   @db.Uuid
+  token       String   @unique @db.VarChar(500)
+  device_type String   @default("web") @db.VarChar(50)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([token])
+}
+
+model notification_preferences {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String   @unique @db.Uuid
+  email_enabled       Boolean  @default(true)
+  push_enabled        Boolean  @default(true)
+  in_app_enabled      Boolean  @default(true)
+  channel_preferences Json?
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
+  users               users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model platform_feedbacks {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String    @db.Uuid
+  rating          Int       @db.SmallInt
+  category        String    @default("OTHER") @db.VarChar(50)
+  comment         String    @db.Text
+  status          String    @default("OPEN") @db.VarChar(30)
+  admin_response  String?   @db.Text
+  responded_by_id String?   @db.Uuid
+  responded_at    DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+  user            users     @relation("UserPlatformFeedbacks", fields: [user_id], references: [id], onDelete: Cascade)
+  admin           users?    @relation("AdminPlatformFeedbackResponses", fields: [responded_by_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([status])
+  @@index([category])
+  @@index([created_at])
+}
+
+

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/constants/roles';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { isUserAdmin } from '@/utils/userUtils';
 
 /**
  * Protects routes that require a specific permission.
@@ -30,7 +31,7 @@ const PermissionRoute = ({ permission, children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const isAdmin = user?.roles?.includes(ROLES.PLATFORM_ADMIN);
+  const isAdmin = isUserAdmin(user);
   const hasPerm = user?.permissions?.includes(permission);
 
   if (!isAdmin && !hasPerm) {

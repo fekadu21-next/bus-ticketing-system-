@@ -1,25 +1,43 @@
 import routeRepository from '../../repository/coordinator/route.repository.js';
 import ApiError from '../../utils/apiError.js';
+import { assertApprovedOrganization } from '../../utils/organizationUtils.js';
 
 export class RouteService {
   async createRoute(organizationId, routeData) {
-    if (!organizationId) {
-      throw new ApiError(400, 'Organization context is required.');
+    await assertApprovedOrganization(organizationId);
+
+    const origin = routeData.origin?.trim();
+    const destination = routeData.destination?.trim();
+    const originStationId = routeData.originStationId || null;
+    const destinationStationId = routeData.destinationStationId || null;
+
+    if (!originStationId && !destinationStationId && (!origin || !destination)) {
+      throw new ApiError(400, 'Origin and destination are required.');
+    }
+
+    if (originStationId && destinationStationId && originStationId === destinationStationId) {
+      throw new ApiError(400, 'Origin and destination stations cannot be the same.');
+    }
+
+    if (origin && destination && origin.toLowerCase() === destination.toLowerCase()) {
+      throw new ApiError(400, 'Origin and destination cannot be the same.');
     }
 
     const existing = await routeRepository.findDuplicate(
       organizationId,
-      routeData.origin,
-      routeData.destination
+      originStationId || origin,
+      destinationStationId || destination
     );
     if (existing) {
-      throw new ApiError(409, `Route from '${routeData.origin}' to '${routeData.destination}' already exists in your organization.`);
+      throw new ApiError(409, 'Route between these stations already exists in your organization.');
     }
 
     return routeRepository.create({
       organizationId,
-      origin: routeData.origin,
-      destination: routeData.destination,
+      origin: origin || 'Origin Terminal',
+      destination: destination || 'Destination Terminal',
+      originStationId,
+      destinationStationId,
       distanceKm: routeData.distanceKm,
       estimatedDurationHours: routeData.estimatedDurationHours,
       isActive: routeData.isActive ?? true,
@@ -47,26 +65,33 @@ export class RouteService {
   }
 
   async updateRoute(routeId, organizationId, updateData) {
+    await assertApprovedOrganization(organizationId);
     const route = await this.getRouteById(routeId, organizationId);
 
-    const newOrigin = updateData.origin || route.origin;
-    const newDestination = updateData.destination || route.destination;
+    const newOriginStationId = updateData.originStationId || route.origin_station_id;
+    const newDestinationStationId = updateData.destinationStationId || route.destination_station_id;
 
-    if (newOrigin.toLowerCase() === newDestination.toLowerCase()) {
-      throw new ApiError(400, 'Origin and destination cannot be identical.');
+    if (newOriginStationId && newDestinationStationId && newOriginStationId === newDestinationStationId) {
+      throw new ApiError(400, 'Origin and destination stations cannot be the same.');
     }
 
-    if (updateData.origin || updateData.destination) {
-      const duplicate = await routeRepository.findDuplicate(organizationId, newOrigin, newDestination);
+    if (updateData.originStationId || updateData.destinationStationId) {
+      const duplicate = await routeRepository.findDuplicate(organizationId, newOriginStationId, newDestinationStationId);
       if (duplicate && duplicate.id !== routeId) {
-        throw new ApiError(409, `Route from '${newOrigin}' to '${newDestination}' already exists in your organization.`);
+        throw new ApiError(409, 'Route between these stations already exists in your organization.');
       }
     }
+
+    if (updateData.status !== undefined && updateData.isActive === undefined) {
+      updateData.isActive = updateData.status === 'ACTIVE';
+    }
+    delete updateData.status;
 
     return routeRepository.update(routeId, organizationId, updateData);
   }
 
   async deleteRoute(routeId, organizationId) {
+    await assertApprovedOrganization(organizationId);
     await this.getRouteById(routeId, organizationId);
 
     const activeTripsCount = await routeRepository.countActiveTrips(routeId);

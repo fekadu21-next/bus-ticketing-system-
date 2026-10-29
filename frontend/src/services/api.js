@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL = import.meta.env.DEV
+  ? '/api/v1'
+  : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1');
 
 // ---------------------------------------------------------------------------
 // In-memory access token — never stored in localStorage or sessionStorage
@@ -19,6 +21,32 @@ export const getAccessToken = () => inMemoryAccessToken;
 /** Remove the in-memory access token */
 export const clearAccessToken = () => {
   inMemoryAccessToken = null;
+};
+
+// ---------------------------------------------------------------------------
+// Shared refresh — one in-flight POST /auth/refresh at a time.
+// Prevents React Strict Mode / parallel 401s from rotating the same cookie
+// twice and triggering reuse detection (which logs the user out).
+// ---------------------------------------------------------------------------
+let refreshPromise = null;
+
+export const refreshSession = () => {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true })
+      .then((response) => {
+        const payload = response.data;
+        const newToken = payload?.data?.accessToken;
+        if (newToken) {
+          setAccessToken(newToken);
+        }
+        return payload;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
 };
 
 // ---------------------------------------------------------------------------
@@ -116,20 +144,27 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
-        const newToken = data.data.accessToken;
-        setAccessToken(newToken);
+        const data = await refreshSession();
+        const newToken = data?.data?.accessToken;
+        if (!newToken) {
+          throw new Error('Refresh succeeded without access token');
+        }
         onRefreshed(newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
-        clearAccessToken();
-        onRefreshed(null);
-        if (onAuthFailureCallback) onAuthFailureCallback();
+        // Only clear auth state if it's a 401 (token truly invalid/expired)
+        // Network errors or server errors should not log out the user
+        if (refreshError.response?.status === 401) {
+          clearAccessToken();
+          onRefreshed(null);
+          if (onAuthFailureCallback) onAuthFailureCallback();
+        } else {
+          // Network/server error: notify subscribers without clearing auth
+          // The original request will still fail but user stays logged in
+          console.log('Refresh failed due to network/server error, keeping user logged in');
+          onRefreshed(null);
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

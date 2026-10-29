@@ -12,4 +12,5 @@ export const updateBusSchema = z.object({
   model: z.string().trim().max(100).nullable().optional(),
   capacity: z.number().int().min(1).max(200).optional(),
   isActive: z.boolean().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'MAINTENANCE']).optional(),
 });

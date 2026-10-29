@@ -51,12 +51,72 @@ export class TripController {
     });
   });
 
+  assignDriver = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    const { driverId } = req.body;
+    const trip = await tripService.assignDriver(tripId, req.organizationId, driverId, req.user, {
+      clientIp: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+    res.status(200).json({
+      success: true,
+      message: driverId ? 'Driver assigned to trip successfully.' : 'Driver unassigned from trip.',
+      data: { trip },
+    });
+  });
+
   cancelTrip = asyncHandler(async (req, res) => {
     const { tripId } = req.params;
     const trip = await tripService.cancelTrip(tripId, req.organizationId);
     res.status(200).json({
       success: true,
       message: 'Trip cancelled successfully.',
+      data: { trip },
+    });
+  });
+
+  publishTrip = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    const trip = await tripService.publishTrip(tripId, req.organizationId);
+    res.status(200).json({
+      success: true,
+      message: 'Trip published successfully.',
+      data: { trip },
+    });
+  });
+
+  unpublishTrip = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    const trip = await tripService.unpublishTrip(tripId, req.organizationId);
+    res.status(200).json({
+      success: true,
+      message: 'Trip unpublished (set to draft).',
+      data: { trip },
+    });
+  });
+
+  deleteTrip = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    await tripService.deleteTrip(tripId, req.organizationId, req.user, {
+      clientIp: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+    res.status(200).json({
+      success: true,
+      message: 'Trip deleted successfully.',
+    });
+  });
+
+  assignVerifier = asyncHandler(async (req, res) => {
+    const { tripId } = req.params;
+    const { verifierId } = req.body;
+    const trip = await tripService.assignVerifier(tripId, req.organizationId, verifierId, req.user, {
+      clientIp: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+    res.status(200).json({
+      success: true,
+      message: verifierId ? 'Ticket verifier assigned to trip successfully.' : 'Ticket verifier unassigned from trip.',
       data: { trip },
     });
   });

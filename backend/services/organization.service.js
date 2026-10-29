@@ -1,6 +1,8 @@
 import organizationRepository from '../repository/organization.repository.js';
 import ApiError from '../utils/apiError.js';
 import { logAuditEvent } from '../utils/auditLogger.js';
+import notificationService from './notification.service.js';
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../constants/notification.js';
 
 export class OrganizationService {
   /**
@@ -18,7 +20,11 @@ export class OrganizationService {
         name: org.name,
         type: org.type,
         isActive: org.is_active,
+        status: org.status,
         memberCount: org._count?.user_roles || 0,
+        tripCount: org._count?.trips || 0,
+        busCount: org._count?.buses || 0,
+        trips: org.trips || [],
         createdAt: org.created_at,
         updatedAt: org.updated_at,
       })),
@@ -49,6 +55,7 @@ export class OrganizationService {
       id: org.id,
       name: org.name,
       type: org.type,
+      status: org.status,
       isActive: org.is_active,
       createdAt: org.created_at,
       updatedAt: org.updated_at,
@@ -79,10 +86,21 @@ export class OrganizationService {
       userAgent: reqMeta.userAgent,
     });
 
+    // Notify Platform Admins of new organization registration
+    notificationService.notifyAdmins({
+      type: NOTIFICATION_TYPES.NEW_ORGANIZATION_REGISTRATION,
+      priority: NOTIFICATION_PRIORITIES.HIGH,
+      title: 'New Organization Registered',
+      message: `Organization "${org.name}" has been registered in the platform.`,
+      metadata: { organizationId: org.id, name: org.name, type: org.type, status: org.status },
+      sendEmail: true,
+    }).catch((err) => console.warn('Failed to notify admins of org creation:', err.message));
+
     return {
       id: org.id,
       name: org.name,
       type: org.type,
+      status: org.status,
       isActive: org.is_active,
       createdAt: org.created_at,
       updatedAt: org.updated_at,
@@ -92,7 +110,7 @@ export class OrganizationService {
   /**
    * Update organization
    */
-  async updateOrganization(id, data, adminUser, reqMeta = {}) {
+  async updateOrganization(id, data, user, reqMeta = {}) {
     const org = await organizationRepository.findById(id);
     if (!org) {
       throw new ApiError(404, 'Organization not found');
@@ -100,17 +118,26 @@ export class OrganizationService {
 
     if (data.name && data.name.trim().toLowerCase() !== org.name.toLowerCase()) {
       const existing = await organizationRepository.findByName(data.name.trim());
-      if (existing) {
+      if (existing && existing.id !== id) {
         throw new ApiError(409, 'An organization with this name already exists.');
       }
     }
 
-    const updated = await organizationRepository.update(id, data);
+    // Guard administrative fields: only platform ADMIN can change status or isActive
+    const isAdmin = user?.roles?.includes(ROLES.ADMIN);
+    const sanitizedData = { ...data };
+    if (!isAdmin) {
+      delete sanitizedData.status;
+      delete sanitizedData.isActive;
+      delete sanitizedData.is_active;
+    }
+
+    const updated = await organizationRepository.update(id, sanitizedData);
 
     await logAuditEvent({
-      userId: adminUser?.id || null,
-      action: 'ADMIN_UPDATE_ORGANIZATION',
-      details: { organizationId: id, updatedFields: Object.keys(data) },
+      userId: user?.id || null,
+      action: isAdmin ? 'ADMIN_UPDATE_ORGANIZATION' : 'MANAGER_UPDATE_ORGANIZATION',
+      details: { organizationId: id, updatedFields: Object.keys(sanitizedData) },
       ipAddress: reqMeta.clientIp,
       userAgent: reqMeta.userAgent,
     });
@@ -119,6 +146,7 @@ export class OrganizationService {
       id: updated.id,
       name: updated.name,
       type: updated.type,
+      status: updated.status,
       isActive: updated.is_active,
       updatedAt: updated.updated_at,
     };

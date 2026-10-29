@@ -1,4 +1,4 @@
-﻿-- CreateTable
+-- CreateTable
 CREATE TABLE IF NOT EXISTS "buses" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "organization_id" UUID NOT NULL,
