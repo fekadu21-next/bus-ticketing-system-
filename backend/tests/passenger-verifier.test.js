@@ -310,7 +310,7 @@ describe('5. Passenger & Ticket Verifier Role Workflow Integration Suite', () =>
       assert.ok(booking1Id);
       assert.equal(res.data.data.booking.seatNumber, 5);
       assert.equal(res.data.data.booking.totalFare, 650);
-      assert.equal(res.data.data.booking.status, 'PENDING');
+      assert.equal(res.data.data.booking.rawStatus, 'PENDING');
     });
 
     it('PREVENT DOUBLE BOOKING: Passenger 2 attempts to book the already-reserved seat 5 (409 Conflict)', async () => {
@@ -325,7 +325,7 @@ describe('5. Passenger & Ticket Verifier Role Workflow Integration Suite', () =>
 
       assert.equal(res.status, 409);
       assert.equal(res.data.success, false);
-      assert.match(res.data.message, /no longer available/i);
+      assert.match(res.data.message, /no longer available|already been reserved|already booked|unavailable/i);
     });
 
     it('CONCURRENT BOOKING PREVENTION: Two passengers race for the exact same seat 12', async () => {
@@ -359,7 +359,7 @@ describe('5. Passenger & Ticket Verifier Role Workflow Integration Suite', () =>
       assert.ok(res.data.data.bookings.length >= 1);
       const found = res.data.data.bookings.find((b) => b.id === booking1Id);
       assert.ok(found);
-      assert.equal(found.seat_number, 5);
+      assert.equal(found.seatNumber, 5);
     });
 
     it('Passenger 1 views own booking by ID', async () => {

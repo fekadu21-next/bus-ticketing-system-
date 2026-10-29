@@ -9,7 +9,26 @@ import notificationService from '../notification.service.js';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 export class PassengerPaymentService {
-  async initializePayment(passengerId, { tripId, seatNumbers, amount, paymentMethod, passengerInfo }) {
+  async initializePayment(passengerId, { tripId, seatNumbers, amount, paymentMethod = 'TELEBIRR', passengerInfo, bookingId, phoneNumber }) {
+    let targetBooking = null;
+    if (bookingId) {
+      targetBooking = await prisma.bookings.findUnique({
+        where: { id: bookingId },
+        include: { trips: true, users: true },
+      });
+      if (!targetBooking) {
+        throw new ApiError(404, 'Booking not found.');
+      }
+      if (passengerId && targetBooking.passenger_id !== passengerId) {
+        throw new ApiError(403, 'You do not have access to this booking.');
+      }
+      if (!passengerId) {
+        passengerId = targetBooking.passenger_id;
+      }
+      tripId = targetBooking.trip_id;
+      seatNumbers = [targetBooking.seat_number];
+      amount = amount || Number(targetBooking.total_fare || targetBooking.trips?.fare || 0);
+    }
     // 1. Resolve passenger ID (authenticated user or guest)
     let user = null;
     if (passengerId) {
@@ -303,7 +322,7 @@ export class PassengerPaymentService {
       }
 
       return { createdBookings: bookingsList, primaryPayment: primPayment };
-    }, { maxWait: 10000, timeout: 25000 });
+    }, { maxWait: 30000, timeout: 90000 });
 
     let checkoutUrl = '';
     let providerResponse = null;
@@ -332,6 +351,8 @@ export class PassengerPaymentService {
     } else if (paymentMethod === 'TELEBIRR') {
       // Telebirr Test Mode Simulator Integration
       checkoutUrl = `${env.clientUrl}/checkout/telebirr?tx_ref=${transactionReference}&amount=${amount}&phone=${encodeURIComponent(passengerPhone)}`;
+    } else {
+      checkoutUrl = `${env.clientUrl}/payment/callback?tx_ref=${transactionReference}&status=success&payment_method=${paymentMethod}&mock=true`;
     }
 
     const checkoutInfo = {
@@ -399,6 +420,11 @@ export class PassengerPaymentService {
 
     if (!payment) {
       throw new ApiError(404, 'Payment record not found for this transaction reference.');
+    }
+
+    // Enforce ownership: only the booking's passenger can verify their payment
+    if (passengerId && payment.bookings?.passenger_id && payment.bookings.passenger_id !== passengerId) {
+      throw new ApiError(403, 'Forbidden: You cannot verify a payment that belongs to another passenger.');
     }
 
     // Verify with payment provider based on method
