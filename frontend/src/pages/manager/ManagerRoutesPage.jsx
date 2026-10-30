@@ -625,7 +625,6 @@ export const ManagerRoutesPage = () => {
               <span>{formError}</span>
             </div>
           )}
-
           <div className="form-group">
             <label className="form-label">
               {t("managerRoutes.originLabel", "Origin Terminal Station")} *

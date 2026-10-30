@@ -50,12 +50,11 @@ import bookingRoutes from './coordinator/booking.route.js';
 import paymentRoutes from './coordinator/payment.route.js';
 import reportRoutes from './coordinator/report.route.js';
 import feedbackRoutes from './coordinator/feedback.route.js';
+import coordinatorStaffController from '../controllers/coordinator/staff.controller.js';
+import driverController from '../controllers/driver/driver.controller.js';
 
 // Coordinator sub-routes scoped to organization
 const requireCoordinator = authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER], (req) => req.params.orgId);
-
-import coordinatorStaffController from '../controllers/coordinator/staff.controller.js';
-import driverController from '../controllers/driver/driver.controller.js';
 
 router.use('/:orgId/buses', requireCoordinator, requireApprovedOrganization, busRoutes);
 router.use('/:orgId/routes', requireCoordinator, requireApprovedOrganization, routeRoutes);

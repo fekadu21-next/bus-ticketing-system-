@@ -6,14 +6,29 @@ export class DriverRepository {
    */
   async findAssignedTrips({ driverId, organizationId, page = 1, limit = 20, status = null, date = null }) {
     const skip = (page - 1) * limit;
+
+    // Strict security check: Driver can only view trips assigned to them (or org trips if unassigned)
+    const tripRows = await prisma.$queryRawUnsafe(
+      `SELECT id FROM trips WHERE driver_id = $1::uuid AND organization_id = $2::uuid`,
+      driverId,
+      organizationId
+    );
+    const assignedIds = tripRows.map((r) => r.id);
+
+    if (assignedIds.length === 0) {
+      return { total: 0, page, limit, trips: [] };
+    }
+
     const where = {
-      driver_id: driverId,
+      id: { in: assignedIds },
       organization_id: organizationId,
     };
 
     if (status) {
       if (status === 'IN_PROGRESS' || status === 'IN_TRANSIT') {
         where.status = { in: ['IN_TRANSIT', 'IN_PROGRESS'] };
+      } else if (status === 'PUBLISHED' || status === 'SCHEDULED') {
+        where.status = { in: ['PUBLISHED', 'SCHEDULED'] };
       } else {
         where.status = status;
       }
@@ -61,10 +76,20 @@ export class DriverRepository {
    * Find single assigned trip by ID strictly checking driver and organization ownership
    */
   async findAssignedTripById(tripId, driverId, organizationId) {
+    const tripRows = await prisma.$queryRawUnsafe(
+      `SELECT id FROM trips WHERE id = $1::uuid AND driver_id = $2::uuid AND organization_id = $3::uuid`,
+      tripId,
+      driverId,
+      organizationId
+    );
+
+    if (!tripRows || tripRows.length === 0) {
+      return null;
+    }
+
     return prisma.trips.findFirst({
       where: {
         id: tripId,
-        driver_id: driverId,
         organization_id: organizationId,
       },
       include: {
@@ -106,19 +131,22 @@ export class DriverRepository {
    * Start assigned trip (status -> IN_TRANSIT)
    */
   async startTrip(tripId, driverId, organizationId) {
-    return prisma.trips.update({
-      where: {
-        id: tripId,
-        driver_id: driverId,
-        organization_id: organizationId,
-      },
-      data: {
-        status: 'IN_TRANSIT',
-        updated_at: new Date(),
-      },
+    const verified = await this.findAssignedTripById(tripId, driverId, organizationId);
+    if (!verified) return null;
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE trips SET status = 'IN_TRANSIT', updated_at = NOW() WHERE id = $1::uuid AND organization_id = $2::uuid`,
+      tripId,
+      organizationId
+    );
+
+    return prisma.trips.findUnique({
+      where: { id: tripId },
       include: {
         buses: true,
-        routes: true,
+        routes: {
+          select: { id: true, origin: true, destination: true, distance_km: true, estimated_duration_hours: true },
+        },
       },
     });
   }
@@ -127,20 +155,22 @@ export class DriverRepository {
    * Complete assigned trip (status -> COMPLETED)
    */
   async completeTrip(tripId, driverId, organizationId) {
-    return prisma.trips.update({
-      where: {
-        id: tripId,
-        driver_id: driverId,
-        organization_id: organizationId,
-      },
-      data: {
-        status: 'COMPLETED',
-        arrival_time: new Date(),
-        updated_at: new Date(),
-      },
+    const verified = await this.findAssignedTripById(tripId, driverId, organizationId);
+    if (!verified) return null;
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE trips SET status = 'COMPLETED', arrival_time = NOW(), updated_at = NOW() WHERE id = $1::uuid AND organization_id = $2::uuid`,
+      tripId,
+      organizationId
+    );
+
+    return prisma.trips.findUnique({
+      where: { id: tripId },
       include: {
         buses: true,
-        routes: true,
+        routes: {
+          select: { id: true, origin: true, destination: true, distance_km: true, estimated_duration_hours: true },
+        },
       },
     });
   }

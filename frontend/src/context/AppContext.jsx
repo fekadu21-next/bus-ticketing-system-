@@ -160,7 +160,7 @@ export const AppProvider = ({ children }) => {
   const [currentRole, setCurrentRole] = useState(getInitialConsoleRole); // 'ADMIN', 'MANAGER', 'PASSENGER', or null
   const [selectedOrgId, setSelectedOrgId] = useState(() => {
     const orgCtx = user?.organizationContext?.[0];
-    return orgCtx?.organizationId || user?.organizationId || initialOrganizations[0]?.id || "org-101";
+    return orgCtx?.organizationId || user?.organizationId || initialOrganizations[0]?.id || null;
   });
   const [activePage, setActivePage] = useState(getInitialConsolePage);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -254,7 +254,7 @@ export const AppProvider = ({ children }) => {
         reportsRes,
         stationsRes,
       ] = await Promise.allSettled([
-        getAdminDashboardStatsApi({ organizationId: selectedOrgId && selectedOrgId !== "ALL" ? selectedOrgId : undefined }),
+        getAdminDashboardStatsApi({ organizationId: selectedOrgId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedOrgId) ? selectedOrgId : undefined }),
         getAdminOrganizationsApi({ limit: 100 }),
         getUsersApi({ limit: 100 }),
         getAdminBusesApi({ limit: 100 }),
@@ -1702,9 +1702,24 @@ export const AppProvider = ({ children }) => {
   // ================= DRIVERS & VERIFIERS ACTIONS (Booking Coordinator) =================
   const addDriver = async (driverData) => {
     const orgId = getCoordinatorOrgId();
-    const newId = `drv-${Date.now()}`;
+
+    if (!orgId) {
+      throw new Error("No organization found. Please ensure your operator account is linked to an organization.");
+    }
+
+    // Always persist to backend first so the driver can actually log in on mobile
+    const apiRes = await createStaffApi(orgId, {
+      name: driverData.name,
+      phone: driverData.phone,
+      email: driverData.email,
+      password: driverData.password,
+      role: "DRIVER",
+    });
+
+    // Build local driver object using the real ID returned from backend (or fall back)
+    const realId = apiRes?.data?.staff?.id || apiRes?.data?.driver?.id || `drv-${Date.now()}`;
     const newDriverObj = {
-      id: newId,
+      id: realId,
       name: driverData.name,
       phone: driverData.phone,
       email: driverData.email,
@@ -1719,33 +1734,33 @@ export const AppProvider = ({ children }) => {
     };
 
     setDrivers((prev) => [newDriverObj, ...prev]);
-
-    try {
-      if (orgId && orgId.length === 36) {
-        await createStaffApi(orgId, {
-          name: driverData.name,
-          phone: driverData.phone,
-          email: driverData.email,
-          password: driverData.password,
-          role: "DRIVER",
-        });
-        await fetchCoordinatorData(orgId, { silent: true });
-      }
-      notifyStatusChange({ entity: "DRIVER", action: "CREATE" });
-      showToast(`Driver "${driverData.name}" registered successfully!`);
-      return newDriverObj;
-    } catch (err) {
-      console.warn("Backend driver creation notice, retained local record:", err.message);
-      showToast(`Driver "${driverData.name}" registered successfully!`);
-      return newDriverObj;
-    }
+    await fetchCoordinatorData(orgId, { silent: true });
+    notifyStatusChange({ entity: "DRIVER", action: "CREATE" });
+    showToast(`Driver "${driverData.name}" registered successfully! They can now log in on the mobile app.`);
+    return newDriverObj;
   };
 
   const addVerifier = async (verifierData) => {
     const orgId = getCoordinatorOrgId();
-    const newId = `vrf-user-${Date.now()}`;
+
+    if (!orgId) {
+      throw new Error("No organization found. Please ensure your operator account is linked to an organization.");
+    }
+
+    // Always persist to backend first so the verifier can actually log in on mobile
+    const apiRes = await createStaffApi(orgId, {
+      name: verifierData.name,
+      email: verifierData.email,
+      phone: verifierData.phone,
+      password: verifierData.password,
+      role: "TICKET_VERIFIER",
+      assignedStation: verifierData.assignedStation,
+    });
+
+    // Build local verifier object using the real ID returned from backend (or fall back)
+    const realId = apiRes?.data?.staff?.id || `vrf-${Date.now()}`;
     const newVerifierObj = {
-      id: newId,
+      id: realId,
       name: verifierData.name,
       email: verifierData.email,
       phone: verifierData.phone,
@@ -1758,27 +1773,10 @@ export const AppProvider = ({ children }) => {
     };
 
     setVerifiers((prev) => [newVerifierObj, ...prev]);
-
-    try {
-      if (orgId && orgId.length === 36) {
-        await createStaffApi(orgId, {
-          name: verifierData.name,
-          email: verifierData.email,
-          phone: verifierData.phone,
-          password: verifierData.password,
-          role: "TICKET_VERIFIER",
-          assignedStation: verifierData.assignedStation,
-        });
-        await fetchCoordinatorData(orgId, { silent: true });
-      }
-      notifyStatusChange({ entity: "VERIFIER", action: "CREATE" });
-      showToast(`Ticket Verifier "${verifierData.name}" registered successfully!`);
-      return newVerifierObj;
-    } catch (err) {
-      console.warn("Backend verifier creation notice, retained local record:", err.message);
-      showToast(`Ticket Verifier "${verifierData.name}" registered successfully!`);
-      return newVerifierObj;
-    }
+    await fetchCoordinatorData(orgId, { silent: true });
+    notifyStatusChange({ entity: "VERIFIER", action: "CREATE" });
+    showToast(`Ticket Verifier "${verifierData.name}" registered successfully! They can now log in on the mobile app.`);
+    return newVerifierObj;
   };
 
   const toggleStaffStatus = async (staffId, targetActiveStatus = null) => {
@@ -2253,7 +2251,7 @@ export const AppProvider = ({ children }) => {
     setDrivers(initialDrivers);
     setVerifiers(initialVerifiers);
     setAuditLogs(initialAuditLogs);
-    setSelectedOrgId(initialOrganizations[0]?.id || "org-101");
+    setSelectedOrgId(initialOrganizations[0]?.id || null);
     setCurrentRole(null);
     setActivePage("dashboard");
     setGlobalSearchQuery("");

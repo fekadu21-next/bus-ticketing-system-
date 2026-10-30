@@ -392,7 +392,7 @@ describe('6. Driver Role, Fleet Operations & Security Isolation Suite', () => {
       const res = await apiRequest(`/organizations/${org1Id}/drivers/${createdDriverId}`, {
         method: 'PATCH',
         token: coord1Token,
-        body: { firstName: 'UpdatedName', phone: '+251999887766' },
+        body: { firstName: 'UpdatedName', phone: '+251999' + Math.floor(100000 + Math.random() * 900000) },
       });
       assert.equal(res.status, 200);
       assert.equal(res.data.data.driver.firstName || res.data.data.driver.name.split(' ')[0], 'UpdatedName');
@@ -620,7 +620,7 @@ describe('6. Driver Role, Fleet Operations & Security Isolation Suite', () => {
           busId: bus1Id,
           routeId: route1Id,
           driverId: driver1User.id,
-          departureTime: '2026-12-10T08:00:00Z',
+          departureTime: new Date(Date.now() + 86400000 * 20 + Math.floor(Math.random() * 100000000)).toISOString(),
           fare: 400,
         },
       });

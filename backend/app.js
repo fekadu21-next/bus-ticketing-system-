@@ -13,7 +13,18 @@ const app = express();
 // 1. Security Middlewares
 app.use(helmet());
 const allowedOrigins = new Set(
-  [env.clientUrl, process.env.FRONTEND_URL, process.env.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173']
+  [
+    env.clientUrl,
+    process.env.FRONTEND_URL,
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:8081',
+    'http://127.0.0.1:8081',
+    'http://localhost:8082',
+    'http://127.0.0.1:8082',
+    'http://localhost:19006',
+  ]
     .filter(Boolean)
     .map((url) => url.replace(/\/$/, ''))
 );

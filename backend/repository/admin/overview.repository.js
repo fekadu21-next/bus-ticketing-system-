@@ -1,5 +1,10 @@
 import prisma from '../../Config/db.js';
 
+/** Returns true only for strings that look like a real UUID */
+const isValidUUID = (val) =>
+  typeof val === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
 export class AdminOverviewRepository {
   /**
    * Get all buses platform-wide with organization metadata
@@ -8,7 +13,7 @@ export class AdminOverviewRepository {
     const skip = (page - 1) * limit;
     const where = {};
 
-    if (organizationId) where.organization_id = organizationId;
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
     if (isActive !== null) where.is_active = isActive;
     if (search) {
       where.OR = [
@@ -42,7 +47,7 @@ export class AdminOverviewRepository {
     const skip = (page - 1) * limit;
     const where = {};
 
-    if (organizationId) where.organization_id = organizationId;
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
     if (search) {
       where.OR = [
         { origin: { contains: search, mode: 'insensitive' } },
@@ -77,7 +82,7 @@ export class AdminOverviewRepository {
     const skip = (page - 1) * limit;
     const where = {};
 
-    if (organizationId) where.organization_id = organizationId;
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
     if (status) {
       where.status = status;
     } else if (upcoming) {
@@ -141,7 +146,7 @@ export class AdminOverviewRepository {
     const skip = (page - 1) * limit;
     const where = {};
 
-    if (organizationId) where.organization_id = organizationId;
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
     if (status) where.status = status;
     if (search) {
       where.OR = [
@@ -184,7 +189,7 @@ export class AdminOverviewRepository {
     const skip = (page - 1) * limit;
     const where = {};
 
-    if (organizationId) where.organization_id = organizationId;
+    if (isValidUUID(organizationId)) where.organization_id = organizationId;
     if (status) where.status = status;
 
     const [total, payments] = await Promise.all([

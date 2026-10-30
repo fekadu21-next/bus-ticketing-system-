@@ -81,4 +81,13 @@ router.use('/passenger', authenticate, authorizeRole(ROLES.PASSENGER), passenger
 router.use('/verifier', authenticate, authorizeRole(ROLES.TICKET_VERIFIER), verifierRoutes);
 router.use('/driver', authenticate, authorizeRole(ROLES.DRIVER), driverRoutes);
 
+// Operational Mobile Specification Aliases
+router.use('/drivers/me/trips', authenticate, authorizeRole(ROLES.DRIVER), driverRoutes);
+router.use('/ticket-verifications', authenticate, authorizeRole(ROLES.TICKET_VERIFIER), (req, res, next) => {
+  if (req.url === '/scan') req.url = '/tickets/verify';
+  if (req.url === '/recent') req.url = '/history';
+  if (req.url === '/active-trip') req.url = '/trips';
+  verifierRoutes(req, res, next);
+});
+
 export default router;

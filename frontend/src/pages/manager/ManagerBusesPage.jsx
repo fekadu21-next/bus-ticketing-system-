@@ -661,7 +661,6 @@ export const ManagerBusesPage = () => {
               <span>{formError}</span>
             </div>
           )}
-
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">{t("managerBuses.busNumberLabel", "Bus Number / Operational Code")}</label>
