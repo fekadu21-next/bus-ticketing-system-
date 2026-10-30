@@ -72,12 +72,14 @@ function isUsableFromThisDevice(url: string): boolean {
 
 export function resolveApiBaseUrl(): string {
   if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && window.location?.hostname) {
+      return `http://${window.location.hostname}:${API_PORT}${API_PATH}`;
+    }
     return `http://localhost:${API_PORT}${API_PATH}`;
   }
 
-  const fromEnv = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '');
-  if (fromEnv && isUsableFromThisDevice(fromEnv)) {
-    return fromEnv;
+  if (Platform.OS === 'android' && !Device.isDevice) {
+    return `http://10.0.2.2:${API_PORT}${API_PATH}`;
   }
 
   const lanHost = getDevHost();
@@ -85,16 +87,17 @@ export function resolveApiBaseUrl(): string {
     return `http://${lanHost}:${API_PORT}${API_PATH}`;
   }
 
+  const fromEnv = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '');
+  if (fromEnv && isUsableFromThisDevice(fromEnv)) {
+    return fromEnv;
+  }
+
   const lanFromEnv = process.env.EXPO_PUBLIC_LAN_API_URL?.replace(/\/$/, '');
   if (lanFromEnv && Device.isDevice) {
     return lanFromEnv;
   }
 
-  if (Platform.OS === 'android' && !Device.isDevice) {
-    return `http://10.0.2.2:${API_PORT}${API_PATH}`;
-  }
-
-  return `http://localhost:${API_PORT}${API_PATH}`;
+  return `http://10.18.201.76:${API_PORT}${API_PATH}`;
 }
 
 export interface AuthUser {
@@ -202,17 +205,21 @@ export function normalizeUser(user: Partial<AuthUser> & Record<string, unknown>)
 }
 
 function isNetworkFailure(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
   return (
-    message === 'Network request failed' ||
+    message.includes('network request failed') ||
     message.includes('timed out') ||
-    message.includes('Failed to fetch') ||
-    message.includes('Network Error') ||
-    message.includes('Cannot reach the API')
+    message.includes('failed to fetch') ||
+    message.includes('fetch failed') ||
+    message.includes('network error') ||
+    message.includes('cannot reach') ||
+    message.includes('cancelled') ||
+    message.includes('canceled') ||
+    message.includes('abort')
   );
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 5000): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 25000): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -349,9 +356,12 @@ class ApiService {
         message,
       };
     } catch (error) {
+      const isNet = isNetworkFailure(error);
       return {
         success: false,
-        error: isNetworkFailure(error) ? 'NETWORK_UNAVAILABLE' : String(error),
+        error: isNet
+          ? 'Unable to connect to backend server. Please verify the server is running and reachable on this network.'
+          : (error instanceof Error ? error.message : String(error)),
       };
     }
   }
@@ -380,10 +390,14 @@ class ApiService {
     password: string;
     confirmPassword: string;
   }): Promise<ApiResponse<{ user: AuthUser; accessToken?: string }>> {
-    return this.request<{ user: AuthUser; accessToken?: string }>('/auth/register', {
+    const res = await this.request<{ user: AuthUser; accessToken?: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    if (res.success && res.data?.user) {
+      res.data.user = normalizeUser(res.data.user as AuthUser & Record<string, unknown>);
+    }
+    return res;
   }
 
   async changePassword(
@@ -989,25 +1003,31 @@ class ApiService {
   }
 
   // Get all active bus companies / operators (public endpoint)
-  async getCompanies(): Promise<ApiResponse<{ companies: Array<{ id: string; name: string; type: string; tripCount?: number }> }>> {
-    const res = await this.request<{ data: { organizations?: Record<string, unknown>[] }; organizations?: Record<string, unknown>[] }>('/organizations/public?isActive=true&limit=50');
+  async getCompanies(): Promise<ApiResponse<{ companies: Array<{ id: string; name: string; type: string; tripCount?: number; busCount?: number }> }>> {
+    let res = await this.request<{ data?: { organizations?: Record<string, unknown>[] }; organizations?: Record<string, unknown>[] }>('/organizations/public?isActive=true&limit=50');
+    if (!res.success || !res.data) {
+      res = await this.request<{ data?: { organizations?: Record<string, unknown>[] }; organizations?: Record<string, unknown>[] }>('/organizations?isActive=true&limit=50');
+    }
     if (res.success && res.data) {
-      const raw = res.data.data?.organizations || (res.data as unknown as { organizations?: Record<string, unknown>[] }).organizations || [];
-      const companies = (raw as Record<string, unknown>[]).map((org) => {
-        const opTypeStr = String(org.type || '');
-        const type =
-          opTypeStr === 'ASSOCIATION' || String(org.name || '').toLowerCase().includes('association') || String(org.name || '').toLowerCase().includes('assoc')
-            ? 'Transport Association'
-            : 'Private Bus Company';
+      const raw = (res.data as any).organizations || (res.data as any).data?.organizations || (Array.isArray(res.data) ? res.data : []);
+      if (Array.isArray(raw)) {
+        const companies = (raw as Record<string, unknown>[]).map((org) => {
+          const opTypeStr = String(org.type || '');
+          const type =
+            opTypeStr === 'ASSOCIATION' || String(org.name || '').toLowerCase().includes('association') || String(org.name || '').toLowerCase().includes('assoc')
+              ? 'Transport Association'
+              : 'Private Bus Company';
 
-        return {
-          id: String(org.id),
-          name: String(org.name || 'Unknown Operator'),
-          type,
-          tripCount: Number(org.tripCount || org._count || 0),
-        };
-      });
-      return { success: true, data: { companies } };
+          return {
+            id: String(org.id),
+            name: String(org.name || 'Unknown Operator'),
+            type,
+            tripCount: Number(org.tripCount || (org as any)._count?.trips || 0),
+            busCount: Number(org.busCount || (org as any)._count?.buses || 0),
+          };
+        });
+        return { success: true, data: { companies } };
+      }
     }
 
     return {
@@ -1053,27 +1073,96 @@ class ApiService {
         amenities: ['AC', 'WiFi', 'USB Charging', 'Reclining Seats'],
       };
 
-      // Generate or map seats (1 to totalSeats)
-      const bookedSet = new Set<number>();
-      if (Array.isArray(res.data.seats)) {
-        res.data.seats.forEach((s) => {
-          if (s.is_booked || s.isBooked || s.status === 'BOOKED' || s.status === 'OCCUPIED') {
-            bookedSet.add(Number(s.seat_number || s.seatNumber));
+      // ── Build accurate seat map from ALL available sources ────────
+      // Status hierarchy: OCCUPIED/BOOKED > HELD/LOCKED > BLOCKED > AVAILABLE
+      const seatStatusMap = new Map<number, SeatInfo['status']>();
+
+      // 1. Check primary trip seats: raw.seats
+      const primarySeats = Array.isArray(raw.seats)
+        ? raw.seats
+        : Array.isArray((raw as any).seatList)
+        ? (raw as any).seatList
+        : Array.isArray(res.data.seats)
+        ? res.data.seats
+        : [];
+
+      primarySeats.forEach((s: any) => {
+        const num = Number(s.seatNumber ?? s.seat_number);
+        if (num > 0) {
+          const st = String(s.status ?? '').toUpperCase();
+          const isBk = s.is_booked === true || s.isBooked === true || st === 'BOOKED' || st === 'OCCUPIED';
+          if (isBk) {
+            seatStatusMap.set(num, 'OCCUPIED');
+          } else if (st === 'HELD' || st === 'LOCKED') {
+            seatStatusMap.set(num, 'HELD');
+          } else if (st === 'BLOCKED') {
+            seatStatusMap.set(num, 'BLOCKED');
+          } else if (st === 'AVAILABLE') {
+            if (!seatStatusMap.has(num)) seatStatusMap.set(num, 'AVAILABLE');
           }
-        });
+        }
+      });
+
+      // 2. Check active bookings on the trip object: raw.bookings
+      const rawBookings = Array.isArray((raw as any).bookings) ? (raw as any).bookings : [];
+      rawBookings.forEach((b: any) => {
+        const num = Number(b.seat_number ?? b.seatNumber);
+        const bStatus = String(b.status ?? 'CONFIRMED').toUpperCase();
+        if (num > 0 && bStatus !== 'CANCELLED') {
+          // Any seat with an active or pending booking is strictly OCCUPIED
+          seatStatusMap.set(num, 'OCCUPIED');
+        }
+      });
+
+      // 3. Query the live /seats endpoint to get real-time database locks
+      try {
+        const seatsRes = await this.request<{
+          seats?: { seatNumber?: number; seat_number?: number; status?: string; is_booked?: boolean }[];
+        }>(`/passenger/trips/${encodeURIComponent(tripId)}/seats`);
+
+        if (seatsRes.success && Array.isArray(seatsRes.data?.seats)) {
+          seatsRes.data.seats.forEach((s) => {
+            const num = Number(s.seatNumber ?? s.seat_number);
+            if (num > 0) {
+              const st = String(s.status ?? '').toUpperCase();
+              const isBk = s.is_booked === true || st === 'BOOKED' || st === 'OCCUPIED';
+              if (isBk) {
+                seatStatusMap.set(num, 'OCCUPIED');
+              } else if (st === 'HELD' || st === 'LOCKED') {
+                seatStatusMap.set(num, 'HELD');
+              } else if (st === 'BLOCKED') {
+                seatStatusMap.set(num, 'BLOCKED');
+              } else if (st === 'AVAILABLE') {
+                // Only mark available if not already booked by active bookings
+                if (!seatStatusMap.has(num) || seatStatusMap.get(num) === 'AVAILABLE') {
+                  seatStatusMap.set(num, 'AVAILABLE');
+                }
+              }
+            }
+          });
+        }
+      } catch {
+        // Fall back gracefully to primarySeats & rawBookings data
       }
 
+      // Generate the final list of SeatInfo objects for all seats (1 to totalSeats)
       const seats: SeatInfo[] = Array.from({ length: totalSeats }, (_, i) => {
         const seatNum = i + 1;
-        const isBooked = bookedSet.has(seatNum);
+        const currentStatus = seatStatusMap.get(seatNum) || 'AVAILABLE';
+        const isBooked = currentStatus !== 'AVAILABLE';
+
         return {
           id: `seat-${seatNum}`,
           seatNumber: seatNum,
           isBooked,
-          status: isBooked ? 'OCCUPIED' : 'AVAILABLE',
+          status: currentStatus,
           price: trip.price,
         };
       });
+
+      // Update availableSeats count dynamically
+      const actualAvailableCount = seats.filter((s) => !s.isBooked && s.status === 'AVAILABLE').length;
+      trip.availableSeats = actualAvailableCount;
 
       return { success: true, data: { trip, seats } };
     }
@@ -1156,18 +1245,87 @@ class ApiService {
   }
 
   async initializePassengerPayment(data: {
-    bookingId: string;
-    amount: number;
-    paymentMethod: string;
+    tripId?: string;
+    seatNumbers?: number[];
+    amount?: number;
+    paymentMethod?: string;
+    platform?: string;
+    returnUrl?: string;
+    passengerInfo?: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+      pickupLocation?: string;
+      dropoffLocation?: string;
+    };
+    bookingId?: string;
     phoneNumber?: string;
-  }): Promise<ApiResponse<{ paymentUrl?: string; reference?: string; status: string }>> {
-    const res = await this.request<{ paymentUrl?: string; reference?: string; status: string }>(
-      '/passenger/payments/initialize',
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }
-    );
+  }): Promise<ApiResponse<{
+    paymentId?: string;
+    bookingId?: string;
+    bookingIds?: string[];
+    seatNumbers?: number[];
+    transactionReference?: string;
+    amount?: number;
+    currency?: string;
+    paymentMethod?: string;
+    checkoutUrl?: string;
+    paymentUrl?: string;
+    reference?: string;
+    status?: string;
+  }>> {
+    const res = await this.request<{
+      paymentId?: string;
+      bookingId?: string;
+      bookingIds?: string[];
+      seatNumbers?: number[];
+      transactionReference?: string;
+      amount?: number;
+      currency?: string;
+      paymentMethod?: string;
+      checkoutUrl?: string;
+      paymentUrl?: string;
+      reference?: string;
+      status?: string;
+    }>('/passenger/payments/initialize', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    return res;
+  }
+
+  async verifyPassengerPayment(data: {
+    transactionReference: string;
+    paymentMethod?: string;
+    bookingId?: string;
+  }): Promise<ApiResponse<Record<string, unknown>>> {
+    const res = await this.request<Record<string, unknown>>('/passenger/payments/verify', {
+      method: 'POST',
+      body: JSON.stringify({
+        transactionReference: data.transactionReference,
+        paymentMethod: data.paymentMethod || 'CHAPA',
+        bookingId: data.bookingId,
+      }),
+    });
+
+    return res;
+  }
+
+  async updateProfile(userId: string, data: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  }): Promise<ApiResponse<{ user: AuthUser }>> {
+    const res = await this.request<{ user: AuthUser }>(`/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+
+    if (res.success && res.data?.user) {
+      res.data.user = normalizeUser(res.data.user as AuthUser & Record<string, unknown>);
+    }
 
     return res;
   }

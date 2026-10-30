@@ -6,6 +6,8 @@ export const initializePaymentSchema = z.union([
     seatNumbers: z.array(z.union([z.string(), z.number()])).min(1, 'At least one seat must be selected'),
     amount: z.number().positive('Amount must be positive').optional(),
     paymentMethod: z.enum(['CHAPA', 'TELEBIRR', 'CBE_BIRR', 'STATION_PAY']).default('TELEBIRR'),
+    platform: z.string().optional(),
+    returnUrl: z.string().optional(),
     passengerInfo: z.object({
       firstName: z.string().min(1, 'First name is required'),
       lastName: z.string().min(1, 'Last name is required'),
@@ -19,6 +21,8 @@ export const initializePaymentSchema = z.union([
     bookingId: z.string().uuid('Invalid booking ID format'),
     amount: z.number().positive('Amount must be positive').optional(),
     paymentMethod: z.enum(['CHAPA', 'TELEBIRR', 'CBE_BIRR', 'STATION_PAY']).default('TELEBIRR'),
+    platform: z.string().optional(),
+    returnUrl: z.string().optional(),
     phoneNumber: z.string().optional(),
   }),
 ]);

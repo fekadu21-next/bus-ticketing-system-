@@ -11,7 +11,7 @@ import { globalLimiter } from './middleware/rateLimit.middleware.js';
 const app = express();
 
 // 1. Security Middlewares
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 const allowedOrigins = new Set(
   [
     env.clientUrl,
@@ -32,7 +32,7 @@ const allowedOrigins = new Set(
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.has(origin)) {
+      if (!origin || env.nodeEnv === 'development' || allowedOrigins.has(origin)) {
         return callback(null, true);
       }
       return callback(null, false);

@@ -46,7 +46,7 @@ export default function LoginPage() {
     setIsSubmitting(false);
 
     if (result.success && result.user) {
-      const roles = result.user.roles || [];
+      const roles = (result.user.roles || []).map((r: string) => String(r).toUpperCase());
       if (roles.includes('TICKET_VERIFIER') && !roles.includes('DRIVER')) {
         router.replace('/verifier/dashboard');
       } else if (roles.includes('DRIVER')) {
@@ -55,6 +55,8 @@ export default function LoginPage() {
         // Passengers land on their home booking dashboard
         router.replace('/passenger/home');
       }
+    } else if (!result.success) {
+      setFormError(result.error || 'Login failed. Please check your credentials.');
     }
   };
 

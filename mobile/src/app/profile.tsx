@@ -38,7 +38,7 @@ export default function DriverProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           await logout();
-          router.replace('/landing');
+          router.replace('/login');
         },
       },
     ]);

@@ -9,7 +9,7 @@ export default function IndexScreen() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#0f766e" />
+        <ActivityIndicator size="large" color="#f43f5e" />
       </View>
     );
   }
@@ -24,7 +24,8 @@ export default function IndexScreen() {
     return <Redirect href="/passenger/home" />;
   }
 
-  return <Redirect href="/passenger/home" />;
+  // Default display page on app launch is login
+  return <Redirect href="/login" />;
 }
 
 const styles = StyleSheet.create({

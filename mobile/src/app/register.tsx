@@ -79,9 +79,11 @@ export default function RegisterPage() {
         router.replace('/passenger/home');
       } else {
         setSuccessMessage(
-          result.message || 'Account created! Please check your email for verification.'
+          result.message || 'Account created! You can now sign in with your email and password.'
         );
       }
+    } else {
+      setFormError(result.error || 'Registration failed. Please check your input.');
     }
   };
 

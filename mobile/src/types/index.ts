@@ -92,7 +92,7 @@ export interface SeatInfo {
   id: string;
   seatNumber: number;
   isBooked: boolean;
-  status: 'AVAILABLE' | 'OCCUPIED' | 'SELECTED';
+  status: 'AVAILABLE' | 'OCCUPIED' | 'SELECTED' | 'HELD' | 'LOCKED' | 'BLOCKED';
   price?: number;
 }
 

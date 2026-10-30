@@ -25,6 +25,7 @@ interface AuthContextType {
         errors?: { message: string }[];
   }>;
   logout: () => Promise<void>;
+  updateProfile: (data: { firstName: string; lastName: string; phone?: string }) => Promise<{ success: boolean; user?: AuthUser; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -154,6 +155,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateProfile = useCallback(async (data: { firstName: string; lastName: string; phone?: string }) => {
+    if (!user?.id) return { success: false, error: 'User not logged in' };
+    try {
+      const res = await apiService.updateProfile(user.id, data);
+      if (res.success && res.data?.user) {
+        await persistSession(accessToken, res.data.user);
+        return { success: true, user: res.data.user };
+      }
+      return { success: false, error: res.error || 'Failed to update profile' };
+    } catch {
+      return { success: false, error: 'Network error while updating profile' };
+    }
+  }, [user, accessToken]);
+
   const logout = useCallback(async () => {
     try {
       await apiService.logout();
@@ -173,11 +188,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      updateProfile,
       loading,
       error,
       clearError,
     }),
-    [user, accessToken, login, register, logout, loading, error, clearError]
+    [user, accessToken, login, register, logout, updateProfile, loading, error, clearError]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

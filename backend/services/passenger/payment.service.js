@@ -9,7 +9,7 @@ import notificationService from '../notification.service.js';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 export class PassengerPaymentService {
-  async initializePayment(passengerId, { tripId, seatNumbers, amount, paymentMethod = 'TELEBIRR', passengerInfo, bookingId, phoneNumber }) {
+  async initializePayment(passengerId, { tripId, seatNumbers, amount, paymentMethod = 'TELEBIRR', passengerInfo, bookingId, phoneNumber, platform, returnUrl }) {
     let targetBooking = null;
     if (bookingId) {
       targetBooking = await prisma.bookings.findUnique({
@@ -337,6 +337,8 @@ export class PassengerPaymentService {
           email: passengerEmail,
           firstName: passengerFirstName,
           lastName: passengerLastName,
+          platform,
+          returnUrl,
         });
         checkoutUrl = providerResponse?.data?.checkout_url || '';
       } catch (err) {
@@ -372,13 +374,23 @@ export class PassengerPaymentService {
     return checkoutInfo;
   }
 
-  async initializeChapaPayment({ amount, transactionReference, email, firstName, lastName }) {
+  async initializeChapaPayment({ amount, transactionReference, email, firstName, lastName, platform, returnUrl }) {
     try {
       // Chapa validates email: ensure valid domain, avoid @example.com
       let chapaEmail = (email || '').trim().toLowerCase();
       if (!chapaEmail || chapaEmail.includes('@example.com') || !chapaEmail.includes('@') || !chapaEmail.includes('.')) {
         const safeUser = (firstName || 'passenger').replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'passenger';
         chapaEmail = `${safeUser}.test@gmail.com`;
+      }
+
+      // If mobile, point return_url to backend callback endpoint which deep-links back to mobile app
+      let finalReturnUrl = returnUrl;
+      if (!finalReturnUrl) {
+        if (platform === 'mobile') {
+          finalReturnUrl = `${env.apiBaseUrl}/passenger/callback/chapa?tx_ref=${encodeURIComponent(transactionReference)}&status=success&payment_method=CHAPA&platform=mobile`;
+        } else {
+          finalReturnUrl = `${env.clientUrl}/payment/callback?tx_ref=${encodeURIComponent(transactionReference)}&status=success&payment_method=CHAPA`;
+        }
       }
 
       const response = await axios.post(
@@ -391,7 +403,7 @@ export class PassengerPaymentService {
           last_name: (lastName || 'Customer').substring(0, 30),
           tx_ref: transactionReference,
           callback_url: `${env.apiBaseUrl}/passenger/callback/chapa`,
-          return_url: `${env.clientUrl}/payment/callback?tx_ref=${transactionReference}&status=success&payment_method=CHAPA`,
+          return_url: finalReturnUrl,
           customization: {
             title: 'Bus Ticket', // Strictly <= 16 characters for Chapa
             description: 'Bus Booking',

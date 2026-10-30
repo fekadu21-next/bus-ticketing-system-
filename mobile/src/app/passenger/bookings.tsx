@@ -396,30 +396,47 @@ export default function PassengerBookingsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>🎫</Text>
-              <Text style={styles.emptyTitle}>
-                {searchQuery
-                  ? 'No matching tickets'
-                  : activeTab === 'UPCOMING'
-                  ? 'No upcoming trips'
-                  : activeTab === 'COMPLETED'
-                  ? 'No past trips'
-                  : activeTab === 'CANCELLED'
-                  ? 'No cancelled bookings'
-                  : 'No bookings found'}
-              </Text>
-              <Text style={styles.emptySub}>
-                {searchQuery
-                  ? `No reservations found matching "${searchQuery}".`
-                  : activeTab === 'UPCOMING'
-                  ? 'You currently have no scheduled bus trips. Find available seats across Ethiopia!'
-                  : 'Start planning your next comfortable intercity bus journey today.'}
-              </Text>
-              <TouchableOpacity
-                style={styles.findBusesBtn}
-                onPress={() => router.push('/passenger/trips')}
-              >
-                <Text style={styles.findBusesBtnText}>Search & Book Buses →</Text>
-              </TouchableOpacity>
+              {!user ? (
+                <>
+                  <Text style={styles.emptyTitle}>Sign in to view your tickets</Text>
+                  <Text style={styles.emptySub}>
+                    Log in with your passenger account to view all your booked trips and tickets synchronized across web and mobile.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.findBusesBtn}
+                    onPress={() => router.push('/login')}
+                  >
+                    <Text style={styles.findBusesBtnText}>Sign In to Account →</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.emptyTitle}>
+                    {searchQuery
+                      ? 'No matching tickets'
+                      : activeTab === 'UPCOMING'
+                      ? 'No upcoming trips'
+                      : activeTab === 'COMPLETED'
+                      ? 'No past trips'
+                      : activeTab === 'CANCELLED'
+                      ? 'No cancelled bookings'
+                      : 'No bookings found'}
+                  </Text>
+                  <Text style={styles.emptySub}>
+                    {searchQuery
+                      ? `No reservations found matching "${searchQuery}".`
+                      : activeTab === 'UPCOMING'
+                      ? 'You currently have no scheduled bus trips. Find available seats across Ethiopia!'
+                      : 'Start planning your next comfortable intercity bus journey today.'}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.findBusesBtn}
+                    onPress={() => router.push('/passenger/trips')}
+                  >
+                    <Text style={styles.findBusesBtnText}>Search & Book Buses →</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           }
         />

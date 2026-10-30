@@ -110,8 +110,8 @@ const LangDropdown = () => {
                 setOpen(false);
               }}
               className={`w-full flex items-center px-3 py-2 text-sm font-semibold transition-colors ${i18n.language === lang.code
-                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
             >
               <span>{lang.label}</span>
@@ -122,8 +122,6 @@ const LangDropdown = () => {
     </div>
   );
 };
-
-
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout, isAdmin, isOperator, isPassenger } = useAuth();
