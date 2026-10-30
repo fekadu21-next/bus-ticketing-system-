@@ -79,7 +79,7 @@ export const SearchTripsPage = () => {
   const [destination, setDestination] = useState(searchParams.get('to') || '');
   const [departureDate, setDepartureDate] = useState(searchParams.get('date') || '');
   const [periods, setPeriods] = useState([]);
-  const [priceRange, setPriceRange] = useState(3000);
+  const [priceRange, setPriceRange] = useState(10000);
   const [operatorSearch, setOperatorSearch] = useState('');
   const [selectedOperators, setSelectedOperators] = useState(
     searchParams.get('operator') ? [searchParams.get('operator')] : []
@@ -186,7 +186,7 @@ export const SearchTripsPage = () => {
 
   const clearAllFilters = () => {
     setPeriods([]);
-    setPriceRange(3000);
+    setPriceRange(10000);
     setOperatorSearch('');
     setSelectedOperators([]);
     setOrgTypes([]);
@@ -385,9 +385,9 @@ export const SearchTripsPage = () => {
               <h3 className="text-[12px] font-bold text-slate-900 mb-3">Price Range</h3>
               <input
                 type="range"
-                min="600"
-                max="2000"
-                step="50"
+                min="100"
+                max="10000"
+                step="100"
                 value={priceRange}
                 onChange={(e) => {
                   setCurrentPage(1);
@@ -396,8 +396,8 @@ export const SearchTripsPage = () => {
                 className="w-full accent-[#2563eb] cursor-pointer"
               />
               <div className="flex justify-between text-[11px] text-slate-500 mt-1">
-                <span>ETB 600</span>
-                <span>ETB 2,000</span>
+                <span>ETB 100</span>
+                <span>ETB {priceRange.toLocaleString()}</span>
               </div>
             </div>
 

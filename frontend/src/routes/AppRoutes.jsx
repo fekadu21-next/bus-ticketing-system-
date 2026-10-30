@@ -263,6 +263,7 @@ export const AppRoutes = () => {
       {/* Public Pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/search-trips" element={<SearchTripsPage />} />
+      <Route path="/trips" element={<Navigate to="/search-trips" replace />} />
       <Route path="/trips/:tripId" element={<TripDetailsPage />} />
       <Route path="/passenger-info" element={<PassengerInfoPage />} />
       <Route path="/payment" element={<PaymentPage />} />

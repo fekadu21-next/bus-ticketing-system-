@@ -16,51 +16,71 @@ export class PassengerTripRepository {
     const limitNum = parseInt(limit, 10) || 20;
     const skip = (pageNum - 1) * limitNum;
 
-    // Filters for passenger-visible bookable trips
+    // Build filters for passenger-visible bookable trips
+    // NOTE: Use Prisma's 'is:' wrapper for filtering on related models
     const where = {
-      status: { in: ['SCHEDULED', 'PUBLISHED'] },
-      departure_time: { gte: new Date() },
+      status: { in: ['SCHEDULED', 'PUBLISHED', 'ACTIVE', 'OPEN'] },
+      departure_time: { gte: new Date() }, // Always only show future/upcoming trips
       organizations: {
-        is_active: true,
-        // If organization has status, must be APPROVED
-        status: { in: ['APPROVED', 'ACTIVE'] },
+        is: {
+          is_active: true,
+          status: { notIn: ['REJECTED', 'SUSPENDED', 'BANNED'] },
+        },
       },
     };
+
 
     if (operatorId) {
       where.organization_id = operatorId;
     }
 
     if (operator) {
+      const cleanOp = operator.trim().toLowerCase();
+      // Build search candidates (e.g., "anbesa buses" -> ["anbesa", "bus"], "abesa" -> "anbesa", "mekele" -> "mekelle")
+      const candidates = [cleanOp];
+      if (cleanOp.includes('abesa') || cleanOp.includes('anbesa')) {
+        candidates.push('anbesa');
+      }
+      if (cleanOp.includes('mekele') || cleanOp.includes('mekelle') || cleanOp.includes('mekel')) {
+        candidates.push('mekel');
+      }
+      if (cleanOp.includes('selam')) {
+        candidates.push('selam');
+      }
+      cleanOp.split(/\s+/).forEach((w) => {
+        const stem = w.replace(/(es|s|lines|line|buses|bus)$/, '');
+        if (stem.length >= 3) candidates.push(stem);
+      });
+
+      const uniqueCandidates = Array.from(new Set(candidates));
+
       where.organizations = {
-        ...where.organizations,
-        name: { contains: operator, mode: 'insensitive' },
+        is: {
+          ...where.organizations?.is,
+          OR: uniqueCandidates.map((c) => ({
+            name: { contains: c, mode: 'insensitive' },
+          })),
+        },
       };
     }
 
     if (origin || destination) {
-      where.routes = { is_active: true };
+      where.routes = { is: {} };
       if (origin) {
-        where.routes.origin = { contains: origin, mode: 'insensitive' };
+        where.routes.is.origin = { contains: origin, mode: 'insensitive' };
       }
       if (destination) {
-        where.routes.destination = { contains: destination, mode: 'insensitive' };
+        where.routes.is.destination = { contains: destination, mode: 'insensitive' };
       }
     }
 
     if (date) {
       const datePart = typeof date === 'string' ? date.split('T')[0] : new Date(date).toISOString().split('T')[0];
+      // Span ±24h around the selected date to handle timezone differences (EAT = UTC+3)
       const startOfDay = new Date(`${datePart}T00:00:00.000Z`);
-      // Ethiopia timezone is UTC+3. Span window across local day to prevent timezone boundary clipping
       const localDayStart = new Date(startOfDay.getTime() - 4 * 60 * 60 * 1000);
       const localDayEnd = new Date(startOfDay.getTime() + 28 * 60 * 60 * 1000);
-
-      const now = new Date();
-      const minDate = localDayStart > now ? localDayStart : now;
-      where.departure_time = {
-        gte: minDate,
-        lte: localDayEnd,
-      };
+      where.departure_time = { gte: localDayStart, lte: localDayEnd };
     }
 
     const orderBy = [];
@@ -114,7 +134,6 @@ export class PassengerTripRepository {
         (trip.bookings || []).map((b) => b.seat_number)
       );
 
-      // Only seats with status AVAILABLE and without an active booking are available
       const availableSeats = (trip.seats || []).filter(
         (s) => s.status === 'AVAILABLE' && !activeBookedSeatNums.has(s.seat_number)
       ).length;

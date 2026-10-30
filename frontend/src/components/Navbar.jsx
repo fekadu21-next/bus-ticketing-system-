@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { formatUserFullName, isUserAdmin, isUserOperator, isUserPassenger } from '@/utils/userUtils';
 import {
   User,
@@ -15,15 +14,116 @@ import {
   ArrowRight,
   Menu,
   X,
-  Sun,
-  Moon,
-  Bus,
   ChevronDown,
   Ticket,
-  Bell,
-  MessageSquareQuote,
+  Globe,
 } from 'lucide-react';
 import { PlatformFeedbackModal } from '@/components/feedback/PlatformFeedbackModal';
+
+// ── Telegram-style theme toggle ──────────────────────────────────────────────
+const ThemeToggle = ({ isDark, toggleTheme }) => (
+  <button
+    type="button"
+    onClick={toggleTheme}
+    aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    className="relative inline-flex items-center w-[46px] h-[26px] rounded-full transition-colors duration-300 focus:outline-none flex-shrink-0"
+    style={{
+      background: isDark
+        ? 'linear-gradient(135deg,#2563eb,#1d4ed8)'
+        : 'rgba(148,163,184,0.35)',
+      border: isDark ? '1.5px solid #3b82f6' : '1.5px solid #cbd5e1',
+    }}
+  >
+    <span
+      className="absolute left-[5px] text-[10px] select-none pointer-events-none transition-opacity duration-200"
+      style={{ opacity: isDark ? 1 : 0 }}
+    >
+      🌙
+    </span>
+    <span
+      className="absolute right-[5px] text-[10px] select-none pointer-events-none transition-opacity duration-200"
+      style={{ opacity: isDark ? 0 : 1 }}
+    >
+      ☀️
+    </span>
+    <span
+      className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-md transition-all duration-300"
+      style={{ left: isDark ? '23px' : '3px' }}
+    />
+  </button>
+);
+
+// ── Compact language dropdown ────────────────────────────────────────────────
+
+
+const LangDropdown = () => {
+  const { i18n } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  const isAmharic =
+    i18n.language === 'am' || i18n.language?.startsWith('am');
+
+  const current = isAmharic ? 'አማርኛ' : 'ENGLISH';
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+
+    if (open) document.addEventListener('mousedown', handler);
+
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-sm font-bold"
+        aria-label="Language"
+      >
+        <span>{current}</span>
+
+        <ChevronDown
+          size={14}
+          className={`transition-transform duration-200 ${open ? 'rotate-180' : ''
+            }`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 mt-1.5 w-[140px] rounded-xl shadow-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 py-1 z-50">
+          {[
+            { code: 'en', label: 'ENGLISH' },
+            { code: 'am', label: 'አማርኛ' },
+          ].map((lang) => (
+            <button
+              key={lang.code}
+              type="button"
+              onClick={() => {
+                i18n.changeLanguage(lang.code);
+                setOpen(false);
+              }}
+              className={`w-full flex items-center px-3 py-2 text-sm font-semibold transition-colors ${i18n.language === lang.code
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+            >
+              <span>{lang.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout, isAdmin, isOperator, isPassenger } = useAuth();
@@ -93,24 +193,18 @@ export const Navbar = () => {
 
   return (
     <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 sticky top-0 z-50 shadow-[0_2px_12px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.3)] transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[80px] flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[100px] flex items-center justify-between gap-4">
         {/* Brand / Logo */}
         <Link
           to="/"
-          className="flex items-center gap-3 text-decoration-none group"
+          className="flex items-center text-decoration-none group"
           onClick={() => setMobileMenuOpen(false)}
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md shadow-blue-600/25 group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
-            <Bus size={22} className="text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">
-              {t('nav.brand', 'BusTicket')}
-            </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold tracking-wide mt-1">
-              {t('nav.subtitle', 'Smart Journey')}
-            </span>
-          </div>
+          <img
+            src="/logo.png"
+            alt="BusTicket"
+            className="h-20 w-auto object-contain group-hover:scale-105 transition-transform duration-200 flex-shrink-0"
+          />
         </Link>
 
         {/* Desktop Navigation Links with Pink-Red Hover & Underline */}
@@ -119,100 +213,70 @@ export const Navbar = () => {
             <li className="h-full flex items-center">
               <Link
                 to="/"
-                className={`relative px-4 py-2.5 text-[16px] font-semibold transition-all duration-300 group flex items-center gap-1.5 ${
-                  isActive('/')
-                    ? 'text-[#f43f5e] font-bold'
-                    : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] dark:hover:text-[#fb7185]'
-                }`}
+                className={`relative px-4 py-2.5 text-[16px] font-semibold transition-all duration-300 group flex items-center gap-1.5 ${isActive('/')
+                  ? 'text-blue-600 font-bold'
+                  : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
               >
                 {t('nav.home', 'Home')}
                 <span
-                  className={`absolute bottom-[-2px] left-3 right-3 h-[2.5px] rounded-full transition-all duration-300 ${
-                    isActive('/')
-                      ? 'bg-[#f43f5e] shadow-[0_2px_8px_rgba(244,63,94,0.45)] scale-x-100'
-                      : 'bg-[#fb7185] scale-x-0 group-hover:scale-x-100 opacity-90'
-                  }`}
+                  className={`absolute bottom-[-2px] left-3 right-3 h-[2.5px] rounded-full transition-all duration-300 ${isActive('/')
+                    ? 'bg-blue-600 shadow-[0_2px_8px_rgba(37,99,235,0.45)] scale-x-100'
+                    : 'bg-blue-400 scale-x-0 group-hover:scale-x-100 opacity-90'
+                    }`}
                 />
               </Link>
             </li>
             <li className="h-full flex items-center">
               <Link
                 to="/search-trips"
-                className={`relative px-4 py-2.5 text-[16px] font-semibold transition-all duration-300 group flex items-center gap-1.5 ${
-                  isActive('/search-trips')
-                    ? 'text-[#f43f5e] font-bold'
-                    : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] dark:hover:text-[#fb7185]'
-                }`}
+                className={`relative px-4 py-2.5 text-[16px] font-semibold transition-all duration-300 group flex items-center gap-1.5 ${isActive('/search-trips')
+                  ? 'text-blue-600 font-bold'
+                  : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
               >
                 {t('nav.searchTrips', 'Search Trips')}
                 <span
-                  className={`absolute bottom-[-2px] left-3 right-3 h-[2.5px] rounded-full transition-all duration-300 ${
-                    isActive('/search-trips')
-                      ? 'bg-[#f43f5e] shadow-[0_2px_8px_rgba(244,63,94,0.45)] scale-x-100'
-                      : 'bg-[#fb7185] scale-x-0 group-hover:scale-x-100 opacity-90'
-                  }`}
+                  className={`absolute bottom-[-2px] left-3 right-3 h-[2.5px] rounded-full transition-all duration-300 ${isActive('/search-trips')
+                    ? 'bg-blue-600 shadow-[0_2px_8px_rgba(37,99,235,0.45)] scale-x-100'
+                    : 'bg-blue-400 scale-x-0 group-hover:scale-x-100 opacity-90'
+                    }`}
                 />
               </Link>
             </li>
 
-            {isAuthenticated && userIsPassenger && (
-              <li className="h-full flex items-center">
-                <Link
-                  to="/my-bookings"
-                  className={`relative px-4 py-2.5 text-[16px] font-semibold transition-all duration-300 group flex items-center gap-1.5 ${
-                    isActive('/my-bookings')
-                      ? 'text-[#f43f5e] font-bold'
-                      : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] dark:hover:text-[#fb7185]'
-                  }`}
-                >
-                  <Ticket size={16} />
-                  My Bookings
-                  <span
-                    className={`absolute bottom-[-2px] left-3 right-3 h-[2.5px] rounded-full transition-all duration-300 ${
-                      isActive('/my-bookings')
-                        ? 'bg-[#f43f5e] shadow-[0_2px_8px_rgba(244,63,94,0.45)] scale-x-100'
-                        : 'bg-[#fb7185] scale-x-0 group-hover:scale-x-100 opacity-90'
-                    }`}
-                  />
-                </Link>
-              </li>
-            )}
 
             <li className="h-full flex items-center">
               <Link
                 to="/about"
-                className={`relative px-4 py-2.5 text-[16px] font-semibold transition-all duration-300 group flex items-center gap-1.5 ${
-                  isActive('/about')
-                    ? 'text-[#f43f5e] font-bold'
-                    : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] dark:hover:text-[#fb7185]'
-                }`}
+                className={`relative px-4 py-2.5 text-[16px] font-semibold transition-all duration-300 group flex items-center gap-1.5 ${isActive('/about')
+                  ? 'text-blue-600 font-bold'
+                  : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
               >
                 {t('nav.about', 'About')}
                 <span
-                  className={`absolute bottom-[-2px] left-3 right-3 h-[2.5px] rounded-full transition-all duration-300 ${
-                    isActive('/about')
-                      ? 'bg-[#f43f5e] shadow-[0_2px_8px_rgba(244,63,94,0.45)] scale-x-100'
-                      : 'bg-[#fb7185] scale-x-0 group-hover:scale-x-100 opacity-90'
-                  }`}
+                  className={`absolute bottom-[-2px] left-3 right-3 h-[2.5px] rounded-full transition-all duration-300 ${isActive('/about')
+                    ? 'bg-blue-600 shadow-[0_2px_8px_rgba(37,99,235,0.45)] scale-x-100'
+                    : 'bg-blue-400 scale-x-0 group-hover:scale-x-100 opacity-90'
+                    }`}
                 />
               </Link>
             </li>
             <li className="h-full flex items-center">
               <Link
                 to="/contact"
-                className={`relative px-4 py-2.5 text-[16px] font-semibold transition-all duration-300 group flex items-center gap-1.5 ${
-                  isActive('/contact')
-                    ? 'text-[#f43f5e] font-bold'
-                    : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] dark:hover:text-[#fb7185]'
-                }`}
+                className={`relative px-4 py-2.5 text-[16px] font-semibold transition-all duration-300 group flex items-center gap-1.5 ${isActive('/contact')
+                  ? 'text-blue-600 font-bold'
+                  : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
               >
                 {t('nav.contact', 'Contact')}
                 <span
-                  className={`absolute bottom-[-2px] left-3 right-3 h-[2.5px] rounded-full transition-all duration-300 ${
-                    isActive('/contact')
-                      ? 'bg-[#f43f5e] shadow-[0_2px_8px_rgba(244,63,94,0.45)] scale-x-100'
-                      : 'bg-[#fb7185] scale-x-0 group-hover:scale-x-100 opacity-90'
-                  }`}
+                  className={`absolute bottom-[-2px] left-3 right-3 h-[2.5px] rounded-full transition-all duration-300 ${isActive('/contact')
+                    ? 'bg-blue-600 shadow-[0_2px_8px_rgba(37,99,235,0.45)] scale-x-100'
+                    : 'bg-blue-400 scale-x-0 group-hover:scale-x-100 opacity-90'
+                    }`}
                 />
               </Link>
             </li>
@@ -221,48 +285,15 @@ export const Navbar = () => {
 
         {/* Right Navigation Actions */}
         <div className="flex items-center gap-2.5">
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            className="p-2 rounded-xl transition-colors duration-200 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
-            onClick={toggleTheme}
-            title={isDark ? t('nav.lightMode', 'Light Mode') : t('nav.darkMode', 'Dark Mode')}
-            aria-label={isDark ? t('nav.lightMode', 'Light Mode') : t('nav.darkMode', 'Dark Mode')}
-          >
-            {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
-          </button>
+          {/* Telegram-style Theme Toggle */}
+          <ThemeToggle isDark={isDark} toggleTheme={toggleTheme} />
 
-          {/* Language Switcher */}
-          <LanguageSwitcher variant="compact" />
-
-          {/* Quick Platform Feedback Button */}
-          {isAuthenticated && (
-            <button
-              type="button"
-              className="p-2 sm:px-3 sm:py-2 rounded-xl transition-colors duration-200 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold"
-              onClick={() => setPlatformFeedbackOpen(true)}
-              title="Give Platform Feedback"
-            >
-              <MessageSquareQuote size={16} className="text-blue-600 dark:text-blue-400" />
-              <span className="hidden sm:inline">Feedback</span>
-            </button>
-          )}
+          {/* Language Dropdown */}
+          <LangDropdown />
 
           {isAuthenticated ? (
             <div className="hidden lg:flex items-center gap-2.5">
-              
-              {/* Quick Action Pill for Current Role */}
-              {userIsPassenger && (
-                <Link
-                  to="/my-bookings"
-                  className="px-3.5 py-2 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
-                >
-                  <Ticket size={14} />
-                  My Bookings
-                </Link>
-              )}
 
-              
               {userIsAdmin && (
                 <Link
                   to="/admin"
@@ -313,9 +344,8 @@ export const Navbar = () => {
 
                   <ChevronDown
                     size={14}
-                    className={`text-slate-400 dark:text-slate-400 transition-transform duration-200 ${
-                      userDropdownOpen ? 'rotate-180' : ''
-                    }`}
+                    className={`text-slate-400 dark:text-slate-400 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''
+                      }`}
                   />
                 </button>
 
@@ -333,7 +363,7 @@ export const Navbar = () => {
                       </span>
                     </div>
 
-                    
+
                     {userIsAdmin && (
                       <Link
                         to="/admin"
@@ -368,15 +398,6 @@ export const Navbar = () => {
                     )}
 
                     <Link
-                      to="/notifications"
-                      className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
-                      onClick={() => setUserDropdownOpen(false)}
-                    >
-                      <Bell size={16} />
-                      Notifications
-                    </Link>
-
-                    <Link
                       to={userIsAdmin ? "/admin/profile" : userIsOperator ? "/operator/profile" : "/profile"}
                       className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
                       onClick={() => setUserDropdownOpen(false)}
@@ -385,36 +406,8 @@ export const Navbar = () => {
                       My Profile
                     </Link>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        setPlatformFeedbackOpen(true);
-                      }}
-                      className="flex items-center gap-2.5 w-full px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer text-left"
-                    >
-                      <MessageSquareQuote size={16} className="text-blue-600 dark:text-blue-400" />
-                      Platform Feedback
-                    </button>
-
-                    {/* Theme Preference Toggle with Sun/Moon */}
-                    <div className="flex items-center justify-between px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800">
-                      <span className="flex items-center gap-2">
-                        {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} />}
-                        Appearance
-                      </span>
-                      <button
-                        type="button"
-                        onClick={toggleTheme}
-                        className="px-2.5 py-1 text-xs rounded-lg font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
-                        title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                      >
-                        {isDark ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} />}
-                        {isDark ? 'Light' : 'Dark'}
-                      </button>
-                    </div>
-
                     <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+
                     <button
                       type="button"
                       onClick={handleLogout}
@@ -499,7 +492,7 @@ export const Navbar = () => {
             </div>
           )}
 
-          
+
           {/* Mobile menu hamburger toggle button */}
           <button
             type="button"
@@ -527,13 +520,12 @@ export const Navbar = () => {
             <div>
               {/* Mobile Menu Header */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
-                    <Bus size={16} className="text-white" />
-                  </div>
-                  <span className="text-base font-black text-slate-900 dark:text-white">
-                    {t('nav.brand', 'BusTicket')}
-                  </span>
+                <div className="flex items-center">
+                  <img
+                    src="/logo.png"
+                    alt="BusTicket"
+                    className="h-16 w-auto object-contain"
+                  />
                 </div>
 
                 <button
@@ -551,11 +543,10 @@ export const Navbar = () => {
                 <li>
                   <Link
                     to="/"
-                    className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors ${
-                      isActive('/')
-                        ? 'bg-rose-50 dark:bg-rose-950/40 text-[#f43f5e] border-l-4 border-[#f43f5e] font-bold'
-                        : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] hover:bg-rose-50/30'
-                    }`}
+                    className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors ${isActive('/')
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 border-l-4 border-blue-600 font-bold'
+                      : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50/30'
+                      }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {t('nav.home', 'Home')}
@@ -564,11 +555,10 @@ export const Navbar = () => {
                 <li>
                   <Link
                     to="/search-trips"
-                    className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors ${
-                      isActive('/search-trips')
-                        ? 'bg-rose-50 dark:bg-rose-950/40 text-[#f43f5e] border-l-4 border-[#f43f5e] font-bold'
-                        : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] hover:bg-rose-50/30'
-                    }`}
+                    className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors ${isActive('/search-trips')
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 border-l-4 border-blue-600 font-bold'
+                      : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50/30'
+                      }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {t('nav.searchTrips', 'Search Trips')}
@@ -578,11 +568,10 @@ export const Navbar = () => {
                   <li>
                     <Link
                       to="/my-bookings"
-                      className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors flex items-center gap-2 ${
-                        isActive('/my-bookings')
-                          ? 'bg-rose-50 dark:bg-rose-950/40 text-[#f43f5e] border-l-4 border-[#f43f5e] font-bold'
-                          : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] hover:bg-rose-50/30'
-                      }`}
+                      className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors flex items-center gap-2 ${isActive('/my-bookings')
+                        ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 border-l-4 border-blue-600 font-bold'
+                        : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50/30'
+                        }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Ticket size={16} />
@@ -593,11 +582,10 @@ export const Navbar = () => {
                 <li>
                   <Link
                     to="/about"
-                    className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors ${
-                      isActive('/about')
-                        ? 'bg-rose-50 dark:bg-rose-950/40 text-[#f43f5e] border-l-4 border-[#f43f5e] font-bold'
-                        : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] hover:bg-rose-50/30'
-                    }`}
+                    className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors ${isActive('/about')
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 border-l-4 border-blue-600 font-bold'
+                      : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50/30'
+                      }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {t('nav.about', 'About')}
@@ -606,11 +594,10 @@ export const Navbar = () => {
                 <li>
                   <Link
                     to="/contact"
-                    className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors ${
-                      isActive('/contact')
-                        ? 'bg-rose-50 dark:bg-rose-950/40 text-[#f43f5e] border-l-4 border-[#f43f5e] font-bold'
-                        : 'text-slate-700 dark:text-slate-200 hover:text-[#f43f5e] hover:bg-rose-50/30'
-                    }`}
+                    className={`block px-3.5 py-2.5 rounded-xl text-[15.5px] font-semibold transition-colors ${isActive('/contact')
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 border-l-4 border-blue-600 font-bold'
+                      : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 hover:bg-blue-50/30'
+                      }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {t('nav.contact', 'Contact')}
@@ -660,29 +647,12 @@ export const Navbar = () => {
                       </Link>
                     )}
                     <Link
-                      to="/notifications"
-                      className="block w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Notifications
-                    </Link>
-                    <Link
                       to={userIsAdmin ? "/admin/profile" : userIsOperator ? "/operator/profile" : "/profile"}
                       className="block w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       My Profile
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        setPlatformFeedbackOpen(true);
-                      }}
-                      className="block w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900"
-                    >
-                      Platform Feedback
-                    </button>
                     <button
                       type="button"
                       onClick={handleLogout}
@@ -724,14 +694,8 @@ export const Navbar = () => {
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>Theme & Language</span>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
-                  onClick={toggleTheme}
-                >
-                  {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} />}
-                </button>
-                <LanguageSwitcher variant="compact" />
+                <ThemeToggle isDark={isDark} toggleTheme={toggleTheme} />
+                <LangDropdown />
               </div>
             </div>
           </div>

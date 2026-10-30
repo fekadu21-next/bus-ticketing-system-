@@ -75,10 +75,14 @@ export const normalizeTrip = (raw) => {
     logoBg = 'bg-[#10b981]';
     logoText = 'GB';
     image = '/images/crops/bus_gebeya.jpg';
-  } else if (lowerName.includes('mekelle')) {
+  } else if (lowerName.includes('mekelle') || lowerName.includes('mekele')) {
     logoBg = 'bg-[#2563eb]';
     logoText = 'MT';
     image = '/images/crops/bus_mekelle.jpg';
+  } else if (lowerName.includes('anbesa') || lowerName.includes('abesa')) {
+    logoBg = 'bg-[#ea580c]';
+    logoText = 'AB';
+    image = '/images/crops/bus_abay.jpg';
   } else if (lowerName.includes('sky')) {
     logoBg = 'bg-[#0284c7]';
     logoText = 'SE';
