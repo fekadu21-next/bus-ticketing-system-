@@ -12,14 +12,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '@/context/AuthContext';
 import {
   apiService,
   type DriverTrip,
-  type DriverProblemReport,
 } from '@/services/api';
 import DriverTabBar from '@/components/DriverTabBar';
 
@@ -28,18 +27,16 @@ const PROBLEM_TYPES = [
   { value: 'DELAY', label: '⏱️ Heavy Traffic / Terminal Delay' },
   { value: 'ROUTE_PROBLEM', label: '🚧 Road Closure / Route Diversion' },
   { value: 'ACCIDENT', label: '⚠️ Road Collision / Accident' },
-  { value: 'PASSENGER_ISSUE', label: '👥 Passenger Medical / Emergency' },
+  { value: 'PASSENGER_ISSUE', label: '👥 Passenger Emergency / Medical' },
   { value: 'OTHER', label: '📝 Other Operational Issue' },
 ];
 
 export default function DriverHomeScreen() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, logout } = useAuth();
 
   const [activeTrip, setActiveTrip] = useState<DriverTrip | null>(null);
-  const [todayTrips, setTodayTrips] = useState<DriverTrip[]>([]);
   const [upcomingTrips, setUpcomingTrips] = useState<DriverTrip[]>([]);
-  const [reportedProblems, setReportedProblems] = useState<DriverProblemReport[]>([]);
   const [stats, setStats] = useState({
     totalAssigned: 0,
     completed: 0,
@@ -50,31 +47,23 @@ export default function DriverHomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Problem report modal state
+  // Quick Problem report modal state
   const [problemModalVisible, setProblemModalVisible] = useState(false);
   const [targetTripId, setTargetTripId] = useState<string | null>(null);
-  const [problemType, setProblemType] = useState('VEHICLE_PROBLEM');
+  const [problemType, setProblemType] = useState('DELAY');
   const [problemDescription, setProblemDescription] = useState('');
   const [problemSubmitting, setProblemSubmitting] = useState(false);
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const [dashRes, problemsRes] = await Promise.all([
-        apiService.getDriverDashboard(),
-        apiService.getDriverProblems(),
-      ]);
+      const dashRes = await apiService.getDriverDashboard();
 
       if (dashRes.success && dashRes.data) {
         setActiveTrip(dashRes.data.activeTrip || null);
-        setTodayTrips(dashRes.data.todayTrips || []);
         setUpcomingTrips(dashRes.data.upcomingTrips || []);
         if (dashRes.data.stats) {
           setStats(dashRes.data.stats);
         }
-      }
-
-      if (problemsRes.success && problemsRes.data?.reports) {
-        setReportedProblems(problemsRes.data.reports.slice(0, 5));
       }
     } catch (err) {
       console.warn('Failed to load driver dashboard data', err);
@@ -95,10 +84,24 @@ export default function DriverHomeScreen() {
     fetchDashboardData();
   };
 
+  const handleLogout = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to log out of the Driver App?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          router.replace('/landing');
+        },
+      },
+    ]);
+  };
+
   const handleStartTrip = (trip: DriverTrip) => {
     Alert.alert(
       'Start Trip Departure',
-      `Departing from ${trip.origin} to ${trip.destination}.\nBus Plate: ${trip.bus?.plateNumber || 'ETH-BUS'}\n\nConfirm departure now?`,
+      `Confirm departure for trip from ${trip.origin} to ${trip.destination}?\n\nAssigned Bus: ${trip.bus?.plateNumber || 'Bus'}\nThis marks the trip as IN TRANSIT.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -109,13 +112,13 @@ export default function DriverHomeScreen() {
             try {
               const res = await apiService.startTrip(trip.id);
               if (res.success) {
-                Alert.alert('Trip Started!', 'Trip status updated to IN PROGRESS. Safe travels!');
+                Alert.alert('Trip Started!', 'Safe travels! Trip is now marked IN TRANSIT.');
                 await fetchDashboardData();
               } else {
-                Alert.alert('Error', res.error || 'Failed to start trip.');
+                Alert.alert('Error', res.error || 'Could not start trip.');
               }
             } catch {
-              Alert.alert('Network Error', 'Could not communicate with dispatch server.');
+              Alert.alert('Error', 'Network error while starting trip.');
             } finally {
               setActionLoading(false);
             }
@@ -128,7 +131,7 @@ export default function DriverHomeScreen() {
   const handleCompleteTrip = (trip: DriverTrip) => {
     Alert.alert(
       'Complete Trip Arrival',
-      `Have you arrived safely at ${trip.destination}?\n\nThis will mark this trip as COMPLETED.`,
+      `Have you arrived safely at ${trip.destination}?\n\nThis will mark the trip as COMPLETED and conclude the run.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -139,13 +142,13 @@ export default function DriverHomeScreen() {
             try {
               const res = await apiService.completeTrip(trip.id);
               if (res.success) {
-                Alert.alert('Trip Completed!', 'Excellent work. Trip is marked as COMPLETED.');
+                Alert.alert('Trip Completed!', 'Run completed successfully! Great job.');
                 await fetchDashboardData();
               } else {
-                Alert.alert('Error', res.error || 'Failed to complete trip.');
+                Alert.alert('Error', res.error || 'Could not complete trip.');
               }
             } catch {
-              Alert.alert('Network Error', 'Could not communicate with dispatch server.');
+              Alert.alert('Error', 'Network error while completing trip.');
             } finally {
               setActionLoading(false);
             }
@@ -156,21 +159,27 @@ export default function DriverHomeScreen() {
   };
 
   const openProblemModal = (tripId?: string) => {
-    const idToUse = tripId || activeTrip?.id || null;
-    if (!idToUse) {
-      Alert.alert('No Active Trip', 'Problem reports must be associated with an assigned trip.');
+    const selectedId = tripId || activeTrip?.id || (upcomingTrips.length > 0 ? upcomingTrips[0].id : null);
+    if (!selectedId) {
+      Alert.alert(
+        'No Active Trip',
+        'You have no assigned trips right now to attach an incident report to. Please check your assigned trips schedule.'
+      );
       return;
     }
-    setTargetTripId(idToUse);
-    setProblemType('VEHICLE_PROBLEM');
+    setTargetTripId(selectedId);
+    setProblemType('DELAY');
     setProblemDescription('');
     setProblemModalVisible(true);
   };
 
   const handleSubmitProblem = async () => {
-    if (!targetTripId) return;
-    if (problemDescription.trim().length < 3) {
-      Alert.alert('Description Required', 'Please enter at least 3 characters describing the issue.');
+    if (!targetTripId) {
+      Alert.alert('Required', 'Please select an assigned trip for this report.');
+      return;
+    }
+    if (problemDescription.trim().length < 5) {
+      Alert.alert('Required', 'Please describe the incident in detail (at least 5 characters).');
       return;
     }
 
@@ -181,87 +190,72 @@ export default function DriverHomeScreen() {
         description: problemDescription.trim(),
       });
       if (res.success) {
-        Alert.alert('Report Logged', 'Your incident report has been submitted to Fleet Operations.');
-        setProblemModalVisible(false);
-        setProblemDescription('');
-        await fetchDashboardData();
+        Alert.alert(
+          'Incident Transmitted',
+          'Your report has been logged and immediately dispatched to Operations Dispatch.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setProblemModalVisible(false);
+                fetchDashboardData();
+              },
+            },
+          ]
+        );
       } else {
-        Alert.alert('Submission Error', res.error || 'Could not record incident report.');
+        Alert.alert('Error', res.error || 'Failed to submit problem report.');
       }
     } catch {
-      Alert.alert('Network Error', 'Failed to submit problem report. Please try again.');
+      Alert.alert('Error', 'Network error while submitting report.');
     } finally {
       setProblemSubmitting(false);
     }
   };
 
-  if (authLoading) {
-    return (
-      <View style={styles.centerWrap}>
-        <ActivityIndicator size="large" color="#0f766e" />
-        <Text style={styles.loadingText}>Verifying Driver Credentials...</Text>
-      </View>
-    );
-  }
+  const formatTime = (isoString?: string) => {
+    if (!isoString) return 'TBD';
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
-  if (!user) {
-    return <Redirect href="/login" />;
-  }
-
-  // Redirect verifier-only accounts
-  if (
-    user.roles?.includes('TICKET_VERIFIER') &&
-    !user.roles?.includes('DRIVER') &&
-    !user.roles?.includes('ADMIN')
-  ) {
-    return <Redirect href="/verifier/dashboard" />;
-  }
+  const formatDate = (isoString?: string) => {
+    if (!isoString) return 'N/A';
+    const d = new Date(isoString);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   const displayName =
-    [user.firstName, user.lastName].filter(Boolean).join(' ').trim() ||
-    (user.email ? user.email.split('@')[0] : 'Driver');
-  const orgName = user.organizationName || 'Fleet Operations';
+    [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() ||
+    (user?.email ? user.email.split('@')[0] : 'Driver');
 
-  const formatTime = (dateStr?: string) => {
-    if (!dateStr) return 'TBD';
-    const d = new Date(dateStr);
-    return `${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • ${d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
-  };
-
-  const getProblemStatusColor = (status: string) => {
-    switch (status) {
-      case 'RESOLVED':
-        return { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' };
-      case 'IN_REVIEW':
-      case 'ACKNOWLEDGED':
-        return { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' };
-      default:
-        return { bg: '#fffbeb', text: '#b45309', border: '#fde68a' };
-    }
-  };
+  const orgName = (user as any)?.organization?.name || 'Fleet Operator';
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Top Header */}
+      {/* Top Header with Sign Out Button in the Top Right */}
       <View style={styles.topBar}>
-        <View>
+        <View style={styles.topBarLeft}>
           <View style={styles.brandRow}>
             <Text style={styles.appTitle}>🚌 BusDriver Pro</Text>
             <View style={styles.liveBadge}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveText}>Online</Text>
+              <Text style={styles.liveText}>On Duty</Text>
             </View>
           </View>
-          <Text style={styles.appSubtitle}>{orgName} • Driver Terminal</Text>
+          <Text style={styles.appSubtitle}>{orgName} • Operational Portal</Text>
         </View>
+
+        {/* Top Right Sign Out Button */}
         <TouchableOpacity
-          style={styles.profileBtn}
-          onPress={() => router.push('/driver/profile' as any)}
+          style={styles.topSignOutBtn}
+          onPress={handleLogout}
           activeOpacity={0.8}
         >
-          <Text style={styles.profileInitial}>{displayName.charAt(0).toUpperCase()}</Text>
+          <Text style={styles.topSignOutIcon}>🚪</Text>
+          <Text style={styles.topSignOutText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
 
@@ -271,17 +265,17 @@ export default function DriverHomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
         }
       >
-        {/* Driver Greeting Card */}
+        {/* Driver Welcome Hero Card */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.heroCard}>
           <View style={styles.heroHeader}>
+            <View style={styles.heroAvatar}>
+              <Text style={styles.heroAvatarText}>{displayName.charAt(0).toUpperCase()}</Text>
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.greeting}>Welcome, {displayName}</Text>
               <Text style={styles.heroSub}>
-                Authorized Driver • Assigned Fleet Operations
+                Authorized Commercial Driver • Fleet Operations
               </Text>
-            </View>
-            <View style={styles.heroAvatarBadge}>
-              <Text style={styles.heroAvatarText}>🪪</Text>
             </View>
           </View>
 
@@ -289,8 +283,8 @@ export default function DriverHomeScreen() {
             <View style={styles.rolePill}>
               <Text style={styles.rolePillText}>DUTY: DRIVER</Text>
             </View>
-            <View style={[styles.rolePill, { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }]}>
-              <Text style={[styles.rolePillText, { color: '#16a34a' }]}>🏢 {orgName}</Text>
+            <View style={styles.orgPill}>
+              <Text style={styles.orgPillText}>🏢 {orgName}</Text>
             </View>
           </View>
         </Animated.View>
@@ -372,7 +366,7 @@ export default function DriverHomeScreen() {
               {/* Trip details grid */}
               <View style={styles.tripMetaGrid}>
                 <View style={styles.metaCol}>
-                  <Text style={styles.metaLabel}>Departure</Text>
+                  <Text style={styles.metaLabel}>Departure Time</Text>
                   <Text style={styles.metaValue}>{formatTime(activeTrip.departureTime)}</Text>
                 </View>
                 <View style={styles.metaCol}>
@@ -451,7 +445,7 @@ export default function DriverHomeScreen() {
           ) : (
             <View style={styles.noTripCard}>
               <Text style={styles.noTripIcon}>🏖️</Text>
-              <Text style={styles.noTripTitle}>No Active Trips Assigned</Text>
+              <Text style={styles.noTripTitle}>No Active Trips In Transit</Text>
               <Text style={styles.noTripSub}>
                 You have no scheduled departures underway right now. When operations assigns you a trip, it will immediately appear here.
               </Text>
@@ -466,122 +460,114 @@ export default function DriverHomeScreen() {
           )}
         </Animated.View>
 
-        {/* UPCOMING TRIPS SCHEDULE */}
-        {upcomingTrips.length > 0 && (
-          <Animated.View entering={FadeInDown.duration(400).delay(220)} style={styles.section}>
+        {/* NEXT SCHEDULED RUN (Preview) */}
+        {upcomingTrips.length > 0 && !activeTrip && (
+          <Animated.View entering={FadeInDown.duration(400).delay(200)} style={styles.section}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionHeading}>UPCOMING SCHEDULE</Text>
+              <Text style={styles.sectionHeading}>NEXT SCHEDULED DEPARTURE</Text>
               <TouchableOpacity
                 onPress={() => router.push('/driver/trips' as any)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.viewDetailsLink}>View All ({upcomingTrips.length}) →</Text>
+                <Text style={styles.viewDetailsLink}>All Trips →</Text>
               </TouchableOpacity>
             </View>
 
-            {upcomingTrips.slice(0, 3).map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.upcomingTripCard}
-                onPress={() => router.push(`/driver/trip/${item.id}` as any)}
-                activeOpacity={0.85}
-              >
-                <View style={styles.upcomingHeader}>
-                  <Text style={styles.upcomingRoute}>
-                    {item.origin} → {item.destination}
-                  </Text>
-                  <View style={styles.upcomingBadge}>
-                    <Text style={styles.upcomingBadgeText}>Scheduled</Text>
-                  </View>
-                </View>
-                <View style={styles.upcomingMetaRow}>
-                  <Text style={styles.upcomingTime}>⏱️ {formatTime(item.departureTime)}</Text>
-                  <Text style={styles.upcomingBus}>
-                    🚌 {item.bus?.plateNumber || 'ETH-BUS'} ({item.bookedSeats || 0} seats)
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
-        )}
-
-        {/* RECENT REPORTED INCIDENTS */}
-        {reportedProblems.length > 0 && (
-          <Animated.View entering={FadeInDown.duration(400).delay(280)} style={styles.section}>
-            <Text style={styles.sectionHeading}>MY REPORTED INCIDENTS</Text>
-            {reportedProblems.map((p) => {
-              const statusBadge = getProblemStatusColor(p.status);
-              return (
-                <View key={p.id} style={styles.problemCard}>
-                  <View style={styles.problemHeader}>
-                    <Text style={styles.problemTypeTitle}>
-                      {p.type.replace(/_/g, ' ')}
-                    </Text>
-                    <View
-                      style={[
-                        styles.problemStatusPill,
-                        { backgroundColor: statusBadge.bg, borderColor: statusBadge.border },
-                      ]}
-                    >
-                      <Text style={[styles.problemStatusText, { color: statusBadge.text }]}>
-                        {p.status}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={styles.problemDesc}>{p.description}</Text>
-                  {p.notes ? (
-                    <View style={styles.problemNotesBox}>
-                      <Text style={styles.problemNotesTitle}>Operations Response:</Text>
-                      <Text style={styles.problemNotesText}>{p.notes}</Text>
-                    </View>
-                  ) : null}
-                  <Text style={styles.problemDate}>
-                    Reported on: {new Date(p.created_at).toLocaleString()}
-                  </Text>
-                </View>
-              );
-            })}
-          </Animated.View>
-        )}
-
-        {/* QUICK SHORTCUTS */}
-        <Animated.View entering={FadeInDown.duration(400).delay(320)} style={styles.section}>
-          <Text style={styles.sectionHeading}>FLEET TOOLS</Text>
-          <View style={styles.shortcutsGrid}>
             <TouchableOpacity
-              style={styles.shortcutCard}
+              style={styles.nextTripCard}
+              onPress={() => router.push(`/driver/trip/${upcomingTrips[0].id}` as any)}
+              activeOpacity={0.85}
+            >
+              <View style={styles.nextTripHeader}>
+                <Text style={styles.nextTripRoute}>
+                  {upcomingTrips[0].origin} → {upcomingTrips[0].destination}
+                </Text>
+                <View style={styles.nextTripBadge}>
+                  <Text style={styles.nextTripBadgeText}>Scheduled</Text>
+                </View>
+              </View>
+
+              <View style={styles.nextTripDetailsRow}>
+                <View style={styles.nextTripDetail}>
+                  <Text style={styles.nextTripDetailLabel}>Date</Text>
+                  <Text style={styles.nextTripDetailVal}>
+                    {formatDate(upcomingTrips[0].departureTime)}
+                  </Text>
+                </View>
+                <View style={styles.nextTripDetail}>
+                  <Text style={styles.nextTripDetailLabel}>Departure</Text>
+                  <Text style={styles.nextTripDetailVal}>
+                    {formatTime(upcomingTrips[0].departureTime)}
+                  </Text>
+                </View>
+                <View style={styles.nextTripDetail}>
+                  <Text style={styles.nextTripDetailLabel}>Bus</Text>
+                  <Text style={styles.nextTripDetailVal}>
+                    {upcomingTrips[0].bus?.plateNumber || 'ETH-BUS'}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
+        {/* OPERATIONS & FLEET TOOLS (Elevated 3-Card Grid) */}
+        <Animated.View entering={FadeInDown.duration(400).delay(250)} style={styles.section}>
+          <Text style={styles.sectionHeading}>FLEET OPERATIONS CENTER</Text>
+
+          <View style={styles.toolsGrid}>
+            {/* My Trips */}
+            <TouchableOpacity
+              style={styles.toolCard}
               onPress={() => router.push('/driver/trips' as any)}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
-              <Text style={styles.shortcutIcon}>📋</Text>
-              <Text style={styles.shortcutTitle}>Assigned Trips</Text>
-              <Text style={styles.shortcutSub}>Past and upcoming routes</Text>
+              <View style={[styles.toolIconWrap, { backgroundColor: '#eff6ff' }]}>
+                <Text style={styles.toolIcon}>🚌</Text>
+              </View>
+              <View style={styles.toolContent}>
+                <Text style={styles.toolTitle}>My Assigned Trips</Text>
+                <Text style={styles.toolSub}>Browse schedules, routes & passenger manifests</Text>
+              </View>
+              <Text style={styles.toolArrow}>→</Text>
             </TouchableOpacity>
 
+            {/* Incidents & Delay Reporting */}
             <TouchableOpacity
-              style={styles.shortcutCard}
-              onPress={() => openProblemModal()}
-              activeOpacity={0.8}
+              style={styles.toolCard}
+              onPress={() => router.push('/driver/incidents' as any)}
+              activeOpacity={0.85}
             >
-              <Text style={styles.shortcutIcon}>🚨</Text>
-              <Text style={styles.shortcutTitle}>Report Issue</Text>
-              <Text style={styles.shortcutSub}>Mechanical, traffic, road</Text>
+              <View style={[styles.toolIconWrap, { backgroundColor: '#fef2f2' }]}>
+                <Text style={styles.toolIcon}>🚨</Text>
+              </View>
+              <View style={styles.toolContent}>
+                <Text style={styles.toolTitle}>Incident & Delay Center</Text>
+                <Text style={styles.toolSub}>Report road delay, mechanical issue & dispatch logs</Text>
+              </View>
+              <Text style={styles.toolArrow}>→</Text>
             </TouchableOpacity>
 
+            {/* Driver Profile */}
             <TouchableOpacity
-              style={styles.shortcutCard}
+              style={styles.toolCard}
               onPress={() => router.push('/driver/profile' as any)}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
-              <Text style={styles.shortcutIcon}>👤</Text>
-              <Text style={styles.shortcutTitle}>Driver Profile</Text>
-              <Text style={styles.shortcutSub}>Security and account</Text>
+              <View style={[styles.toolIconWrap, { backgroundColor: '#f0fdf4' }]}>
+                <Text style={styles.toolIcon}>👤</Text>
+              </View>
+              <View style={styles.toolContent}>
+                <Text style={styles.toolTitle}>Driver Profile & Security</Text>
+                <Text style={styles.toolSub}>Driver credentials, license & password security</Text>
+              </View>
+              <Text style={styles.toolArrow}>→</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
       </ScrollView>
 
-      {/* Incident / Problem Reporting Modal */}
+      {/* Quick Problem Report Modal */}
       <Modal
         visible={problemModalVisible}
         transparent
@@ -671,27 +657,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  centerWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
-  },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+  },
+  topBarLeft: {
+    flex: 1,
   },
   brandRow: {
     flexDirection: 'row',
@@ -700,52 +677,60 @@ const styles = StyleSheet.create({
   },
   appTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#0f766e',
+    fontWeight: '900',
+    color: '#0f172a',
+    letterSpacing: 0.3,
   },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#ecfdf5',
+    borderColor: '#a7f3d0',
+    borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
-    gap: 4,
+    gap: 5,
   },
   liveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#16a34a',
+    backgroundColor: '#10b981',
   },
   liveText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#15803d',
+    color: '#059669',
   },
   appSubtitle: {
     fontSize: 11,
     color: '#64748b',
     marginTop: 2,
+    fontWeight: '500',
   },
-  profileBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#0f766e',
-    justifyContent: 'center',
+  topSignOutBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
   },
-  profileInitial: {
-    color: '#ffffff',
-    fontSize: 16,
+  topSignOutIcon: {
+    fontSize: 13,
+  },
+  topSignOutText: {
+    fontSize: 12,
     fontWeight: '700',
+    color: '#dc2626',
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 32,
-    gap: 16,
+    padding: 16,
+    paddingBottom: 24,
   },
   heroCard: {
     backgroundColor: '#ffffff',
@@ -753,19 +738,33 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    shadowColor: '#000',
+    shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,
+    marginBottom: 12,
   },
   heroHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
+  },
+  heroAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0f766e',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroAvatarText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#ffffff',
   },
   greeting: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0f172a',
   },
@@ -774,45 +773,49 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 2,
   },
-  heroAvatarBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#f1f5f9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  heroAvatarText: {
-    fontSize: 20,
-  },
   driverBadgeRow: {
     flexDirection: 'row',
-    gap: 8,
     marginTop: 12,
+    gap: 8,
   },
   rolePill: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
   },
   rolePillText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
     color: '#475569',
+    letterSpacing: 0.3,
+  },
+  orgPill: {
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  orgPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#16a34a',
   },
   statsCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    marginBottom: 14,
   },
   sectionHeadingMini: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
     color: '#94a3b8',
     letterSpacing: 0.8,
     marginBottom: 10,
@@ -820,42 +823,41 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   statBox: {
     flex: 1,
     alignItems: 'center',
   },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: '#e2e8f0',
+  },
   statNumber: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '900',
     color: '#0f172a',
   },
   statLabel: {
     fontSize: 11,
     color: '#64748b',
-    fontWeight: '600',
     marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: '#e2e8f0',
+    fontWeight: '600',
   },
   section: {
-    gap: 8,
+    marginBottom: 16,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 2,
+    marginBottom: 8,
   },
   sectionHeading: {
     fontSize: 12,
     fontWeight: '800',
     color: '#475569',
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
   },
   viewDetailsLink: {
     fontSize: 12,
@@ -864,25 +866,25 @@ const styles = StyleSheet.create({
   },
   loadingCard: {
     backgroundColor: '#ffffff',
-    padding: 32,
-    borderRadius: 16,
+    borderRadius: 14,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    gap: 12,
+    gap: 8,
   },
   loadingTripText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748b',
   },
   currentTripCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 18,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: '#cbd5e1',
-    shadowColor: '#0f766e',
+    shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -907,32 +909,34 @@ const styles = StyleSheet.create({
   routeCityDest: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#0f766e',
+    color: '#0f172a',
   },
   statusPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
     borderWidth: 1,
-  },
-  inProgressPill: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#a7f3d0',
   },
   scheduledPill: {
     backgroundColor: '#eff6ff',
     borderColor: '#bfdbfe',
   },
-  statusPillText: {
+  scheduledPillText: {
+    color: '#2563eb',
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 0.5,
+  },
+  inProgressPill: {
+    backgroundColor: '#ecfdf5',
+    borderColor: '#a7f3d0',
   },
   inProgressPillText: {
     color: '#059669',
+    fontSize: 11,
+    fontWeight: '800',
   },
-  scheduledPillText: {
-    color: '#2563eb',
+  statusPillText: {
+    letterSpacing: 0.4,
   },
   divider: {
     height: 1,
@@ -948,29 +952,22 @@ const styles = StyleSheet.create({
   },
   metaLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#64748b',
     fontWeight: '600',
-    textTransform: 'uppercase',
+    marginBottom: 2,
   },
   metaValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginTop: 2,
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0f172a',
   },
   metaValueHighlight: {
     fontSize: 14,
     fontWeight: '800',
     color: '#0f766e',
-    marginTop: 2,
   },
   occupancyBox: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
+    marginTop: 14,
   },
   occupancyHeader: {
     flexDirection: 'row',
@@ -979,8 +976,8 @@ const styles = StyleSheet.create({
   },
   occupancyLabel: {
     fontSize: 11,
-    color: '#64748b',
     fontWeight: '600',
+    color: '#64748b',
   },
   occupancyValue: {
     fontSize: 11,
@@ -988,28 +985,28 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   progressBarTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#e2e8f0',
+    height: 7,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: '#0f766e',
-    borderRadius: 3,
+    borderRadius: 4,
   },
   tripActionRow: {
-    marginTop: 14,
+    marginTop: 16,
     gap: 8,
   },
   primaryActionBtn: {
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 13,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   startBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#16a34a',
   },
   completeBtn: {
     backgroundColor: '#2563eb',
@@ -1018,20 +1015,20 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
   incidentActionBtn: {
-    backgroundColor: '#fffbeb',
-    borderWidth: 1,
-    borderColor: '#fde68a',
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    backgroundColor: '#fef2f2',
     alignItems: 'center',
   },
   incidentActionBtnText: {
-    color: '#b45309',
     fontSize: 12,
     fontWeight: '700',
+    color: '#dc2626',
   },
   noTripCard: {
     backgroundColor: '#ffffff',
@@ -1040,163 +1037,130 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    gap: 6,
+    gap: 8,
   },
   noTripIcon: {
-    fontSize: 32,
-    marginBottom: 4,
+    fontSize: 36,
   },
   noTripTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#1e293b',
+    color: '#0f172a',
   },
   noTripSub: {
     fontSize: 12,
     color: '#64748b',
     textAlign: 'center',
     lineHeight: 18,
+    paddingHorizontal: 8,
   },
   refreshTripsBtn: {
-    marginTop: 10,
+    marginTop: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
     paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 14,
     borderRadius: 8,
   },
   refreshTripsBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#334155',
   },
-  upcomingTripCard: {
+  // Next Scheduled Trip Card
+  nextTripCard: {
     backgroundColor: '#ffffff',
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    gap: 6,
   },
-  upcomingHeader: {
+  nextTripHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 10,
   },
-  upcomingRoute: {
+  nextTripRoute: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  nextTripBadge: {
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  nextTripBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#2563eb',
+  },
+  nextTripDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  nextTripDetail: {
+    flex: 1,
+  },
+  nextTripDetailLabel: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  nextTripDetailVal: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+    marginTop: 2,
+  },
+  // Fleet Operations Tools (3 Cards)
+  toolsGrid: {
+    gap: 10,
+  },
+  toolCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 12,
+  },
+  toolIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolIcon: {
+    fontSize: 22,
+  },
+  toolContent: {
+    flex: 1,
+  },
+  toolTitle: {
     fontSize: 14,
     fontWeight: '800',
     color: '#0f172a',
   },
-  upcomingBadge: {
-    backgroundColor: '#eff6ff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  upcomingBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#2563eb',
-  },
-  upcomingMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  upcomingTime: {
+  toolSub: {
     fontSize: 11,
     color: '#64748b',
-    fontWeight: '600',
-  },
-  upcomingBus: {
-    fontSize: 11,
-    color: '#475569',
-    fontWeight: '700',
-  },
-  problemCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 6,
-  },
-  problemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  problemTypeTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  problemStatusPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  problemStatusText: {
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  problemDesc: {
-    fontSize: 12,
-    color: '#334155',
-    lineHeight: 17,
-  },
-  problemNotesBox: {
-    backgroundColor: '#f0fdf4',
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-    marginTop: 4,
-  },
-  problemNotesTitle: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#166534',
-  },
-  problemNotesText: {
-    fontSize: 11,
-    color: '#15803d',
     marginTop: 2,
   },
-  problemDate: {
-    fontSize: 10,
-    color: '#94a3b8',
-    marginTop: 2,
-  },
-  shortcutsGrid: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  shortcutCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    alignItems: 'center',
-    gap: 4,
-  },
-  shortcutIcon: {
-    fontSize: 22,
-    marginBottom: 2,
-  },
-  shortcutTitle: {
-    fontSize: 12,
+  toolArrow: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#0f172a',
-    textAlign: 'center',
-  },
-  shortcutSub: {
-    fontSize: 10,
     color: '#94a3b8',
-    textAlign: 'center',
   },
+  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.65)',
@@ -1204,20 +1168,23 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     backgroundColor: '#ffffff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '85%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
+    maxHeight: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: '#e2e8f0',
   },
   modalTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0f172a',
   },
@@ -1231,13 +1198,13 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: '#f1f5f9',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   modalCloseText: {
     fontSize: 14,
-    color: '#64748b',
     fontWeight: '700',
+    color: '#64748b',
   },
   modalBody: {
     padding: 20,
@@ -1245,31 +1212,31 @@ const styles = StyleSheet.create({
   modalLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#475569',
+    color: '#334155',
     marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    marginTop: 4,
+    letterSpacing: 0.3,
   },
   typeSelector: {
     gap: 6,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   typeOption: {
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
   },
   typeOptionSelected: {
-    backgroundColor: '#f0fdfa',
     borderColor: '#0f766e',
+    backgroundColor: '#f0fdfa',
   },
   typeOptionText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#334155',
+    color: '#475569',
   },
   typeOptionTextSelected: {
     color: '#0f766e',
@@ -1279,19 +1246,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#cbd5e1',
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 12,
     fontSize: 13,
     color: '#0f172a',
-    height: 90,
-    marginBottom: 20,
+    minHeight: 88,
+    marginBottom: 16,
   },
   submitProblemBtn: {
     backgroundColor: '#0f766e',
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 24,
+    justifyContent: 'center',
   },
   submitProblemBtnDisabled: {
     opacity: 0.6,
@@ -1300,6 +1267,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
 });

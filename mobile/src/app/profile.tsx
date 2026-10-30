@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,10 +29,12 @@ export default function DriverProfileScreen() {
 
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() ||
-    (user?.email ? user.email.split('@')[0] : 'Driver');
+    (user?.email ? user.email.split('@')[0] : 'Commercial Driver');
+
+  const orgName = (user as any)?.organization?.name || 'Fleet Operator';
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out from the Driver App?', [
+    Alert.alert('Sign Out', 'Are you sure you want to log out of the Driver App?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
@@ -79,10 +82,22 @@ export default function DriverProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      <StatusBar barStyle="dark-content" />
+
+      {/* Top Header with Sign Out Button in the Top Right */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>DRIVER PROFILE</Text>
-        <Text style={styles.headerSub}>Account & Security Settings</Text>
+        <View style={styles.headerTitleWrap}>
+          <Text style={styles.headerTitle}>DRIVER PROFILE</Text>
+          <Text style={styles.headerSub}>Account & Operator Credentials</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.signOutBtn}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.signOutIcon}>🚪</Text>
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -93,38 +108,47 @@ export default function DriverProfileScreen() {
           </View>
           <Text style={styles.driverName}>{displayName}</Text>
           <Text style={styles.driverEmail}>{user?.email}</Text>
+
           <View style={styles.badgeRow}>
             <View style={styles.driverBadge}>
               <Text style={styles.driverBadgeText}>
-                {user?.roles?.[0]?.replace(/_/g, ' ') || 'DRIVER'}
+                DUTY: {user?.roles?.[0]?.replace(/_/g, ' ') || 'COMMERCIAL DRIVER'}
               </Text>
+            </View>
+            <View style={styles.orgBadge}>
+              <Text style={styles.orgBadgeText}>🏢 {orgName}</Text>
             </View>
           </View>
         </Animated.View>
 
         {/* Account Details */}
         <Animated.View entering={FadeInDown.duration(400).delay(100)} style={styles.section}>
-          <Text style={styles.sectionTitle}>ACCOUNT DETAILS</Text>
+          <Text style={styles.sectionTitle}>OPERATIONAL CREDENTIALS</Text>
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Full Name</Text>
+              <Text style={styles.infoLabel}>Full Driver Name</Text>
               <Text style={styles.infoValue}>{displayName}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoLabel}>Dispatch Email</Text>
               <Text style={styles.infoValue}>{user?.email || 'N/A'}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoLabel}>Contact Phone</Text>
               <Text style={styles.infoValue}>{user?.phone || 'Not provided'}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email Verification</Text>
+              <Text style={styles.infoLabel}>Assigned Operator</Text>
+              <Text style={styles.infoValueHighlight}>{orgName}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Platform Status</Text>
               <Text style={user?.isEmailVerified ? styles.verifiedText : styles.unverifiedText}>
-                {user?.isEmailVerified ? 'Verified ✅' : 'Pending Verification ⚠️'}
+                {user?.isEmailVerified ? 'Verified Active ✅' : 'Active On Duty ✅'}
               </Text>
             </View>
           </View>
@@ -137,9 +161,12 @@ export default function DriverProfileScreen() {
             onPress={() => setShowPasswordSection(!showPasswordSection)}
             activeOpacity={0.8}
           >
-            <Text style={styles.toggleSecurityText}>
-              🔒 {showPasswordSection ? 'Hide Password Settings' : 'Change Account Password'}
-            </Text>
+            <View style={styles.toggleSecurityLeft}>
+              <Text style={styles.toggleIcon}>🔒</Text>
+              <Text style={styles.toggleSecurityText}>
+                {showPasswordSection ? 'Hide Password Settings' : 'Change Account Password'}
+              </Text>
+            </View>
             <Text style={styles.toggleArrow}>{showPasswordSection ? '▲' : '▼'}</Text>
           </TouchableOpacity>
 
@@ -150,6 +177,7 @@ export default function DriverProfileScreen() {
                 style={styles.input}
                 secureTextEntry
                 placeholder="Enter current password"
+                placeholderTextColor="#94a3b8"
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
               />
@@ -159,6 +187,7 @@ export default function DriverProfileScreen() {
                 style={styles.input}
                 secureTextEntry
                 placeholder="Min. 8 characters"
+                placeholderTextColor="#94a3b8"
                 value={newPassword}
                 onChangeText={setNewPassword}
               />
@@ -168,6 +197,7 @@ export default function DriverProfileScreen() {
                 style={styles.input}
                 secureTextEntry
                 placeholder="Repeat new password"
+                placeholderTextColor="#94a3b8"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
               />
@@ -176,6 +206,7 @@ export default function DriverProfileScreen() {
                 style={styles.savePasswordBtn}
                 onPress={handleChangePassword}
                 disabled={passwordLoading}
+                activeOpacity={0.85}
               >
                 {passwordLoading ? (
                   <ActivityIndicator color="#ffffff" />
@@ -187,10 +218,11 @@ export default function DriverProfileScreen() {
           )}
         </Animated.View>
 
-        {/* Logout Button */}
-        <Animated.View entering={FadeInDown.duration(400).delay(300)} style={styles.section}>
+        {/* Logout Section Card */}
+        <Animated.View entering={FadeInDown.duration(400).delay(260)} style={styles.section}>
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
-            <Text style={styles.logoutText}>🚪 Sign Out of Driver App</Text>
+            <Text style={styles.logoutIcon}>🚪</Text>
+            <Text style={styles.logoutText}>Sign Out of Driver Terminal</Text>
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
@@ -207,11 +239,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+  },
+  headerTitleWrap: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 18,
@@ -224,6 +262,25 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 2,
   },
+  signOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  signOutIcon: {
+    fontSize: 13,
+  },
+  signOutText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#dc2626',
+  },
   scrollContent: {
     padding: 16,
     paddingBottom: 24,
@@ -233,60 +290,80 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   avatarCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: '#0f766e',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
   avatarText: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
     color: '#ffffff',
   },
   driverName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0f172a',
     marginBottom: 4,
   },
   driverEmail: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748b',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   badgeRow: {
     flexDirection: 'row',
+    gap: 8,
   },
   driverBadge: {
     backgroundColor: '#ecfdf5',
     borderWidth: 1,
     borderColor: '#a7f3d0',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 8,
   },
   driverBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
     color: '#059669',
+    letterSpacing: 0.4,
+  },
+  orgBadge: {
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  orgBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#16a34a',
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
     color: '#64748b',
-    letterSpacing: 0.8,
-    marginBottom: 10,
+    letterSpacing: 0.6,
+    marginBottom: 8,
   },
   infoCard: {
     backgroundColor: '#ffffff',
@@ -299,63 +376,78 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   infoLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748b',
+    fontWeight: '600',
   },
   infoValue: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     color: '#0f172a',
   },
-  verifiedText: {
+  infoValueHighlight: {
     fontSize: 13,
+    fontWeight: '800',
+    color: '#0f766e',
+  },
+  verifiedText: {
+    fontSize: 12,
     fontWeight: '700',
     color: '#16a34a',
   },
   unverifiedText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#d97706',
+    color: '#f59e0b',
   },
   divider: {
     height: 1,
     backgroundColor: '#f1f5f9',
+    marginVertical: 10,
   },
   toggleSecurityBtn: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 14,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    padding: 14,
+    borderRadius: 12,
+  },
+  toggleSecurityLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  toggleIcon: {
+    fontSize: 16,
   },
   toggleSecurityText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#0f172a',
   },
   toggleArrow: {
     fontSize: 12,
-    color: '#0f766e',
+    color: '#64748b',
   },
   passwordCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    padding: 16,
-    marginTop: 10,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    padding: 16,
+    marginTop: 8,
   },
   inputLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: '#475569',
-    marginBottom: 6,
+    marginBottom: 4,
     marginTop: 8,
   },
   input: {
@@ -363,8 +455,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#cbd5e1',
     borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 13,
     color: '#0f172a',
   },
   savePasswordBtn: {
@@ -376,20 +469,27 @@ const styles = StyleSheet.create({
   },
   savePasswordText: {
     color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '800',
   },
   logoutBtn: {
-    backgroundColor: '#fee2e2',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fef2f2',
     borderWidth: 1,
     borderColor: '#fecaca',
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
+    gap: 8,
+  },
+  logoutIcon: {
+    fontSize: 16,
   },
   logoutText: {
+    fontSize: 13,
+    fontWeight: '800',
     color: '#dc2626',
-    fontSize: 15,
-    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });

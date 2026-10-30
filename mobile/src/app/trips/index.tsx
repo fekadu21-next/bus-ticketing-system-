@@ -1,16 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useAuth } from '@/context/AuthContext';
 import { apiService, type DriverTrip } from '@/services/api';
 import DriverTabBar from '@/components/DriverTabBar';
 
@@ -18,11 +21,27 @@ type FilterTab = 'ALL' | 'PUBLISHED' | 'IN_PROGRESS' | 'COMPLETED';
 
 export default function MyTripsScreen() {
   const router = useRouter();
+  const { logout } = useAuth();
+
   const [trips, setTrips] = useState<DriverTrip[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterTab>('ALL');
   const [error, setError] = useState<string | null>(null);
+
+  const handleLogout = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to log out of the Driver App?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          router.replace('/landing');
+        },
+      },
+    ]);
+  };
 
   const fetchTrips = useCallback(async () => {
     try {
@@ -54,7 +73,7 @@ export default function MyTripsScreen() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'IN_PROGRESS':
-        return { label: 'IN PROGRESS', bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' };
+        return { label: 'IN TRANSIT', bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' };
       case 'PUBLISHED':
       case 'SCHEDULED':
         return { label: 'SCHEDULED', bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' };
@@ -81,7 +100,7 @@ export default function MyTripsScreen() {
     const { date, time } = formatDateTime(item.departureTime);
 
     return (
-      <Animated.View entering={FadeInDown.duration(350).delay(index * 50)} style={styles.card}>
+      <Animated.View entering={FadeInDown.duration(320).delay(index * 40)} style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.routeContainer}>
             <Text style={styles.routeCity}>{item.origin || 'Origin'}</Text>
@@ -104,29 +123,33 @@ export default function MyTripsScreen() {
 
         <View style={styles.tripMetaGrid}>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>📅 Date</Text>
+            <Text style={styles.metaLabel}>📅 Departure Date</Text>
             <Text style={styles.metaValue}>{date}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>⏰ Departure</Text>
+            <Text style={styles.metaLabel}>⏰ Scheduled Time</Text>
             <Text style={styles.metaValue}>{time}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>🚌 Bus Plate</Text>
-            <Text style={styles.metaValue}>{item.bus?.plateNumber || 'ETH-1234'}</Text>
+            <Text style={styles.metaLabel}>🚌 Assigned Bus</Text>
+            <Text style={styles.metaValueHighlight}>
+              {item.bus?.plateNumber || 'ETH-1234'}
+            </Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>💺 Capacity</Text>
-            <Text style={styles.metaValue}>{item.bus?.capacity || 50} seats</Text>
+            <Text style={styles.metaLabel}>👥 Passenger Seats</Text>
+            <Text style={styles.metaValue}>
+              {item.bookedSeats ?? 0} / {item.bus?.capacity ?? item.totalSeats ?? 50} booked
+            </Text>
           </View>
         </View>
 
         <TouchableOpacity
           style={styles.detailsButton}
           onPress={() => router.push(`/driver/trip/${item.id}` as any)}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
-          <Text style={styles.detailsButtonText}>VIEW DETAILS</Text>
+          <Text style={styles.detailsButtonText}>VIEW MANIFEST & TRIP CONTROLS</Text>
           <Text style={styles.detailsArrow}>→</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -135,10 +158,22 @@ export default function MyTripsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top Header */}
+      <StatusBar barStyle="dark-content" />
+
+      {/* Top Header with Sign Out Button in the Top Right */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>MY TRIPS</Text>
-        <Text style={styles.headerSub}>Assigned Routes & Operations</Text>
+        <View style={styles.headerTitleWrap}>
+          <Text style={styles.headerTitle}>MY TRIPS</Text>
+          <Text style={styles.headerSub}>Assigned Routes & Fleet Operations</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.signOutBtn}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.signOutIcon}>🚪</Text>
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Filter Tabs */}
@@ -151,7 +186,7 @@ export default function MyTripsScreen() {
               : tab === 'PUBLISHED'
               ? 'Scheduled'
               : tab === 'IN_PROGRESS'
-              ? 'In Progress'
+              ? 'In Transit'
               : 'Completed';
           return (
             <TouchableOpacity
@@ -194,7 +229,7 @@ export default function MyTripsScreen() {
               <Text style={styles.emptyTitle}>No Trips Found</Text>
               <Text style={styles.emptySubtitle}>
                 {filter === 'ALL'
-                  ? 'Your operational manager has not assigned any trips to you yet.'
+                  ? 'Your operational coordinator has not assigned any trips to you yet.'
                   : `No trips found under '${filter.replace(/_/g, ' ')}' status.`}
               </Text>
             </View>
@@ -214,11 +249,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+  },
+  headerTitleWrap: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 18,
@@ -231,24 +272,44 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 2,
   },
+  signOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  signOutIcon: {
+    fontSize: 13,
+  },
+  signOutText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#dc2626',
+  },
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
   },
   tab: {
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
     alignItems: 'center',
-    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
   },
   activeTab: {
     backgroundColor: '#0f766e',
+    borderColor: '#0f766e',
   },
   tabText: {
     fontSize: 12,
@@ -257,19 +318,20 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: '#ffffff',
+    fontWeight: '700',
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 24,
+    gap: 12,
   },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    shadowColor: '#000',
+    padding: 16,
+    shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
@@ -287,24 +349,25 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   routeCity: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
     color: '#0f172a',
   },
   routeArrow: {
     fontSize: 14,
     color: '#0f766e',
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 6,
     borderWidth: 1,
   },
   statusText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
   cardDivider: {
     height: 1,
@@ -314,94 +377,102 @@ const styles = StyleSheet.create({
   tripMetaGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
     marginBottom: 14,
   },
   metaItem: {
-    width: '47%',
-    backgroundColor: '#f8fafc',
-    padding: 10,
-    borderRadius: 8,
+    width: '48%',
   },
   metaLabel: {
-    fontSize: 11,
-    color: '#64748b',
-    marginBottom: 2,
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   metaValue: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontWeight: '700',
+    color: '#334155',
+    marginTop: 2,
+  },
+  metaValueHighlight: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0f766e',
+    marginTop: 2,
   },
   detailsButton: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0f766e',
-    paddingVertical: 12,
-    borderRadius: 10,
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
   },
   detailsButtonText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '800',
-    color: '#ffffff',
-    marginRight: 6,
+    color: '#0f766e',
     letterSpacing: 0.5,
   },
   detailsArrow: {
-    fontSize: 14,
-    color: '#ffffff',
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0f766e',
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    justifyContent: 'center',
+    padding: 32,
+    gap: 12,
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 14,
+    fontSize: 13,
     color: '#64748b',
+    fontWeight: '500',
   },
   errorIcon: {
-    fontSize: 40,
-    marginBottom: 10,
+    fontSize: 32,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#dc2626',
     textAlign: 'center',
-    marginBottom: 16,
   },
   retryButton: {
     backgroundColor: '#0f766e',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 8,
+    marginTop: 6,
   },
   retryButtonText: {
     color: '#ffffff',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 13,
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 20,
+    justifyContent: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    gap: 8,
   },
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0f172a',
+    fontSize: 44,
     marginBottom: 6,
   },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
   emptySubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748b',
     textAlign: 'center',
     lineHeight: 18,
