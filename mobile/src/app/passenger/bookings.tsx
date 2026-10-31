@@ -380,7 +380,7 @@ export default function PassengerBookingsScreen() {
       {/* Bookings List */}
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0f766e" />
+          <ActivityIndicator size="large" color="#2563eb" />
           <Text style={styles.loadingText}>Syncing your travel reservations...</Text>
         </View>
       ) : (
@@ -391,7 +391,7 @@ export default function PassengerBookingsScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#2563eb',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -486,11 +486,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   bookNewBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 12,
-    shadowColor: '#0f766e',
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   activeTab: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
   },
   tabText: {
     fontSize: 11,
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#2563eb',
     marginTop: 2,
   },
   dateText: {
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     fontSize: 16,
-    color: '#0f766e',
+    color: '#2563eb',
   },
   directLabel: {
     fontSize: 8,
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
   fareAmountText: {
     fontSize: 14,
     fontWeight: '900',
-    color: '#0f766e',
+    color: '#2563eb',
     marginTop: 2,
   },
   cardActionsRow: {
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   },
   viewTicketBtn: {
     flex: 1,
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   findBusesBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 12,

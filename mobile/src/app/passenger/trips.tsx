@@ -282,7 +282,7 @@ export default function PassengerTripsScreen() {
           {/* Operator Header */}
           <View style={styles.cardHeader}>
             <View style={styles.operatorRow}>
-              <View style={[styles.avatarCircle, { backgroundColor: item.logoBg || '#0f766e' }]}>
+              <View style={[styles.avatarCircle, { backgroundColor: item.logoBg || '#2563eb' }]}>
                 <Text style={styles.avatarText}>{item.logoText || 'SB'}</Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -488,7 +488,7 @@ export default function PassengerTripsScreen() {
       {/* Main Trip List */}
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0f766e" />
+          <ActivityIndicator size="large" color="#2563eb" />
           <Text style={styles.loadingText}>Searching available buses & fares...</Text>
         </View>
       ) : (
@@ -498,7 +498,7 @@ export default function PassengerTripsScreen() {
           renderItem={renderTripCard}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -877,8 +877,8 @@ const styles = StyleSheet.create({
     borderColor: '#cbd5e1',
   },
   activeFilterTriggerBtn: {
-    backgroundColor: '#0f766e',
-    borderColor: '#0f766e',
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
   },
   filterTriggerText: {
     fontSize: 12,
@@ -954,8 +954,8 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   activeQuickChip: {
-    backgroundColor: '#0f766e',
-    borderColor: '#0f766e',
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
   },
   quickChipText: {
     fontSize: 11,
@@ -1112,7 +1112,7 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
   },
   arrowBar: {
     flex: 1,
@@ -1121,7 +1121,7 @@ const styles = StyleSheet.create({
   },
   arrowHead: {
     fontSize: 12,
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '800',
     marginLeft: 2,
   },
@@ -1174,7 +1174,7 @@ const styles = StyleSheet.create({
   priceAmount: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   perPersonText: {
     fontSize: 11,
@@ -1187,7 +1187,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   viewDetailsBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 10,
@@ -1233,7 +1233,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   resetFiltersBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 12,
@@ -1310,7 +1310,7 @@ const styles = StyleSheet.create({
   filterSelectedValue: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   optionsList: {
     gap: 12,
@@ -1330,8 +1330,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   checkboxBoxActive: {
-    backgroundColor: '#0f766e',
-    borderColor: '#0f766e',
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
   },
   checkmarkText: {
     color: '#ffffff',
@@ -1363,8 +1363,8 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   activePricePresetBtn: {
-    backgroundColor: '#0f766e',
-    borderColor: '#0f766e',
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
   },
   pricePresetText: {
     fontSize: 12,
@@ -1417,8 +1417,8 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   activeSeatOptionBtn: {
-    backgroundColor: '#0f766e',
-    borderColor: '#0f766e',
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
   },
   seatOptionText: {
     fontSize: 12,
@@ -1434,7 +1434,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   applyFiltersBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: 'center',
@@ -1511,7 +1511,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeCityTabBtn: {
-    borderColor: '#0f766e',
+    borderColor: '#2563eb',
     backgroundColor: '#f0fdfa',
   },
   cityTabBtnText: {
@@ -1520,7 +1520,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   activeCityTabBtnText: {
-    color: '#0f766e',
+    color: '#2563eb',
   },
   cityRowItem: {
     flexDirection: 'row',
@@ -1541,7 +1541,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   citySelectedCheck: {
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '900',
     fontSize: 16,
   },

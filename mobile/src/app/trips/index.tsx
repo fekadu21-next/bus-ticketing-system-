@@ -168,7 +168,7 @@ export default function MyTripsScreen() {
       {/* Content */}
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0f766e" />
+          <ActivityIndicator size="large" color="#2563eb" />
           <Text style={styles.loadingText}>Fetching assigned trips...</Text>
         </View>
       ) : error ? (
@@ -186,7 +186,7 @@ export default function MyTripsScreen() {
           renderItem={renderTripItem}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f5f9',
   },
   activeTab: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
   },
   tabText: {
     fontSize: 12,
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   routeArrow: {
     fontSize: 14,
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: 'bold',
   },
   statusBadge: {
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingVertical: 12,
     borderRadius: 10,
   },
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,

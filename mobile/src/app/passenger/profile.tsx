@@ -17,8 +17,8 @@ import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/services/api';
 import PassengerTabBar from '@/components/PassengerTabBar';
 
-const ROSE = '#f43f5e';
-const ROSE_DARK = '#e11d48';
+const ROSE = '#2563eb';
+const ROSE_DARK = '#1d4ed8';
 const SLATE_900 = '#0f172a';
 const SLATE_800 = '#1e293b';
 const SLATE_600 = '#475569';

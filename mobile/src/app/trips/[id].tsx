@@ -177,7 +177,7 @@ export default function TripDetailsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0f766e" />
+        <ActivityIndicator size="large" color="#2563eb" />
         <Text style={styles.loadingText}>Loading trip details...</Text>
       </SafeAreaView>
     );
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   routeLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#0f766e',
+    color: '#2563eb',
     letterSpacing: 0.8,
     marginBottom: 4,
   },
@@ -584,8 +584,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   startBtn: {
-    backgroundColor: '#0f766e',
-    shadowColor: '#0f766e',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
   },
   completeBtn: {
     backgroundColor: '#2563eb',
@@ -670,12 +670,12 @@ const styles = StyleSheet.create({
   infoValueHighlight: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   timeHighlight: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   plateTag: {
     backgroundColor: '#f1f5f9',
@@ -757,7 +757,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   typeOptionSelected: {
-    borderColor: '#0f766e',
+    borderColor: '#2563eb',
     backgroundColor: '#f0fdfa',
   },
   typeOptionText: {
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   typeOptionTextSelected: {
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '700',
   },
   problemInput: {
@@ -816,7 +816,7 @@ const styles = StyleSheet.create({
   tripProblemStatus: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   tripProblemDesc: {
     fontSize: 12,

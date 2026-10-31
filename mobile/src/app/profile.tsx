@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -337,11 +337,11 @@ const styles = StyleSheet.create({
   toggleSecurityText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   toggleArrow: {
     fontSize: 12,
-    color: '#0f766e',
+    color: '#2563eb',
   },
   passwordCard: {
     backgroundColor: '#ffffff',
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   savePasswordBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',

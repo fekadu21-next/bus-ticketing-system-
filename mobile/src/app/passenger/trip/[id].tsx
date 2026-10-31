@@ -18,8 +18,10 @@ import { apiService } from '@/services/api';
 import type { PassengerTrip, SeatInfo } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 
-const ROSE = '#f43f5e';
-const ROSE_DARK = '#e11d48';
+const PRIMARY = '#2563eb';
+const ROSE = '#2563eb';
+const PRIMARY_DARK = '#1d4ed8';
+const ROSE_DARK = '#1d4ed8';
 const GREEN = '#059669';
 const SLATE_900 = '#0f172a';
 const SLATE_800 = '#1e293b';

@@ -27,7 +27,9 @@ const GRID_GAP = 12;
 const CARD_WIDTH = (width - 32 - GRID_GAP) / 2;
 
 // Brand Color Palette
-const ROSE = '#f43f5e';
+const PRIMARY = '#2563eb';
+const PRIMARY_DARK = '#1d4ed8';
+const PRIMARY_LIGHT = '#eff6ff';
 const GREEN = '#059669';
 const GREEN_DARK = '#047857';
 const SLATE_900 = '#0f172a';
@@ -440,7 +442,7 @@ export default function PassengerHomeScreen() {
                   activeOpacity={0.88}
                 >
                   <LinearGradient
-                    colors={[GREEN, GREEN_DARK]}
+                    colors={[PRIMARY, PRIMARY_DARK]}
                     style={styles.searchSubmitGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -669,7 +671,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: '#fff1f2',
+    backgroundColor: '#eff6ff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -706,7 +708,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   signInBtn: {
-    backgroundColor: ROSE,
+    backgroundColor: PRIMARY,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -720,7 +722,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: ROSE,
+    backgroundColor: PRIMARY,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -919,7 +921,7 @@ const styles = StyleSheet.create({
   },
   tagBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#fff1f2',
+    backgroundColor: '#eff6ff',
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
@@ -928,7 +930,7 @@ const styles = StyleSheet.create({
   tagBadgeText: {
     fontSize: 9,
     fontWeight: '800',
-    color: ROSE,
+    color: PRIMARY,
     letterSpacing: 0.5,
   },
   tagBadgeEmerald: {
@@ -1190,7 +1192,7 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   dateOptionRowSelected: {
-    backgroundColor: '#fff1f2',
+    backgroundColor: '#eff6ff',
     borderColor: '#fca5a5',
   },
   dateOptionText: {
@@ -1199,12 +1201,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   dateOptionTextSelected: {
-    color: ROSE,
+    color: PRIMARY,
     fontWeight: '800',
   },
   dateOptionCheck: {
     fontSize: 14,
-    color: ROSE,
+    color: PRIMARY,
     fontWeight: '900',
   },
   dateModalCancelBtn: {

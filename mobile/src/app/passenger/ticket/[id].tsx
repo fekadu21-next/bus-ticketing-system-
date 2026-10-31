@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
     backgroundColor: WHITE, borderWidth: 1.5, borderColor: SLATE_200,
   },
-  tabActive: { backgroundColor: GREEN, borderColor: GREEN },
+  tabActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
   tabText: { fontSize: 12, fontWeight: '700', color: SLATE_600 },
   tabTextActive: { color: WHITE },
 
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
   // Actions
   actionsCard: { gap: 10 },
   shareBtn: {
-    backgroundColor: GREEN, paddingVertical: 14, borderRadius: 12, alignItems: 'center',
+    backgroundColor: '#2563eb', paddingVertical: 14, borderRadius: 12, alignItems: 'center',
   },
   shareBtnText: { color: WHITE, fontSize: 14, fontWeight: '800' },
   myBookingsBtn: {
