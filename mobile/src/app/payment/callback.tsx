@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  StatusBar,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { apiService } from '@/services/api';
-
-const GREEN = '#059669';
-const SLATE_900 = '#0f172a';
-const SLATE_600 = '#475569';
-const WHITE = '#ffffff';
+import { Theme } from '@/constants/theme';
 
 export default function PaymentCallbackScreen() {
   const router = useRouter();
@@ -19,25 +23,36 @@ export default function PaymentCallbackScreen() {
     booking_id?: string;
   }>();
 
+  const [verificationStatus, setVerificationStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [statusMessage, setStatusMessage] = useState('Verifying your payment...');
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     let isMounted = true;
 
     async function verifyAndNavigate() {
       const txRef = params.tx_ref || params.transactionReference;
+      const callbackStatus = params.status;
       const paymentMethod = params.payment_method || 'CHAPA';
 
       if (!txRef) {
         if (isMounted) {
-          setError('Missing transaction reference.');
+          setVerificationStatus('error');
+          setErrorMessage('Invalid payment callback. Transaction reference not found.');
+        }
+        return;
+      }
+
+      if (callbackStatus === 'cancelled' || callbackStatus === 'failed') {
+        if (isMounted) {
+          setVerificationStatus('error');
+          setErrorMessage('Payment was cancelled or failed. Please try again.');
         }
         return;
       }
 
       try {
-        setStatusMessage('Connecting to payment provider...');
+        setStatusMessage('Connecting to payment provider & confirming transaction...');
         // 1. Verify with backend
         const verifyRes = await apiService.verifyPassengerPayment({
           transactionReference: txRef,
@@ -48,14 +63,16 @@ export default function PaymentCallbackScreen() {
           console.warn('Verification note:', verifyRes.error);
         }
 
-        setStatusMessage('Generating your official boarding passes...');
+        if (isMounted) {
+          setVerificationStatus('success');
+          setStatusMessage('Your seat is confirmed. Redirecting to your boarding ticket...');
+        }
 
         // 2. Fetch the newly confirmed booking
         const bookingsRes = await apiService.getPassengerBookings();
         let confirmedBooking: any = null;
 
         if (bookingsRes.success && bookingsRes.data?.bookings?.length) {
-          // Find the matching booking by tx_ref or take the newest one
           confirmedBooking =
             bookingsRes.data.bookings.find(
               (b: any) =>
@@ -65,7 +82,8 @@ export default function PaymentCallbackScreen() {
             ) || bookingsRes.data.bookings[0];
         }
 
-        if (isMounted) {
+        setTimeout(() => {
+          if (!isMounted) return;
           if (confirmedBooking) {
             router.replace({
               pathname: '/passenger/ticket/[id]',
@@ -75,13 +93,13 @@ export default function PaymentCallbackScreen() {
               },
             });
           } else {
-            // Fall back to My Bookings list
             router.replace('/passenger/bookings');
           }
-        }
+        }, 1200);
       } catch (err: any) {
         if (isMounted) {
-          setError(err?.message || 'Payment verification failed. Check My Bookings.');
+          setVerificationStatus('error');
+          setErrorMessage(err?.message || 'Payment verification failed. Please contact support if payment was made.');
         }
       }
     }
@@ -91,31 +109,63 @@ export default function PaymentCallbackScreen() {
     return () => {
       isMounted = false;
     };
-  }, [params.tx_ref, params.transactionReference, params.payment_method, params.booking_id]);
+  }, [params.tx_ref, params.transactionReference, params.status, params.payment_method, params.booking_id]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.card}>
-        {error ? (
-          <>
-            <Text style={styles.errorIcon}>⚠️</Text>
-            <Text style={styles.errorTitle}>Verification Status</Text>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity
-              style={styles.btn}
-              onPress={() => router.replace('/passenger/bookings')}
-            >
-              <Text style={styles.btnText}>Go to My Bookings</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <ActivityIndicator size="large" color={GREEN} style={styles.loader} />
-            <Text style={styles.title}>Payment Received!</Text>
-            <Text style={styles.sub}>{statusMessage}</Text>
-          </>
+      <StatusBar barStyle="dark-content" />
+
+      <Animated.View entering={FadeIn.duration(400)} style={styles.card}>
+        {verificationStatus === 'processing' && (
+          <View style={styles.stateContainer}>
+            <View style={styles.spinnerWrap}>
+              <ActivityIndicator size="large" color={Theme.colors.primary} />
+            </View>
+            <Text style={styles.title}>Verifying Payment</Text>
+            <Text style={styles.subtitle}>
+              Please wait while we confirm your payment and issue your digital ticket...
+            </Text>
+          </View>
         )}
-      </View>
+
+        {verificationStatus === 'success' && (
+          <View style={styles.stateContainer}>
+            <View style={styles.successIconCircle}>
+              <Text style={styles.successIcon}>✓</Text>
+            </View>
+            <Text style={styles.title}>Payment Verified!</Text>
+            <Text style={styles.subtitle}>{statusMessage}</Text>
+          </View>
+        )}
+
+        {verificationStatus === 'error' && (
+          <View style={styles.stateContainer}>
+            <View style={styles.errorIconCircle}>
+              <Text style={styles.errorIcon}>✕</Text>
+            </View>
+            <Text style={styles.title}>Payment Verification Notice</Text>
+            <Text style={styles.errorMessage}>{errorMessage}</Text>
+
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={() => router.back()}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.primaryBtnText}>Try Payment Again</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.secondaryBtn}
+                onPress={() => router.replace('/passenger/bookings')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.secondaryBtnText}>View My Bookings</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -123,66 +173,129 @@ export default function PaymentCallbackScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f8fafc',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 20,
   },
   card: {
-    backgroundColor: '#1e293b',
-    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
     padding: 32,
     alignItems: 'center',
     width: '100%',
-    maxWidth: 380,
+    maxWidth: 420,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 32,
+    elevation: 8,
   },
-  loader: {
+  stateContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  spinnerWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#eff6ff',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: WHITE,
-    marginBottom: 8,
-    textAlign: 'center',
+  successIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#ecfdf5',
+    borderWidth: 1.5,
+    borderColor: '#a7f3d0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  sub: {
-    fontSize: 14,
-    color: '#94a3b8',
-    textAlign: 'center',
-    lineHeight: 20,
+  successIcon: {
+    fontSize: 32,
+    color: '#059669',
+    fontWeight: '900',
+  },
+  errorIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#fee2e2',
+    borderWidth: 1.5,
+    borderColor: '#fecaca',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   errorIcon: {
-    fontSize: 40,
-    marginBottom: 12,
+    fontSize: 28,
+    color: '#dc2626',
+    fontWeight: '900',
   },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#f87171',
+  title: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0f172a',
     marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 13,
-    color: '#cbd5e1',
     textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 18,
+    letterSpacing: -0.3,
   },
-  btn: {
-    backgroundColor: GREEN,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 10,
+  subtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 320,
+  },
+  errorMessage: {
+    fontSize: 13,
+    color: '#b91c1c',
+    textAlign: 'center',
+    lineHeight: 19,
+    backgroundColor: '#fef2f2',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fecaca',
     width: '100%',
-    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 20,
   },
-  btnText: {
-    color: WHITE,
+  actionRow: {
+    width: '100%',
+    gap: 10,
+    marginTop: 8,
+  },
+  primaryBtn: {
+    backgroundColor: Theme.colors.primary,
+    paddingVertical: 13,
+    borderRadius: Theme.radius.md,
+    alignItems: 'center',
+    width: '100%',
+  },
+  primaryBtnText: {
+    color: '#ffffff',
     fontSize: 14,
     fontWeight: '800',
   },
+  secondaryBtn: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    paddingVertical: 12,
+    borderRadius: Theme.radius.md,
+    alignItems: 'center',
+    width: '100%',
+  },
+  secondaryBtnText: {
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '700',
+  },
 });
-
