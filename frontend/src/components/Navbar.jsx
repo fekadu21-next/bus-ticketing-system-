@@ -290,12 +290,12 @@ export const Navbar = () => {
           <LangDropdown />
 
           {isAuthenticated ? (
-            <div className="hidden lg:flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
 
               {userIsAdmin && (
                 <Link
                   to="/admin"
-                  className="px-3.5 py-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+                  className="hidden md:flex px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
                 >
                   <Shield size={14} />
                   Platform Admin
@@ -305,7 +305,7 @@ export const Navbar = () => {
               {userIsOperator && (
                 <Link
                   to="/operator"
-                  className="px-3.5 py-2 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/80 border border-amber-200/80 dark:border-amber-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+                  className="hidden md:flex px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/80 border border-amber-200/80 dark:border-amber-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
                 >
                   <Building2 size={14} />
                   Operator Console
@@ -331,7 +331,7 @@ export const Navbar = () => {
                     </div>
                   )}
 
-                  <div className="flex flex-col text-left">
+                  <div className="hidden sm:flex flex-col text-left">
                     <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight max-w-[130px] truncate">
                       {formatUserFullName(user, 'Valued User')}
                     </span>
@@ -419,7 +419,7 @@ export const Navbar = () => {
               </div>
             </div>
           ) : (
-            <div className="hidden lg:flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               {/* High Contrast, Professional Login Button */}
               <Link
                 to="/login"
@@ -431,14 +431,14 @@ export const Navbar = () => {
               {/* Prominent Register Button */}
               <Link
                 to="/register"
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-200"
+                className="hidden sm:inline-flex px-3.5 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-200"
               >
                 {t('nav.createAccount', 'Register')}
               </Link>
 
               {/* Become a Partner Button */}
               <div
-                className="relative group"
+                className="hidden md:block relative group"
                 onMouseEnter={() => setPartnerPopupOpen(true)}
                 onMouseLeave={() => setPartnerPopupOpen(false)}
               >
