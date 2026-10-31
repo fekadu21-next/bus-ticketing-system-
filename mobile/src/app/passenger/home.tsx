@@ -29,7 +29,6 @@ const CARD_WIDTH = (width - 32 - GRID_GAP) / 2;
 // Brand Color Palette
 const PRIMARY = '#2563eb';
 const PRIMARY_DARK = '#1d4ed8';
-const PRIMARY_LIGHT = '#eff6ff';
 const GREEN = '#059669';
 const GREEN_DARK = '#047857';
 const SLATE_900 = '#0f172a';
