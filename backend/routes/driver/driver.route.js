@@ -16,8 +16,8 @@ router.get('/me', driverController.getProfile);
 router.get('/dashboard', driverController.getDashboard);
 
 // Trips
-router.get('/trips', validate(getDriverTripsQuerySchema, 'query'), driverController.getAssignedTrips);
-router.get('/trips/:tripId', validate(tripIdParamSchema, 'params'), driverController.getTripDetails);
+router.get(['/', '/trips'], validate(getDriverTripsQuerySchema, 'query'), driverController.getAssignedTrips);
+router.get(['/:tripId', '/trips/:tripId'], validate(tripIdParamSchema, 'params'), driverController.getTripDetails);
 
 // Trip Operations
 router.post('/trips/:tripId/start', validate(tripIdParamSchema, 'params'), driverController.startTrip);

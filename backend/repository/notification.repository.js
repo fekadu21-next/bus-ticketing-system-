@@ -58,6 +58,7 @@ export class NotificationRepository {
     });
   }
 
+
   /**
    * List paginated notifications for an authenticated user
    */
@@ -155,86 +156,6 @@ export class NotificationRepository {
     });
 
     return { count: result.count };
-  }
-
-  // --- Notification Preferences ---
-
-  /**
-   * Get notification preferences for a user, or default values if not created
-   */
-  async getPreferences(userId) {
-    const prefs = await prisma.notification_preferences.findUnique({
-      where: { user_id: userId },
-    });
-
-    if (prefs) return prefs;
-
-    // Default preferences
-    return {
-      user_id: userId,
-      email_enabled: true,
-      push_enabled: true,
-      in_app_enabled: true,
-      channel_preferences: null,
-    };
-  }
-
-  /**
-   * Upsert notification preferences for a user
-   */
-  async upsertPreferences(userId, { emailEnabled, pushEnabled, inAppEnabled, channelPreferences }) {
-    const data = {
-      ...(emailEnabled !== undefined && { email_enabled: Boolean(emailEnabled) }),
-      ...(pushEnabled !== undefined && { push_enabled: Boolean(pushEnabled) }),
-      ...(inAppEnabled !== undefined && { in_app_enabled: Boolean(inAppEnabled) }),
-      ...(channelPreferences !== undefined && { channel_preferences: channelPreferences }),
-      updated_at: new Date(),
-    };
-
-    return prisma.notification_preferences.upsert({
-      where: { user_id: userId },
-      update: data,
-      create: {
-        user_id: userId,
-        email_enabled: emailEnabled !== undefined ? Boolean(emailEnabled) : true,
-        push_enabled: pushEnabled !== undefined ? Boolean(pushEnabled) : true,
-        in_app_enabled: inAppEnabled !== undefined ? Boolean(inAppEnabled) : true,
-        channel_preferences: channelPreferences || undefined,
-      },
-    });
-  }
-
-  // --- Device Tokens (FCM) ---
-
-  async registerDeviceToken(userId, token, deviceType = 'web') {
-    return prisma.user_device_tokens.upsert({
-      where: { token },
-      update: {
-        user_id: userId,
-        device_type: deviceType,
-        updated_at: new Date(),
-      },
-      create: {
-        user_id: userId,
-        token,
-        device_type: deviceType,
-      },
-    });
-  }
-
-  async unregisterDeviceToken(userId, token) {
-    return prisma.user_device_tokens.deleteMany({
-      where: {
-        token,
-        user_id: userId,
-      },
-    });
-  }
-
-  async getUserDeviceTokens(userId) {
-    return prisma.user_device_tokens.findMany({
-      where: { user_id: userId },
-    });
   }
 }
 

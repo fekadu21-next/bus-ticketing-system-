@@ -66,6 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    apiService.setOnUnauthorized(() => {
+      void persistSession(null, null);
+    });
+
     const checkAuth = async () => {
       try {
         const [token, cachedUserRaw] = await Promise.all([
@@ -95,7 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const unauthorized = result.error?.toLowerCase().includes('unauthorized') ||
+        const unauthorized =
+          result.status === 401 ||
+          result.error?.toLowerCase().includes('unauthorized') ||
+          result.error?.toLowerCase().includes('token') ||
+          result.error?.toLowerCase().includes('expired') ||
           result.error?.includes('(401)');
         if (unauthorized) {
           await persistSession(null, null);
@@ -108,6 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     void checkAuth();
+
+    return () => {
+      apiService.setOnUnauthorized(null);
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

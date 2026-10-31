@@ -20,16 +20,6 @@ export class PassengerFeedbackController {
       data: { feedbacks },
     });
   });
-
-  getTripFeedback = asyncHandler(async (req, res) => {
-    const { tripId } = req.params;
-    const feedback = await passengerFeedbackService.getTripFeedback(req.user.id, tripId);
-
-    res.status(200).json({
-      success: true,
-      data: { feedback: feedback || null, isRated: Boolean(feedback) },
-    });
-  });
 }
 
 export const passengerFeedbackController = new PassengerFeedbackController();

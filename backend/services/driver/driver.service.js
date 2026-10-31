@@ -210,26 +210,13 @@ export class DriverService {
       organizationId,
       [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER],
       {
-        type: NOTIFICATION_TYPES.DRIVER_PROBLEM_REPORT || NOTIFICATION_TYPES.TRIP_PROBLEM_REPORTED,
+        type: NOTIFICATION_TYPES.TRIP_PROBLEM_REPORTED,
         priority: NOTIFICATION_PRIORITIES.HIGH,
-        title: `Driver Problem Reported: ${type}`,
+        title: `Trip Problem Reported: ${type}`,
         message: `Driver reported an issue (${type}): "${description.substring(0, 100)}" for trip.`,
         metadata: { reportId: report.id, tripId, organizationId, type },
-        sendEmail: true,
       }
     ).catch((err) => console.warn('Failed to notify staff of problem report:', err.message));
-
-    // If critical problem (Accident, Breakdown, Emergency), notify Platform Admin
-    if (['ACCIDENT', 'BREAKDOWN', 'EMERGENCY', 'CRITICAL', 'SECURITY'].includes(type?.toUpperCase())) {
-      await notificationService.notifyAdmins({
-        type: NOTIFICATION_TYPES.CRITICAL_PLATFORM_ISSUE,
-        priority: NOTIFICATION_PRIORITIES.URGENT,
-        title: `Critical Platform Issue: ${type}`,
-        message: `A critical operational problem (${type}) was reported by a driver for trip ${tripId}: "${description}".`,
-        metadata: { reportId: report.id, tripId, organizationId, type },
-        sendEmail: true,
-      }).catch((err) => console.warn('Failed to alert admins of critical issue:', err.message));
-    }
 
     return report;
   }

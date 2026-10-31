@@ -7,8 +7,6 @@ import ApiError from '../../utils/apiError.js';
 import { formatSafeUser } from './utils/formatSafeUser.js';
 import { ROLES } from '../../constants/index.js';
 import prisma from '../../Config/db.js';
-import notificationService from '../notification.service.js';
-import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 import { sessionService } from './session.service.js';
 import { emailVerificationService } from './email-verification.service.js';
@@ -150,7 +148,7 @@ export class AuthService {
           name: trimmedOrgName,
           type: orgType ? orgType.trim() : 'COMPANY',
           status: 'PENDING',
-          is_active: false,
+          is_active: true,
         },
       });
 
@@ -208,63 +206,6 @@ export class AuthService {
       ipAddress: clientIp,
       userAgent,
     });
-
-    const registrationDate = result.organization.created_at || new Date();
-    const formattedDate = new Date(registrationDate).toLocaleString('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
-
-    const managerFullName = `${result.user.first_name} ${result.user.last_name}`.trim();
-    const managerPhone = result.user.phone || repPhone || orgPhone || 'N/A';
-    const managerPosition = repPosition || 'Operational Manager';
-    const orgLocation = [city, address].filter(Boolean).join(', ') || 'N/A';
-    const orgContact = [orgEmail, orgPhone].filter(Boolean).join(' | ') || 'N/A';
-
-    try {
-      await notificationService.notifyAdmins({
-        type: NOTIFICATION_TYPES.ORGANIZATION_APPROVAL_REQUEST,
-        priority: NOTIFICATION_PRIORITIES.HIGH,
-        title: 'New Organization Approval Required',
-        message: `New partner organization "${result.organization.name}" has registered and requires platform administrator review and approval.`,
-        metadata: {
-          idempotencyKey: `org_approval_req_${result.organization.id}`,
-          organizationId: result.organization.id,
-          organizationName: result.organization.name,
-          organizationType: result.organization.type || orgType || 'COMPANY',
-          registrationNumber: regNumber || null,
-          city: city || null,
-          address: address || null,
-          organizationPhone: orgPhone || null,
-          organizationEmail: orgEmail || null,
-          operationalManagerId: result.user.id,
-          operationalManagerName: managerFullName,
-          operationalManagerEmail: result.user.email,
-          operationalManagerPhone: managerPhone,
-          operationalManagerPosition: managerPosition,
-          registrationDate: typeof registrationDate.toISOString === 'function' ? registrationDate.toISOString() : registrationDate,
-          status: 'PENDING',
-          actionUrl: '/admin/organizations',
-          actionLabel: 'Review Organization',
-          details: {
-            'Organization Name': result.organization.name,
-            'Organization Type': result.organization.type || orgType || 'COMPANY',
-            'Registration Number': regNumber || 'N/A',
-            'Location': orgLocation,
-            'Organization Contact': orgContact,
-            'Operational Manager': managerFullName,
-            'Manager Email': result.user.email,
-            'Manager Phone': managerPhone,
-            'Manager Position': managerPosition,
-            'Registration Date': formattedDate,
-            'Status': 'Pending Approval',
-          },
-        },
-        sendEmail: true,
-      });
-    } catch (notifErr) {
-      console.warn('⚠️ Failed to dispatch registration approval notification to admins:', notifErr.message);
-    }
 
     return {
       user: {
