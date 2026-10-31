@@ -18,8 +18,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   const normalized = (status || '').toUpperCase();
   const displayLabel = label || normalized.replace(/_/g, ' ');
 
-  let badgeStyle = styles.default;
-  let textBadgeStyle = styles.defaultText;
+  let badgeStyle: ViewStyle = styles.default;
+  let textBadgeStyle: TextStyle = styles.defaultText;
 
   if (['CONFIRMED', 'VALID', 'ACTIVE', 'COMPLETED', 'VERIFIED', 'PAID', 'SUCCESS'].includes(normalized)) {
     badgeStyle = styles.success;
