@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { apiService } from '@/services/api';
 import type { PassengerTrip, SeatInfo } from '@/types';
@@ -32,6 +32,7 @@ const WHITE = '#ffffff';
 
 export default function TripSeatSelectionScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
 
@@ -532,14 +533,33 @@ export default function TripSeatSelectionScreen() {
                 Total: {totalPrice.toLocaleString()} ETB
               </Text>
             </View>
+
+            {/* Scrollable Proceed to Payment Button */}
+            <View style={styles.scrollProceedContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.scrollProceedBtn,
+                  selectedSeats.length === 0 && styles.proceedBtnDisabled,
+                ]}
+                onPress={handleProceedToPayment}
+                disabled={selectedSeats.length === 0}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.scrollProceedBtnText}>
+                  {selectedSeats.length === 0
+                    ? 'Select a Seat to Continue'
+                    : `Proceed to Payment (${totalPrice.toLocaleString()} ETB) →`}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </Animated.View>
 
-          <View style={{ height: 110 }} />
+          <View style={{ height: 20 }} />
         </ScrollView>
       </KeyboardAvoidingView>
 
       {/* ── Fixed Bottom Checkout Bar ──────────────────────── */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={styles.bottomBarInfo}>
           <Text style={styles.bottomSeatsText}>
             {selectedSeats.length} {selectedSeats.length === 1 ? 'Seat' : 'Seats'} Selected
@@ -1024,17 +1044,33 @@ const styles = StyleSheet.create({
   },
 
   // Bottom Checkout Bar
+  scrollProceedContainer: {
+    marginTop: 16,
+  },
+  scrollProceedBtn: {
+    backgroundColor: ROSE,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: ROSE,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  scrollProceedBtnText: {
+    color: WHITE,
+    fontSize: 14,
+    fontWeight: '800',
+  },
   bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: WHITE,
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    paddingTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

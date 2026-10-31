@@ -329,26 +329,38 @@ export class PassengerPaymentService {
 
     // 5. Initialize payment provider
     if (paymentMethod === 'CHAPA') {
-      // Chapa Test Mode Integration
-      try {
-        providerResponse = await this.initializeChapaPayment({
-          amount,
-          transactionReference,
-          email: passengerEmail,
-          firstName: passengerFirstName,
-          lastName: passengerLastName,
-          platform,
-          returnUrl,
-        });
-        checkoutUrl = providerResponse?.data?.checkout_url || '';
-      } catch (err) {
-        console.warn('Chapa live initialization warning:', err.response?.data || err.message);
-      }
+      const isChapaTest =
+        !env.payment.chapa.secretKey ||
+        env.payment.chapa.secretKey.startsWith('CHASECK_TEST') ||
+        process.env.CHAPA_SIMULATOR === 'true' ||
+        env.nodeEnv !== 'production';
 
-      // If Chapa live checkout URL is not returned, provide fallback
-      if (!checkoutUrl) {
-        console.warn('Chapa did not return hosted link, using test callback URL');
-        checkoutUrl = `${env.clientUrl}/payment/callback?tx_ref=${transactionReference}&status=success&payment_method=CHAPA&mock=true`;
+      if (isChapaTest) {
+        // Chapa hosted checkout currently has an upstream sandbox bug (mode=0 causes checkInGroup TypeError: Cannot convert undefined or null to object).
+        // Route to the Chapa Sandbox Simulator so test payments work reliably without crashing.
+        checkoutUrl = `${env.clientUrl}/checkout/chapa?tx_ref=${encodeURIComponent(transactionReference)}&amount=${amount}&email=${encodeURIComponent(passengerEmail || '')}&name=${encodeURIComponent(passengerFirstName || 'Passenger')}`;
+      } else {
+        // Live Production Integration with Chapa Gateway
+        try {
+          providerResponse = await this.initializeChapaPayment({
+            amount,
+            transactionReference,
+            email: passengerEmail,
+            firstName: passengerFirstName,
+            lastName: passengerLastName,
+            platform,
+            returnUrl,
+          });
+          checkoutUrl = providerResponse?.data?.checkout_url || '';
+        } catch (err) {
+          console.warn('Chapa live initialization warning:', err.response?.data || err.message);
+        }
+
+        // Fallback if live Chapa hosted link is not available
+        if (!checkoutUrl) {
+          console.warn('Chapa did not return hosted link, falling back to simulator URL');
+          checkoutUrl = `${env.clientUrl}/checkout/chapa?tx_ref=${encodeURIComponent(transactionReference)}&amount=${amount}&email=${encodeURIComponent(passengerEmail || '')}&name=${encodeURIComponent(passengerFirstName || 'Passenger')}`;
+        }
       }
     } else if (paymentMethod === 'TELEBIRR') {
       // Telebirr Test Mode Simulator Integration

@@ -15,6 +15,7 @@ import PassengerInfoPage from '@/pages/PassengerInfoPage';
 import PaymentPage from '@/pages/PaymentPage';
 import PaymentCallbackPage from '@/pages/PaymentCallbackPage';
 import TelebirrCheckoutPage from '@/pages/TelebirrCheckoutPage';
+import ChapaCheckoutPage from '@/pages/ChapaCheckoutPage';
 import BookingConfirmationPage from '@/pages/BookingConfirmationPage';
 import MyBookingsPage from '@/pages/MyBookingsPage';
 import AboutPage from '@/pages/AboutPage';
@@ -268,6 +269,7 @@ export const AppRoutes = () => {
       <Route path="/passenger-info" element={<PassengerInfoPage />} />
       <Route path="/payment" element={<PaymentPage />} />
       <Route path="/checkout/telebirr" element={<TelebirrCheckoutPage />} />
+      <Route path="/checkout/chapa" element={<ChapaCheckoutPage />} />
       <Route path="/payment/callback" element={<PaymentCallbackPage />} />
       <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
 
