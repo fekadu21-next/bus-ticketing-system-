@@ -2,8 +2,6 @@ import adminOrganizationRepository from '../../repository/admin/organization.rep
 import ApiError from '../../utils/apiError.js';
 import { AuditAction, logAuditEvent } from '../../utils/auditLogger.js';
 import { ORGANIZATION_STATUS, ROLES } from '../../constants/index.js';
-import notificationService from '../notification.service.js';
-import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 export class AdminOrganizationService {
   /**
@@ -167,38 +165,6 @@ export class AdminOrganizationService {
       userAgent: reqMeta.userAgent,
     });
 
-    // Notify organization coordinators and operational managers
-    try {
-      await notificationService.notifyOrganizationStaff(
-        id,
-        [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER, 'OPERATOR', 'MANAGER'],
-        {
-          type: NOTIFICATION_TYPES.ORGANIZATION_APPROVED,
-          priority: NOTIFICATION_PRIORITIES.HIGH,
-          title: 'Organization Approved',
-          message: `Your organization "${org.name}" has been approved by the platform administrator. You now have full operational access to create and manage trips, routes, buses, and staff.`,
-          metadata: {
-            idempotencyKey: `org_approved_${id}`,
-            organizationId: id,
-            organizationName: org.name,
-            status: ORGANIZATION_STATUS.APPROVED,
-            approvedAt: new Date().toISOString(),
-            actionUrl: '/manager/dashboard',
-            actionLabel: 'Go to Dashboard',
-            details: {
-              'Organization Name': org.name,
-              'Status': 'Approved',
-              'Approval Date': new Date().toLocaleString(),
-              'Operational Access': 'Full Access Enabled',
-            },
-          },
-          sendEmail: true,
-        }
-      );
-    } catch (err) {
-      console.warn('Failed to notify staff of approval:', err.message);
-    }
-
     return {
       id: updated.id,
       name: updated.name,
@@ -248,38 +214,6 @@ export class AdminOrganizationService {
       ipAddress: reqMeta.clientIp,
       userAgent: reqMeta.userAgent,
     });
-
-    // Notify organization coordinators and operational managers of rejection
-    try {
-      await notificationService.notifyOrganizationStaff(
-        id,
-        [ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER, 'OPERATOR', 'MANAGER'],
-        {
-          type: NOTIFICATION_TYPES.ORGANIZATION_REJECTED,
-          priority: NOTIFICATION_PRIORITIES.HIGH,
-          title: 'Organization Application Rejected',
-          message: `Your organization "${org.name}" application was rejected.${reason ? ` Reason: ${reason}` : ''}`,
-          metadata: {
-            idempotencyKey: `org_rejected_${id}`,
-            organizationId: id,
-            organizationName: org.name,
-            status: ORGANIZATION_STATUS.REJECTED,
-            reason: reason || 'Application rejected by platform administrator',
-            rejectionReason: reason || null,
-            reviewedAt: new Date().toISOString(),
-            details: {
-              'Organization Name': org.name,
-              'Status': 'Rejected',
-              'Reason': reason || 'Application rejected by platform administrator',
-              'Review Date': new Date().toLocaleString(),
-            },
-          },
-          sendEmail: true,
-        }
-      );
-    } catch (err) {
-      console.warn('Failed to notify staff of rejection:', err.message);
-    }
 
     return {
       id: updated.id,

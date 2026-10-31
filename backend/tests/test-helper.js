@@ -2,7 +2,6 @@ process.env.NODE_ENV = 'test';
 import app from '../app.js';
 import prisma, { connectDB, disconnectDB } from '../Config/db.js';
 import http from 'http';
-import socketService from '../services/socket.service.js';
 
 let server;
 let baseUrl;
@@ -11,7 +10,6 @@ export async function startTestServer() {
   await connectDB();
   return new Promise((resolve) => {
     server = http.createServer(app);
-    socketService.init(server);
     server.listen(0, () => {
       const port = server.address().port;
       baseUrl = `http://127.0.0.1:${port}/api/v1`;

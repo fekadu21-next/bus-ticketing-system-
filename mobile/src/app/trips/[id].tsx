@@ -207,8 +207,8 @@ export default function TripDetailsScreen() {
       <SafeAreaView style={styles.loadingContainer}>
         <Text style={styles.errorIcon}>⚠️</Text>
         <Text style={styles.errorText}>{error || 'Trip not found'}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
-          <Text style={styles.retryButtonText}>Go Back</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => router.back()} activeOpacity={0.7}>
+          <Text style={styles.retryButtonText}>← Return</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -236,7 +236,7 @@ export default function TripDetailsScreen() {
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           <View>
-            <Text style={styles.headerTitle}>TRIP MANIFEST</Text>
+            <Text style={styles.headerTitle}>TRIP DETAIL</Text>
             <Text style={styles.headerSub}>Fleet Operations & Dispatch</Text>
           </View>
         </View>
@@ -254,13 +254,31 @@ export default function TripDetailsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Route Banner Card */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.bannerCard}>
-          <View style={styles.bannerRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.routeLabel}>ASSIGNED ROUTE</Text>
-              <Text style={styles.routeOrigin}>{trip.origin}</Text>
-              <Text style={styles.bannerArrow}>↓</Text>
-              <Text style={styles.routeDestination}>{trip.destination}</Text>
+          <View style={styles.routeHeaderRow}>
+            <View style={styles.routeSegment}>
+              <View style={styles.originDot} />
+              <View>
+                <Text style={styles.routeRoleLabel}>ORIGIN</Text>
+                <Text style={styles.routeOrigin}>{trip.origin || 'Addis Ababa'}</Text>
+              </View>
             </View>
+
+            <View style={styles.routeArrowContainer}>
+              <View style={styles.routeArrowLine} />
+              <Text style={styles.routeArrowIcon}>→</Text>
+              <View style={styles.routeArrowLine} />
+            </View>
+
+            <View style={[styles.routeSegment, { alignItems: 'flex-end' }]}>
+              <View style={styles.destDot} />
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.routeRoleLabel}>DESTINATION</Text>
+                <Text style={styles.routeDestination}>{trip.destination || 'Destination'}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.statusBadgeRow}>
             <View
               style={[
                 styles.statusBadge,
@@ -626,33 +644,66 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  bannerRow: {
+  routeHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  routeLabel: {
-    fontSize: 10,
+  routeSegment: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  originDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#059669',
+  },
+  destDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#2563eb',
+  },
+  routeRoleLabel: {
+    fontSize: 9,
     fontWeight: '800',
     color: '#94a3b8',
     letterSpacing: 0.6,
-    marginBottom: 4,
   },
   routeOrigin: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#0f172a',
-  },
-  bannerArrow: {
-    fontSize: 14,
-    color: '#0f766e',
+    fontSize: 16,
     fontWeight: '800',
-    marginVertical: 1,
+    color: '#0f172a',
   },
   routeDestination: {
-    fontSize: 18,
-    fontWeight: '900',
+    fontSize: 16,
+    fontWeight: '800',
     color: '#0f172a',
+  },
+  routeArrowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  routeArrowLine: {
+    width: 12,
+    height: 1.5,
+    backgroundColor: '#cbd5e1',
+  },
+  routeArrowIcon: {
+    fontSize: 13,
+    color: '#0f766e',
+    fontWeight: '900',
+    marginHorizontal: 3,
+  },
+  statusBadgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginTop: 2,
   },
   statusBadge: {
     paddingHorizontal: 10,

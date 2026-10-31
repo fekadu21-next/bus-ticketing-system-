@@ -17,6 +17,11 @@ import { useAuth } from '@/context/AuthContext';
 import { apiService, type DriverTrip } from '@/services/api';
 import DriverTabBar from '@/components/DriverTabBar';
 
+const TEAL = '#0d9488';
+const TEAL_DARK = '#0f766e';
+const HEADER_BG = '#11423f';
+const STRIP_BG = '#0d3835';
+
 type FilterTab = 'ALL' | 'PUBLISHED' | 'IN_PROGRESS' | 'COMPLETED';
 
 export default function MyTripsScreen() {
@@ -30,7 +35,7 @@ export default function MyTripsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to log out of the Driver App?', [
+    Alert.alert('Sign Out', 'Sign out of driver session?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
@@ -73,12 +78,12 @@ export default function MyTripsScreen() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'IN_PROGRESS':
-        return { label: 'IN TRANSIT', bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' };
+        return { label: 'IN TRANSIT', bg: '#f0fdfa', text: TEAL_DARK, border: '#99f6e4' };
       case 'PUBLISHED':
       case 'SCHEDULED':
-        return { label: 'SCHEDULED', bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' };
+        return { label: 'SCHEDULED', bg: '#fffbeb', text: '#b45309', border: '#fde68a' };
       case 'COMPLETED':
-        return { label: 'COMPLETED', bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' };
+        return { label: 'COMPLETED', bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0' };
       case 'CANCELLED':
         return { label: 'CANCELLED', bg: '#fef2f2', text: '#dc2626', border: '#fecaca' };
       default:
@@ -87,11 +92,11 @@ export default function MyTripsScreen() {
   };
 
   const formatDateTime = (dateStr: string) => {
-    if (!dateStr) return { date: 'N/A', time: 'N/A' };
+    if (!dateStr) return { date: '—', time: '—' };
     const d = new Date(dateStr);
     return {
-      date: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
-      time: d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+      date: isNaN(d.getTime()) ? dateStr : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      time: isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
   };
 
@@ -100,11 +105,13 @@ export default function MyTripsScreen() {
     const { date, time } = formatDateTime(item.departureTime);
 
     return (
-      <Animated.View entering={FadeInDown.duration(320).delay(index * 40)} style={styles.card}>
+      <Animated.View entering={FadeInDown.duration(300).delay(index * 35)} style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.routeContainer}>
-            <Text style={styles.routeCity}>{item.origin || 'Origin'}</Text>
-            <Text style={styles.routeArrow}> → </Text>
+            <View style={[styles.cityDot, { backgroundColor: '#10b981' }]} />
+            <Text style={styles.routeCity}>{item.origin || 'Addis Ababa'}</Text>
+            <Text style={styles.routeArrow}>›</Text>
+            <View style={[styles.cityDot, { backgroundColor: '#0284c7' }]} />
             <Text style={styles.routeCity}>{item.destination || 'Destination'}</Text>
           </View>
           <View
@@ -123,23 +130,19 @@ export default function MyTripsScreen() {
 
         <View style={styles.tripMetaGrid}>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>📅 Departure Date</Text>
-            <Text style={styles.metaValue}>{date}</Text>
+            <Text style={styles.metaLabel}>Departure</Text>
+            <Text style={styles.metaValue}>{date} {time ? `• ${time}` : ''}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>⏰ Scheduled Time</Text>
-            <Text style={styles.metaValue}>{time}</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>🚌 Assigned Bus</Text>
-            <Text style={styles.metaValueHighlight}>
-              {item.bus?.plateNumber || 'ETH-1234'}
+            <Text style={styles.metaLabel}>Bus</Text>
+            <Text style={[styles.metaValue, { color: TEAL_DARK, fontWeight: '800' }]}>
+              {item.bus?.plateNumber || 'ETH-BUS'}
             </Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>👥 Passenger Seats</Text>
+            <Text style={styles.metaLabel}>Seats</Text>
             <Text style={styles.metaValue}>
-              {item.bookedSeats ?? 0} / {item.bus?.capacity ?? item.totalSeats ?? 50} booked
+              {item.bookedSeats ?? 0}/{item.bus?.capacity ?? item.totalSeats ?? 50}
             </Text>
           </View>
         </View>
@@ -149,8 +152,8 @@ export default function MyTripsScreen() {
           onPress={() => router.push(`/driver/trip/${item.id}` as any)}
           activeOpacity={0.85}
         >
-          <Text style={styles.detailsButtonText}>VIEW MANIFEST & TRIP CONTROLS</Text>
-          <Text style={styles.detailsArrow}>→</Text>
+          <Text style={styles.detailsButtonText}>Trip Details</Text>
+          <Text style={styles.detailsArrow}>›</Text>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -158,22 +161,27 @@ export default function MyTripsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
 
-      {/* Top Header with Sign Out Button in the Top Right */}
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitle}>MY TRIPS</Text>
-          <Text style={styles.headerSub}>Assigned Routes & Fleet Operations</Text>
+        <View>
+          <Text style={styles.headerTitle}>Assigned Trips</Text>
+          <Text style={styles.headerSub}>Fleet Run Manifest</Text>
         </View>
         <TouchableOpacity
-          style={styles.signOutBtn}
+          style={styles.headerIconBtn}
           onPress={handleLogout}
           activeOpacity={0.8}
         >
-          <Text style={styles.signOutIcon}>🚪</Text>
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Text style={styles.headerIconText}>🚪</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Role Strip */}
+      <View style={styles.roleStrip}>
+        <View style={styles.roleDot} />
+        <Text style={styles.roleText}>DRIVER · FLEET RUNS</Text>
       </View>
 
       {/* Filter Tabs */}
@@ -193,6 +201,7 @@ export default function MyTripsScreen() {
               key={tab}
               style={[styles.tab, isActive && styles.activeTab]}
               onPress={() => setFilter(tab)}
+              activeOpacity={0.8}
             >
               <Text style={[styles.tabText, isActive && styles.activeTabText]}>{label}</Text>
             </TouchableOpacity>
@@ -203,8 +212,8 @@ export default function MyTripsScreen() {
       {/* Content */}
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0f766e" />
-          <Text style={styles.loadingText}>Fetching assigned trips...</Text>
+          <ActivityIndicator size="large" color={TEAL} />
+          <Text style={styles.loadingText}>Fetching trips...</Text>
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
@@ -221,7 +230,7 @@ export default function MyTripsScreen() {
           renderItem={renderTripItem}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[TEAL]} />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -229,68 +238,53 @@ export default function MyTripsScreen() {
               <Text style={styles.emptyTitle}>No Trips Found</Text>
               <Text style={styles.emptySubtitle}>
                 {filter === 'ALL'
-                  ? 'Your operational coordinator has not assigned any trips to you yet.'
-                  : `No trips found under '${filter.replace(/_/g, ' ')}' status.`}
+                  ? 'No scheduled departures assigned yet.'
+                  : `No trips under '${filter.replace(/_/g, ' ')}' status.`}
               </Text>
             </View>
           }
         />
       )}
 
-      {/* Persistent Bottom Tab Bar */}
       <DriverTabBar />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: HEADER_BG,
   },
-  headerTitleWrap: {
-    flex: 1,
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#ffffff' },
+  headerSub: { fontSize: 12, color: '#99f6e4', marginTop: 1 },
+  headerIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0f172a',
-    letterSpacing: 0.5,
-  },
-  headerSub: {
-    fontSize: 11,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  signOutBtn: {
+  headerIconText: { fontSize: 18 },
+
+  roleStrip: {
+    backgroundColor: STRIP_BG,
+    paddingHorizontal: 20,
+    paddingVertical: 7,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef2f2',
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 4,
+    gap: 6,
   },
-  signOutIcon: {
-    fontSize: 13,
-  },
-  signOutText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#dc2626',
-  },
+  roleDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#2dd4bf' },
+  roleText: { fontSize: 10, fontWeight: '800', color: '#99f6e4', letterSpacing: 1.2 },
+
   tabsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -298,183 +292,70 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tab: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 18,
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  activeTab: {
-    backgroundColor: '#0f766e',
-    borderColor: '#0f766e',
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  activeTabText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    gap: 12,
-  },
+  activeTab: { backgroundColor: '#f0fdfa', borderColor: TEAL },
+  tabText: { fontSize: 12, fontWeight: '600', color: '#64748b' },
+  activeTabText: { color: TEAL_DARK, fontWeight: '800' },
+
+  listContent: { padding: 16, paddingBottom: 90 },
+
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 14,
+    padding: 16,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    padding: 16,
-    shadowColor: '#0f172a',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 2,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  routeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    flexWrap: 'wrap',
-  },
-  routeCity: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  routeArrow: {
-    fontSize: 14,
-    color: '#0f766e',
-    fontWeight: '800',
-  },
-  statusBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: '#f1f5f9',
-    marginVertical: 12,
-  },
-  tripMetaGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 14,
-  },
-  metaItem: {
-    width: '48%',
-  },
-  metaLabel: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  metaValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#334155',
-    marginTop: 2,
-  },
-  metaValueHighlight: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#0f766e',
-    marginTop: 2,
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  routeContainer: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
+  cityDot: { width: 8, height: 8, borderRadius: 4 },
+  routeCity: { fontSize: 14, fontWeight: '800', color: '#0f172a' },
+  routeArrow: { fontSize: 16, color: TEAL, fontWeight: '900' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, borderWidth: 1 },
+  statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.3 },
+
+  cardDivider: { height: 1, backgroundColor: '#f1f5f9', marginBottom: 12 },
+
+  tripMetaGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 },
+  metaItem: { flex: 1 },
+  metaLabel: { fontSize: 11, color: '#94a3b8', marginBottom: 3, fontWeight: '600' },
+  metaValue: { fontSize: 13, fontWeight: '700', color: '#0f172a' },
+
   detailsButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
     paddingVertical: 10,
-    borderRadius: 8,
-    gap: 6,
+    borderRadius: 10,
+    backgroundColor: '#f0fdfa',
+    borderWidth: 1,
+    borderColor: '#99f6e4',
+    gap: 4,
   },
-  detailsButtonText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#0f766e',
-    letterSpacing: 0.5,
-  },
-  detailsArrow: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0f766e',
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  errorIcon: {
-    fontSize: 32,
-  },
-  errorText: {
-    fontSize: 13,
-    color: '#dc2626',
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#0f766e',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 6,
-  },
-  retryButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-    gap: 8,
-  },
-  emptyIcon: {
-    fontSize: 44,
-    marginBottom: 6,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  emptySubtitle: {
-    fontSize: 12,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
+  detailsButtonText: { fontSize: 12, fontWeight: '800', color: TEAL_DARK },
+  detailsArrow: { fontSize: 14, color: TEAL_DARK, fontWeight: '900' },
+
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  loadingText: { marginTop: 10, color: '#64748b', fontSize: 13 },
+  errorIcon: { fontSize: 32, marginBottom: 8 },
+  errorText: { fontSize: 13, color: '#ef4444', textAlign: 'center', marginBottom: 12 },
+  retryButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: TEAL },
+  retryButtonText: { color: '#ffffff', fontWeight: '700', fontSize: 12 },
+
+  emptyContainer: { alignItems: 'center', paddingVertical: 40 },
+  emptyIcon: { fontSize: 32, marginBottom: 8 },
+  emptyTitle: { fontSize: 15, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
+  emptySubtitle: { fontSize: 12, color: '#64748b', textAlign: 'center' },
 });

@@ -11,6 +11,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  optimizeDeps: {
+    include: ['socket.io-client', 'react', 'react-dom', 'react-router-dom', 'axios', 'lucide-react'],
+  },
   server: {
     proxy: {
       '/socket.io': {

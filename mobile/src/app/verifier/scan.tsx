@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -14,10 +15,23 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
 import { apiService } from '@/services/api';
 
-// Try to import camera - gracefully degrade if not installed
+const TEAL = '#0d9488';
+const TEAL_DARK = '#0f766e';
+const HEADER_BG = '#11423f';
+const STRIP_BG = '#0d3835';
+
+// Try to import camera safely
 let CameraView: any = null;
 let useCameraPermissions: any = null;
 try {
@@ -26,24 +40,21 @@ try {
   CameraView = cam.CameraView;
   useCameraPermissions = cam.useCameraPermissions;
 } catch {
-  // expo-camera not available, manual mode only
+  // Manual mode fallback
 }
 
 export default function ScanTicketScreen() {
   const router = useRouter();
   const [manualToken, setManualToken] = useState('');
   const [verifying, setVerifying] = useState(false);
-  const [showManual, setShowManual] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [cameraMode, setCameraMode] = useState(false);
   const [torch, setTorch] = useState(false);
 
-  // Camera permissions (only if expo-camera is available)
   const [permission, requestPermission] = useCameraPermissions
     ? useCameraPermissions()
     : [null, async () => {}];
 
-  // Scanning line animation
   const scanLineY = useSharedValue(0);
   const scanLineStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: scanLineY.value }],
@@ -53,8 +64,8 @@ export default function ScanTicketScreen() {
     if (cameraMode) {
       scanLineY.value = withRepeat(
         withSequence(
-          withTiming(220, { duration: 1800 }),
-          withTiming(0, { duration: 1800 })
+          withTiming(200, { duration: 1600 }),
+          withTiming(0, { duration: 1600 })
         ),
         -1,
         false
@@ -64,8 +75,7 @@ export default function ScanTicketScreen() {
 
   const handleVerifyToken = async (tokenToVerify: string) => {
     const cleanToken = tokenToVerify.trim();
-    if (!cleanToken) return;
-    if (verifying) return;
+    if (!cleanToken || verifying) return;
 
     setVerifying(true);
     Vibration.vibrate(50);
@@ -78,10 +88,10 @@ export default function ScanTicketScreen() {
           params: { resultData: JSON.stringify(res.data.result) },
         });
       } else {
-        Alert.alert('Verification Error', res.error || 'Could not verify ticket. Please try again.');
+        Alert.alert('Verification Notice', res.error || 'Ticket could not be verified.');
       }
     } catch {
-      Alert.alert('Network Error', 'Unable to reach verification server. Check your connection.');
+      Alert.alert('Connection Error', 'Unable to reach server. Check network.');
     } finally {
       setVerifying(false);
       setScanned(false);
@@ -91,31 +101,20 @@ export default function ScanTicketScreen() {
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (scanned || verifying) return;
     setScanned(true);
-    Vibration.vibrate([0, 100, 50, 100]);
+    Vibration.vibrate([0, 80, 40, 80]);
     void handleVerifyToken(data);
   };
 
   const enableCamera = async () => {
     if (!CameraView) {
-      Alert.alert(
-        'Camera Not Available',
-        'Camera module is not installed. Please use manual token entry.',
-        [{ text: 'OK', onPress: () => setShowManual(true) }]
-      );
+      Alert.alert('Camera Unavailable', 'Camera module not found. Use manual token entry below.');
       return;
     }
 
     if (!permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) {
-        Alert.alert(
-          'Camera Permission Required',
-          'To scan QR codes, please allow camera access in your device settings.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Use Manual Entry', onPress: () => setShowManual(true) },
-          ]
-        );
+        Alert.alert('Camera Permission Required', 'Please enable camera permission in device settings.');
         return;
       }
     }
@@ -125,22 +124,31 @@ export default function ScanTicketScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top Header */}
+      <StatusBar barStyle="light-content" />
+
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Scan Passenger Ticket</Text>
+        <Text style={styles.headerTitle}>Scan Ticket</Text>
         {cameraMode ? (
           <TouchableOpacity
-            style={[styles.torchButton, torch && styles.torchButtonActive]}
+            style={[styles.torchBtn, torch && styles.torchBtnActive]}
             onPress={() => setTorch(!torch)}
+            activeOpacity={0.7}
           >
             <Text style={styles.torchIcon}>{torch ? '🔦' : '💡'}</Text>
           </TouchableOpacity>
         ) : (
-          <View style={styles.torchButton} />
+          <View style={{ width: 38 }} />
         )}
+      </View>
+
+      {/* Role Strip */}
+      <View style={styles.roleStrip}>
+        <View style={styles.roleDot} />
+        <Text style={styles.roleText}>TICKET VERIFIER · BOARDING CHECK</Text>
       </View>
 
       <KeyboardAvoidingView
@@ -148,11 +156,10 @@ export default function ScanTicketScreen() {
         style={styles.flex}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-
-          {/* CAMERA SCANNER OR VIEWFINDER */}
-          <Animated.View entering={FadeIn.duration(400)} style={styles.scannerWrapper}>
+          {/* CAMERA VIEWFINDER CARD */}
+          <Animated.View entering={FadeIn.duration(350)} style={styles.scannerCard}>
             {cameraMode && CameraView ? (
-              <View style={styles.cameraContainer}>
+              <View style={styles.cameraBox}>
                 <CameraView
                   style={styles.camera}
                   facing="back"
@@ -160,157 +167,100 @@ export default function ScanTicketScreen() {
                   onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
                   enableTorch={torch}
                 >
-                  {/* Corner brackets overlay */}
-                  <View style={styles.overlay}>
-                    <View style={styles.topRow}>
-                      <View style={styles.corner} />
-                      <View style={styles.cornerRight} />
-                    </View>
-                    <View style={styles.middleRow}>
-                      {/* Scanning line animation */}
-                      <Animated.View style={[styles.scanLine, scanLineStyle]} />
-                    </View>
-                    <View style={styles.bottomRow}>
-                      <View style={styles.cornerBL} />
-                      <View style={styles.cornerBR} />
-                    </View>
+                  <View style={styles.overlayFrame}>
+                    <View style={styles.reticleCornerTL} />
+                    <View style={styles.reticleCornerTR} />
+                    <View style={styles.reticleCornerBL} />
+                    <View style={styles.reticleCornerBR} />
+                    <Animated.View style={[styles.laserLine, scanLineStyle]} />
                   </View>
                 </CameraView>
 
-                <View style={styles.cameraFooter}>
-                  {verifying ? (
-                    <View style={styles.verifyingBanner}>
-                      <ActivityIndicator color="#ffffff" size="small" />
-                      <Text style={styles.verifyingText}>VERIFYING WITH SERVER...</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.cameraGuide}>
-                      {scanned ? '✓ QR Scanned — Processing...' : 'Point camera at passenger QR code'}
-                    </Text>
-                  )}
+                <View style={styles.cameraActions}>
+                  <Text style={styles.cameraPrompt}>
+                    {scanned ? 'Processing QR...' : 'Align passenger QR inside frame'}
+                  </Text>
                   <TouchableOpacity
-                    style={styles.exitCameraBtn}
+                    style={styles.closeCamBtn}
                     onPress={() => { setCameraMode(false); setScanned(false); }}
                   >
-                    <Text style={styles.exitCameraText}>✕ Close Camera</Text>
+                    <Text style={styles.closeCamText}>✕ Close Camera</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ) : (
-              /* Simulated viewfinder when camera not active */
-              <View>
-                <TouchableOpacity
-                  style={styles.activateCameraBtn}
-                  onPress={enableCamera}
-                  activeOpacity={0.88}
-                >
-                  <View style={styles.cameraBoxFrame}>
-                    <View style={[styles.corner, { top: -2, left: -2 }]} />
-                    <View style={[styles.cornerRight, { top: -2, right: -2 }]} />
-                    <View style={[styles.cornerBL, { bottom: -2, left: -2 }]} />
-                    <View style={[styles.cornerBR, { bottom: -2, right: -2 }]} />
-                    <View style={styles.cameraBoxInner}>
-                      <Text style={styles.cameraIconLarge}>📷</Text>
-                      <Text style={styles.tapToScanText}>TAP TO OPEN CAMERA</Text>
-                      <Text style={styles.tapToScanSub}>Scan passenger QR ticket</Text>
-                    </View>
+              <TouchableOpacity
+                style={styles.openCamHero}
+                onPress={enableCamera}
+                activeOpacity={0.88}
+              >
+                <View style={styles.reticleBox}>
+                  <View style={styles.reticleCornerTL} />
+                  <View style={styles.reticleCornerTR} />
+                  <View style={styles.reticleCornerBL} />
+                  <View style={styles.reticleCornerBR} />
+                  <View style={styles.camIconCircle}>
+                    <Text style={styles.camIcon}>📷</Text>
                   </View>
-                </TouchableOpacity>
-                <Text style={styles.guideText}>Point camera at QR code on passenger's ticket or phone screen</Text>
-              </View>
+                  <Text style={styles.camPromptTitle}>TAP TO OPEN CAMERA</Text>
+                  <Text style={styles.camPromptSub}>Instant QR code validation</Text>
+                </View>
+              </TouchableOpacity>
             )}
           </Animated.View>
 
-          {/* MANUAL TOKEN INPUT */}
-          <Animated.View entering={FadeInDown.duration(400).delay(100)} style={styles.section}>
-            <TouchableOpacity
-              style={styles.toggleManualBtn}
-              onPress={() => setShowManual(!showManual)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.toggleManualText}>
-                ⌨️ {showManual ? 'Hide Manual Entry' : 'Enter Ticket Token Manually'}
-              </Text>
-              <Text style={styles.toggleChevron}>{showManual ? '▲' : '▼'}</Text>
-            </TouchableOpacity>
-
-            {showManual && (
-              <View style={styles.manualCard}>
-                <Text style={styles.inputLabel}>Enter Ticket Number / QR Token</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. TKT-000123 or paste QR token"
-                  placeholderTextColor="#94a3b8"
-                  value={manualToken}
-                  onChangeText={setManualToken}
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  returnKeyType="done"
-                  onSubmitEditing={() => void handleVerifyToken(manualToken)}
-                />
-                <TouchableOpacity
-                  style={[styles.verifyManualBtn, (verifying || !manualToken.trim()) && styles.disabledBtn]}
-                  onPress={() => void handleVerifyToken(manualToken)}
-                  disabled={verifying || !manualToken.trim()}
-                  activeOpacity={0.85}
-                >
-                  {verifying ? (
-                    <ActivityIndicator color="#ffffff" />
-                  ) : (
-                    <Text style={styles.verifyManualText}>✓ VERIFY TICKET</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
-          </Animated.View>
-
-          {/* VERIFICATION STATUS LEGEND */}
-          <Animated.View entering={FadeInDown.duration(400).delay(200)} style={styles.legendCard}>
-            <Text style={styles.legendTitle}>VERIFICATION OUTCOMES</Text>
-            <View style={styles.legendRow}>
-              <View style={[styles.legendDot, { backgroundColor: '#10b981' }]} />
-              <Text style={styles.legendText}><Text style={styles.legendBold}>VALID</Text> — Allow boarding</Text>
-            </View>
-            <View style={styles.legendRow}>
-              <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
-              <Text style={styles.legendText}><Text style={styles.legendBold}>ALREADY USED</Text> — Reject boarding</Text>
-            </View>
-            <View style={styles.legendRow}>
-              <View style={[styles.legendDot, { backgroundColor: '#ef4444' }]} />
-              <Text style={styles.legendText}><Text style={styles.legendBold}>INVALID</Text> — Unknown / forged QR</Text>
-            </View>
-            <View style={styles.legendRow}>
-              <View style={[styles.legendDot, { backgroundColor: '#dc2626' }]} />
-              <Text style={styles.legendText}><Text style={styles.legendBold}>CANCELLED</Text> — Ticket was refunded</Text>
-            </View>
-            <View style={styles.legendRow}>
-              <View style={[styles.legendDot, { backgroundColor: '#ea580c' }]} />
-              <Text style={styles.legendText}><Text style={styles.legendBold}>WRONG TRIP</Text> — Different route</Text>
+          {/* MANUAL ENTRY */}
+          <Animated.View entering={FadeInDown.duration(400).delay(80)} style={styles.manualSection}>
+            <Text style={styles.sectionLabel}>MANUAL TICKET ENTRY</Text>
+            <View style={styles.inputCard}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Ticket # (e.g. ET-TKT-1001)"
+                placeholderTextColor="#94a3b8"
+                value={manualToken}
+                onChangeText={setManualToken}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={() => void handleVerifyToken(manualToken)}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.verifyBtn,
+                  (verifying || !manualToken.trim()) && styles.verifyBtnDisabled,
+                ]}
+                onPress={() => void handleVerifyToken(manualToken)}
+                disabled={verifying || !manualToken.trim()}
+                activeOpacity={0.88}
+              >
+                {verifying ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.verifyBtnText}>Verify</Text>
+                )}
+              </TouchableOpacity>
             </View>
           </Animated.View>
 
-          {/* QUICK TEST BUTTONS (for development/demo use) */}
-          <Animated.View entering={FadeInDown.duration(400).delay(300)} style={styles.devSection}>
-            <Text style={styles.devSectionTitle}>🧪 QUICK VERIFICATION TEST</Text>
-            <Text style={styles.devSectionSub}>Test different scan outcomes against live backend:</Text>
-
-            <View style={styles.testGrid}>
+          {/* QUICK SAMPLES FOR RAPID TESTING */}
+          <Animated.View entering={FadeInDown.duration(400).delay(140)} style={styles.testSection}>
+            <Text style={styles.sectionLabel}>SAMPLE TICKET TOKENS</Text>
+            <View style={styles.testChipsRow}>
               {[
-                { label: '✓ VALID', token: 'QR_VALID_TKT_001', color: '#059669', bg: 'rgba(16,185,129,0.1)', border: '#059669' },
-                { label: '⚠ ALREADY USED', token: 'QR_USED_TKT_002', color: '#d97706', bg: 'rgba(245,158,11,0.1)', border: '#d97706' },
-                { label: '✕ CANCELLED', token: 'QR_CANCELLED_TKT_003', color: '#b91c1c', bg: 'rgba(239,68,68,0.1)', border: '#b91c1c' },
-                { label: '✕ WRONG TRIP', token: 'QR_WRONG_TRIP_SKY_001', color: '#ea580c', bg: 'rgba(249,115,22,0.1)', border: '#ea580c' },
-                { label: '✕ INVALID', token: 'FORGED_TOKEN_999', color: '#dc2626', bg: 'rgba(239,68,68,0.1)', border: '#ef4444' },
+                { label: 'Valid Sample', token: 'QR_VALID_TKT_001', color: '#15803d', bg: '#f0fdf4' },
+                { label: 'Used Sample', token: 'QR_USED_TKT_002', color: '#b45309', bg: '#fffbeb' },
+                { label: 'Invalid Token', token: 'INVALID_9999', color: '#b91c1c', bg: '#fef2f2' },
               ].map((item) => (
                 <TouchableOpacity
                   key={item.token}
-                  style={[styles.testBtn, { backgroundColor: item.bg, borderColor: item.border }]}
+                  style={[styles.sampleChip, { backgroundColor: item.bg }]}
                   onPress={() => void handleVerifyToken(item.token)}
                   disabled={verifying}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.testBtnLabel, { color: item.color }]}>{item.label}</Text>
-                  <Text style={styles.testBtnToken}>{item.token.slice(0, 16)}</Text>
+                  <Text style={[styles.sampleChipText, { color: item.color }]}>
+                    {item.label}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -322,355 +272,149 @@ export default function ScanTicketScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  flex: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  flex: { flex: 1 },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: '#1e293b',
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    backgroundColor: HEADER_BG,
   },
-  backButton: {
-    padding: 6,
-    width: 40,
-  },
-  backButtonText: {
-    fontSize: 22,
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#ffffff',
-    flex: 1,
-    textAlign: 'center',
-  },
-  torchButton: {
-    width: 40,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: '#334155',
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
     justifyContent: 'center',
+  },
+  backIcon: { fontSize: 26, color: '#ffffff', fontWeight: '300', marginTop: -2 },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: '#ffffff' },
+  torchBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
-  },
-  torchButtonActive: {
-    backgroundColor: '#0f766e',
-  },
-  torchIcon: {
-    fontSize: 16,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  scannerWrapper: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  // Camera active mode
-  cameraContainer: {
-    width: '100%',
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  camera: {
-    width: '100%',
-    height: 300,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: 'space-between',
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 30,
-    paddingTop: 30,
-  },
-  middleRow: {
-    flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 40,
-    overflow: 'hidden',
   },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 30,
-    paddingBottom: 30,
-  },
-  corner: {
-    width: 24,
-    height: 24,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
-    borderColor: '#2dd4bf',
-    borderTopLeftRadius: 6,
-  },
-  cornerRight: {
-    width: 24,
-    height: 24,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
-    borderColor: '#2dd4bf',
-    borderTopRightRadius: 6,
-  },
-  cornerBL: {
-    width: 24,
-    height: 24,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-    borderColor: '#2dd4bf',
-    borderBottomLeftRadius: 6,
-  },
-  cornerBR: {
-    width: 24,
-    height: 24,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
-    borderColor: '#2dd4bf',
-    borderBottomRightRadius: 6,
-  },
-  scanLine: {
-    height: 2,
-    backgroundColor: '#2dd4bf',
-    borderRadius: 2,
-    shadowColor: '#2dd4bf',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  cameraFooter: {
-    backgroundColor: '#1e293b',
-    padding: 14,
-    alignItems: 'center',
-    gap: 10,
-  },
-  verifyingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#0f766e',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  verifyingText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  cameraGuide: {
-    color: '#94a3b8',
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  exitCameraBtn: {
-    backgroundColor: '#334155',
+  torchBtnActive: { backgroundColor: '#facc15' },
+  torchIcon: { fontSize: 16 },
+
+  roleStrip: {
+    backgroundColor: STRIP_BG,
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  exitCameraText: {
-    color: '#f1f5f9',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  // Inactive camera placeholder
-  activateCameraBtn: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  cameraBoxFrame: {
-    width: 260,
-    height: 260,
-    backgroundColor: 'rgba(15,118,110,0.12)',
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: '#0f766e',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  cameraBoxInner: {
-    alignItems: 'center',
-  },
-  cameraIconLarge: {
-    fontSize: 52,
-    marginBottom: 10,
-  },
-  tapToScanText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#2dd4bf',
-    letterSpacing: 0.8,
-    marginBottom: 4,
-  },
-  tapToScanSub: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  guideText: {
-    fontSize: 13,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  // Manual input
-  section: {
-    marginBottom: 16,
-  },
-  toggleManualBtn: {
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: '#334155',
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  toggleManualText: {
-    color: '#2dd4bf',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  toggleChevron: {
-    color: '#2dd4bf',
-    fontSize: 12,
-  },
-  manualCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#cbd5e1',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#0f172a',
-    borderWidth: 1,
-    borderColor: '#475569',
-    borderRadius: 10,
-    padding: 13,
-    fontSize: 15,
-    color: '#ffffff',
-    marginBottom: 12,
-    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-  },
-  verifyManualBtn: {
-    backgroundColor: '#0f766e',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#0f766e',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  verifyManualText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  disabledBtn: {
-    opacity: 0.5,
-  },
-  // Legend
-  legendCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-    gap: 8,
-  },
-  legendTitle: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#64748b',
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  legendRow: {
+    paddingVertical: 7,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 6,
   },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendText: {
-    fontSize: 13,
-    color: '#94a3b8',
-  },
-  legendBold: {
-    fontWeight: '800',
-    color: '#f1f5f9',
-  },
-  // Dev test buttons
-  devSection: {
-    backgroundColor: '#1e293b',
+  roleDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#2dd4bf' },
+  roleText: { fontSize: 10, fontWeight: '800', color: '#99f6e4', letterSpacing: 1.2 },
+
+  scrollContent: { padding: 16, paddingBottom: 60 },
+
+  scannerCard: {
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
+    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  devSectionTitle: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#64748b',
-    letterSpacing: 0.8,
-    marginBottom: 4,
-  },
-  devSectionSub: {
-    fontSize: 12,
-    color: '#475569',
-    marginBottom: 14,
-  },
-  testGrid: {
-    gap: 8,
-  },
-  testBtn: {
-    padding: 12,
-    borderRadius: 10,
+  openCamHero: { alignItems: 'center' },
+  reticleBox: {
+    width: '100%',
+    height: 220,
+    borderRadius: 12,
+    backgroundColor: '#f0fdfa',
     borderWidth: 1,
-    flexDirection: 'row',
+    borderColor: '#ccfbf1',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  testBtnLabel: {
-    fontWeight: '800',
-    fontSize: 13,
+  reticleCornerTL: { position: 'absolute', top: 12, left: 12, width: 22, height: 22, borderTopWidth: 3, borderLeftWidth: 3, borderColor: TEAL },
+  reticleCornerTR: { position: 'absolute', top: 12, right: 12, width: 22, height: 22, borderTopWidth: 3, borderRightWidth: 3, borderColor: TEAL },
+  reticleCornerBL: { position: 'absolute', bottom: 12, left: 12, width: 22, height: 22, borderBottomWidth: 3, borderLeftWidth: 3, borderColor: TEAL },
+  reticleCornerBR: { position: 'absolute', bottom: 12, right: 12, width: 22, height: 22, borderBottomWidth: 3, borderRightWidth: 3, borderColor: TEAL },
+
+  camIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#99f6e4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    shadowColor: TEAL,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  testBtnToken: {
-    color: '#64748b',
-    fontSize: 11,
-    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+  camIcon: { fontSize: 26 },
+  camPromptTitle: { fontSize: 14, fontWeight: '900', color: TEAL_DARK, letterSpacing: 0.5 },
+  camPromptSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
+
+  cameraBox: { borderRadius: 12, overflow: 'hidden' },
+  camera: { width: '100%', height: 260 },
+  overlayFrame: { flex: 1, position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  laserLine: { width: '80%', height: 2, backgroundColor: '#10b981', position: 'absolute', top: 30 },
+  cameraActions: { backgroundColor: '#0f172a', padding: 12, alignItems: 'center' },
+  cameraPrompt: { color: '#ffffff', fontSize: 12, fontWeight: '700', marginBottom: 8 },
+  closeCamBtn: { paddingVertical: 4, paddingHorizontal: 12 },
+  closeCamText: { color: '#94a3b8', fontSize: 12, fontWeight: '700' },
+
+  manualSection: { marginBottom: 18 },
+  sectionLabel: { fontSize: 11, fontWeight: '800', color: '#94a3b8', letterSpacing: 1, marginBottom: 8 },
+  inputCard: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    padding: 6,
+    alignItems: 'center',
   },
+  input: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#0f172a',
+    fontWeight: '600',
+  },
+  verifyBtn: {
+    backgroundColor: TEAL,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifyBtnDisabled: { opacity: 0.5 },
+  verifyBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
+
+  testSection: { marginBottom: 16 },
+  testChipsRow: { flexDirection: 'row', gap: 8 },
+  sampleChip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  sampleChipText: { fontSize: 11, fontWeight: '800' },
 });

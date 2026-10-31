@@ -23,15 +23,20 @@ import {
 } from '@/services/api';
 import DriverTabBar from '@/components/DriverTabBar';
 
+const TEAL = '#0d9488';
+const TEAL_DARK = '#0f766e';
+const HEADER_BG = '#11423f';
+const STRIP_BG = '#0d3835';
+
 type FilterTab = 'ALL' | 'REPORTED' | 'IN_REVIEW' | 'RESOLVED';
 
 const PROBLEM_TYPES = [
-  { value: 'VEHICLE_PROBLEM', label: '🚗 Vehicle / Mechanical Issue' },
-  { value: 'DELAY', label: '⏱️ Heavy Traffic / Terminal Delay' },
-  { value: 'ROUTE_PROBLEM', label: '🚧 Road Closure / Route Diversion' },
-  { value: 'ACCIDENT', label: '⚠️ Road Collision / Accident' },
-  { value: 'PASSENGER_ISSUE', label: '👥 Passenger Medical / Emergency' },
-  { value: 'OTHER', label: '📝 Other Operational Issue' },
+  { value: 'VEHICLE_PROBLEM', label: '🚗 Vehicle Issue' },
+  { value: 'DELAY', label: '⏱️ Traffic Delay' },
+  { value: 'ROUTE_PROBLEM', label: '🚧 Road Diversion' },
+  { value: 'ACCIDENT', label: '⚠️ Collision' },
+  { value: 'PASSENGER_ISSUE', label: '👥 Passenger Medical' },
+  { value: 'OTHER', label: '📝 Other' },
 ];
 
 export default function DriverIncidentsScreen() {
@@ -43,7 +48,6 @@ export default function DriverIncidentsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterTab>('ALL');
-  const [error, setError] = useState<string | null>(null);
 
   // Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -52,7 +56,7 @@ export default function DriverIncidentsScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to log out of the Driver App?', [
+    Alert.alert('Sign Out', 'Sign out of driver session?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
@@ -67,7 +71,6 @@ export default function DriverIncidentsScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      setError(null);
       const [problemsRes, dashRes] = await Promise.all([
         apiService.getDriverProblems(),
         apiService.getDriverDashboard(),
@@ -75,15 +78,12 @@ export default function DriverIncidentsScreen() {
 
       if (problemsRes.success && problemsRes.data?.reports) {
         setProblems(problemsRes.data.reports);
-      } else {
-        setError(problemsRes.error || 'Failed to load reported incidents');
       }
-
       if (dashRes.success && dashRes.data?.activeTrip) {
         setActiveTrip(dashRes.data.activeTrip);
       }
-    } catch {
-      setError('Network error while loading incident reports');
+    } catch (err) {
+      console.warn('Driver incidents fetch notice:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -106,20 +106,16 @@ export default function DriverIncidentsScreen() {
   };
 
   const handleSubmitProblem = async () => {
-    if (description.trim().length < 5) {
-      Alert.alert('Required', 'Please describe the incident in detail (at least 5 characters).');
+    if (description.trim().length < 4) {
+      Alert.alert('Details Required', 'Please enter a brief description.');
       return;
     }
 
     setSubmitting(true);
     try {
-      // Use active trip if present, otherwise call with activeTrip id or fallback
       const tripId = activeTrip?.id;
       if (!tripId) {
-        Alert.alert(
-          'No Active Trip',
-          'You do not have an active trip currently selected. Incidents must be linked to an assigned trip. Please check your assigned trips.'
-        );
+        Alert.alert('No Active Trip', 'Please ensure you have an assigned trip before reporting.');
         setSubmitting(false);
         return;
       }
@@ -130,17 +126,15 @@ export default function DriverIncidentsScreen() {
       });
 
       if (res.success) {
-        Alert.alert(
-          'Incident Transmitted',
-          'Your report has been logged and immediately dispatched to Operations Dispatch.',
-          [{ text: 'OK', onPress: () => setModalVisible(false) }]
-        );
+        Alert.alert('Report Logged', 'Dispatched to operations fleet center.', [
+          { text: 'OK', onPress: () => setModalVisible(false) },
+        ]);
         fetchData();
       } else {
-        Alert.alert('Submission Error', res.error || 'Failed to transmit incident report.');
+        Alert.alert('Notice', res.error || 'Failed to submit report.');
       }
     } catch {
-      Alert.alert('Error', 'Network error transmitting report. Please verify connection.');
+      Alert.alert('Error', 'Network error submitting report.');
     } finally {
       setSubmitting(false);
     }
@@ -172,7 +166,7 @@ export default function DriverIncidentsScreen() {
           hour: '2-digit',
           minute: '2-digit',
         })
-      : 'N/A';
+      : '—';
 
     const categoryIcon =
       item.type === 'VEHICLE_PROBLEM'
@@ -188,7 +182,7 @@ export default function DriverIncidentsScreen() {
         : '📝';
 
     return (
-      <Animated.View entering={FadeInDown.duration(300).delay(index * 40)} style={styles.card}>
+      <Animated.View entering={FadeInDown.duration(300).delay(index * 35)} style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.typeRow}>
             <Text style={styles.typeIcon}>{categoryIcon}</Text>
@@ -202,25 +196,20 @@ export default function DriverIncidentsScreen() {
           </View>
         </View>
 
-        {/* Route tag if available */}
         {item.trips?.routes && (
           <View style={styles.routeTag}>
             <Text style={styles.routeTagText}>
               📍 {item.trips.routes.origin || 'Origin'} → {item.trips.routes.destination || 'Destination'}
-              {item.trips.buses?.plate_number ? ` • Bus: ${item.trips.buses.plate_number}` : ''}
+              {item.trips.buses?.plate_number ? ` • ${item.trips.buses.plate_number}` : ''}
             </Text>
           </View>
         )}
 
-        {/* Driver Description */}
         <Text style={styles.descriptionText}>{item.description}</Text>
 
-        {/* Dispatch Operations Feedback Note */}
         {item.notes ? (
           <View style={styles.dispatchNoteBox}>
-            <View style={styles.dispatchNoteHeader}>
-              <Text style={styles.dispatchNoteBadge}>DISPATCH RESPONSE</Text>
-            </View>
+            <Text style={styles.dispatchNoteBadge}>DISPATCH RESPONSE</Text>
             <Text style={styles.dispatchNoteText}>{item.notes}</Text>
           </View>
         ) : null}
@@ -230,81 +219,70 @@ export default function DriverIncidentsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
 
-      {/* Top Header with Sign Out Button in the Top Right */}
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitle}>INCIDENT CENTER</Text>
-          <Text style={styles.headerSub}>Operational Logs & Delay Reports</Text>
+        <View>
+          <Text style={styles.headerTitle}>Incident Center</Text>
+          <Text style={styles.headerSub}>Fleet Operations Reports</Text>
         </View>
         <TouchableOpacity
-          style={styles.signOutBtn}
+          style={styles.headerIconBtn}
           onPress={handleLogout}
           activeOpacity={0.8}
         >
-          <Text style={styles.signOutIcon}>🚪</Text>
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Text style={styles.headerIconText}>🚪</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Hero Report Button */}
+      {/* Role Strip */}
+      <View style={styles.roleStrip}>
+        <View style={styles.roleDot} />
+        <Text style={styles.roleText}>DRIVER · INCIDENT DISPATCH</Text>
+      </View>
+
+      {/* Report Button Card */}
       <View style={styles.heroActionContainer}>
         <TouchableOpacity
           style={styles.reportNewBtn}
           onPress={handleOpenModal}
-          activeOpacity={0.85}
+          activeOpacity={0.88}
         >
           <Text style={styles.reportNewIcon}>🚨</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.reportNewTitle}>TRANSMIT INCIDENT / DELAY</Text>
-            <Text style={styles.reportNewSub}>
-              {activeTrip
-                ? `Reporting for active: ${activeTrip.origin} → ${activeTrip.destination}`
-                : 'Alert Operations Dispatch immediately'}
-            </Text>
+            <Text style={styles.reportNewTitle}>REPORT INCIDENT / DELAY</Text>
+            <Text style={styles.reportNewSub}>Log immediate delay or vehicle issue to dispatch</Text>
           </View>
-          <Text style={styles.reportNewArrow}>→</Text>
+          <Text style={styles.reportNewArrow}>›</Text>
         </TouchableOpacity>
       </View>
 
       {/* Filter Tabs */}
-      <View style={styles.tabsContainer}>
-        {(['ALL', 'REPORTED', 'IN_REVIEW', 'RESOLVED'] as FilterTab[]).map((tab) => {
-          const isActive = filter === tab;
-          const label =
-            tab === 'ALL'
-              ? 'All'
-              : tab === 'REPORTED'
-              ? 'Pending'
-              : tab === 'IN_REVIEW'
-              ? 'In Review'
-              : 'Resolved';
+      <View style={styles.filterBar}>
+        {(['ALL', 'REPORTED', 'IN_REVIEW', 'RESOLVED'] as FilterTab[]).map((tabKey) => {
+          const isSelected = filter === tabKey;
+          const label = tabKey === 'IN_REVIEW' ? 'Review' : tabKey.charAt(0) + tabKey.slice(1).toLowerCase();
           return (
             <TouchableOpacity
-              key={tab}
-              style={[styles.tab, isActive && styles.activeTab]}
-              onPress={() => setFilter(tab)}
+              key={tabKey}
+              style={[styles.filterChip, isSelected && styles.filterChipActive]}
+              onPress={() => setFilter(tabKey)}
+              activeOpacity={0.8}
             >
-              <Text style={[styles.tabText, isActive && styles.activeTabText]}>{label}</Text>
+              <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
+                {label}
+              </Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
-      {/* Content */}
+      {/* Incidents List */}
       {loading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0f766e" />
-          <Text style={styles.loadingText}>Fetching reported incidents...</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchData}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color={TEAL} />
+          <Text style={styles.loadingText}>Loading reports...</Text>
         </View>
       ) : (
         <FlatList
@@ -313,23 +291,23 @@ export default function DriverIncidentsScreen() {
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[TEAL]} />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>🛡️</Text>
-              <Text style={styles.emptyTitle}>No Incidents Logged</Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={styles.emptyTitle}>No Incidents Found</Text>
+              <Text style={styles.emptySub}>
                 {filter === 'ALL'
-                  ? 'All operations normal. If you encounter vehicle trouble, route closure, or road delay, report it above.'
-                  : `No incidents found with status '${filter.replace(/_/g, ' ')}'.`}
+                  ? 'All runs smooth. No issues reported.'
+                  : `No incidents in "${filter}" status.`}
               </Text>
             </View>
           }
         />
       )}
 
-      {/* Incident Modal */}
+      {/* Modal */}
       <Modal
         visible={modalVisible}
         transparent
@@ -339,10 +317,7 @@ export default function DriverIncidentsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>Report Trip Incident</Text>
-                <Text style={styles.modalSub}>Logged directly to Operations Dispatch</Text>
-              </View>
+              <Text style={styles.modalTitle}>Report Delay / Incident</Text>
               <TouchableOpacity
                 style={styles.modalCloseBtn}
                 onPress={() => setModalVisible(false)}
@@ -352,7 +327,7 @@ export default function DriverIncidentsScreen() {
             </View>
 
             <View style={styles.modalBody}>
-              <Text style={styles.modalLabel}>Incident Category:</Text>
+              <Text style={styles.fieldLabel}>Category</Text>
               <View style={styles.typeSelector}>
                 {PROBLEM_TYPES.map((pt) => {
                   const isSelected = selectedType === pt.value;
@@ -375,13 +350,13 @@ export default function DriverIncidentsScreen() {
                 })}
               </View>
 
-              <Text style={styles.modalLabel}>Description & Vehicle Status:</Text>
+              <Text style={styles.fieldLabel}>Description</Text>
               <TextInput
-                style={styles.problemInput}
-                placeholder="Detail current location, road hazard, delay duration or mechanical condition..."
+                style={styles.textInput}
+                placeholder="Detail current location, road hazard, or delay..."
                 placeholderTextColor="#94a3b8"
                 multiline
-                numberOfLines={4}
+                numberOfLines={3}
                 textAlignVertical="top"
                 value={description}
                 onChangeText={setDescription}
@@ -389,18 +364,15 @@ export default function DriverIncidentsScreen() {
               />
 
               <TouchableOpacity
-                style={[
-                  styles.submitBtn,
-                  submitting && styles.submitBtnDisabled,
-                ]}
+                style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
                 onPress={handleSubmitProblem}
                 disabled={submitting}
                 activeOpacity={0.85}
               >
                 {submitting ? (
-                  <ActivityIndicator color="#ffffff" />
+                  <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.submitBtnText}>TRANSMIT REPORT TO DISPATCH</Text>
+                  <Text style={styles.submitBtnText}>Transmit to Dispatch</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -408,381 +380,187 @@ export default function DriverIncidentsScreen() {
         </View>
       </Modal>
 
-      {/* Driver Bottom Tab Bar */}
       <DriverTabBar />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: HEADER_BG,
   },
-  headerTitleWrap: {
-    flex: 1,
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#ffffff' },
+  headerSub: { fontSize: 12, color: '#99f6e4', marginTop: 1 },
+  headerIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0f172a',
-    letterSpacing: 0.5,
-  },
-  headerSub: {
-    fontSize: 11,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  signOutBtn: {
+  headerIconText: { fontSize: 18 },
+
+  roleStrip: {
+    backgroundColor: STRIP_BG,
+    paddingHorizontal: 20,
+    paddingVertical: 7,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef2f2',
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 4,
+    gap: 6,
   },
-  signOutIcon: {
-    fontSize: 13,
-  },
-  signOutText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#dc2626',
-  },
-  heroActionContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 6,
-  },
+  roleDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#2dd4bf' },
+  roleText: { fontSize: 10, fontWeight: '800', color: '#99f6e4', letterSpacing: 1.2 },
+
+  heroActionContainer: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 },
   reportNewBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0f766e',
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
-    shadowColor: '#0f172a',
+    shadowColor: TEAL_DARK,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
   },
-  reportNewIcon: {
-    fontSize: 24,
-  },
-  reportNewTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#ffffff',
-    letterSpacing: 0.5,
-  },
-  reportNewSub: {
-    fontSize: 11,
-    color: '#94a3b8',
-    marginTop: 2,
-  },
-  reportNewArrow: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#38bdf8',
-  },
-  tabsContainer: {
+  reportNewIcon: { fontSize: 24 },
+  reportNewTitle: { color: '#ffffff', fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
+  reportNewSub: { color: '#99f6e4', fontSize: 11, marginTop: 1 },
+  reportNewArrow: { color: '#99f6e4', fontSize: 20, fontWeight: '900' },
+
+  filterBar: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 18,
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  activeTab: {
-    backgroundColor: '#0f766e',
-    borderColor: '#0f766e',
+  filterChipActive: {
+    backgroundColor: '#f0fdfa',
+    borderColor: TEAL,
   },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  activeTabText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    gap: 12,
-  },
+  filterChipText: { fontSize: 12, fontWeight: '600', color: '#64748b' },
+  filterChipTextActive: { color: TEAL_DARK, fontWeight: '800' },
+
+  listContent: { padding: 16, paddingBottom: 90 },
+
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    padding: 16,
-    shadowColor: '#0f172a',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 2,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  typeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  typeIcon: {
-    fontSize: 22,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  cardDate: {
-    fontSize: 11,
-    color: '#94a3b8',
-    marginTop: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  typeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  typeIcon: { fontSize: 18 },
+  cardTitle: { fontSize: 13, fontWeight: '800', color: '#0f172a' },
+  cardDate: { fontSize: 11, color: '#94a3b8', marginTop: 1 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, borderWidth: 1 },
+  statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.3 },
+
   routeTag: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#f8fafc',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 8,
     alignSelf: 'flex-start',
     marginBottom: 8,
   },
-  routeTagText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  descriptionText: {
-    fontSize: 13,
-    color: '#334155',
-    lineHeight: 19,
-  },
+  routeTagText: { fontSize: 11, color: '#475569', fontWeight: '600' },
+  descriptionText: { fontSize: 13, color: '#334155', lineHeight: 18 },
+
   dispatchNoteBox: {
-    marginTop: 12,
+    backgroundColor: '#f0fdfa',
+    borderColor: '#99f6e4',
+    borderWidth: 1,
+    borderRadius: 8,
     padding: 10,
-    backgroundColor: '#eff6ff',
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#2563eb',
+    marginTop: 10,
   },
-  dispatchNoteHeader: {
-    marginBottom: 4,
-  },
-  dispatchNoteBadge: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#2563eb',
-    letterSpacing: 0.5,
-  },
-  dispatchNoteText: {
-    fontSize: 12,
-    color: '#1e3a8a',
-    lineHeight: 17,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  errorIcon: {
-    fontSize: 32,
-  },
-  errorText: {
-    fontSize: 13,
-    color: '#dc2626',
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#0f766e',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 6,
-  },
-  retryButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-    gap: 8,
-  },
-  emptyIcon: {
-    fontSize: 44,
-    marginBottom: 6,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  emptySubtitle: {
-    fontSize: 12,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  // Modal styles
+  dispatchNoteBadge: { fontSize: 9, fontWeight: '800', color: TEAL_DARK, letterSpacing: 0.6, marginBottom: 2 },
+  dispatchNoteText: { fontSize: 12, color: '#0f766e' },
+
+  centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  loadingText: { marginTop: 10, color: '#64748b', fontSize: 13 },
+
+  emptyContainer: { alignItems: 'center', paddingVertical: 40 },
+  emptyIcon: { fontSize: 32, marginBottom: 8 },
+  emptyTitle: { fontSize: 15, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
+  emptySub: { fontSize: 12, color: '#64748b', textAlign: 'center' },
+
+  // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    backgroundColor: 'rgba(15,23,42,0.6)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
     backgroundColor: '#ffffff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-    maxHeight: '90%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: '80%',
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  modalSub: {
-    fontSize: 11,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  modalCloseBtn: {
-    width: 32,
-    height: 32,
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  modalTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
+  modalCloseBtn: { padding: 4 },
+  modalCloseText: { fontSize: 16, color: '#64748b', fontWeight: '800' },
+  modalBody: { marginBottom: 10 },
+  fieldLabel: { fontSize: 11, fontWeight: '700', color: '#64748b', marginBottom: 8, textTransform: 'uppercase' },
+  typeSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+  typeOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 16,
     backgroundColor: '#f1f5f9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCloseText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#64748b',
-  },
-  modalBody: {
-    padding: 20,
-  },
-  modalLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#334155',
-    marginBottom: 8,
-    marginTop: 4,
-    letterSpacing: 0.3,
-  },
-  typeSelector: {
-    gap: 6,
-    marginBottom: 14,
-  },
-  typeOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+  },
+  typeOptionSelected: { backgroundColor: '#f0fdfa', borderColor: TEAL },
+  typeOptionText: { fontSize: 11, color: '#475569', fontWeight: '600' },
+  typeOptionTextSelected: { color: TEAL_DARK, fontWeight: '800' },
+  textInput: {
     backgroundColor: '#f8fafc',
-  },
-  typeOptionSelected: {
-    borderColor: '#0f766e',
-    backgroundColor: '#f0fdfa',
-  },
-  typeOptionText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  typeOptionTextSelected: {
-    color: '#0f766e',
-    fontWeight: '800',
-  },
-  problemInput: {
-    backgroundColor: '#f8fafc',
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#cbd5e1',
-    borderRadius: 10,
-    padding: 12,
+    padding: 10,
     fontSize: 13,
     color: '#0f172a',
-    minHeight: 88,
-    marginBottom: 16,
+    height: 80,
+    marginBottom: 14,
   },
   submitBtn: {
-    backgroundColor: '#0f766e',
-    paddingVertical: 14,
+    backgroundColor: TEAL,
+    paddingVertical: 13,
     borderRadius: 10,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  submitBtnDisabled: {
-    opacity: 0.6,
-  },
-  submitBtnText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
+  submitBtnDisabled: { opacity: 0.6 },
+  submitBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
 });

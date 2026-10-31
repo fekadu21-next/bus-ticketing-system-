@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
+
+const ACTIVE_TEAL = '#0d9488';
 
 export default function DriverTabBar() {
   const router = useRouter();
@@ -14,27 +16,27 @@ export default function DriverTabBar() {
   return (
     <View style={styles.tabBar}>
       <TouchableOpacity
-        style={[styles.tabItem, isDashboard && styles.activeTabItem]}
+        style={styles.tabItem}
         onPress={() => router.replace('/driver' as any)}
         activeOpacity={0.7}
       >
         <Text style={[styles.tabIcon, isDashboard && styles.activeTabIcon]}>🏠</Text>
-        <Text style={[styles.tabLabel, isDashboard && styles.activeTabLabel]}>Dashboard</Text>
+        <Text style={[styles.tabLabel, isDashboard && styles.activeTabLabel]}>Home</Text>
         {isDashboard && <View style={styles.activeIndicator} />}
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.tabItem, isTrips && styles.activeTabItem]}
+        style={styles.tabItem}
         onPress={() => router.replace('/driver/trips' as any)}
         activeOpacity={0.7}
       >
         <Text style={[styles.tabIcon, isTrips && styles.activeTabIcon]}>🚌</Text>
-        <Text style={[styles.tabLabel, isTrips && styles.activeTabLabel]}>My Trips</Text>
+        <Text style={[styles.tabLabel, isTrips && styles.activeTabLabel]}>Runs</Text>
         {isTrips && <View style={styles.activeIndicator} />}
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.tabItem, isIncidents && styles.activeTabItem]}
+        style={styles.tabItem}
         onPress={() => router.replace('/driver/incidents' as any)}
         activeOpacity={0.7}
       >
@@ -44,7 +46,7 @@ export default function DriverTabBar() {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.tabItem, isProfile && styles.activeTabItem]}
+        style={styles.tabItem}
         onPress={() => router.replace('/driver/profile' as any)}
         activeOpacity={0.7}
       >
@@ -62,31 +64,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
-    paddingBottom: 8,
+    paddingBottom: Platform.OS === 'ios' ? 16 : 10,
     paddingTop: 8,
-    shadowColor: '#0f172a',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 6,
-    elevation: 10,
+    elevation: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
     position: 'relative',
-  },
-  activeTabItem: {
-    transform: [{ scale: 1.02 }],
   },
   tabIcon: {
     fontSize: 20,
     marginBottom: 2,
-    opacity: 0.85,
+    opacity: 0.65,
   },
   activeTabIcon: {
     opacity: 1,
+    transform: [{ scale: 1.08 }],
   },
   tabLabel: {
     fontSize: 11,
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   activeTabLabel: {
-    color: '#0f766e',
+    color: ACTIVE_TEAL,
     fontWeight: '800',
   },
   activeIndicator: {
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     top: -8,
     width: 28,
     height: 3,
-    backgroundColor: '#0f766e',
+    backgroundColor: ACTIVE_TEAL,
     borderRadius: 2,
   },
 });

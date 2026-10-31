@@ -156,6 +156,7 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   errors?: { message: string }[];
+  status?: number;
 }
 
 export interface AuthResponse {
@@ -286,6 +287,11 @@ function mapBackendTripToDriverTrip(raw: Record<string, unknown>): DriverTrip {
 
 class ApiService {
   private token: string | null = null;
+  private onUnauthorizedCallback: (() => void) | null = null;
+
+  setOnUnauthorized(callback: (() => void) | null): void {
+    this.onUnauthorizedCallback = callback;
+  }
 
   setToken(token: string | null): void {
     this.token = token;
@@ -326,6 +332,7 @@ class ApiService {
         } catch {
           return {
             success: false,
+            status: response.status,
             error: `Invalid server response (${response.status})`,
           };
         }
@@ -336,8 +343,15 @@ class ApiService {
       const errors = body.errors as { message: string }[] | undefined;
 
       if (!response.ok) {
+        if (response.status === 401 && this.token) {
+          if (this.onUnauthorizedCallback) {
+            this.onUnauthorizedCallback();
+          }
+        }
+
         return {
           success: false,
+          status: response.status,
           error: message || `Request failed (${response.status})`,
           errors,
         };
@@ -345,6 +359,7 @@ class ApiService {
 
       return {
         success: true,
+        status: response.status,
         data: nested,
         message,
       };
@@ -442,7 +457,7 @@ class ApiService {
     const query = status ? `?status=${encodeURIComponent(status)}` : '';
     // Backend returns { total, page, limit, trips } wrapped in data
     let result = await this.request<{ total?: number; page?: number; limit?: number; trips: Record<string, unknown>[] }>(`/driver/trips${query}`);
-    if (!result.success) {
+    if (!result.success && result.status !== 401 && result.status !== 403) {
       result = await this.request<{ total?: number; page?: number; limit?: number; trips: Record<string, unknown>[] }>(`/drivers/me/trips${query}`);
     }
 
@@ -452,12 +467,14 @@ class ApiService {
       const mappedTrips = tripsArray.map(mapBackendTripToDriverTrip);
       return {
         success: true,
+        status: result.status,
         data: { trips: mappedTrips },
       };
     }
 
     return {
       success: false,
+      status: result.status,
       error: result.error || 'Failed to load trips from server',
     };
   }
@@ -488,6 +505,7 @@ class ApiService {
 
       return {
         success: true,
+        status: result.status,
         data: {
           driver: result.data.driver,
           activeTrip: result.data.activeTrip ? mapBackendTripToDriverTrip(result.data.activeTrip as Record<string, unknown>) : null,
@@ -498,6 +516,14 @@ class ApiService {
       };
     }
 
+    if (result.status === 401 || result.status === 403) {
+      return {
+        success: false,
+        status: result.status,
+        error: result.error || 'Authentication required',
+      };
+    }
+
     // Fallback by computing dashboard from real driver trips endpoint
     const tripsRes = await this.getDriverTrips();
     if (tripsRes.success && tripsRes.data) {
@@ -505,6 +531,7 @@ class ApiService {
       const active = trips.find((t) => t.status === 'IN_PROGRESS') || null;
       return {
         success: true,
+        status: tripsRes.status,
         data: {
           driver: null,
           activeTrip: active,
@@ -521,6 +548,7 @@ class ApiService {
 
     return {
       success: false,
+      status: result.status || tripsRes.status,
       error: result.error || tripsRes.error || 'Failed to load driver dashboard',
     };
   }

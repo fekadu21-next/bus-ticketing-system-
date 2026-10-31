@@ -1,10 +1,11 @@
 import busRepository from '../../repository/coordinator/bus.repository.js';
 import ApiError from '../../utils/apiError.js';
-import { assertApprovedOrganization } from '../../utils/organizationUtils.js';
 
 export class BusService {
   async createBus(organizationId, busData) {
-    await assertApprovedOrganization(organizationId);
+    if (!organizationId) {
+      throw new ApiError(400, 'Organization context is required.');
+    }
 
     const plateNumber = busData.plateNumber?.trim();
     if (!plateNumber) {
@@ -46,7 +47,6 @@ export class BusService {
   }
 
   async updateBus(busId, organizationId, updateData) {
-    await assertApprovedOrganization(organizationId);
     const bus = await this.getBusById(busId, organizationId);
 
     if (updateData.plateNumber) {
@@ -69,7 +69,6 @@ export class BusService {
   }
 
   async deleteBus(busId, organizationId) {
-    await assertApprovedOrganization(organizationId);
     await this.getBusById(busId, organizationId);
 
     const activeTripsCount = await busRepository.countActiveTrips(busId);

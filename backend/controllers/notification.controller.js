@@ -57,64 +57,6 @@ export class NotificationController {
       data: result,
     });
   });
-
-  /**
-   * GET /api/v1/notifications/preferences
-   * Retrieve notification preferences for authenticated user
-   */
-  getPreferences = asyncHandler(async (req, res) => {
-    const preferences = await notificationService.getUserPreferences(req.user.id);
-
-    res.status(200).json({
-      success: true,
-      message: 'Notification preferences retrieved successfully.',
-      data: { preferences },
-    });
-  });
-
-  /**
-   * PUT or PATCH /api/v1/notifications/preferences
-   * Update notification preferences
-   */
-  updatePreferences = asyncHandler(async (req, res) => {
-    const preferences = await notificationService.updateUserPreferences(req.user.id, req.body);
-
-    res.status(200).json({
-      success: true,
-      message: 'Notification preferences updated successfully.',
-      data: { preferences },
-    });
-  });
-
-  /**
-   * POST /api/v1/notifications/device-token
-   * Register or update FCM push notification device token
-   */
-  registerDeviceToken = asyncHandler(async (req, res) => {
-    const { token, deviceType = 'web' } = req.body;
-    const result = await notificationService.registerDeviceToken(req.user.id, token, deviceType);
-
-    res.status(200).json({
-      success: true,
-      message: 'Device token registered successfully for push notifications.',
-      data: result,
-    });
-  });
-
-  /**
-   * DELETE or POST /api/v1/notifications/device-token
-   * Unregister FCM device token (e.g. on logout)
-   */
-  unregisterDeviceToken = asyncHandler(async (req, res) => {
-    const token = req.body?.token || req.query?.token;
-    const result = await notificationService.unregisterDeviceToken(req.user.id, token);
-
-    res.status(200).json({
-      success: true,
-      message: 'Device token unregistered successfully.',
-      data: result,
-    });
-  });
 }
 
 export const notificationController = new NotificationController();
