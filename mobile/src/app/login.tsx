@@ -17,7 +17,9 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { KeyboardScreen } from '@/components/keyboard-screen';
+import { AlertBanner } from '@/components/ui/AlertBanner';
 import { useAuth } from '@/context/AuthContext';
+import { Theme } from '@/constants/theme';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -66,40 +68,41 @@ export default function LoginPage() {
     <KeyboardScreen style={styles.root}>
       <StatusBar barStyle="light-content" />
 
-      {/* Background gradient */}
+      {/* Web-matching deep slate/navy gradient */}
       <LinearGradient
-        colors={['#0a1628', '#0f2744', '#0a3d2e']}
+        colors={['#071833', '#0b2447', '#172554']}
         style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
 
-      {/* Decorative blobs */}
+      {/* Subtle brand glow effects */}
       <View style={styles.blob1} />
       <View style={styles.blob2} />
 
       <Animated.View entering={FadeIn.duration(500)} style={styles.container}>
-        {/* Branding */}
+        {/* Branding (BusTicket) */}
         <Animated.View entering={FadeInDown.duration(600)} style={styles.brandBlock}>
           <View style={styles.logoWrap}>
             <Text style={styles.logoIcon}>🚌</Text>
           </View>
-          <Text style={styles.appName}>EthioRide</Text>
-          <Text style={styles.tagline}>Intercity Bus Ticketing</Text>
+          <Text style={styles.appName}>{Theme.brand.name}</Text>
+          <Text style={styles.tagline}>{Theme.brand.tagline}</Text>
         </Animated.View>
 
-        {/* Glass Card */}
+        {/* Form Card */}
         <Animated.View entering={FadeInUp.duration(600).delay(150)} style={styles.card}>
-          <Text style={styles.cardTitle}>Welcome back</Text>
-          <Text style={styles.cardSubtitle}>Sign in to continue</Text>
+          <Text style={styles.cardTitle}>Welcome Back</Text>
+          <Text style={styles.cardSubtitle}>Sign in to access your tickets & trips</Text>
 
-          {/* Email */}
+          {/* Email Input */}
+          <Text style={styles.fieldLabel}>Email Address</Text>
           <View style={styles.inputWrap}>
             <Text style={styles.inputIcon}>✉</Text>
             <TextInput
               style={styles.input}
-              placeholder="Email address"
-              placeholderTextColor="#6b7280"
+              placeholder="you@example.com"
+              placeholderTextColor="#94a3b8"
               value={formData.email}
               onChangeText={(v) => handleChange('email', v)}
               keyboardType="email-address"
@@ -110,13 +113,14 @@ export default function LoginPage() {
             />
           </View>
 
-          {/* Password */}
+          {/* Password Input */}
+          <Text style={styles.fieldLabel}>Password</Text>
           <View style={styles.inputWrap}>
             <Text style={styles.inputIcon}>🔒</Text>
             <TextInput
-              style={[styles.input, { paddingRight: 56 }]}
-              placeholder="Password"
-              placeholderTextColor="#6b7280"
+              style={[styles.input, { paddingRight: 48 }]}
+              placeholder="Enter your password"
+              placeholderTextColor="#94a3b8"
               value={formData.password}
               onChangeText={(v) => handleChange('password', v)}
               secureTextEntry={!showPassword}
@@ -132,7 +136,7 @@ export default function LoginPage() {
             </TouchableOpacity>
           </View>
 
-          {/* Forgot */}
+          {/* Forgot Password Link */}
           <TouchableOpacity
             style={styles.forgotRow}
             onPress={() => router.push('/forgot-password')}
@@ -141,14 +145,12 @@ export default function LoginPage() {
             <Text style={styles.forgotTxt}>Forgot password?</Text>
           </TouchableOpacity>
 
-          {/* Error */}
+          {/* Error Banner */}
           {displayError ? (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorTxt}>⚠  {displayError}</Text>
-            </View>
+            <AlertBanner type="error" message={displayError} />
           ) : null}
 
-          {/* Sign In */}
+          {/* Sign In Button */}
           <TouchableOpacity
             style={[styles.signInBtn, isSubmitting && styles.signInBtnDisabled]}
             onPress={handleSubmit}
@@ -156,25 +158,25 @@ export default function LoginPage() {
             activeOpacity={0.88}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#ffffff" />
             ) : (
               <Text style={styles.signInTxt}>Sign In</Text>
             )}
           </TouchableOpacity>
 
-          {/* Register */}
+          {/* Register Link */}
           <View style={styles.registerRow}>
-            <Text style={styles.registerRowTxt}>Don't have an account? </Text>
+            <Text style={styles.registerRowTxt}>Don&apos;t have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/register')} activeOpacity={0.7}>
               <Text style={styles.registerLink}>Create Account</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
 
-        {/* Guest */}
+        {/* Guest Option */}
         <Animated.View entering={FadeIn.duration(600).delay(300)} style={styles.guestRow}>
           <TouchableOpacity onPress={() => router.replace('/passenger/home')} activeOpacity={0.7}>
-            <Text style={styles.guestTxt}>Continue as Guest  →</Text>
+            <Text style={styles.guestTxt}>Continue as Guest →</Text>
           </TouchableOpacity>
         </Animated.View>
       </Animated.View>
@@ -185,14 +187,14 @@ export default function LoginPage() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0a1628',
+    backgroundColor: '#071833',
   },
   blob1: {
     position: 'absolute',
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: 'rgba(16,118,110,0.12)',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
     top: -80,
     right: -80,
   },
@@ -201,7 +203,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: 'rgba(16,118,110,0.08)',
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
     bottom: 60,
     left: -60,
   },
@@ -213,72 +215,81 @@ const styles = StyleSheet.create({
   },
   brandBlock: {
     alignItems: 'center',
-    marginBottom: 36,
+    marginBottom: 28,
   },
   logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(16,118,110,0.25)',
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: 'rgba(37, 99, 235, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 1.5,
-    borderColor: 'rgba(16,118,110,0.5)',
+    borderColor: 'rgba(191, 219, 254, 0.35)',
   },
   logoIcon: {
-    fontSize: 36,
+    fontSize: 34,
   },
   appName: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#f0fdf4',
-    letterSpacing: 0.5,
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#ffffff',
+    letterSpacing: -0.5,
   },
   tagline: {
     fontSize: 13,
-    color: '#6ee7b7',
-    marginTop: 4,
-    letterSpacing: 0.3,
+    color: '#93c5fd',
+    marginTop: 2,
+    fontWeight: '600',
   },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 24,
+    backgroundColor: '#ffffff',
+    borderRadius: Theme.radius.xl,
     padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
   },
   cardTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#f8fafc',
+    color: Theme.colors.textMain,
     marginBottom: 4,
   },
   cardSubtitle: {
     fontSize: 13,
-    color: '#94a3b8',
-    marginBottom: 24,
+    color: Theme.colors.textMuted,
+    marginBottom: 20,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Theme.colors.textMain,
+    marginBottom: 6,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    paddingHorizontal: 14,
+    backgroundColor: Theme.colors.bgMain,
+    borderRadius: Theme.radius.md,
+    borderWidth: 1.2,
+    borderColor: Theme.colors.borderDark,
+    paddingHorizontal: 12,
     marginBottom: 14,
-    height: 52,
+    height: 48,
   },
   inputIcon: {
-    fontSize: 16,
-    marginRight: 10,
-    color: '#6ee7b7',
+    fontSize: 15,
+    marginRight: 8,
+    color: Theme.colors.textMuted,
   },
   input: {
     flex: 1,
-    fontSize: 15,
-    color: '#f1f5f9',
+    fontSize: 14,
+    color: Theme.colors.textMain,
     height: '100%',
   },
   eyeBtn: {
@@ -288,73 +299,60 @@ const styles = StyleSheet.create({
   eyeTxt: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#6ee7b7',
+    color: Theme.colors.primary,
   },
   forgotRow: {
     alignSelf: 'flex-end',
-    marginBottom: 18,
-    marginTop: 2,
+    marginBottom: 16,
   },
   forgotTxt: {
     fontSize: 12.5,
-    color: '#6ee7b7',
-    fontWeight: '600',
-  },
-  errorBox: {
-    backgroundColor: 'rgba(239,68,68,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.3)',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 14,
-  },
-  errorTxt: {
-    fontSize: 12.5,
-    color: '#fca5a5',
+    color: Theme.colors.primary,
     fontWeight: '600',
   },
   signInBtn: {
-    backgroundColor: '#0f766e',
-    borderRadius: 14,
-    paddingVertical: 15,
+    backgroundColor: Theme.colors.primary,
+    borderRadius: Theme.radius.md,
+    paddingVertical: 14,
     alignItems: 'center',
-    shadowColor: '#0f766e',
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 4,
+    marginTop: 4,
   },
   signInBtnDisabled: {
-    opacity: 0.6,
+    opacity: 0.65,
   },
   signInTxt: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     color: '#ffffff',
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   registerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 18,
     alignItems: 'center',
   },
   registerRowTxt: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: Theme.colors.textMuted,
   },
   registerLink: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#6ee7b7',
+    color: Theme.colors.primary,
   },
   guestRow: {
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 20,
   },
   guestTxt: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.45)',
+    color: '#93c5fd',
     fontWeight: '600',
   },
 });

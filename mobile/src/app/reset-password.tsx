@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-nativ
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { KeyboardScreen } from '@/components/keyboard-screen';
+import { AlertBanner } from '@/components/ui/AlertBanner';
 import { apiService } from '@/services/api';
+import { Theme } from '@/constants/theme';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -64,12 +66,14 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <KeyboardScreen>
+      <KeyboardScreen style={styles.root}>
         <View style={styles.successContainer}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.successTitle}>Invalid Link</Text>
+          <View style={styles.warningBadge}>
+            <Text style={styles.errorIcon}>⚠️</Text>
+          </View>
+          <Text style={styles.successTitle}>Invalid Reset Link</Text>
           <Text style={styles.successMessage}>
-            This password reset link is invalid or has expired. Please request a new one.
+            This password reset link is invalid or has expired. Please request a new link to proceed.
           </Text>
           <TouchableOpacity
             style={styles.primaryButton}
@@ -82,21 +86,23 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <KeyboardScreen>
+    <KeyboardScreen style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.logo}>🔐</Text>
+        <View style={styles.logoBadge}>
+          <Text style={styles.logo}>🔐</Text>
+        </View>
         <Text style={styles.title}>Reset Password</Text>
-        <Text style={styles.subtitle}>Enter your new password</Text>
+        <Text style={styles.subtitle}>Enter your new password to regain access</Text>
       </View>
 
-      <View style={styles.form}>
+      <View style={styles.formCard}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>New Password *</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={[styles.input, styles.passwordInput]}
               placeholder="Min 8 characters"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor={Theme.colors.textSubtle}
               value={formData.newPassword}
               onChangeText={(value) => handleChange('newPassword', value)}
               secureTextEntry={!showPassword}
@@ -115,7 +121,7 @@ export default function ResetPasswordPage() {
             <TextInput
               style={[styles.input, styles.passwordInput]}
               placeholder="Repeat password"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor={Theme.colors.textSubtle}
               value={formData.confirmPassword}
               onChangeText={(value) => handleChange('confirmPassword', value)}
               secureTextEntry={!showConfirm}
@@ -129,9 +135,7 @@ export default function ResetPasswordPage() {
         </View>
 
         {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
+          <AlertBanner type="error" message={error} />
         ) : null}
 
         <TouchableOpacity
@@ -146,7 +150,7 @@ export default function ResetPasswordPage() {
 
       <View style={styles.footer}>
         <TouchableOpacity onPress={() => router.push('/login')}>
-          <Text style={styles.link}>← Back to Login</Text>
+          <Text style={styles.link}>← Back to Sign In</Text>
         </TouchableOpacity>
       </View>
     </KeyboardScreen>
@@ -154,48 +158,74 @@ export default function ResetPasswordPage() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    backgroundColor: Theme.colors.bgMain,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+  },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
-  },
-  logo: {
-    fontSize: 60,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#0f172a',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-  },
-  form: {
     marginBottom: 24,
   },
-  inputGroup: {
+  logoBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: Theme.colors.primaryLight,
+    borderWidth: 1.5,
+    borderColor: Theme.colors.primaryBorder,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  logo: {
+    fontSize: 30,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: Theme.colors.textMain,
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: Theme.colors.textMuted,
+    textAlign: 'center',
+  },
+  formCard: {
+    backgroundColor: Theme.colors.bgCard,
+    borderRadius: Theme.radius.lg,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+    padding: 20,
     marginBottom: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  inputGroup: {
+    marginBottom: 16,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '700',
+    color: Theme.colors.textMain,
+    marginBottom: 6,
   },
   input: {
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#0f172a',
+    backgroundColor: Theme.colors.bgMain,
+    borderWidth: 1.2,
+    borderColor: Theme.colors.borderDark,
+    borderRadius: Theme.radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: Theme.colors.textMain,
   },
   passwordInput: {
-    paddingRight: 64,
+    paddingRight: 56,
   },
   inputWrapper: {
     position: 'relative',
@@ -203,83 +233,90 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     position: 'absolute',
-    right: 16,
+    right: 12,
     height: '100%',
     justifyContent: 'center',
   },
   eyeText: {
-    fontSize: 13,
-    color: '#0f766e',
-    fontWeight: '600',
-  },
-  errorContainer: {
-    backgroundColor: '#fee2e2',
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 20,
-  },
-  errorText: {
-    color: '#dc2626',
-    fontSize: 14,
-  },
-  errorIcon: {
-    fontSize: 80,
-    marginBottom: 24,
+    fontSize: 12,
+    color: Theme.colors.primary,
+    fontWeight: '700',
   },
   submitButton: {
-    backgroundColor: '#0f766e',
-    padding: 18,
-    borderRadius: 12,
+    backgroundColor: Theme.colors.primary,
+    paddingVertical: 14,
+    borderRadius: Theme.radius.md,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   submitButtonDisabled: {
     opacity: 0.6,
   },
   submitButtonText: {
     color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   footer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 10,
   },
   link: {
-    fontSize: 16,
-    color: '#0f766e',
-    fontWeight: '600',
+    fontSize: 14,
+    color: Theme.colors.primary,
+    fontWeight: '700',
   },
   successContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
+  },
+  warningBadge: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: Theme.colors.warningLight,
+    borderWidth: 1.5,
+    borderColor: Theme.colors.warningBorder,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  errorIcon: {
+    fontSize: 40,
   },
   successTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#0f172a',
-    marginBottom: 12,
+    fontSize: 22,
+    fontWeight: '800',
+    color: Theme.colors.textMain,
+    marginBottom: 10,
     textAlign: 'center',
   },
   successMessage: {
-    fontSize: 16,
-    color: '#64748b',
+    fontSize: 14,
+    color: Theme.colors.textMuted,
     textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
+    marginBottom: 28,
+    lineHeight: 22,
   },
   primaryButton: {
-    backgroundColor: '#0f766e',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: Theme.colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: Theme.radius.md,
     alignItems: 'center',
+    width: '100%',
   },
   primaryButtonText: {
     color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '800',
   },
 });
