@@ -57,7 +57,7 @@ export default function VerifierDashboardPage() {
   if (authLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#0f766e" />
+        <ActivityIndicator size="large" color="#2563eb" />
       </View>
     );
   }
@@ -96,7 +96,7 @@ export default function VerifierDashboardPage() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />
         }
       >
         {/* Verifier Greeting */}
@@ -121,7 +121,7 @@ export default function VerifierDashboardPage() {
 
           {loading ? (
             <View style={styles.loadingBox}>
-              <ActivityIndicator color="#0f766e" />
+              <ActivityIndicator color="#2563eb" />
             </View>
           ) : activeTrip ? (
             <TouchableOpacity
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#0f766e',
+    color: '#2563eb',
     letterSpacing: 0.5,
   },
   appSubtitle: {
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   viewAllLink: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   activeTripCard: {
     backgroundColor: '#ffffff',
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   routeArrow: {
     fontSize: 16,
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '900',
     marginVertical: 1,
   },
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
   verifiedCountText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   loadingBox: {
     padding: 30,
@@ -376,12 +376,12 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   bigScanBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     borderRadius: 20,
     paddingVertical: 24,
     paddingHorizontal: 20,
     alignItems: 'center',
-    shadowColor: '#0f766e',
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,

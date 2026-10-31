@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 
 // Web-matching rose/pink color palette
-const ROSE = '#f43f5e';
-const ROSE_DARK = '#e11d48';
+const ROSE = '#2563eb';
+const ROSE_DARK = '#1d4ed8';
 
 export default function PassengerTabBar() {
   const router = useRouter();

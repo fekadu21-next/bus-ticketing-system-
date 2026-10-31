@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   valueHighlight: {
     fontSize: 15,
     fontWeight: '900',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   warningValue: {
     fontSize: 15,
@@ -388,11 +388,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   scanAgainBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingVertical: 18,
     borderRadius: 14,
     alignItems: 'center',
-    shadowColor: '#0f766e',
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,

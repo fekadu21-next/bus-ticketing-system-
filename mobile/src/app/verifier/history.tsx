@@ -88,7 +88,7 @@ export default function RecentScansScreen() {
 
       {loading ? (
         <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color="#0f766e" />
+          <ActivityIndicator size="large" color="#2563eb" />
         </View>
       ) : (
         <FlatList
@@ -97,7 +97,7 @@ export default function RecentScansScreen() {
           renderItem={renderScanItem}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />
           }
           ListEmptyComponent={
             <View style={styles.emptyWrap}>

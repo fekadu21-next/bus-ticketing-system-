@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
   activeTabLabel: {
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '800',
   },
   centerScanItem: {
@@ -104,10 +104,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#0f766e',
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
   },
   activeScanCircle: {
-    backgroundColor: '#0d9488',
+    backgroundColor: '#1d4ed8',
     transform: [{ scale: 1.05 }],
   },
   scanCircleIcon: {
@@ -125,11 +125,11 @@ const styles = StyleSheet.create({
   scanLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#0f766e',
+    color: '#2563eb',
     marginTop: 4,
     letterSpacing: 0.5,
   },
   activeScanLabel: {
-    color: '#0d9488',
+    color: '#1d4ed8',
   },
 });

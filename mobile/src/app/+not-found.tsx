@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   linkText: {
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '600',
     fontSize: 16,
   },

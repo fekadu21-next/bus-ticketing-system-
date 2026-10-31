@@ -62,7 +62,7 @@ export default function ActiveTripScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#0f766e" />
+        <ActivityIndicator size="large" color="#2563eb" />
         <Text style={styles.loadingText}>Loading assigned trip & manifest...</Text>
       </SafeAreaView>
     );
@@ -87,7 +87,7 @@ export default function ActiveTripScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />
         }
       >
         {/* Route Card */}
@@ -250,12 +250,12 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
   },
   bannerCard: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     borderRadius: 16,
     padding: 22,
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#0f766e',
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   },
   infoValueHighlight: {
     fontSize: 15,
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '800',
   },
   plateTag: {
@@ -334,14 +334,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   scanBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     borderRadius: 14,
     paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    shadowColor: '#0f766e',
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   manifestCount: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   emptyManifest: {
     backgroundColor: '#ffffff',
@@ -423,12 +423,12 @@ const styles = StyleSheet.create({
   seatNumber: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   seatLabel: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#0d9488',
+    color: '#1d4ed8',
   },
   passengerDetails: {
     flex: 1,

@@ -291,7 +291,7 @@ export default function PassengerHomeScreen() {
             <Text style={styles.logoIcon}>🚌</Text>
           </View>
           <View>
-            <Text style={styles.brandTitle}>EthioRide</Text>
+            <Text style={styles.brandTitle}>BusTicket</Text>
             <Text style={styles.brandGreeting}>{passengerGreeting}</Text>
           </View>
         </View>

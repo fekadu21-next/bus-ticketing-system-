@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
   activeTabLabel: {
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '800',
   },
   logoutTabLabel: {

@@ -198,7 +198,7 @@ export default function DriverHomeScreen() {
   if (authLoading) {
     return (
       <View style={styles.centerWrap}>
-        <ActivityIndicator size="large" color="#0f766e" />
+        <ActivityIndicator size="large" color="#2563eb" />
         <Text style={styles.loadingText}>Verifying Driver Credentials...</Text>
       </View>
     );
@@ -268,7 +268,7 @@ export default function DriverHomeScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0f766e']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />
         }
       >
         {/* Driver Greeting Card */}
@@ -305,7 +305,7 @@ export default function DriverHomeScreen() {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statBox}>
-              <Text style={[styles.statNumber, { color: '#0f766e' }]}>
+              <Text style={[styles.statNumber, { color: '#2563eb' }]}>
                 {stats.inProgress || (activeTrip?.status === 'IN_PROGRESS' ? 1 : 0)}
               </Text>
               <Text style={styles.statLabel}>In Transit</Text>
@@ -334,7 +334,7 @@ export default function DriverHomeScreen() {
 
           {loading ? (
             <View style={styles.loadingCard}>
-              <ActivityIndicator color="#0f766e" />
+              <ActivityIndicator color="#2563eb" />
               <Text style={styles.loadingTripText}>Loading assigned operations...</Text>
             </View>
           ) : activeTrip ? (
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   liveBadge: {
     flexDirection: 'row',
@@ -732,7 +732,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
   viewDetailsLink: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   loadingCard: {
     backgroundColor: '#ffffff',
@@ -882,7 +882,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#cbd5e1',
-    shadowColor: '#0f766e',
+    shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -900,14 +900,14 @@ const styles = StyleSheet.create({
   },
   routeArrow: {
     fontSize: 14,
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '800',
     marginVertical: 1,
   },
   routeCityDest: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   statusPill: {
     paddingHorizontal: 12,
@@ -961,7 +961,7 @@ const styles = StyleSheet.create({
   metaValueHighlight: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#0f766e',
+    color: '#2563eb',
     marginTop: 2,
   },
   occupancyBox: {
@@ -995,7 +995,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     borderRadius: 3,
   },
   tripActionRow: {
@@ -1009,7 +1009,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   startBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
   },
   completeBtn: {
     backgroundColor: '#2563eb',
@@ -1067,7 +1067,7 @@ const styles = StyleSheet.create({
   refreshTripsBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#2563eb',
   },
   upcomingTripCard: {
     backgroundColor: '#ffffff',
@@ -1264,7 +1264,7 @@ const styles = StyleSheet.create({
   },
   typeOptionSelected: {
     backgroundColor: '#f0fdfa',
-    borderColor: '#0f766e',
+    borderColor: '#2563eb',
   },
   typeOptionText: {
     fontSize: 12,
@@ -1272,7 +1272,7 @@ const styles = StyleSheet.create({
     color: '#334155',
   },
   typeOptionTextSelected: {
-    color: '#0f766e',
+    color: '#2563eb',
     fontWeight: '800',
   },
   problemInput: {
@@ -1287,7 +1287,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   submitProblemBtn: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2563eb',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',

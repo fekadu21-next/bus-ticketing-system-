@@ -980,7 +980,7 @@ class ApiService {
           operatorId: operator?.id || String(raw.operatorId || ''),
           orgType,
           period,
-          logoBg: '#0f766e',
+          logoBg: '#2563eb',
           logoText: initials,
           badge: fare <= 1150 ? 'Best Price' : undefined,
           rating: 4.6,
