@@ -3,6 +3,7 @@ import ApiError from '../utils/apiError.js';
 import { logAuditEvent } from '../utils/auditLogger.js';
 import notificationService from './notification.service.js';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../constants/notification.js';
+import { ROLES } from '../constants/roles.js';
 
 export class OrganizationService {
   /**

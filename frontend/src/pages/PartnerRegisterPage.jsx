@@ -55,7 +55,7 @@ export const PartnerRegisterPage = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
-    if (name === 'repEmail' && !formData.loginEmail) {
+    if (name === 'repEmail' && (!formData.loginEmail || formData.loginEmail === formData.repEmail)) {
       setFormData((prev) => ({ ...prev, loginEmail: value }));
     }
     if (stepErrors[name]) {
@@ -125,9 +125,10 @@ export const PartnerRegisterPage = () => {
     if (currentStep === 1 && validateStep1()) {
       setCurrentStep(2);
     } else if (currentStep === 2 && validateStep2()) {
-      if (!formData.loginEmail) {
-        setFormData((prev) => ({ ...prev, loginEmail: prev.repEmail }));
-      }
+      setFormData((prev) => ({
+        ...prev,
+        loginEmail: prev.loginEmail && prev.loginEmail.includes('@') ? prev.loginEmail : prev.repEmail,
+      }));
       setCurrentStep(3);
     } else if (currentStep === 3 && validateStep3()) {
       setCurrentStep(4);

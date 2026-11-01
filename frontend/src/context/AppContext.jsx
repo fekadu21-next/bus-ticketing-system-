@@ -227,8 +227,23 @@ export const AppProvider = ({ children }) => {
     setAuditLogs((prev) => [newLog, ...prev]);
   };
 
-  // Active Organization object for Booking Coordinator
-  const activeOrg = organizations.find((o) => o.id === selectedOrgId) || organizations[0];
+  // Active Organization object for Booking Coordinator - robust fallback to user's org context
+  const activeOrg = React.useMemo(() => {
+    const found = organizations.find((o) => o.id === selectedOrgId);
+    if (found) return found;
+    const orgCtx = user?.organizationContext?.[0];
+    if (orgCtx && (orgCtx.organizationId === selectedOrgId || !selectedOrgId)) {
+      return {
+        id: orgCtx.organizationId,
+        name: orgCtx.organizationName || "Company",
+        type: orgCtx.organizationType || "COMPANY",
+        status: (orgCtx.status || "APPROVED").toUpperCase(),
+        isActive: orgCtx.isActive !== false && orgCtx.is_active !== false,
+        is_active: orgCtx.is_active !== false && orgCtx.isActive !== false,
+      };
+    }
+    return organizations[0];
+  }, [organizations, selectedOrgId, user]);
 
   // Helper to resolve the coordinator organization ID
   const getCoordinatorOrgId = useCallback(() => {
@@ -588,8 +603,9 @@ export const AppProvider = ({ children }) => {
             id: orgData.id,
             name: orgData.name,
             type: orgData.type || "COMPANY",
-            status: orgData.status || "APPROVED",
-            isActive: orgData.isActive ?? true,
+            status: (orgData.status || "APPROVED").toUpperCase(),
+            isActive: orgData.isActive ?? orgData.is_active ?? true,
+            is_active: orgData.is_active ?? orgData.isActive ?? true,
             licenseNumber: `LIC-${orgData.id.slice(0, 6).toUpperCase()}`,
             contactEmail: orgData.members?.[0]?.email || "contact@operator.et",
             contactPhone: orgData.members?.[0]?.phone || "+251911000000",
@@ -880,7 +896,22 @@ export const AppProvider = ({ children }) => {
   // Cross-Tab & In-App Broadcast synchronization: immediately fetch when status changes anywhere
   useEffect(() => {
     if (!isAuthenticated) return;
-    const handleBroadcastSync = () => {
+    const handleBroadcastSync = (event) => {
+      const payload = event?.detail || event?.data;
+      if (payload?.entity === "ORGANIZATION" && payload?.id) {
+        setOrganizations((prev) =>
+          prev.map((o) =>
+            o.id === payload.id
+              ? {
+                  ...o,
+                  status: payload.status,
+                  isActive: payload.isActive ?? (payload.status === "APPROVED"),
+                  is_active: payload.isActive ?? (payload.status === "APPROVED"),
+                }
+              : o
+          )
+        );
+      }
       if (currentRole === "ADMIN") {
         fetchAdminData();
       } else if (currentRole === "MANAGER") {
@@ -908,10 +939,10 @@ export const AppProvider = ({ children }) => {
     try {
       await approveOrganizationApi(orgId);
       setOrganizations((prev) =>
-        prev.map((o) => (o.id === orgId ? { ...o, status: "APPROVED" } : o))
+        prev.map((o) => (o.id === orgId ? { ...o, status: "APPROVED", isActive: true, is_active: true } : o))
       );
       addAuditLog("APPROVE_ORGANIZATION", "Organization", orgId, "Status: PENDING", "Status: APPROVED", org?.name);
-      notifyStatusChange({ entity: "ORGANIZATION", id: orgId, status: "APPROVED" });
+      notifyStatusChange({ entity: "ORGANIZATION", id: orgId, status: "APPROVED", isActive: true });
       showToast(`Organization "${org?.name || orgId}" approved successfully via backend!`);
       await fetchAdminData();
     } catch (err) {
@@ -968,7 +999,7 @@ export const AppProvider = ({ children }) => {
     try {
       await activateOrganizationApi(orgId);
       setOrganizations((prev) =>
-        prev.map((o) => (o.id === orgId ? { ...o, status: "APPROVED", notes: "Reactivated by platform administrator" } : o))
+        prev.map((o) => (o.id === orgId ? { ...o, status: "APPROVED", isActive: true, is_active: true, notes: "Reactivated by platform administrator" } : o))
       );
       addAuditLog("REACTIVATE_ORGANIZATION", "Organization", orgId, "Status: SUSPENDED", "Status: APPROVED", org?.name);
       notifyStatusChange({ entity: "ORGANIZATION", id: orgId, status: "APPROVED" });

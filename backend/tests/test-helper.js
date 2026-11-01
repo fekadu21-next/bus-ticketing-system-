@@ -48,13 +48,10 @@ export async function apiRequest(endpoint, { method = 'GET', body = null, token 
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  let data = null;
   const contentType = response.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    data = await response.json();
-  } else {
-    data = await response.text();
-  }
+  const data = contentType.includes('application/json')
+    ? await response.json()
+    : await response.text();
 
   // Extract set-cookie headers
   const setCookie = response.headers.get('set-cookie');

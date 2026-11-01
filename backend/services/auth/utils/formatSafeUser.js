@@ -20,7 +20,12 @@ export const formatSafeUser = (user) => {
       organizationId: ur.organization_id,
       organizationName: ur.organizations?.name,
       organizationType: ur.organizations?.type,
+      status: (ur.organizations?.status || 'APPROVED').toUpperCase(),
+      isActive: ur.organizations?.is_active ?? true,
+      is_active: ur.organizations?.is_active ?? true,
     }));
+
+  const primaryOrg = organizationContext[0] || null;
 
   return {
     id: user.id,
@@ -33,6 +38,9 @@ export const formatSafeUser = (user) => {
     emailVerified: user.email_verified,
     roles,
     permissions,
+    organizationId: primaryOrg?.organizationId || null,
+    organizationName: primaryOrg?.organizationName || null,
+    organizationStatus: primaryOrg?.status || null,
     organizationContext: organizationContext.length > 0 ? organizationContext : null,
   };
 };

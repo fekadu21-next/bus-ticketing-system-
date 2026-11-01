@@ -68,7 +68,6 @@ export class VerifierService {
     const orgId = this.resolveVerifierOrg(user);
 
     // 1. Decode and validate QR token
-    let ticket = null;
     let decodedToken = null;
 
     try {
@@ -77,11 +76,9 @@ export class VerifierService {
       // Could be raw token string lookup fallback
     }
 
-    if (decodedToken && decodedToken.ticketId) {
-      ticket = await verifierRepository.findTicketById(decodedToken.ticketId);
-    } else {
-      ticket = await verifierRepository.findTicketByToken(qrToken);
-    }
+    const ticket = decodedToken && decodedToken.ticketId
+      ? await verifierRepository.findTicketById(decodedToken.ticketId)
+      : await verifierRepository.findTicketByToken(qrToken);
 
     // 2. INVALID: If ticket is not found in database or invalid QR
     if (!ticket) {

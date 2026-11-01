@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import passengerPaymentRepository from '../../repository/passenger/payment.repository.js';
-import passengerBookingRepository from '../../repository/passenger/booking.repository.js';
 import authRepository from '../../repository/auth.repository.js';
 import ApiError from '../../utils/apiError.js';
 import env from '../../Config/env.js';
@@ -10,10 +9,9 @@ import notificationService from '../notification.service.js';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../constants/notification.js';
 
 export class PassengerPaymentService {
-  async initializePayment(passengerId, { tripId, seatNumbers, amount, paymentMethod = 'TELEBIRR', passengerInfo, bookingId, phoneNumber, platform, returnUrl }) {
-    let targetBooking = null;
+  async initializePayment(passengerId, { tripId, seatNumbers, amount, paymentMethod = 'TELEBIRR', passengerInfo, bookingId, phoneNumber: _phoneNumber, platform, returnUrl }) {
     if (bookingId) {
-      targetBooking = await prisma.bookings.findUnique({
+      const targetBooking = await prisma.bookings.findUnique({
         where: { id: bookingId },
         include: { trips: true, users: true },
       });
@@ -48,16 +46,26 @@ export class PassengerPaymentService {
       if (user) {
         passengerId = user.id;
       } else {
-        // Create temporary/guest user for this booking via authRepository
-        const tempUser = await authRepository.createPassengerUser({
-          email: email || `guest-${Date.now()}@busticket.et`,
-          firstName: passengerInfo?.firstName || 'Guest',
-          lastName: passengerInfo?.lastName || 'Passenger',
-          phone: passengerInfo?.phone || null,
-          passwordHash: '$2b$12$' + crypto.randomBytes(30).toString('base64'),
-        });
-        passengerId = tempUser.id;
-        user = tempUser;
+        const candidatePhone = passengerInfo?.phone?.trim();
+        const existingPhoneUser = candidatePhone
+          ? await prisma.users.findFirst({ where: { phone: candidatePhone } })
+          : null;
+
+        if (existingPhoneUser) {
+          user = existingPhoneUser;
+          passengerId = existingPhoneUser.id;
+        } else {
+          // Create temporary/guest user for this booking via authRepository
+          const tempUser = await authRepository.createPassengerUser({
+            email: email || `guest-${Date.now()}@busticket.et`,
+            firstName: passengerInfo?.firstName || 'Guest',
+            lastName: passengerInfo?.lastName || 'Passenger',
+            phone: candidatePhone || null,
+            passwordHash: '$2b$12$' + crypto.randomBytes(30).toString('base64'),
+          });
+          passengerId = tempUser.id;
+          user = tempUser;
+        }
       }
     }
 
@@ -95,6 +103,10 @@ export class PassengerPaymentService {
 
     if (!trip) {
       throw new ApiError(404, 'Trip not found.');
+    }
+
+    if (!amount || amount <= 0) {
+      amount = Number(trip.fare) * parsedSeatNumbers.length;
     }
 
     if (!['SCHEDULED', 'PUBLISHED'].includes(trip.status)) {
@@ -326,7 +338,6 @@ export class PassengerPaymentService {
     }, { maxWait: 30000, timeout: 90000 });
 
     let checkoutUrl = '';
-    let providerResponse = null;
 
     // 5. Initialize payment provider
     if (paymentMethod === 'CHAPA') {
@@ -343,7 +354,7 @@ export class PassengerPaymentService {
       } else {
         // Live Production Integration with Chapa Gateway
         try {
-          providerResponse = await this.initializeChapaPayment({
+          const providerResponse = await this.initializeChapaPayment({
             amount,
             transactionReference,
             email: passengerEmail,
