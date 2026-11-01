@@ -10,6 +10,7 @@ const QUEUE_NAME = 'notifications';
 
 let notificationQueue = null;
 let notificationWorker = null;
+let isReadyListenerAttached = false;
 
 /**
  * Direct inline processor used when Redis/BullMQ is offline or during testing
@@ -35,7 +36,7 @@ export async function processNotificationDirect(jobData) {
           },
         });
       } catch (err) {
-        // FCM non-blocking warning
+        // FCM non-blocking simulation
       }
     }
 
@@ -88,6 +89,18 @@ export async function processNotificationDirect(jobData) {
 export function initNotificationQueue() {
   if (notificationQueue || !redisClient) return;
 
+  // If Redis is not currently ready, do NOT attempt to spin up worker connections!
+  if (!isRedisAvailable()) {
+    if (!isReadyListenerAttached) {
+      isReadyListenerAttached = true;
+      redisClient.once('ready', () => {
+        isReadyListenerAttached = false;
+        initNotificationQueue();
+      });
+    }
+    return;
+  }
+
   try {
     notificationQueue = new Queue(QUEUE_NAME, {
       connection: redisClient,
@@ -120,15 +133,14 @@ export function initNotificationQueue() {
     });
 
     notificationWorker.on('error', (err) => {
-      // Suppress worker reconnect spam
-      if (process.env.NODE_ENV !== 'test') {
+      if (err.code !== 'ECONNREFUSED' && process.env.NODE_ENV !== 'test') {
         console.warn('⚠️  [NOTIFICATION WORKER ERROR]', err.message);
       }
     });
 
     console.log('📬 [QUEUE] BullMQ notification queue & worker initialized.');
   } catch (error) {
-    console.warn('⚠️  [QUEUE INIT FAILED] Falling back to direct async execution:', error.message);
+    console.warn('ℹ️  [QUEUE INIT FAILED] Falling back to direct async execution:', error.message);
     notificationQueue = null;
     notificationWorker = null;
   }
@@ -145,7 +157,7 @@ export async function enqueueNotificationJob(notification, params) {
       await notificationQueue.add('dispatchExternal', jobData);
       return true;
     } catch (err) {
-      console.warn('⚠️  [QUEUE ENQUEUE ERROR] Fallback to direct inline dispatch:', err.message);
+      // Fallback below
     }
   }
 

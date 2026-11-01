@@ -85,6 +85,13 @@ class AuthController {
 
   refresh = asyncHandler(async (req, res) => {
     const rawRefreshToken = getRefreshTokenFromRequest(req);
+    if (!rawRefreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'No refresh token provided. Please log in.',
+      });
+    }
+
     const clientIp = req.ip;
     const userAgent = req.headers['user-agent'];
 

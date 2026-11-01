@@ -130,8 +130,28 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, [resetAuthState]);
 
+  const hasCheckedAuthRef = React.useRef(false);
+
   // Session initialization — restore cached session, then try cookie refresh
   const checkAuth = useCallback(async () => {
+    // Only attempt refresh if there is a cached session or hint of an active session
+    const cached = loadAuthSession();
+    const hasSessionHint = Boolean(
+      cached?.accessToken ||
+      sessionStorage.getItem('ticketing.auth.session') ||
+      localStorage.getItem('ticketing.auth.session') ||
+      sessionStorage.getItem('ticketing.auth.userId') ||
+      localStorage.getItem('ticketing.auth.userId')
+    );
+
+    if (!hasSessionHint) {
+      setIsLoading(false);
+      return;
+    }
+
+    if (hasCheckedAuthRef.current) return;
+    hasCheckedAuthRef.current = true;
+
     const existingToken = getAccessToken();
     if (!existingToken) {
       setIsLoading(true);

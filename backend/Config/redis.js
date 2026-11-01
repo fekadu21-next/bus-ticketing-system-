@@ -3,6 +3,7 @@ import env from './env.js';
 
 let isRedisConnected = false;
 let redisClient = null;
+let hasLoggedOffline = false;
 
 try {
   const redisUrl = env.redisUrl || 'redis://127.0.0.1:6379';
@@ -10,14 +11,17 @@ try {
   redisClient = new Redis(redisUrl, {
     maxRetriesPerRequest: null, // Critical requirement for BullMQ
     enableReadyCheck: true,
-    connectTimeout: 5000,
+    connectTimeout: 3000,
     retryStrategy(times) {
-      // In development or test environments, avoid infinite spamming if Redis server is not started locally
-      if (times > 5 && process.env.NODE_ENV !== 'production') {
-        console.warn('⚠️  [REDIS] Local Redis server not reachable. Running in resilient offline fallback mode.');
+      // In development, stop reconnecting after 3 attempts if Redis is not running
+      if (times > 2 && process.env.NODE_ENV !== 'production') {
+        if (!hasLoggedOffline) {
+          hasLoggedOffline = true;
+          console.warn('ℹ️  [REDIS] Local Redis server not reachable at 127.0.0.1:6379. Running in resilient offline fallback mode.');
+        }
         return null;
       }
-      return Math.min(times * 300, 3000);
+      return Math.min(times * 500, 3000);
     },
   });
 
@@ -27,13 +31,20 @@ try {
 
   redisClient.on('ready', () => {
     isRedisConnected = true;
+    hasLoggedOffline = false;
     console.log('⚡ [REDIS] Connected and ready.');
   });
 
   redisClient.on('error', (err) => {
     isRedisConnected = false;
-    // Suppress unhandled crash - log warning once
-    if (process.env.NODE_ENV !== 'test') {
+    // Suppress repeated connection refused logs when running without local Redis
+    const isConnRefused = err.code === 'ECONNREFUSED' || err.message?.includes('ECONNREFUSED');
+    if (isConnRefused) {
+      if (!hasLoggedOffline) {
+        hasLoggedOffline = true;
+        console.warn('ℹ️  [REDIS] Local Redis server not reachable at 127.0.0.1:6379. Running in resilient offline fallback mode.');
+      }
+    } else if (process.env.NODE_ENV !== 'test') {
       console.warn('⚠️  [REDIS ERROR]', err.message || err);
     }
   });
@@ -46,7 +57,7 @@ try {
     isRedisConnected = false;
   });
 } catch (error) {
-  console.warn('⚠️  [REDIS INIT WARNING] Could not initialize Redis client:', error.message);
+  console.warn('ℹ️  [REDIS] Could not initialize client, running in offline fallback mode:', error.message);
   isRedisConnected = false;
   redisClient = null;
 }
@@ -72,7 +83,6 @@ export async function redisGet(key) {
       return raw;
     }
   } catch (err) {
-    console.warn(`[REDIS] get(${key}) error:`, err.message);
     return null;
   }
 }
@@ -91,7 +101,6 @@ export async function redisSet(key, value, ttlSeconds = null) {
     }
     return true;
   } catch (err) {
-    console.warn(`[REDIS] set(${key}) error:`, err.message);
     return false;
   }
 }
@@ -105,7 +114,6 @@ export async function redisDel(key) {
     await redisClient.del(key);
     return true;
   } catch (err) {
-    console.warn(`[REDIS] del(${key}) error:`, err.message);
     return false;
   }
 }
@@ -121,7 +129,6 @@ export async function redisSetNx(key, value, ttlSeconds = 600) {
     const result = await redisClient.set(key, payload, 'EX', ttlSeconds, 'NX');
     return result === 'OK';
   } catch (err) {
-    console.warn(`[REDIS] setNx(${key}) error:`, err.message);
     return false;
   }
 }
