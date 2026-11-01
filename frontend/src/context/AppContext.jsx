@@ -304,8 +304,8 @@ export const AppProvider = ({ children }) => {
 
         if (Array.isArray(rawOrgs) && rawOrgs.length > 0) {
           const mappedOrgs = rawOrgs.map((o) => {
-            const orgBusCount = o.totalBuses ?? o._count?.buses ?? (Array.isArray(rawBuses) ? rawBuses.filter(b => b.organization_id === o.id || b.organizationId === o.id).length : 0) || (o.buses?.length || 0);
-            const orgTripCount = o.activeTrips ?? o._count?.trips ?? (Array.isArray(rawTrips) ? rawTrips.filter(t => t.organization_id === o.id || t.organizationId === o.id).length : 0) || (o.trips?.length || 0);
+            const orgBusCount = o.totalBuses ?? o._count?.buses ?? ((Array.isArray(rawBuses) ? rawBuses.filter(b => b.organization_id === o.id || b.organizationId === o.id).length : 0) || (o.buses?.length || 0));
+            const orgTripCount = o.activeTrips ?? o._count?.trips ?? ((Array.isArray(rawTrips) ? rawTrips.filter(t => t.organization_id === o.id || t.organizationId === o.id).length : 0) || (o.trips?.length || 0));
 
             return {
               id: o.id,

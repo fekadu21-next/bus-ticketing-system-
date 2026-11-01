@@ -65,7 +65,9 @@ export const PaymentCallbackPage = () => {
           // Clean up sessionStorage
           try {
             sessionStorage.removeItem('pending_booking_state');
-          } catch {}
+          } catch (_err) {
+            // ignore storage removal error
+          }
 
           setTimeout(() => {
             navigate('/booking-confirmation', {

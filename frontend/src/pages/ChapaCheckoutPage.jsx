@@ -39,7 +39,7 @@ export const ChapaCheckoutPage = () => {
     }
   }, []);
 
-  const txRef = txRefFromUrl || savedBookingState?.transactionReference || `TX-CHAPA-${Date.now()}`;
+  const txRef = txRefFromUrl || savedBookingState?.transactionReference || 'TX-CHAPA-PENDING';
   const amount = Number(amountFromUrl || savedBookingState?.totalPrice || 1200);
   const initialEmail = emailFromUrl || savedBookingState?.passengerInfo?.email || 'passenger@gmail.com';
   const initialName = nameFromUrl || savedBookingState?.passengerInfo?.fullName || 'Valued Passenger';

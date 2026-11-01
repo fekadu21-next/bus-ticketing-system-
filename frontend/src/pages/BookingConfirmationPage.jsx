@@ -81,8 +81,9 @@ export const BookingConfirmationPage = () => {
 
     // Fallback: create a ticket for each selected seat
     const seats = Array.isArray(selectedSeats) && selectedSeats.length > 0 ? selectedSeats : [1];
-    const baseTicketNumber = bookingData.ticket?.ticketNumber || ('TKT-' + (bookingData.payment?.transactionReference?.substring(7, 15) || Date.now().toString(36).toUpperCase()));
-    const baseBookingId = bookingData.booking?.id || ('BK-' + (bookingData.payment?.transactionReference?.substring(7, 15) || Date.now().toString(36).toUpperCase()));
+    const fallbackToken = bookingData.payment?.transactionReference?.substring(7, 15) || bookingData.booking?.id?.substring(0, 8) || 'CONFIRMED';
+    const baseTicketNumber = bookingData.ticket?.ticketNumber || ('TKT-' + fallbackToken);
+    const baseBookingId = bookingData.booking?.id || ('BK-' + fallbackToken);
 
     return seats.map((seatNum, idx) => ({
       id: `${baseBookingId}-${seatNum}`,

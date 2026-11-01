@@ -29,7 +29,9 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(() => !getAccessToken());
   const [error, setError] = useState(null);
   const userRef = React.useRef(user);
-  userRef.current = user;
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   /** Sync token to both React state and the Axios in-memory store */
   const updateAccessToken = useCallback((token) => {
