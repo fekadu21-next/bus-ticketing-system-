@@ -1,58 +1,73 @@
 import React from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
+import RoleRoute from "./RoleRoute";
 import { useAuth } from "../context/AuthContext";
+import { ROLES } from "@/constants/roles";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
-import { isUserAdmin, isUserOperator } from "@/utils/userUtils";
+import { isUserAdmin, isUserOperator, isUserDriver, isUserVerifier } from "@/utils/userUtils";
 
-// Public Passenger & Marketing Pages
+// Immediate Critical Landing Page
 import HomePage from '@/pages/HomePage';
-import SearchTripsPage from '@/pages/SearchTripsPage';
-import TripDetailsPage from '@/pages/TripDetailsPage';
-import PassengerInfoPage from '@/pages/PassengerInfoPage';
-import PaymentPage from '@/pages/PaymentPage';
-import PaymentCallbackPage from '@/pages/PaymentCallbackPage';
-import TelebirrCheckoutPage from '@/pages/TelebirrCheckoutPage';
-import ChapaCheckoutPage from '@/pages/ChapaCheckoutPage';
-import BookingConfirmationPage from '@/pages/BookingConfirmationPage';
-import MyBookingsPage from '@/pages/MyBookingsPage';
-import AboutPage from '@/pages/AboutPage';
-import ContactPage from '@/pages/ContactPage';
-import PartnerRegisterPage from '@/pages/PartnerRegisterPage';
-import NotificationsPage from '@/pages/NotificationsPage';
-import FeedbackPage from '@/pages/FeedbackPage';
 
-// Auth Pages
-import LoginPage from "../features/auth/pages/LoginPage";
-import RegisterPage from "../features/auth/pages/RegisterPage";
-import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage";
-import ResetPasswordPage from "../features/auth/pages/ResetPasswordPage";
-import VerifyEmailPage from "../features/auth/pages/VerifyEmailPage";
-import ResendVerificationPage from "../features/auth/pages/ResendVerificationPage";
-import ProfilePage from "../features/auth/pages/ProfilePage";
-import ChangePasswordPage from "../features/auth/pages/ChangePasswordPage";
-import NotFoundPage from "../features/auth/pages/NotFoundPage";
+// Lazy-loaded Passenger & Checkout Flow Pages
+const SearchTripsPage = React.lazy(() => import('@/pages/SearchTripsPage'));
+const TripDetailsPage = React.lazy(() => import('@/pages/TripDetailsPage'));
+const PassengerInfoPage = React.lazy(() => import('@/pages/PassengerInfoPage'));
+const PaymentPage = React.lazy(() => import('@/pages/PaymentPage'));
+const PaymentCallbackPage = React.lazy(() => import('@/pages/PaymentCallbackPage'));
+const TelebirrCheckoutPage = React.lazy(() => import('@/pages/TelebirrCheckoutPage'));
+const ChapaCheckoutPage = React.lazy(() => import('@/pages/ChapaCheckoutPage'));
+const BookingConfirmationPage = React.lazy(() => import('@/pages/BookingConfirmationPage'));
+const MyBookingsPage = React.lazy(() => import('@/pages/MyBookingsPage'));
+const AboutPage = React.lazy(() => import('@/pages/AboutPage'));
+const ContactPage = React.lazy(() => import('@/pages/ContactPage'));
+const PartnerRegisterPage = React.lazy(() => import('@/pages/PartnerRegisterPage'));
+const NotificationsPage = React.lazy(() => import('@/pages/NotificationsPage'));
+const FeedbackPage = React.lazy(() => import('@/pages/FeedbackPage'));
 
-// Lazy-loaded Management Console (Code-splitting operator & admin dashboards)
+// Lazy-loaded Auth Pages
+const LoginPage = React.lazy(() => import("../features/auth/pages/LoginPage"));
+const RegisterPage = React.lazy(() => import("../features/auth/pages/RegisterPage"));
+const ForgotPasswordPage = React.lazy(() => import("../features/auth/pages/ForgotPasswordPage"));
+const ResetPasswordPage = React.lazy(() => import("../features/auth/pages/ResetPasswordPage"));
+const VerifyEmailPage = React.lazy(() => import("../features/auth/pages/VerifyEmailPage"));
+const ResendVerificationPage = React.lazy(() => import("../features/auth/pages/ResendVerificationPage"));
+const ProfilePage = React.lazy(() => import("../features/auth/pages/ProfilePage"));
+const ChangePasswordPage = React.lazy(() => import("../features/auth/pages/ChangePasswordPage"));
+const NotFoundPage = React.lazy(() => import("../features/auth/pages/NotFoundPage"));
+
+// Lazy-loaded Staff & Management Portals
 const ManagementConsole = React.lazy(() => import("./ManagementConsole"));
+const DriverDashboardPage = React.lazy(() => import("@/pages/driver/DriverDashboardPage"));
+const VerifierDashboardPage = React.lazy(() => import("@/pages/verifier/VerifierDashboardPage"));
 
 export const AppRoutes = () => {
-  const { user, isAuthenticated, isLoading, isAdmin, isOperator } = useAuth();
+  const { user, isAuthenticated, isLoading, isAdmin, isOperator, isDriver, isTicketVerifier } = useAuth();
   const location = useLocation();
 
   const getAuthenticatedHome = () => {
     const fromPath = location.state?.from?.pathname;
     const adminUser = isUserAdmin(user) || (typeof isAdmin === "function" && isAdmin());
     const operatorUser = isUserOperator(user) || (typeof isOperator === "function" && isOperator());
+    const driverUser = isUserDriver(user) || (typeof isDriver === "function" && isDriver());
+    const verifierUser = isUserVerifier(user) || (typeof isTicketVerifier === "function" && isTicketVerifier());
 
     if (fromPath && fromPath !== "/login" && fromPath !== "/register") {
       if (adminUser && (fromPath.startsWith("/operator") || fromPath.startsWith("/manager"))) {
         return "/admin";
       }
+      if (!adminUser && !operatorUser && (fromPath.startsWith("/operator") || fromPath.startsWith("/manager") || fromPath.startsWith("/admin"))) {
+        if (driverUser) return "/driver";
+        if (verifierUser) return "/verifier";
+        return "/my-bookings";
+      }
       return fromPath;
     }
     if (adminUser) return "/admin";
     if (operatorUser) return "/operator";
+    if (driverUser) return "/driver";
+    if (verifierUser) return "/verifier";
     return "/my-bookings";
   };
 
@@ -77,17 +92,113 @@ export const AppRoutes = () => {
         <Route path="/partner-register" element={<PartnerRegisterPage />} />
         <Route path="/partner" element={<Navigate to="/partner-register" replace />} />
 
-        {/* Interactive Operations Console & System Dashboards */}
-        <Route path="/dashboard" element={<ManagementConsole />} />
-        <Route path="/dashboard/*" element={<ManagementConsole />} />
-        <Route path="/operator" element={<ManagementConsole />} />
-        <Route path="/operator/*" element={<ManagementConsole />} />
+        {/* Dynamic Authenticated Hub Dispatcher */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <ManagementConsole />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/*"
+          element={
+            <ProtectedRoute>
+              <ManagementConsole />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Operator / Management Console (Restricted to Coordinators, Operational Managers & Admins) */}
+        <Route
+          path="/operator"
+          element={
+            <RoleRoute allowedRoles={[ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]}>
+              <ManagementConsole />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/operator/*"
+          element={
+            <RoleRoute allowedRoles={[ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]}>
+              <ManagementConsole />
+            </RoleRoute>
+          }
+        />
         <Route path="/manager" element={<Navigate to="/operator" replace />} />
         <Route path="/manager/*" element={<Navigate to="/operator" replace />} />
-        <Route path="/portal/*" element={<ManagementConsole />} />
-        <Route path="/management/*" element={<ManagementConsole />} />
-        <Route path="/admin" element={<ManagementConsole />} />
-        <Route path="/admin/*" element={<ManagementConsole />} />
+        <Route
+          path="/portal/*"
+          element={
+            <RoleRoute allowedRoles={[ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]}>
+              <ManagementConsole />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/management/*"
+          element={
+            <RoleRoute allowedRoles={[ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]}>
+              <ManagementConsole />
+            </RoleRoute>
+          }
+        />
+
+        {/* Platform Admin Console (Restricted to Admins only) */}
+        <Route
+          path="/admin"
+          element={
+            <RoleRoute allowedRoles={[ROLES.ADMIN]}>
+              <ManagementConsole />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/*"
+          element={
+            <RoleRoute allowedRoles={[ROLES.ADMIN]}>
+              <ManagementConsole />
+            </RoleRoute>
+          }
+        />
+
+        {/* Dedicated Driver Staff Portal (Restricted to Drivers & Admin Superusers) */}
+        <Route
+          path="/driver"
+          element={
+            <RoleRoute allowedRoles={[ROLES.DRIVER]}>
+              <DriverDashboardPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/driver/*"
+          element={
+            <RoleRoute allowedRoles={[ROLES.DRIVER]}>
+              <DriverDashboardPage />
+            </RoleRoute>
+          }
+        />
+
+        {/* Dedicated Station Ticket Verifier Portal (Restricted to Verifiers & Admin Superusers) */}
+        <Route
+          path="/verifier"
+          element={
+            <RoleRoute allowedRoles={[ROLES.TICKET_VERIFIER]}>
+              <VerifierDashboardPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/verifier/*"
+          element={
+            <RoleRoute allowedRoles={[ROLES.TICKET_VERIFIER]}>
+              <VerifierDashboardPage />
+            </RoleRoute>
+          }
+        />
 
         {/* Public Auth Routes */}
         <Route
@@ -119,7 +230,7 @@ export const AppRoutes = () => {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/resend-verification" element={<ResendVerificationPage />} />
 
-        {/* User Account Settings */}
+        {/* Authenticated User Account Settings & Bookings */}
         <Route
           path="/account-overview"
           element={
@@ -132,9 +243,9 @@ export const AppRoutes = () => {
           path="/profile"
           element={
             <ProtectedRoute>
-              {isAdmin() ? (
+              {typeof isAdmin === 'function' && isAdmin() ? (
                 <Navigate to="/admin/profile" replace />
-              ) : isOperator() ? (
+              ) : typeof isOperator === 'function' && isOperator() ? (
                 <Navigate to="/operator/profile" replace />
               ) : (
                 <ProfilePage />
@@ -162,9 +273,9 @@ export const AppRoutes = () => {
           path="/change-password"
           element={
             <ProtectedRoute>
-              {isAdmin() ? (
+              {typeof isAdmin === 'function' && isAdmin() ? (
                 <Navigate to="/admin/change-password" replace />
-              ) : isOperator() ? (
+              ) : typeof isOperator === 'function' && isOperator() ? (
                 <Navigate to="/operator/change-password" replace />
               ) : (
                 <ChangePasswordPage />

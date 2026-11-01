@@ -1,0 +1,33 @@
+# Git and IDE
+.git
+.gitignore
+.vscode
+.claude
+.idea
+
+# Dependencies and caches
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build artifacts
+dist
+build
+.expo
+
+# Environment & local secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Test coverage
+coverage
+.nyc_output
+
+# OS specific
+.DS_Store
+Thumbs.db

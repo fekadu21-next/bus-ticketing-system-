@@ -10,6 +10,10 @@ import { globalLimiter } from './middleware/rateLimit.middleware.js';
 
 const app = express();
 
+// Security Hardening: disable express fingerprint and trust reverse proxies
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+
 // 1. Security Middlewares
 app.use(helmet({ crossOriginResourcePolicy: false }));
 const allowedOrigins = new Set(

@@ -81,7 +81,7 @@ import {
   initialVerifiers,
   initialAuditLogs,
 } from "../data/mockData";
-import { isUserAdmin, isUserOperator, isUserPassenger } from "../utils/userUtils";
+import { isUserAdmin, isUserOperator, isUserDriver, isUserVerifier, isUserPassenger } from "../utils/userUtils";
 
 const AppContext = createContext();
 
@@ -844,13 +844,12 @@ export const AppProvider = ({ children }) => {
         setSelectedOrgId((prev) => (prev === targetOrgId ? prev : targetOrgId));
         fetchCoordinatorData(targetOrgId, { silent: false });
       }
+    } else if (isUserDriver(user)) {
+      setCurrentRole("DRIVER");
+    } else if (isUserVerifier(user)) {
+      setCurrentRole("VERIFIER");
     } else {
-      const roles = Array.isArray(user.roles) ? user.roles : [];
-      if (roles.includes("DRIVER")) {
-        setCurrentRole("DRIVER");
-      } else {
-        setCurrentRole("PASSENGER");
-      }
+      setCurrentRole("PASSENGER");
     }
   }, [isAuthenticated, user, getCoordinatorOrgId]);
 

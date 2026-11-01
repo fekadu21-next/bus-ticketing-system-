@@ -18,7 +18,6 @@ async function seedAllTables() {
   console.log('1. Verifying System Roles & Permissions...');
   const systemRoles = [
     { name: 'ADMIN', description: 'Platform Administrator with complete system-wide access' },
-    { name: 'BOOKING_COORDINATOR', description: 'Manager for organization bus schedules, trips, fleet, and bookings' },
     { name: 'OPERATIONAL_MANAGER', description: 'Operations manager for transport partner organizations' },
     { name: 'PASSENGER', description: 'Public passenger who searches trips, books seats, and manages tickets' },
     { name: 'TICKET_VERIFIER', description: 'Station and boarding officer who verifies passenger tickets' },
@@ -85,7 +84,7 @@ async function seedAllTables() {
   // 4. USERS ACROSS ROLES
   // -------------------------------------------------------------
   console.log('4. Verifying Core Users Across Roles...');
-  const samplePasswordHash = '$2b$12$e6i9k89wVqV3d/kO67B.uOS08xQxN95sQ0m6fK7R9B3x1c2v3b4n5'; // bcrypt hash
+  const samplePasswordHash = '$2b$12$s/eQHRjiQlpUDz55tVN0auYWgKdbyWBadHY1gfLnFJRVq4Y4cI/G2'; // real bcrypt hash for 'Password123!'
 
   const coreUsers = [
     { email: 'admin@busticket.com', firstName: 'Almaz', lastName: 'Tadesse', phone: '0911000001', role: 'ADMIN' },
@@ -453,3 +452,4 @@ seedAllTables()
   .finally(async () => {
     await prisma.$disconnect();
   });
+

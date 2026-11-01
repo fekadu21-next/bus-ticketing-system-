@@ -11,7 +11,7 @@ import {
 import { setAccessToken, clearAccessToken, getAccessToken, setAuthFailureHandler } from '@/services/api';
 import { ROLES } from '@/constants/roles';
 import { loadAuthSession, saveAuthSession, clearAuthSession, checkSessionMismatch } from '@/utils/authStorage';
-import { extractUserRoles, isUserAdmin, isUserOperator, isUserPassenger } from '@/utils/userUtils';
+import { extractUserRoles, isUserAdmin, isUserOperator, isUserDriver, isUserVerifier, isUserPassenger } from '@/utils/userUtils';
 
 const AuthContext = createContext(null);
 
@@ -67,6 +67,12 @@ export const AuthProvider = ({ children }) => {
     }
     if (isUserOperator(u)) {
       return '/operator';
+    }
+    if (isUserDriver(u)) {
+      return '/driver';
+    }
+    if (isUserVerifier(u)) {
+      return '/verifier';
     }
     return '/my-bookings';
   }, [user]);
@@ -362,12 +368,11 @@ export const AuthProvider = ({ children }) => {
 
   const isOperator = () => isUserOperator(user);
 
+  const isDriver = () => isUserDriver(user);
+
   const isBookingCoordinator = isOperator;
   const isOperationalManager = isOperator;
-  const isTicketVerifier = () => {
-    const roles = extractUserRoles(user);
-    return roles.includes('TICKET_VERIFIER') || roles.includes(ROLES.TICKET_VERIFIER);
-  };
+  const isTicketVerifier = () => isUserVerifier(user);
 
   const isPassenger = () => isUserPassenger(user);
 
@@ -395,6 +400,7 @@ export const AuthProvider = ({ children }) => {
     hasPermission,
     isAdmin,
     isOperator,
+    isDriver,
     isBookingCoordinator,
     isTicketVerifier,
     isPassenger,

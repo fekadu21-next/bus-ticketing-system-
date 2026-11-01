@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import Alert from '@/components/ui/Alert';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { Bus, Eye, EyeOff, ArrowRight, Building } from 'lucide-react';
-import { isUserAdmin, isUserOperator } from '@/utils/userUtils';
+import { isUserAdmin, isUserOperator, isUserDriver, isUserVerifier } from '@/utils/userUtils';
 
 const LoginPage = () => {
   const { user, isAuthenticated, isLoading, login } = useAuth();
@@ -16,7 +16,11 @@ const LoginPage = () => {
   // If user is already authenticated, immediately bounce to their respective home dashboard
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      const dest = isUserAdmin(user) ? '/admin' : isUserOperator(user) ? '/operator' : '/my-bookings';
+      let dest = '/my-bookings';
+      if (isUserAdmin(user)) dest = '/admin';
+      else if (isUserOperator(user)) dest = '/operator';
+      else if (isUserDriver(user)) dest = '/driver';
+      else if (isUserVerifier(user)) dest = '/verifier';
       navigate(dest, { replace: true });
     }
   }, [isLoading, isAuthenticated, user, navigate]);
@@ -45,6 +49,8 @@ const LoginPage = () => {
       const targetUser = result.user;
       const isAdminUser = isUserAdmin(targetUser);
       const isOperatorUser = isUserOperator(targetUser);
+      const isDriverUser = isUserDriver(targetUser);
+      const isVerifierUser = isUserVerifier(targetUser);
 
       const requestedFrom = location.state?.from?.pathname;
       let targetPath;
@@ -62,6 +68,20 @@ const LoginPage = () => {
         } else {
           targetPath = '/operator';
         }
+      } else if (isDriverUser) {
+        // Registered Vehicle Drivers go to Driver Portal
+        if (requestedFrom && requestedFrom.startsWith('/driver')) {
+          targetPath = requestedFrom;
+        } else {
+          targetPath = '/driver';
+        }
+      } else if (isVerifierUser) {
+        // Ticket Verifiers go to Verifier Portal
+        if (requestedFrom && requestedFrom.startsWith('/verifier')) {
+          targetPath = requestedFrom;
+        } else {
+          targetPath = '/verifier';
+        }
       } else {
         // Passengers go to their bookings or requested public page
         if (
@@ -69,6 +89,8 @@ const LoginPage = () => {
           !requestedFrom.startsWith('/admin') &&
           !requestedFrom.startsWith('/operator') &&
           !requestedFrom.startsWith('/manager') &&
+          !requestedFrom.startsWith('/driver') &&
+          !requestedFrom.startsWith('/verifier') &&
           requestedFrom !== '/login' &&
           requestedFrom !== '/register'
         ) {

@@ -735,12 +735,7 @@ class ApiService {
     qrToken: string,
     tripId?: string
   ): Promise<ApiResponse<{ result: VerificationResultData }>> {
-    // If no tripId provided, resolve active trip id first
-    let targetTripId = tripId;
-    if (!targetTripId) {
-      const activeRes = await this.getActiveTrip();
-      targetTripId = activeRes.data?.trip?.id;
-    }
+    const cleanToken = (qrToken || '').trim();
 
     // 1. Try real backend verify endpoint
     let res = await this.request<{
@@ -764,14 +759,20 @@ class ApiService {
       };
     }>('/verifier/tickets/verify', {
       method: 'POST',
-      body: JSON.stringify({ qrToken, tripId: targetTripId }),
+      body: JSON.stringify({
+        qrToken: cleanToken,
+        ...(tripId ? { tripId } : {}),
+      }),
     });
 
     if (!res.success && res.error === 'NETWORK_UNAVAILABLE') {
       // Try alias endpoint
       res = await this.request('/ticket-verifications/scan', {
         method: 'POST',
-        body: JSON.stringify({ qrToken, tripId: targetTripId }),
+        body: JSON.stringify({
+          qrToken: cleanToken,
+          ...(tripId ? { tripId } : {}),
+        }),
       });
     }
 

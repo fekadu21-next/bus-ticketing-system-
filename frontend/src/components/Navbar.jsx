@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import { formatUserFullName, isUserAdmin, isUserOperator, isUserPassenger } from '@/utils/userUtils';
+import { formatUserFullName, isUserAdmin, isUserOperator, isUserDriver, isUserVerifier, isUserPassenger } from '@/utils/userUtils';
 import {
   User,
   LogOut,
@@ -16,8 +16,7 @@ import {
   X,
   ChevronDown,
   Ticket,
-  Globe,
-} from 'lucide-react';
+  Globe,  Navigation,  QrCode,} from 'lucide-react';
 import { PlatformFeedbackModal } from '@/components/feedback/PlatformFeedbackModal';
 
 // ── Telegram-style theme toggle ──────────────────────────────────────────────
@@ -137,6 +136,8 @@ export const Navbar = () => {
 
   const userIsAdmin = isUserAdmin(user);
   const userIsOperator = isUserOperator(user);
+  const userIsDriver = isUserDriver(user);
+  const userIsVerifier = isUserVerifier(user);
   const userIsPassenger = isUserPassenger(user);
 
   // Close mobile drawer and user dropdown whenever location changes
@@ -312,6 +313,26 @@ export const Navbar = () => {
                 </Link>
               )}
 
+              {userIsDriver && (
+                <Link
+                  to="/driver"
+                  className="px-3.5 py-2 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+                >
+                  <Navigation size={14} />
+                  Driver Portal
+                </Link>
+              )}
+
+              {userIsVerifier && (
+                <Link
+                  to="/verifier"
+                  className="px-3.5 py-2 bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/80 border border-purple-200/80 dark:border-purple-800/60 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+                >
+                  <QrCode size={14} />
+                  Verifier Portal
+                </Link>
+              )}
+
               {/* User Dropdown Trigger */}
               <div className="relative" id="user-menu-container">
                 <button
@@ -336,7 +357,7 @@ export const Navbar = () => {
                       {formatUserFullName(user, 'Valued User')}
                     </span>
                     <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider leading-none mt-0.5">
-                      {userIsAdmin ? 'Administrator' : userIsOperator ? 'Operator' : 'Passenger'}
+                      {userIsAdmin ? 'Administrator' : userIsOperator ? 'Operator' : userIsDriver ? 'Driver' : userIsVerifier ? 'Verifier' : 'Passenger'}
                     </span>
                   </div>
 
@@ -357,7 +378,7 @@ export const Navbar = () => {
                         {formatUserFullName(user, user?.email || 'User')}
                       </div>
                       <span className="inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                        {userIsAdmin ? 'Administrator' : userIsOperator ? 'Bus Operator' : 'Passenger Account'}
+                        {userIsAdmin ? 'Administrator' : userIsOperator ? 'Bus Operator' : userIsDriver ? 'Fleet Driver' : userIsVerifier ? 'Ticket Verifier' : 'Passenger Account'}
                       </span>
                     </div>
 
@@ -373,6 +394,33 @@ export const Navbar = () => {
                       </Link>
                     )}
 
+                    {userIsDriver && (
+                      <Link
+                        to="/driver"
+                        className="block w-full py-2.5 px-3 rounded-xl text-xs font-bold text-center bg-blue-600 text-white hover:bg-blue-700"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Driver Portal
+                      </Link>
+                    )}
+                    {userIsVerifier && (
+                      <Link
+                        to="/verifier"
+                        className="block w-full py-2.5 px-3 rounded-xl text-xs font-bold text-center bg-purple-600 text-white hover:bg-purple-700"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Verifier Portal
+                      </Link>
+                    )}
+                    {userIsPassenger && (
+                      <Link
+                        to="/my-bookings"
+                        className="block w-full py-2.5 px-3 rounded-xl text-xs font-bold text-center bg-blue-600 text-white hover:bg-blue-700"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        My Bookings
+                      </Link>
+                    )}
                     {userIsOperator && (
                       <Link
                         to="/operator"
@@ -381,6 +429,28 @@ export const Navbar = () => {
                       >
                         <Building2 size={16} />
                         Operator Dashboard
+                      </Link>
+                    )}
+
+                    {userIsDriver && (
+                      <Link
+                        to="/driver"
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <Navigation size={16} />
+                        Driver Portal
+                      </Link>
+                    )}
+
+                    {userIsVerifier && (
+                      <Link
+                        to="/verifier"
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-purple-600 dark:text-purple-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <QrCode size={16} />
+                        Verifier Portal
                       </Link>
                     )}
 
@@ -395,8 +465,8 @@ export const Navbar = () => {
                       </Link>
                     )}
 
-                    <Link
-                      to={userIsAdmin ? "/admin/profile" : userIsOperator ? "/operator/profile" : "/profile"}
+
+                    <Link to={userIsAdmin ? "/admin/profile" : userIsOperator ? "/operator/profile" : "/profile"}
                       className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
                       onClick={() => setUserDropdownOpen(false)}
                     >
@@ -621,7 +691,7 @@ export const Navbar = () => {
                           {formatUserFullName(user, 'User')}
                         </span>
                         <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold uppercase">
-                          {userIsAdmin ? 'Administrator' : userIsOperator ? 'Operator' : 'Passenger'}
+                          {userIsAdmin ? 'Administrator' : userIsOperator ? 'Operator' : userIsDriver ? 'Driver' : userIsVerifier ? 'Verifier' : 'Passenger'}
                         </span>
                       </div>
                     </div>

@@ -7,6 +7,8 @@ import adminRoutes from './admin/index.js';
 import coordinatorRoutes from './coordinator/index.js';
 import passengerRoutes from './passenger/index.js';
 import passengerTripRoutes from './passenger/trip.route.js';
+import paymentRoutes from './passenger/payment.route.js';
+import passengerCallbackRoutes from './passenger/callback.route.js';
 import verifierRoutes from './verifier/index.js';
 import driverRoutes from './driver/index.js';
 import notificationRoutes from './notification.route.js';
@@ -60,7 +62,7 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/rbac', rbacRoutes);
 router.use('/organizations', organizationRoutes);
-router.use('/admin', adminRoutes);
+router.use('/admin', authenticate, authorizeRole(ROLES.ADMIN), adminRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/feedback', platformFeedbackRoutes);
 
@@ -68,17 +70,31 @@ router.use('/feedback', platformFeedbackRoutes);
 router.get('/stations', authenticate, stationsController.getStations);
 router.get('/stations/active', authenticate, stationsController.getActiveStations);
 
-router.use('/coordinator', authenticate, authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]), requireApprovedOrganization, coordinatorRoutes);
+// Coordinator routes
+router.use(
+  '/coordinator',
+  authenticate,
+  authorizeOrgRole([ROLES.BOOKING_COORDINATOR, ROLES.OPERATIONAL_MANAGER]),
+  requireApprovedOrganization,
+  coordinatorRoutes
+);
+
 // Public passenger routes (trip search, trip details, trip seats) - no auth required
 router.use('/passenger/trips', passengerTripRoutes);
+
 // Public passenger payment initialization route - no auth required for initial payment flow
-import paymentRoutes from './passenger/payment.route.js';
 router.use('/passenger/payments', paymentRoutes);
-// Public passenger payment callback routes (Chapa/Telebirr webhooks) - no auth required
-router.use('/passenger/callback', passengerRoutes);
+
+// Public passenger payment callback routes (Chapa/Telebirr webhooks) - strict public callback router
+router.use('/passenger/callback', passengerCallbackRoutes);
+
 // Authenticated passenger routes (bookings, tickets, feedback)
 router.use('/passenger', authenticate, authorizeRole(ROLES.PASSENGER), passengerRoutes);
+
+// Dedicated Verifier portal endpoints
 router.use('/verifier', authenticate, authorizeRole(ROLES.TICKET_VERIFIER), verifierRoutes);
+
+// Dedicated Driver portal endpoints
 router.use('/driver', authenticate, authorizeRole(ROLES.DRIVER), driverRoutes);
 
 // Operational Mobile Specification Aliases

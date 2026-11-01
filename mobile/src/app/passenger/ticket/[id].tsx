@@ -123,12 +123,14 @@ export default function DigitalTicketScreen() {
         ? `${baseTicketNumber}-S${seatNum}`
         : baseTicketNumber;
 
-      const qrToken = `SECURE-PASS-${ticketNum}-SEAT${seatNum}`;
+      const qrToken = booking?.ticket?.qrToken || `SECURE-PASS-${ticketNum}-SEAT${seatNum}`;
 
       // QR payload matches web BookingConfirmationPage.jsx format
       const qrPayload = JSON.stringify({
         verificationType: 'ETHIO_BUS_SECURE_TICKET',
         ticketNumber: ticketNum,
+        ticketId: booking?.ticket?.id,
+        qrToken,
         bookingId,
         seatNumber: seatNum,
         passenger: passengerName,
@@ -345,7 +347,9 @@ export default function DigitalTicketScreen() {
               <Text style={styles.qrInstruction}>
                 Scan at the bus door for instant verifier validation
               </Text>
-              <Text style={styles.qrTokenText} numberOfLines={2}>{ticket.qrToken}</Text>
+              <Text style={styles.qrTokenText} numberOfLines={2}>
+                Ticket #{ticket.ticketNumber}
+              </Text>
 
               {/* Per-ticket share button */}
               {ticketsList.length > 1 && (

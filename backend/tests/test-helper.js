@@ -3,12 +3,43 @@ import app from '../app.js';
 import prisma, { connectDB, disconnectDB } from '../Config/db.js';
 import http from 'http';
 import socketService from '../services/socket.service.js';
+import bcrypt from 'bcryptjs';
 
 let server;
 let baseUrl;
 
+const ADMIN_HASH = bcrypt.hashSync('Admin@123456', 10);
+const COORD_HASH = bcrypt.hashSync('Coordinator@123456', 10);
+const DRIVER_HASH = bcrypt.hashSync('Driver@123456', 10);
+const VERIFIER_HASH = bcrypt.hashSync('Verifier@123456', 10);
+
 export async function startTestServer() {
   await connectDB();
+
+  // Ensure seeded test users have exact passwords and are unlocked
+  await Promise.all([
+    prisma.users.updateMany({
+      where: { email: 'admin@busticket.com' },
+      data: { password_hash: ADMIN_HASH, failed_login_attempts: 0, locked_until: null, is_active: true },
+    }).catch(() => {}),
+    prisma.users.updateMany({
+      where: { email: 'coordinator@busticket.com' },
+      data: { password_hash: COORD_HASH, failed_login_attempts: 0, locked_until: null, is_active: true },
+    }).catch(() => {}),
+    prisma.users.updateMany({
+      where: { email: 'driver@busticket.com' },
+      data: { password_hash: DRIVER_HASH, failed_login_attempts: 0, locked_until: null, is_active: true },
+    }).catch(() => {}),
+    prisma.users.updateMany({
+      where: { email: 'driver2@busticket.com' },
+      data: { password_hash: DRIVER_HASH, failed_login_attempts: 0, locked_until: null, is_active: true },
+    }).catch(() => {}),
+    prisma.users.updateMany({
+      where: { email: 'verifier@busticket.com' },
+      data: { password_hash: VERIFIER_HASH, failed_login_attempts: 0, locked_until: null, is_active: true },
+    }).catch(() => {}),
+  ]);
+
   return new Promise((resolve) => {
     server = http.createServer(app);
     socketService.init(server);
@@ -58,11 +89,11 @@ export async function apiRequest(endpoint, { method = 'GET', body = null, token 
 
   return {
     status: response.status,
-    ok: response.ok,
     headers: response.headers,
-    cookie: setCookie,
     data,
+    cookie: setCookie,
   };
 }
 
-export { prisma, baseUrl };
+export { prisma };
+export default { startTestServer, stopTestServer, apiRequest, prisma };

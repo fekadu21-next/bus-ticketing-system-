@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useApp } from "../context/AppContext";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
-import { isUserAdmin, isUserOperator } from "@/utils/userUtils";
+import { isUserAdmin, isUserOperator, isUserDriver, isUserVerifier } from "@/utils/userUtils";
 
 // Auth Pages (embedded in console)
 import ProfilePage from "../features/auth/pages/ProfilePage";
@@ -120,14 +120,25 @@ export const ManagementConsole = () => {
     if (isCoordinator) {
       return <Navigate to="/operator" replace />;
     }
+    if (isUserDriver(user)) {
+      return <Navigate to="/driver" replace />;
+    }
+    if (isUserVerifier(user)) {
+      return <Navigate to="/verifier" replace />;
+    }
     return <Navigate to="/my-bookings" replace />;
   }
 
   if (!isAdmin && isAdminRoute) {
-    return <Navigate to="/operator" replace />;
+    if (isCoordinator) return <Navigate to="/operator" replace />;
+    if (isUserDriver(user)) return <Navigate to="/driver" replace />;
+    if (isUserVerifier(user)) return <Navigate to="/verifier" replace />;
+    return <Navigate to="/my-bookings" replace />;
   }
 
   if (!isAdmin && !isCoordinator) {
+    if (isUserDriver(user)) return <Navigate to="/driver" replace />;
+    if (isUserVerifier(user)) return <Navigate to="/verifier" replace />;
     return <Navigate to="/my-bookings" replace />;
   }
 

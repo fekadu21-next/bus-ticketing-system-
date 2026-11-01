@@ -134,33 +134,88 @@ export const isUserAdmin = (user) => {
 };
 
 /**
+ * Returns true if the user is a registered vehicle driver.
+ */
+export const isUserDriver = (user) => {
+  if (!user) return false;
+  if (isUserAdmin(user)) return false;
+  const roles = extractUserRoles(user);
+  if (roles.includes('DRIVER')) return true;
+  if (typeof user.role === 'string' && user.role.toUpperCase().includes('DRIVER')) return true;
+  if (Array.isArray(user.organizationContext)) {
+    return user.organizationContext.some((ctx) => (ctx?.role || '').toUpperCase() === 'DRIVER');
+  }
+  return false;
+};
+
+/**
+ * Returns true if the user is an assigned station / boarding ticket verifier.
+ */
+export const isUserVerifier = (user) => {
+  if (!user) return false;
+  if (isUserAdmin(user)) return false;
+  const roles = extractUserRoles(user);
+  if (roles.includes('TICKET_VERIFIER') || roles.includes('VERIFIER')) return true;
+  if (typeof user.role === 'string' && user.role.toUpperCase().includes('VERIFIER')) return true;
+  if (Array.isArray(user.organizationContext)) {
+    return user.organizationContext.some((ctx) => (ctx?.role || '').toUpperCase() === 'TICKET_VERIFIER');
+  }
+  return false;
+};
+
+/**
  * Returns true if the user is a transport operator / booking coordinator.
- * Platform admins are not restricted to operator scope.
+ * Platform admins, drivers, and ticket verifiers are strictly excluded from operator dashboard access.
  */
 export const isUserOperator = (user) => {
   if (!user) return false;
   if (isUserAdmin(user)) return false;
 
   const roles = extractUserRoles(user);
-  if (
+
+  // If user only has DRIVER or TICKET_VERIFIER without managerial role, they are not an operator
+  const isDriverOrVerifier = roles.includes('DRIVER') || roles.includes('TICKET_VERIFIER');
+  const hasManagerRole =
     roles.includes('BOOKING_COORDINATOR') ||
     roles.includes('OPERATIONAL_MANAGER') ||
     roles.includes('OPERATOR') ||
     roles.includes('MANAGER') ||
-    roles.includes('DISPATCHER')
-  ) {
+    roles.includes('DISPATCHER');
+
+  if (hasManagerRole) {
     return true;
   }
+
+  if (isDriverOrVerifier) {
+    return false;
+  }
+
+  // Check singular role string
   if (typeof user.role === 'string') {
     const r = user.role.toUpperCase();
-    if (r.includes('MANAGER') || r.includes('COORDINATOR') || r.includes('OPERATOR')) return true;
+    if (
+      (r.includes('MANAGER') || r.includes('COORDINATOR') || r.includes('OPERATOR')) &&
+      !r.includes('DRIVER') &&
+      !r.includes('VERIFIER')
+    ) {
+      return true;
+    }
   }
+
+  // Check organization context for explicit manager/coordinator roles
   if (Array.isArray(user.organizationContext) && user.organizationContext.length > 0) {
-    return true;
+    return user.organizationContext.some((ctx) => {
+      const r = (ctx?.role || '').toUpperCase();
+      return (
+        r === 'BOOKING_COORDINATOR' ||
+        r === 'OPERATIONAL_MANAGER' ||
+        r === 'OPERATOR' ||
+        r === 'MANAGER' ||
+        r === 'DISPATCHER'
+      );
+    });
   }
-  if (user.organizationId) {
-    return true;
-  }
+
   return false;
 };
 
@@ -169,7 +224,7 @@ export const isUserOperator = (user) => {
  */
 export const isUserPassenger = (user) => {
   if (!user) return true;
-  if (isUserAdmin(user) || isUserOperator(user)) return false;
+  if (isUserAdmin(user) || isUserOperator(user) || isUserDriver(user) || isUserVerifier(user)) return false;
   return true;
 };
 

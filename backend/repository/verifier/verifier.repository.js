@@ -121,9 +121,70 @@ export class VerifierRepository {
     });
   }
 
-  async findTicketByToken(qrToken) {
-    return prisma.tickets.findUnique({
-      where: { qr_token: qrToken },
+  async findTicketByIdentifiers({
+    ticketId = null,
+    ticketNumber = null,
+    cleanTicketNumber = null,
+    qrToken = null,
+    bookingId = null,
+    bookingNumber = null,
+    seatNumber = null,
+  } = {}) {
+    const isUUID = (val) =>
+      typeof val === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val.trim());
+
+    const orConditions = [];
+
+    if (ticketId && isUUID(ticketId)) {
+      orConditions.push({ id: ticketId.trim() });
+    }
+
+    if (qrToken && typeof qrToken === 'string' && qrToken.trim()) {
+      const q = qrToken.trim();
+      orConditions.push({ qr_token: q });
+      if (isUUID(q)) {
+        orConditions.push({ id: q });
+        orConditions.push({ booking_id: q });
+      }
+    }
+
+    if (ticketNumber && typeof ticketNumber === 'string' && ticketNumber.trim()) {
+      const tn = ticketNumber.trim();
+      orConditions.push({ ticket_number: { equals: tn, mode: 'insensitive' } });
+      orConditions.push({ qr_token: tn });
+      if (isUUID(tn)) {
+        orConditions.push({ id: tn });
+        orConditions.push({ booking_id: tn });
+      }
+    }
+
+    if (cleanTicketNumber && typeof cleanTicketNumber === 'string' && cleanTicketNumber.trim()) {
+      const ctn = cleanTicketNumber.trim();
+      if (ctn !== ticketNumber) {
+        orConditions.push({ ticket_number: { equals: ctn, mode: 'insensitive' } });
+        orConditions.push({ qr_token: ctn });
+        if (isUUID(ctn)) {
+          orConditions.push({ id: ctn });
+          orConditions.push({ booking_id: ctn });
+        }
+      }
+    }
+
+    if (bookingId && isUUID(bookingId)) {
+      if (seatNumber) {
+        orConditions.push({
+          booking_id: bookingId.trim(),
+          seat_number: Number(seatNumber),
+        });
+      }
+      orConditions.push({ booking_id: bookingId.trim() });
+    }
+
+    if (orConditions.length === 0) return null;
+
+    return prisma.tickets.findFirst({
+      where: { OR: orConditions },
       include: {
         passenger: {
           select: { id: true, first_name: true, last_name: true, email: true, phone: true },
@@ -148,6 +209,11 @@ export class VerifierRepository {
         },
       },
     });
+  }
+
+  async findTicketByToken(qrToken) {
+    if (!qrToken) return null;
+    return this.findTicketByIdentifiers({ qrToken, ticketNumber: qrToken });
   }
 
   async findTicketById(ticketId) {
@@ -198,7 +264,7 @@ export class VerifierRepository {
       const updateResult = await tx.tickets.updateMany({
         where: {
           id: ticketId,
-          status: 'UNUSED',
+          status: { in: ['UNUSED', 'ACTIVE', 'VALID', 'CONFIRMED'] },
         },
         data: {
           status: 'USED',

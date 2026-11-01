@@ -12,7 +12,7 @@ import {
   View,
   Vibration,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 import { apiService } from '@/services/api';
@@ -31,6 +31,7 @@ try {
 
 export default function ScanTicketScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ tripId?: string }>();
   const [manualToken, setManualToken] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [showManual, setShowManual] = useState(false);
@@ -71,7 +72,7 @@ export default function ScanTicketScreen() {
     Vibration.vibrate(50);
 
     try {
-      const res = await apiService.verifyTicket(cleanToken);
+      const res = await apiService.verifyTicket(cleanToken, params.tripId);
       if (res.success && res.data?.result) {
         router.push({
           pathname: '/verifier/result',
