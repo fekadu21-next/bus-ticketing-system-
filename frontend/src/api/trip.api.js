@@ -63,7 +63,7 @@ export const normalizeTrip = (raw) => {
 
   // Operator branding & images
   let logoBg = 'bg-[#1d4ed8]';
-  let logoText = 'SB';
+  let logoText;
   let image = '/images/crops/bus_selam.jpg';
   const lowerName = operatorName.toLowerCase();
 
@@ -342,7 +342,7 @@ export const getPublicOperatorsApi = async (params = {}) => {
     console.log('Organizations from backend:', orgs);
     return orgs.map((org) => {
       let logoBg = 'bg-[#1d4ed8]';
-      let logoText = 'SB';
+      let logoText;
       let image = '/images/operators/selam-bus.png';
       const lower = org.name.toLowerCase();
 

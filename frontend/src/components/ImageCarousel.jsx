@@ -8,7 +8,6 @@ const ImageCarousel = ({
   children,
 }) => {
   const total = images.length;
-  if (!images || total === 0) return null;
 
   const [current, setCurrent] = useState(0);
   const [prev, setPrev] = useState(null);
@@ -121,6 +120,8 @@ const ImageCarousel = ({
     touchStartX.current = null;
     touchEndX.current = null;
   };
+
+  if (!images || total === 0) return null;
 
   return (
     <div
