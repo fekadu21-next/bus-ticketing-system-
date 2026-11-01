@@ -37,6 +37,7 @@ export const env = {
     maxLoginAttempts: 5,
     lockoutDurationMinutes: 15,
   },
+  redisUrl: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
 };
 
 if (env.nodeEnv === 'production') {

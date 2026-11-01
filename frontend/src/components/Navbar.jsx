@@ -18,6 +18,7 @@ import {
   Ticket,
   Globe,  Navigation,  QrCode,} from 'lucide-react';
 import { PlatformFeedbackModal } from '@/components/feedback/PlatformFeedbackModal';
+import { NotificationBell } from '@/components/ui/NotificationBell';
 
 // ── Telegram-style theme toggle ──────────────────────────────────────────────
 const ThemeToggle = ({ isDark, toggleTheme }) => (
@@ -333,6 +334,9 @@ export const Navbar = () => {
                 </Link>
               )}
 
+              {/* Real-time Role Notification Center */}
+              <NotificationBell />
+
               {/* User Dropdown Trigger */}
               <div className="relative" id="user-menu-container">
                 <button
@@ -394,30 +398,13 @@ export const Navbar = () => {
                       </Link>
                     )}
 
-                    {userIsDriver && (
-                      <Link
-                        to="/driver"
-                        className="block w-full py-2.5 px-3 rounded-xl text-xs font-bold text-center bg-blue-600 text-white hover:bg-blue-700"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Driver Portal
-                      </Link>
-                    )}
-                    {userIsVerifier && (
-                      <Link
-                        to="/verifier"
-                        className="block w-full py-2.5 px-3 rounded-xl text-xs font-bold text-center bg-purple-600 text-white hover:bg-purple-700"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Verifier Portal
-                      </Link>
-                    )}
                     {userIsPassenger && (
                       <Link
                         to="/my-bookings"
-                        className="block w-full py-2.5 px-3 rounded-xl text-xs font-bold text-center bg-blue-600 text-white hover:bg-blue-700"
-                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
                       >
+                        <Ticket size={16} />
                         My Bookings
                       </Link>
                     )}

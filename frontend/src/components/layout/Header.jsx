@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
 import { formatUserFullName, isUserAdmin } from "../../utils/userUtils";
+import { NotificationBell } from "../ui/NotificationBell";
 import {
   Search,
   Building2,
@@ -220,6 +221,9 @@ export const Header = () => {
         >
           {isDark ? <Sun size={16} style={{ color: "#fbbf24" }} /> : <Moon size={16} />}
         </button>
+
+        {/* Real-time Notification Center */}
+        <NotificationBell />
 
         {/* User profile dropdown */}
         <div style={{ position: "relative" }} ref={userMenuRef}>

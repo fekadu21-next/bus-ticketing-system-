@@ -2,12 +2,17 @@ import http from 'http';
 import app from './app.js';
 import env from './Config/env.js';
 import { connectDB, disconnectDB } from './Config/db.js';
+import { closeRedis } from './Config/redis.js';
 import socketService from './services/socket.service.js';
 import { startSeatCleaner, stopSeatCleaner } from './services/seatCleaner.service.js';
+import { initNotificationQueue, closeNotificationQueue } from './queues/notification.queue.js';
 
 async function startServer() {
   // Connect to PostgreSQL DB via Prisma
   await connectDB();
+
+  // Initialize BullMQ message queues
+  initNotificationQueue();
 
   // Start background seat lock cleaner
   startSeatCleaner();
@@ -28,6 +33,8 @@ async function startServer() {
   const shutdown = async (signal) => {
     console.log(`\n⚠️  Received ${signal}. Initiating graceful shutdown...`);
     stopSeatCleaner();
+    await closeNotificationQueue();
+    await closeRedis();
 
     server.close(async () => {
       console.log('🛑 HTTP server closed.');

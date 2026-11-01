@@ -100,6 +100,33 @@ export class TripService {
       capacity: bus.capacity,
     });
 
+    const routeOrigin = route.origin_station?.name || route.origin || 'Origin';
+    const routeDest = route.destination_station?.name || route.destination || 'Destination';
+
+    if (trip.driver_id) {
+      notificationService.safeCreateNotification({
+        userId: trip.driver_id,
+        type: NOTIFICATION_TYPES.TRIP_ASSIGNED,
+        priority: NOTIFICATION_PRIORITIES.HIGH,
+        title: 'New Trip Assigned',
+        message: `You have been assigned to drive trip ${routeOrigin} to ${routeDest}.`,
+        metadata: { tripId: trip.id, organizationId: trip.organization_id },
+        sendEmail: true,
+      }).catch(() => {});
+    }
+
+    if (trip.verifier_id) {
+      notificationService.safeCreateNotification({
+        userId: trip.verifier_id,
+        type: NOTIFICATION_TYPES.VERIFIER_TRIP_ASSIGNED,
+        priority: NOTIFICATION_PRIORITIES.NORMAL,
+        title: 'Trip Verification Assigned',
+        message: `You have been assigned as ticket verifier for trip ${routeOrigin} to ${routeDest}.`,
+        metadata: { tripId: trip.id, organizationId: trip.organization_id },
+        sendEmail: false,
+      }).catch(() => {});
+    }
+
     return {
       id: trip.id,
       organizationId: trip.organization_id,
@@ -369,6 +396,58 @@ export class TripService {
           title: 'Trip Route Updated',
           message: `The route for your assigned verification trip has been changed.`,
           metadata: { tripId, oldRouteId: trip.route_id, newRouteId: updateData.routeId },
+        }).catch(() => {});
+      }
+    }
+
+    // 4. Driver assignment changed
+    if (updateData.driverId !== undefined && updateData.driverId !== trip.driver_id) {
+      if (updateData.driverId) {
+        notificationService.safeCreateNotification({
+          userId: updateData.driverId,
+          type: NOTIFICATION_TYPES.TRIP_ASSIGNED,
+          priority: NOTIFICATION_PRIORITIES.HIGH,
+          title: 'Trip Assignment',
+          message: `You have been assigned to drive trip ${routeName}.`,
+          metadata: { tripId, organizationId },
+          sendEmail: true,
+        }).catch(() => {});
+      }
+      if (trip.driver_id) {
+        notificationService.safeCreateNotification({
+          userId: trip.driver_id,
+          type: NOTIFICATION_TYPES.TRIP_REASSIGNED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Trip Assignment Removed',
+          message: `You have been unassigned from trip ${routeName}.`,
+          metadata: { tripId, organizationId },
+          sendEmail: false,
+        }).catch(() => {});
+      }
+    }
+
+    // 5. Verifier assignment changed
+    if (updateData.verifierId !== undefined && updateData.verifierId !== trip.verifier_id) {
+      if (updateData.verifierId) {
+        notificationService.safeCreateNotification({
+          userId: updateData.verifierId,
+          type: NOTIFICATION_TYPES.VERIFIER_TRIP_ASSIGNED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Trip Verification Assigned',
+          message: `You have been assigned as ticket verifier for trip ${routeName}.`,
+          metadata: { tripId, organizationId },
+          sendEmail: false,
+        }).catch(() => {});
+      }
+      if (trip.verifier_id) {
+        notificationService.safeCreateNotification({
+          userId: trip.verifier_id,
+          type: NOTIFICATION_TYPES.VERIFIER_TRIP_REASSIGNED,
+          priority: NOTIFICATION_PRIORITIES.NORMAL,
+          title: 'Trip Verification Assignment Removed',
+          message: `You have been unassigned from trip ${routeName}.`,
+          metadata: { tripId, organizationId },
+          sendEmail: false,
         }).catch(() => {});
       }
     }

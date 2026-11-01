@@ -11,8 +11,13 @@ export const tripIdParamSchema = z.object({
   tripId: z.string().uuid('Invalid trip ID format'),
 });
 
-export const verifyTicketSchema = z.object({
-  qrToken: z.string().min(1, 'QR token is required'),
-  tripId: z.string().uuid('Invalid trip ID format').optional(),
-});
-
+export const verifyTicketSchema = z
+  .object({
+    qrToken: z.string().min(1).optional(),
+    qrCode: z.string().min(1).optional(),
+    tripId: z.string().uuid('Invalid trip ID format').optional(),
+  })
+  .refine((data) => Boolean(data.qrToken || data.qrCode), {
+    message: 'qrToken or qrCode is required',
+    path: ['qrToken'],
+  });

@@ -13,6 +13,7 @@ class StationsController {
     };
 
     const result = await stationsService.getStations(query);
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
     res.status(200).json({
       success: true,
       data: result,
@@ -86,6 +87,7 @@ class StationsController {
 
   getActiveStations = asyncHandler(async (req, res) => {
     const stations = await stationsService.getAllActiveStations();
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=900');
     res.status(200).json({
       success: true,
       data: { stations },

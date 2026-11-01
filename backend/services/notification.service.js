@@ -5,6 +5,7 @@ import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../constants/notifi
 import socketService from './socket.service.js';
 import fcmService from './fcm.service.js';
 import { sendNotificationEmail } from '../utils/email.js';
+import { enqueueNotificationJob } from '../queues/notification.queue.js';
 
 export class NotificationService {
   /**
@@ -103,62 +104,10 @@ export class NotificationService {
       }
     }
 
-    // Channel 2: Push Notifications (FCM)
-    if (preferences.push_enabled !== false) {
-      try {
-        await fcmService.sendPushToUser(userId, {
-          title,
-          body: message,
-          data: {
-            notificationId: notification?.id || '',
-            type,
-            priority,
-            ...(metadata || {}),
-          },
-        });
-      } catch (err) {
-        console.warn('FCM push notification warning:', err.message);
-      }
-    }
-
-    // Channel 3: Email Notification (Important Events or Explicit Flag)
-    const isImportantEmailEvent =
-      sendEmail ||
-      [
-        NOTIFICATION_TYPES.BOOKING_CONFIRMED,
-        NOTIFICATION_TYPES.PAYMENT_SUCCESS,
-        NOTIFICATION_TYPES.PAYMENT_FAILED,
-        NOTIFICATION_TYPES.TRIP_CANCELLED,
-        NOTIFICATION_TYPES.TRIP_RESCHEDULED,
-        NOTIFICATION_TYPES.TRIP_DELAYED,
-        NOTIFICATION_TYPES.NEW_ORGANIZATION_REGISTRATION,
-        NOTIFICATION_TYPES.ORGANIZATION_APPROVAL_REQUEST,
-        NOTIFICATION_TYPES.ORGANIZATION_APPROVED,
-        NOTIFICATION_TYPES.ORGANIZATION_REJECTED,
-        NOTIFICATION_TYPES.CRITICAL_PLATFORM_ISSUE,
-        NOTIFICATION_TYPES.TRIP_ASSIGNED,
-      ].includes(type);
-
-    if (preferences.email_enabled !== false && isImportantEmailEvent) {
-      try {
-        const user = await prisma.users.findUnique({
-          where: { id: userId },
-          select: { email: true, first_name: true },
-        });
-
-        if (user?.email) {
-          await sendNotificationEmail(user.email, user.first_name, {
-            title,
-            message,
-            details: metadata || {},
-            actionUrl: actionUrl || metadata?.actionUrl || null,
-            actionLabel: actionLabel || metadata?.actionLabel || 'View in App',
-          });
-        }
-      } catch (err) {
-        console.warn('Email notification warning:', err.message);
-      }
-    }
+    // Channel 2 & 3: Push Notifications (FCM) & Email Notifications offloaded to BullMQ background queue
+    enqueueNotificationJob(notification, params).catch((err) => {
+      console.warn('⚠️ [QUEUE ENQUEUE ERROR]', err.message);
+    });
   }
 
   /**

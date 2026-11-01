@@ -69,11 +69,11 @@ export class VerifierService {
     };
   }
 
-  async verifyTicket(user, { qrToken, tripId }) {
+  async verifyTicket(user, { qrToken, qrCode, tripId }) {
     const isAdmin = Boolean(user?.roles?.includes(ROLES.ADMIN));
     const orgId = this.resolveVerifierOrg(user);
 
-    const cleanInput = String(qrToken || '').trim();
+    const cleanInput = String(qrToken || qrCode || '').trim();
     if (!cleanInput) {
       return {
         valid: false,
