@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import notificationApi from '../api/notification.api';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import {
   Bell,
   CheckCheck,
@@ -201,10 +199,8 @@ export const NotificationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
-      <Navbar />
-
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-8 sm:px-6">
+    <div className="w-full max-w-4xl mx-auto px-4 py-8 sm:px-6 text-slate-800 dark:text-slate-100 transition-colors">
+      <main className="w-full">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
           <div>
@@ -482,8 +478,6 @@ export const NotificationsPage = () => {
           </div>
         )}
       </main>
-
-      <Footer />
     </div>
   );
 };
