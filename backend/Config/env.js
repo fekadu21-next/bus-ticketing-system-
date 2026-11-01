@@ -39,4 +39,10 @@ export const env = {
   },
 };
 
+if (env.nodeEnv === 'production') {
+  if (!process.env.JWT_ACCESS_SECRET || process.env.JWT_ACCESS_SECRET.includes('minimum')) {
+    console.warn('⚠️  [SECURITY WARNING] Running in production with default or missing JWT_ACCESS_SECRET! Set a cryptographically secure JWT_ACCESS_SECRET in environment.');
+  }
+}
+
 export default env;

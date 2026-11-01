@@ -3,10 +3,14 @@ import app from './app.js';
 import env from './Config/env.js';
 import { connectDB, disconnectDB } from './Config/db.js';
 import socketService from './services/socket.service.js';
+import { startSeatCleaner, stopSeatCleaner } from './services/seatCleaner.service.js';
 
 async function startServer() {
   // Connect to PostgreSQL DB via Prisma
   await connectDB();
+
+  // Start background seat lock cleaner
+  startSeatCleaner();
 
   // Create HTTP server and initialize Socket.IO
   const httpServer = http.createServer(app);
@@ -16,13 +20,14 @@ async function startServer() {
   const server = httpServer.listen(env.port, () => {
     console.log(`🚀 Server running in ${env.nodeEnv} mode on port ${env.port}`);
     console.log(`🔗 API Endpoint: http://localhost:${env.port}/api/v1`);
-    console.log(`🏥 Health Check: http://localhost:${env.port}/api/v1/health`);
+    console.log(`🏥 Health Check: http://localhost:${env.port}/health`);
     console.log(`🔌 Socket.IO initialized on port ${env.port}`);
   });
 
   // Graceful Shutdown Logic
   const shutdown = async (signal) => {
     console.log(`\n⚠️  Received ${signal}. Initiating graceful shutdown...`);
+    stopSeatCleaner();
 
     server.close(async () => {
       console.log('🛑 HTTP server closed.');

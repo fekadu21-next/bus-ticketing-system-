@@ -49,19 +49,29 @@ app.use(cookieParser());
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// 3. Logging & Global Rate Limiting
+// 3. Logging
 if (env.nodeEnv === 'development') {
   app.use(morgan('dev'));
 }
-app.use('/api', globalLimiter);
 
-// 4. API V1 Routes
+// 4. Root & Health Check Endpoint (for orchestrators, load balancers, and container health probes)
+app.get(['/', '/health'], (req, res) => {
+  res.status(200).json({
+    status: 'UP',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    environment: env.nodeEnv,
+  });
+});
+
+// 5. Global API Rate Limiting & Routes
+app.use('/api', globalLimiter);
 app.use('/api/v1', apiRoutes);
 
-// 5. Catch-all Unmatched Routes (404)
+// 6. Catch-all Unmatched Routes (404)
 app.use(notFoundHandler);
 
-// 6. Centralized Error Handling Middleware
+// 7. Centralized Error Handling Middleware
 app.use(errorHandler);
 
 export default app;

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import passengerPaymentRepository from '../../repository/passenger/payment.repository.js';
 import passengerBookingRepository from '../../repository/passenger/booking.repository.js';
 import authRepository from '../../repository/auth.repository.js';
@@ -53,7 +54,7 @@ export class PassengerPaymentService {
           firstName: passengerInfo?.firstName || 'Guest',
           lastName: passengerInfo?.lastName || 'Passenger',
           phone: passengerInfo?.phone || null,
-          passwordHash: '$2b$12$e6m0L62Uu3WJ1dZ/cQc9UOGzWnZ2gP6rE9/9Qc9UOGzWnZ2gP6rE9',
+          passwordHash: '$2b$12$' + crypto.randomBytes(30).toString('base64'),
         });
         passengerId = tempUser.id;
         user = tempUser;
