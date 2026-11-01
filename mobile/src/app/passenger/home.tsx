@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -172,7 +173,23 @@ function formatDateForInput(date: Date): string {
 
 export default function PassengerHomeScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const [profileMenuVisible, setProfileMenuVisible] = useState(false);
+
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out of your BusTicket account?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          setProfileMenuVisible(false);
+          await logout();
+          router.replace('/login');
+        },
+      },
+    ]);
+  };
 
   // Search state
   const [origin, setOrigin] = useState('Addis Ababa');
@@ -301,26 +318,42 @@ export default function PassengerHomeScreen() {
             onPress={() => router.push('/passenger/bookings')}
             activeOpacity={0.8}
           >
-            <Text style={styles.myTicketsPillText}>🎫 My Tickets</Text>
+            <Text style={styles.myTicketsPillText}>🎫 Tickets</Text>
           </TouchableOpacity>
 
           {user ? (
-            <TouchableOpacity
-              style={styles.avatarPill}
-              onPress={() => router.push('/passenger/profile')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.avatarLetter}>
-                {(user.firstName || 'P').charAt(0).toUpperCase()}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.profileActionCluster}>
+              <TouchableOpacity
+                style={styles.profileChip}
+                onPress={() => setProfileMenuVisible(true)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.avatarPill}>
+                  <Text style={styles.avatarLetter}>
+                    {(user.firstName || 'P').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <Text style={styles.profileChipName} numberOfLines={1}>
+                  {user.firstName || 'Profile'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickSignOutBtn}
+                onPress={handleSignOut}
+                activeOpacity={0.7}
+                accessibilityLabel="Sign Out"
+              >
+                <Text style={styles.quickSignOutIcon}>🚪</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <TouchableOpacity
               style={styles.signInBtn}
               onPress={() => router.push('/login')}
               activeOpacity={0.8}
             >
-              <Text style={styles.signInText}>Sign In</Text>
+              <Text style={styles.signInText}>👤 Sign In</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -638,6 +671,94 @@ export default function PassengerHomeScreen() {
             </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+      {/* Bottom Tab Bar */}
+      {/* ── Profile & Sign Out Account Modal ────────────────── */}
+      <Modal
+        visible={profileMenuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setProfileMenuVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.profileModalOverlay}
+          activeOpacity={1}
+          onPress={() => setProfileMenuVisible(false)}
+        >
+          <View style={styles.profileMenuCard}>
+            <View style={styles.profileMenuHeader}>
+              <View style={styles.profileModalAvatar}>
+                <Text style={styles.profileModalAvatarText}>
+                  {(user?.firstName || 'P').charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.profileModalMeta}>
+                <Text style={styles.profileModalName} numberOfLines={1}>
+                  {[user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Passenger'}
+                </Text>
+                <Text style={styles.profileModalEmail} numberOfLines={1}>
+                  {user?.email || ''}
+                </Text>
+                <View style={styles.roleBadgeWrap}>
+                  <Text style={styles.roleBadgeText}>Passenger Account</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.profileMenuDivider} />
+
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={() => {
+                setProfileMenuVisible(false);
+                router.push('/passenger/profile');
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.profileMenuItemIcon}>👤</Text>
+              <View style={styles.profileMenuItemTextWrap}>
+                <Text style={styles.profileMenuItemTitle}>My Profile</Text>
+                <Text style={styles.profileMenuItemSub}>Personal info, security & contact</Text>
+              </View>
+              <Text style={styles.profileMenuArrow}>›</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={() => {
+                setProfileMenuVisible(false);
+                router.push('/passenger/bookings');
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.profileMenuItemIcon}>🎫</Text>
+              <View style={styles.profileMenuItemTextWrap}>
+                <Text style={styles.profileMenuItemTitle}>My Bookings & E-Tickets</Text>
+                <Text style={styles.profileMenuItemSub}>Boarding passes and QR codes</Text>
+              </View>
+              <Text style={styles.profileMenuArrow}>›</Text>
+            </TouchableOpacity>
+
+            <View style={styles.profileMenuDivider} />
+
+            <TouchableOpacity
+              style={styles.signOutMenuItem}
+              onPress={handleSignOut}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.signOutMenuItemIcon}>🚪</Text>
+              <Text style={styles.signOutMenuItemText}>Sign Out</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.closeProfileMenuBtn}
+              onPress={() => setProfileMenuVisible(false)}
+            >
+              <Text style={styles.closeProfileMenuText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Bottom Tab Bar */}
@@ -1216,6 +1337,168 @@ const styles = StyleSheet.create({
   },
   dateModalCancelText: {
     fontSize: 13,
+    fontWeight: '700',
+    color: SLATE_600,
+  },
+  profileActionCluster: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  profileChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eff6ff',
+    paddingRight: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    gap: 6,
+  },
+  profileChipName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: PRIMARY,
+    maxWidth: 70,
+  },
+  quickSignOutBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickSignOutIcon: {
+    fontSize: 14,
+  },
+  profileModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 65,
+    paddingRight: 16,
+  },
+  profileMenuCard: {
+    width: 290,
+    backgroundColor: WHITE,
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  profileMenuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingBottom: 4,
+  },
+  profileModalAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: PRIMARY,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileModalAvatarText: {
+    color: WHITE,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  profileModalMeta: {
+    flex: 1,
+  },
+  profileModalName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: SLATE_900,
+  },
+  profileModalEmail: {
+    fontSize: 11,
+    color: SLATE_600,
+    marginTop: 1,
+  },
+  roleBadgeWrap: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 4,
+    borderWidth: 0.5,
+    borderColor: '#bfdbfe',
+  },
+  roleBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: PRIMARY,
+    textTransform: 'uppercase',
+  },
+  profileMenuDivider: {
+    height: 1,
+    backgroundColor: '#f1f5f9',
+    marginVertical: 10,
+  },
+  profileMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 9,
+    gap: 10,
+  },
+  profileMenuItemIcon: {
+    fontSize: 18,
+  },
+  profileMenuItemTextWrap: {
+    flex: 1,
+  },
+  profileMenuItemTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: SLATE_900,
+  },
+  profileMenuItemSub: {
+    fontSize: 10,
+    color: SLATE_400,
+    marginTop: 1,
+  },
+  profileMenuArrow: {
+    fontSize: 16,
+    color: SLATE_400,
+    fontWeight: '600',
+  },
+  signOutMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: '#fef2f2',
+    gap: 8,
+  },
+  signOutMenuItemIcon: {
+    fontSize: 16,
+  },
+  signOutMenuItemText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#dc2626',
+  },
+  closeProfileMenuBtn: {
+    marginTop: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  closeProfileMenuText: {
+    fontSize: 12,
     fontWeight: '700',
     color: SLATE_600,
   },
