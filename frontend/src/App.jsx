@@ -8,6 +8,7 @@ import { NotificationProvider } from '@/context/NotificationContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AppRoutes from '@/routes/AppRoutes';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 import '@/i18n';
 import '@/index.css';
@@ -27,8 +28,6 @@ function MainLayout() {
     return <AppRoutes />;
   }
 
-  const isHome = location.pathname === '/';
-
   return (
     <div className="app-container">
       <Navbar />
@@ -42,17 +41,19 @@ function MainLayout() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <AppProvider>
-              <MainLayout />
-            </AppProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ThemeProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <AppProvider>
+                <MainLayout />
+              </AppProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
