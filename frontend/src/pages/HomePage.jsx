@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import TripSearchBar from '@/components/TripSearchBar';
 import ImageCarousel from '@/components/ImageCarousel';
-import { getPublicOperatorsApi } from '@/api/trip.api';
+import { getPublicOperatorsApi, DEFAULT_PUBLIC_OPERATORS } from '@/api/trip.api';
 
 const getTodayString = () => new Date().toISOString().split('T')[0];
 
@@ -37,11 +37,14 @@ export default function HomePage() {
       try {
         setLoadingOperators(true);
         const data = await getPublicOperatorsApi();
-        if (isMounted && data) {
+        if (isMounted && data && data.length > 0) {
           setOperators(data);
+        } else if (isMounted) {
+          setOperators(DEFAULT_PUBLIC_OPERATORS);
         }
       } catch (err) {
         console.error('Failed to load operators from backend:', err);
+        if (isMounted) setOperators(DEFAULT_PUBLIC_OPERATORS);
       } finally {
         if (isMounted) setLoadingOperators(false);
       }
