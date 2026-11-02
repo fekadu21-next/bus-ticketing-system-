@@ -287,7 +287,7 @@ export const SearchTripsPage = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-[#071833]/85 via-[#0b2a4a]/55 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-[1180px] w-full mx-auto px-4 sm:px-6 py-10">
+        <div className="relative z-10 w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 py-10">
           <p className="text-[11px] font-bold tracking-[0.22em] text-white/80 uppercase mb-3">
             Search Bus Trips
           </p>
@@ -313,7 +313,7 @@ export const SearchTripsPage = () => {
       </section>
 
       <section className="bg-white border-b border-slate-100">
-        <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: ShieldCheck, title: 'Safe & Reliable', text: 'Trusted operators and secure payments.' },
             { icon: Clock, title: 'Real-Time Availability', text: 'See live seat availability and choose your best option.' },
@@ -333,7 +333,7 @@ export const SearchTripsPage = () => {
         </div>
       </section>
 
-      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 py-6 sm:py-8">
         {/* Mobile Filters Toggle Button */}
         <div className="lg:hidden mb-4">
           <button
@@ -656,7 +656,7 @@ export const SearchTripsPage = () => {
         </div>
       </div>
 
-      <section className="max-w-[1180px] mx-auto px-4 sm:px-6 pb-12">
+      <section className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 pb-12">
         <div className="bg-[#eef5ff] rounded-[22px] px-6 py-7 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-[#2563eb] text-white flex items-center justify-center flex-shrink-0">

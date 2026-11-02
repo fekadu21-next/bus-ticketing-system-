@@ -179,7 +179,7 @@ export const VerifierDashboardPage = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-16">
       {/* Top Banner / Verifier Identity */}
       <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="w-full max-w-[100%] w-full mx-auto px-4 sm:px-6 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
@@ -216,7 +216,7 @@ export const VerifierDashboardPage = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+      <div className="w-full max-w-[100%] w-full mx-auto px-4 sm:px-6 pt-6">
         {/* Global Feedback */}
         {feedback && (
           <div className="mb-6">

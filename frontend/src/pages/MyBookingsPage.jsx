@@ -374,7 +374,7 @@ export const MyBookingsPage = () => {
           <img src="/images/crops/detail_banner.jpg" alt="" className="w-full h-full object-cover object-[75%_center]" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#071833]/90 via-[#0b2a4a]/75 to-[#071833]/90" />
         </div>
-        <div className="relative z-10 max-w-[1180px] mx-auto px-4 sm:px-6 pt-8 pb-16">
+        <div className="relative z-10 w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 pt-8 pb-16">
           <Link to="/" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/90 hover:text-white mb-2">
             <ArrowRight size={14} className="rotate-180" />
             Back to Home
@@ -384,7 +384,7 @@ export const MyBookingsPage = () => {
         </div>
       </section>
 
-      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 -mt-8 space-y-4 relative z-20">
+      <div className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 -mt-8 space-y-4 relative z-20">
         <div className="bg-white rounded-[24px] border border-slate-200/80 shadow-[0_8px_30px_rgba(15,23,42,0.06)] p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>

@@ -336,7 +336,7 @@ export const BookingConfirmationPage = () => {
           <img src="/images/crops/detail_banner.jpg" alt="" className="w-full h-full object-cover object-[75%_center]" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#071833]/90 via-[#0b2a4a]/75 to-[#071833]/90" />
         </div>
-        <div className="relative z-10 max-w-[1100px] mx-auto px-4 sm:px-6 pt-8 pb-16">
+        <div className="relative z-10 w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 pt-8 pb-16">
           <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-white mb-3">
             <ArrowLeft size={14} />
             Back to Home
@@ -377,7 +377,7 @@ export const BookingConfirmationPage = () => {
         </div>
       </section>
 
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 -mt-8 space-y-5 relative z-20 print:mt-0 print:p-0">
+      <div className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 -mt-8 space-y-5 relative z-20 print:mt-0 print:p-0">
         {/* Success Banner */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-[0_8px_30px_rgba(15,23,42,0.06)] p-6 sm:p-8 text-center print:shadow-none print:border-none transition-colors">
           <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center mx-auto mb-3">

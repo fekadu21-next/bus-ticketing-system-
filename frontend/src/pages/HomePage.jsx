@@ -124,10 +124,10 @@ export default function HomePage() {
         <ImageCarousel
           images={['/bus0.jpg', '/bus1.jpg', '/bus2.jpg']}
           interval={5000}
-          className="w-full h-[286px] sm:h-[386px] lg:h-[486px] flex items-start"
+          className="w-full h-[calc(100vh-100px)] min-h-[580px] flex items-center justify-center"
         >
-          <div className="w-full flex flex-col items-center justify-start pt-5 sm:pt-7 lg:pt-8 px-4 sm:px-6 lg:px-8 text-center">
-            <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
+          <div className="w-full flex flex-col items-center justify-center py-6 px-4 sm:px-6 lg:px-8 text-center z-20">
+            <div className="w-full max-w-[96%] lg:max-w-[92%] xl:max-w-[88%] mx-auto flex flex-col items-center">
               {/* Top Verified Pill Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-semibold mb-3 sm:mb-4 shadow-xl transition-transform hover:scale-105">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#f43f5e] shadow-[0_0_10px_#f43f5e] animate-ping" />
@@ -159,6 +159,19 @@ export default function HomePage() {
                   <Ticket size={13} className="text-emerald-400" /> Real-time Seat Choice
                 </span>
               </div>
+
+              {/* Full Width Trip Search Bar inside Hero */}
+              <div className="w-full max-w-[96%] lg:max-w-[90%] xl:max-w-[85%] mt-6 sm:mt-8">
+                <TripSearchBar
+                  origin={origin}
+                  destination={destination}
+                  departureDate={departureDate}
+                  onOriginChange={setOrigin}
+                  onDestinationChange={setDestination}
+                  onDateChange={setDepartureDate}
+                  onSubmit={handleSearch}
+                />
+              </div>
             </div>
           </div>
         </ImageCarousel>
@@ -166,7 +179,7 @@ export default function HomePage() {
 
       {/* Popular Operators Section */}
       <section className="bg-white dark:bg-slate-900 pt-8 pb-14 border-b border-slate-100 dark:border-slate-800">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#f43f5e] mb-1.5">
@@ -190,7 +203,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full">
             {loadingOperators && operators.length === 0 ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-4 shadow-sm animate-pulse">
@@ -284,7 +297,7 @@ export default function HomePage() {
 
       {/* Feature Highlights Grid */}
       <section className="bg-white dark:bg-slate-900 py-12 border-b border-slate-100 dark:border-slate-800">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feat) => {
               const Icon = feat.icon;
@@ -313,7 +326,7 @@ export default function HomePage() {
 
       {/* Mobile App Download Showcase - White-like Background */}
       <section className="relative overflow-hidden bg-white dark:bg-slate-900 py-16 lg:py-20 border-b border-slate-100 dark:border-slate-800">
-        <div className="relative z-10 max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div className="relative z-10 w-full px-4 sm:px-6 lg:px-10 xl:px-14 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-4">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#f43f5e] mb-3">
               <Smartphone size={14} />
@@ -391,7 +404,7 @@ export default function HomePage() {
 
       {/* Testimonials & FAQs Section */}
       <section className="bg-gradient-to-b from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-850 dark:to-slate-900 py-16 lg:py-20">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-14 grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Customer Testimonials */}
           <div className="lg:col-span-7">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#f43f5e] mb-1.5">

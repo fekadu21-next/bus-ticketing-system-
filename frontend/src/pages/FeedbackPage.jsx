@@ -162,7 +162,7 @@ export const FeedbackPage = () => {
           <img src="/images/crops/detail_banner.jpg" alt="" className="w-full h-full object-cover object-[75%_center]" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#071833]/90 via-[#0b2a4a]/75 to-[#071833]/90" />
         </div>
-        <div className="relative z-10 max-w-[1180px] mx-auto px-4 sm:px-6 pt-8 pb-16 text-center">
+        <div className="relative z-10 w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 pt-8 pb-16 text-center">
           <div className="flex items-center justify-center gap-4 mb-2">
             <Link to="/my-bookings" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/90 hover:text-white">
               <Ticket size={14} />

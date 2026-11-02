@@ -181,7 +181,7 @@ export const TripDetailsPage = () => {
           <img src="/images/crops/detail_banner.jpg" alt="" className="w-full h-full object-cover object-[75%_center]" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#071833]/88 via-[#0b2a4a]/60 to-transparent" />
         </div>
-        <div className="relative z-10 max-w-[1180px] mx-auto px-4 sm:px-6 pt-8 pb-16">
+        <div className="relative z-10 w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 pt-8 pb-16">
           <Link to="/search-trips" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/90">
             <ArrowLeft size={14} />
             Back to Search Results
@@ -191,7 +191,7 @@ export const TripDetailsPage = () => {
         </div>
       </section>
 
-      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 -mt-8 space-y-4 relative z-20">
+      <div className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 -mt-8 space-y-4 relative z-20">
         <div className="bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_24px_rgba(15,23,42,0.06)] p-4 sm:p-5">
           <div className="flex flex-col lg:flex-row lg:items-center gap-5">
             <div className="relative w-full lg:w-[210px] h-[128px] rounded-[14px] overflow-hidden bg-slate-100 flex-shrink-0">

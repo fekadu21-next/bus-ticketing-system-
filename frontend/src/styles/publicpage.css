@@ -33,8 +33,9 @@
 }
 
 .navbar-dark .navbar-container {
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
   padding: 0 24px;
   height: 72px;
   display: flex;
@@ -292,8 +293,9 @@
 }
 
 .hero-content-wrapper {
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   align-items: center;
@@ -450,8 +452,9 @@
 }
 
 .features-container {
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
@@ -496,8 +499,9 @@
 }
 
 .partner-how-container {
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 48px;
@@ -623,8 +627,9 @@
 }
 
 .operator-banner-card {
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -916,7 +921,7 @@
 
 .about-content-section,
 .contact-content-container {
-  max-width: 1240px;
+  max-width: 100%; width: 100%;
   margin: 40px auto;
   padding: 0 24px;
 }
@@ -1005,8 +1010,9 @@
 }
 
 .footer-top {
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
   padding: 50px 24px 40px;
   display: grid;
   grid-template-columns: 1.6fr 1fr 1fr 1fr;
@@ -1078,8 +1084,9 @@
 }
 
 .footer-bottom-container {
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;

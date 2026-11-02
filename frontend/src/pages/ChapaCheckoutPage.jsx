@@ -123,7 +123,7 @@ export const ChapaCheckoutPage = () => {
     <div className="min-h-screen bg-[#f3f7f5] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col justify-between selection:bg-[#00c067] selection:text-white transition-colors">
       {/* Top Chapa Brand Header */}
       <header className="bg-[#0b241b] text-white shadow-md border-b border-[#143d2f]">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="w-full max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Chapa Logo Badge */}
             <div className="w-10 h-10 rounded-xl bg-[#00c067] shadow-sm flex items-center justify-center font-black text-white text-lg tracking-tight">
@@ -152,7 +152,7 @@ export const ChapaCheckoutPage = () => {
       </header>
 
       {/* Main Checkout Container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 sm:py-8">
+      <main className="flex-1 max-w-[1240px] w-full mx-auto px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Order & Merchant Summary */}
           <div className="lg:col-span-5 space-y-4">

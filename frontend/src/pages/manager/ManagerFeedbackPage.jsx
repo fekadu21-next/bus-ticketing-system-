@@ -114,7 +114,7 @@ export const ManagerFeedbackPage = () => {
   }, [stats]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="w-full mx-auto space-y-6">
       {/* Page Header */}
       <div className="page-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="page-title">

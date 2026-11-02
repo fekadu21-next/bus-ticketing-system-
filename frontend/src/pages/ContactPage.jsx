@@ -65,7 +65,7 @@ export const ContactPage = () => {
           <div className="absolute bottom-20 right-1/3 w-20 h-20 bg-white/5 rounded-full animate-float-slow"></div>
         </div>
         
-        <div className="relative max-w-4xl mx-auto text-center animate-fade-in">
+        <div className="relative w-full text-center animate-fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full mb-6 backdrop-blur-sm animate-pulse-slow">
             <HeadphonesIcon size={18} className="text-white" />
             <span className="text-white text-sm font-medium">24/7 Support Available</span>
@@ -78,7 +78,7 @@ export const ContactPage = () => {
       </section>
 
       {/* Contact Information Section */}
-      <section className="max-w-[1180px] mx-auto px-5 sm:px-8 py-14 lg:py-16">
+      <section className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 py-14 lg:py-16">
         <div className="text-center mb-12">
           <p className="text-[11px] font-semibold tracking-[0.22em] text-teal-600 uppercase mb-2 animate-fade-in">
             Get in Touch
@@ -111,7 +111,7 @@ export const ContactPage = () => {
 
       {/* Contact Form Section */}
       <section className="bg-gradient-to-b from-slate-50 to-white border-y border-slate-100">
-        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 py-14 lg:py-16">
+        <div className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 py-14 lg:py-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             <div className="lg:col-span-5">
               <p className="text-[11px] font-semibold tracking-[0.22em] text-teal-600 uppercase mb-2">
@@ -257,7 +257,7 @@ export const ContactPage = () => {
       </section>
 
       {/* CTA Section */}
-      <div className="max-w-[1180px] mx-auto px-5 sm:px-8 py-10">
+      <div className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 py-10">
         <div className="contact-cta hover:shadow-2xl transition-shadow duration-300">
           <div className="flex items-center gap-4">
             <span className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 animate-pulse-slow">

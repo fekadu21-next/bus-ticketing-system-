@@ -330,7 +330,7 @@ export const AboutPage = () => {
       </section>
 
       {/* OUR STORY */}
-      <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:py-24">
+      <section className="mx-auto max-w-[100%] w-full px-5 py-16 sm:px-8 sm:py-20 lg:py-24">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div className="about-fade-up">
             <SectionEyebrow>{t('aboutPage.storyBadge')}</SectionEyebrow>
@@ -391,7 +391,7 @@ export const AboutPage = () => {
       <section className="relative isolate border-y border-slate-200/70 bg-slate-50/80">
         <div className="pointer-events-none absolute -top-24 right-0 -z-10 h-72 w-72 rounded-full bg-blue-100/60 blur-3xl" />
 
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-12 lg:gap-12 lg:py-24">
+        <div className="mx-auto grid max-w-[100%] w-full gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-12 lg:gap-12 lg:py-24">
           <div className="about-fade-up lg:col-span-4">
             <SectionEyebrow>{t('aboutPage.whyBadge')}</SectionEyebrow>
 
@@ -446,7 +446,7 @@ export const AboutPage = () => {
 
       {/* IMPACT STATISTICS */}
       <section id="our-impact" className="scroll-mt-24">
-        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:py-24">
+        <div className="mx-auto max-w-[100%] w-full px-5 py-16 sm:px-8 sm:py-20 lg:py-24">
           <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-12">
             <div className="about-fade-up lg:col-span-4">
               <SectionEyebrow>{t('aboutPage.impactBadge')}</SectionEyebrow>
@@ -498,7 +498,7 @@ export const AboutPage = () => {
         id="our-values"
         className="scroll-mt-24 border-y border-slate-200/70 bg-slate-50/80"
       >
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-12 lg:gap-14 lg:py-24">
+        <div className="mx-auto grid max-w-[100%] w-full items-center gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-12 lg:gap-14 lg:py-24">
           <div className="about-fade-up lg:col-span-4">
             <div className="group relative">
               <div className="absolute -inset-3 -z-10 rounded-[2rem] bg-gradient-to-br from-blue-100 to-violet-100 blur-xl" />
@@ -550,7 +550,7 @@ export const AboutPage = () => {
       </section>
 
       {/* FINAL CALL TO ACTION */}
-      <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+      <section className="mx-auto max-w-[100%] w-full px-5 py-12 sm:px-8 sm:py-16">
         <div className="relative isolate overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-[#0b1b3a] via-[#123b7a] to-[#1d4ed8] p-6 shadow-[0_24px_70px_-28px_rgba(29,78,216,.55)] sm:rounded-[2rem] sm:p-9 lg:p-11">
           <div className="pointer-events-none absolute -right-16 -top-24 -z-10 h-72 w-72 rounded-full border-[42px] border-white/[0.06]" />
 

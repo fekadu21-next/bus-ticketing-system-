@@ -180,7 +180,7 @@ export const TelebirrCheckoutPage = () => {
     <div className="min-h-screen bg-[#f0f4f9] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col justify-between selection:bg-[#0072ce] selection:text-white transition-colors">
       {/* Top Telebirr / Ethio Telecom Brand Header */}
       <header className="bg-gradient-to-r from-[#004f9e] via-[#005cb9] to-[#0072ce] text-white shadow-md">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="w-full max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Telebirr Logo Emblem */}
             <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center font-black text-[#005cb9] text-xl tracking-tighter">
@@ -209,7 +209,7 @@ export const TelebirrCheckoutPage = () => {
       </header>
 
       {/* Main Checkout Container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 sm:py-8">
+      <main className="flex-1 max-w-[1240px] w-full mx-auto px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Order & Merchant Summary */}
           <div className="lg:col-span-5 space-y-4">
@@ -557,7 +557,7 @@ export const TelebirrCheckoutPage = () => {
 
       {/* Footer / Regulatory Notice */}
       <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 mt-8">
-        <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <div className="max-w-[1240px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} className="text-[#005cb9] dark:text-blue-400" />
             <span>Ethio Telecom • Telebirr Financial Services Regulatory Compliance</span>

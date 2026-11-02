@@ -67,8 +67,9 @@
 }
 
 .search-header-container {
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
 }
 
 .search-header-container h2 {
@@ -103,8 +104,9 @@
 }
 
 .search-trips-content {
-  max-width: 1240px;
-  margin: 28px auto 0;
+  max-width: 100%;
+  width: 100%;
+  margin: 28px 0 0;
   padding: 0 24px;
 }
 
@@ -250,8 +252,9 @@
    ROLE-BASED DASHBOARDS
    ============================================================ */
 .dashboard-container {
-  max-width: 1240px;
-  margin: 30px auto;
+  max-width: 100%;
+  width: 100%;
+  margin: 20px 0;
   padding: 0 24px;
 }
 

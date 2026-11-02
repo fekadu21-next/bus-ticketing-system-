@@ -185,7 +185,7 @@ export const PartnerRegisterPage = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-amber-500 to-orange-500 py-12 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-[96%] w-full mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('partnerRegister.pageTitle')}</h1>
             <p className="text-amber-100">
@@ -213,7 +213,7 @@ export const PartnerRegisterPage = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="w-full max-w-[96%] w-full mx-auto px-6 py-12">
         {errorMsg && (
           <div className="mb-6">
             <Alert variant="danger">{errorMsg}</Alert>

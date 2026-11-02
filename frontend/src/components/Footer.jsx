@@ -31,7 +31,7 @@ export const Footer = () => {
 
   return (
     <footer className="bg-[#071833] text-white">
-      <div className="max-w-[1180px] mx-auto px-5 sm:px-8 pt-12 pb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10">
+      <div className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 pt-12 pb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-3">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-4">
             <span className="w-9 h-9 rounded-lg bg-[#2563eb] flex items-center justify-center">
@@ -126,7 +126,7 @@ export const Footer = () => {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="max-w-[1180px] mx-auto px-5 sm:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[#8aa0bb]">
+        <div className="w-full max-w-[100%] px-4 sm:px-6 lg:px-10 xl:px-12 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[#8aa0bb]">
           <p>&copy; {new Date().getFullYear()} BusTicket. {t('footer.rights')}</p>
           <div className="flex items-center gap-4">
             <button

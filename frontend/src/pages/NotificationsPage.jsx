@@ -199,7 +199,7 @@ export const NotificationsPage = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-8 sm:px-6 text-slate-800 dark:text-slate-100 transition-colors">
+    <div className="w-full w-full max-w-[100%] w-full mx-auto px-4 py-8 sm:px-6 text-slate-800 dark:text-slate-100 transition-colors">
       <main className="w-full">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
