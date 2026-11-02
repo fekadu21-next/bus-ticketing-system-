@@ -137,20 +137,35 @@ const ImageCarousel = ({
       {/* CSS Keyframes for smooth, glitch-free horizontal transitions */}
       <style>{`
         @keyframes carouselSlideInNext {
-          0% { transform: translate3d(100%, 0, 0); }
-          100% { transform: translate3d(0, 0, 0); }
+          0% { transform: translate3d(100%, 0, 0) scale(1.04); opacity: 0.9; }
+          100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
         }
         @keyframes carouselSlideOutNext {
-          0% { transform: translate3d(0, 0, 0); }
-          100% { transform: translate3d(-100%, 0, 0); }
+          0% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
+          100% { transform: translate3d(-100%, 0, 0) scale(1.02); opacity: 0.9; }
         }
         @keyframes carouselSlideInPrev {
-          0% { transform: translate3d(-100%, 0, 0); }
-          100% { transform: translate3d(0, 0, 0); }
+          0% { transform: translate3d(-100%, 0, 0) scale(1.04); opacity: 0.9; }
+          100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
         }
         @keyframes carouselSlideOutPrev {
-          0% { transform: translate3d(0, 0, 0); }
-          100% { transform: translate3d(100%, 0, 0); }
+          0% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
+          100% { transform: translate3d(100%, 0, 0) scale(1.02); opacity: 0.9; }
+        }
+        @keyframes cinematicSlowZoom {
+          0% { transform: scale(1) translate3d(0, 0, 0); }
+          50% { transform: scale(1.06) translate3d(-0.6%, -0.4%, 0); }
+          100% { transform: scale(1) translate3d(0, 0, 0); }
+        }
+        @keyframes ambientGlowPulse {
+          0%, 100% { opacity: 0.28; transform: scale(1); }
+          50% { opacity: 0.48; transform: scale(1.06); }
+        }
+        @keyframes lightShimmer {
+          0% { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+          25% { opacity: 0.14; }
+          55% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
+          100% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
         }
       `}</style>
 
@@ -170,10 +185,14 @@ const ImageCarousel = ({
           <img
             src={images[prev]}
             alt="Bus journey"
-            className="w-full h-full object-cover object-center pointer-events-none"
+            className="w-full h-full object-cover object-center pointer-events-none will-change-transform"
+            style={{
+              filter: 'contrast(1.08) saturate(1.15) brightness(0.96)',
+            }}
             loading="eager"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/60 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-slate-950/25 to-slate-950/80 pointer-events-none" />
+          <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.65)] pointer-events-none" />
         </div>
       )}
 
@@ -195,10 +214,37 @@ const ImageCarousel = ({
         <img
           src={images[current]}
           alt="Bus journey"
-          className="w-full h-full object-cover object-center pointer-events-none"
+          className="w-full h-full object-cover object-center pointer-events-none will-change-transform"
+          style={{
+            animation: 'cinematicSlowZoom 22s ease-in-out infinite alternate',
+            filter: 'contrast(1.08) saturate(1.16) brightness(0.96)',
+          }}
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/60 pointer-events-none" />
+        {/* Cinematic Multi-Layer Gradient: keeps bus clear while making text pop */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-slate-950/25 to-slate-950/80 pointer-events-none" />
+        
+        {/* Atmospheric Ambient Glow Pulse in Corners for Depth */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle at 18% 28%, rgba(244,63,94,0.18) 0%, transparent 55%), radial-gradient(circle at 82% 72%, rgba(37,99,235,0.16) 0%, transparent 60%)',
+            animation: 'ambientGlowPulse 10s ease-in-out infinite alternate',
+          }}
+        />
+
+        {/* Subtle Glass Light Shimmer Sweep */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div
+            className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
+            style={{
+              animation: 'lightShimmer 14s ease-in-out infinite',
+            }}
+          />
+        </div>
+
+        {/* Filmic Corner Vignette */}
+        <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.65)] pointer-events-none" />
       </div>
 
       {/* Floating Prev / Next Navigation Arrows */}
