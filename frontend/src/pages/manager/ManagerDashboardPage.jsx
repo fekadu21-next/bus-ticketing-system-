@@ -192,7 +192,7 @@ export const ManagerDashboardPage = () => {
           </span>
         </div>
 
-        <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))" }}>
+        <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(clamp(210px, 14vw, 270px), 1fr))" }}>
           <StatCard
             title={t("managerDashboard.totalPayments")}
             value={`${Math.round(totalGrossRevenue).toLocaleString()} ETB`}
@@ -299,7 +299,7 @@ export const ManagerDashboardPage = () => {
       )}
 
       {/* Operational Sections Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "1.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "clamp(1.25rem, 1.6vw, 2.25rem)", width: "100%" }}>
         {/* Today's Scheduled Departure Trips */}
         <div className="card-table-wrapper">
           <div className="card-header-toolbar">
@@ -411,7 +411,7 @@ export const ManagerDashboardPage = () => {
       </div>
 
       {/* Personnel Management Sections */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginTop: "1.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(1.25rem, 1.6vw, 2.25rem)", marginTop: "clamp(1.25rem, 1.6vw, 2.25rem)", width: "100%" }}>
         {/* Drivers Section */}
         <div className="card-table-wrapper">
           <div className="card-header-toolbar">

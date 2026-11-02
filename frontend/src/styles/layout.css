@@ -232,8 +232,9 @@
   .nav-items-list {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: clamp(4px, 0.8vh, 10px);
     width: 100%;
+    flex: 1 0 auto;
   }
 
   .nav-group-title {
@@ -634,6 +635,9 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .page-header {
@@ -744,4 +748,230 @@
   margin-left: 8px;
   padding-left: 12px;
   border-left: 1px solid var(--color-border);
+}
+
+/* ============================================================
+   RESPONSIVE FLUID SCALING FOR DASHBOARDS & SIDEBAR ON DESKTOPS
+   ============================================================ */
+
+/* Viewport height scaling: allows sidebar list to span full screen height on desktop monitors */
+@media (min-height: 760px) {
+  .sidebar-nav {
+    padding: clamp(0.85rem, 1.2vh, 1.4rem) clamp(0.7rem, 0.8vw, 1rem);
+  }
+
+  .sidebar-nav .nav-items-list {
+    gap: clamp(6px, 1.1vh, 14px);
+  }
+
+  .sidebar-nav .nav-item {
+    padding: clamp(0.7rem, 0.95vh, 0.95rem) clamp(0.85rem, 0.9vw, 1.15rem);
+  }
+}
+
+@media (min-height: 900px) {
+  .sidebar-nav {
+    padding: clamp(1rem, 1.5vh, 1.85rem) clamp(0.85rem, 1vw, 1.3rem);
+  }
+
+  .sidebar-nav .nav-items-list {
+    gap: clamp(10px, 1.6vh, 20px);
+  }
+
+  .sidebar-nav .nav-item {
+    padding: clamp(0.82rem, 1.3vh, 1.2rem) clamp(0.95rem, 1vw, 1.35rem);
+    font-size: 0.95rem;
+  }
+}
+
+@media (min-height: 1080px) {
+  .sidebar-nav {
+    padding: clamp(1.25rem, 1.8vh, 2.25rem) clamp(1rem, 1.1vw, 1.5rem);
+  }
+
+  .sidebar-nav .nav-items-list {
+    gap: clamp(14px, 2.2vh, 28px);
+  }
+
+  .sidebar-nav .nav-item {
+    padding: clamp(0.95rem, 1.5vh, 1.4rem) clamp(1.1rem, 1.1vw, 1.55rem);
+    font-size: 1.02rem;
+  }
+}
+
+/* Width-based scaling: scales sidebar width, header, and page container proportionally */
+@media (min-width: 1400px) {
+  .sidebar {
+    width: clamp(285px, 17vw, 325px);
+  }
+
+  .sidebar.collapsed {
+    width: clamp(76px, 4.5vw, 86px);
+  }
+
+  .sidebar-header {
+    padding: clamp(1.35rem, 1.4vh, 1.75rem) clamp(1.2rem, 1.2vw, 1.6rem);
+  }
+
+  .brand-logo-img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .brand-text h2 {
+    font-size: 1.08rem;
+  }
+
+  .brand-text span {
+    font-size: 0.74rem;
+  }
+
+  .sidebar-nav .nav-item {
+    font-size: clamp(0.92rem, 0.95vw, 1.02rem);
+    border-radius: 9px;
+  }
+
+  .sidebar-nav .nav-item .nav-link-content {
+    gap: 0.85rem;
+  }
+
+  .sidebar-nav .nav-item .nav-link-content svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sidebar-nav .nav-item .badge-count {
+    font-size: 0.76rem;
+    padding: 0.2rem 0.58rem;
+  }
+
+  .sidebar-footer {
+    padding: clamp(1.15rem, 1.3vh, 1.6rem) clamp(1.1rem, 1.1vw, 1.45rem);
+  }
+
+  .role-scope-badge {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  .role-scope-badge .role-title {
+    font-size: 0.86rem;
+  }
+
+  .sidebar-logout-btn {
+    padding: 0.65rem 0.9rem;
+    font-size: 0.86rem;
+  }
+
+  .top-header {
+    height: clamp(68px, 6vh, 76px);
+    padding: 0 clamp(1.75rem, 2vw, 2.75rem);
+  }
+
+  .header-search {
+    width: clamp(340px, 22vw, 440px);
+  }
+
+  .page-container {
+    padding: clamp(2rem, 2.3vw, 2.85rem);
+  }
+
+  .page-title h1 {
+    font-size: clamp(1.5rem, 1.7vw, 1.95rem);
+  }
+
+  .page-title p {
+    font-size: clamp(0.86rem, 0.9vw, 0.98rem);
+  }
+}
+
+@media (min-width: 1800px) {
+  .sidebar {
+    width: clamp(330px, 17.5vw, 385px);
+  }
+
+  .sidebar.collapsed {
+    width: clamp(84px, 4.5vw, 96px);
+  }
+
+  .sidebar-header {
+    padding: clamp(1.6rem, 1.7vh, 2.1rem) clamp(1.5rem, 1.4vw, 1.95rem);
+  }
+
+  .brand-logo-img {
+    width: 56px;
+    height: 56px;
+  }
+
+  .brand-text h2 {
+    font-size: 1.24rem;
+  }
+
+  .brand-text span {
+    font-size: 0.82rem;
+  }
+
+  .sidebar-nav .nav-item {
+    font-size: clamp(1.02rem, 1vw, 1.15rem);
+    border-radius: 12px;
+  }
+
+  .sidebar-nav .nav-item .nav-link-content {
+    gap: 1.1rem;
+  }
+
+  .sidebar-nav .nav-item .nav-link-content svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .sidebar-nav .nav-item .badge-count {
+    font-size: 0.82rem;
+    padding: 0.25rem 0.72rem;
+  }
+
+  .sidebar-footer {
+    padding: clamp(1.4rem, 1.6vh, 2rem) clamp(1.35rem, 1.3vw, 1.85rem);
+  }
+
+  .role-scope-badge {
+    padding: 0.9rem 1rem;
+    font-size: 0.92rem;
+  }
+
+  .role-scope-badge .role-title {
+    font-size: 0.98rem;
+  }
+
+  .sidebar-logout-btn {
+    padding: 0.8rem 1.1rem;
+    font-size: 0.94rem;
+    margin-top: 0.9rem;
+  }
+
+  .top-header {
+    height: clamp(78px, 6.5vh, 88px);
+    padding: 0 clamp(2.25rem, 2.5vw, 3.5rem);
+  }
+
+  .header-search {
+    width: clamp(400px, 24vw, 520px);
+  }
+
+  .header-search input {
+    padding: 0.65rem 1rem 0.65rem 2.6rem;
+    font-size: 0.96rem;
+  }
+
+  .page-container {
+    padding: clamp(2.5rem, 2.8vw, 3.75rem);
+  }
+
+  .page-title h1 {
+    font-size: clamp(1.8rem, 1.9vw, 2.35rem);
+  }
+
+  .page-title p {
+    font-size: clamp(0.96rem, 0.98vw, 1.12rem);
+  }
 }

@@ -542,3 +542,54 @@
   font-size: 0.95rem;
   color: #0f172a;
 }
+
+/* Large Desktop scaling for Dashboards */
+@media (min-width: 1400px) {
+  .data-table-card {
+    border-radius: 16px;
+    margin-bottom: 2rem;
+  }
+
+  .table-header {
+    padding: clamp(20px, 1.5vh, 28px) clamp(24px, 1.8vw, 34px);
+  }
+
+  .table-header h3 {
+    font-size: 1.15rem;
+  }
+
+  .app-data-table th {
+    padding: clamp(14px, 1.2vh, 18px) clamp(22px, 1.5vw, 30px);
+    font-size: 0.86rem;
+  }
+
+  .app-data-table td {
+    padding: clamp(18px, 1.4vh, 24px) clamp(22px, 1.5vw, 30px);
+    font-size: 0.95rem;
+  }
+}
+
+@media (min-width: 1800px) {
+  .data-table-card {
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
+  }
+
+  .table-header {
+    padding: clamp(24px, 1.8vh, 36px) clamp(30px, 2vw, 44px);
+  }
+
+  .table-header h3 {
+    font-size: 1.35rem;
+  }
+
+  .app-data-table th {
+    padding: clamp(18px, 1.5vh, 24px) clamp(28px, 1.8vw, 40px);
+    font-size: 0.94rem;
+  }
+
+  .app-data-table td {
+    padding: clamp(22px, 1.7vh, 30px) clamp(28px, 1.8vw, 40px);
+    font-size: 1.05rem;
+  }
+}

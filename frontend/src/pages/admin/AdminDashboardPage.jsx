@@ -407,7 +407,7 @@ export const AdminDashboardPage = () => {
           </span>
         </div>
 
-        <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(clamp(220px, 14vw, 280px), 1fr))" }}>
           <StatCard
             title={isFiltered ? `Payments (${dateFilterLabel})` : "Total Booking Payments"}
             value={`${Math.round(displayGrossRevenue).toLocaleString()} ETB`}
