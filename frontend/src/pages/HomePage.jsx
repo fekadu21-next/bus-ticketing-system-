@@ -203,73 +203,76 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-5 lg:gap-6 w-full">
             {loadingOperators && operators.length === 0 ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-4 shadow-sm animate-pulse">
-                  <div className="h-[128px] bg-slate-100 dark:bg-slate-700 rounded-xl mb-4" />
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-3 sm:p-4 shadow-sm animate-pulse">
+                  <div className="h-[110px] sm:h-[136px] bg-slate-100 dark:bg-slate-700 rounded-xl mb-3 sm:mb-4" />
                   <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded w-1/2 mb-4" />
-                  <div className="h-9 bg-slate-100 dark:bg-slate-700 rounded-xl" />
+                  <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded w-1/2 mb-3 sm:mb-4" />
+                  <div className="h-8 sm:h-9 bg-slate-100 dark:bg-slate-700 rounded-xl" />
                 </div>
               ))
             ) : (
               operators.map((op) => (
                 <article
                   key={op.id}
-                  className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 shadow-[0_4px_20px_rgba(15,23,42,0.05)] hover:shadow-[0_16px_36px_rgba(244,63,94,0.12)] hover:border-rose-300 dark:hover:border-rose-500/50 transition-all duration-300 group flex flex-col justify-between overflow-hidden"
+                  className="group relative bg-white dark:bg-slate-800/95 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 shadow-[0_4px_16px_rgba(15,23,42,0.04)] hover:shadow-[0_20px_42px_rgba(244,63,94,0.18)] dark:hover:shadow-[0_20px_42px_rgba(244,63,94,0.3)] hover:border-rose-400 dark:hover:border-rose-500/80 hover:-translate-y-2 hover:scale-[1.015] transition-all duration-300 ease-out flex flex-col justify-between overflow-hidden cursor-pointer"
                 >
+                  {/* Glowing Top Accent Line on Hover */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30" />
+
                   <div>
-                    {/* Operator Photo Header */}
-                    <div className="h-[136px] overflow-hidden relative bg-slate-100 dark:bg-slate-700">
+                    {/* Operator Photo Header with Zoom Effect */}
+                    <div className="h-[116px] sm:h-[140px] overflow-hidden relative bg-slate-100 dark:bg-slate-700">
                       <img
                         src={op.image}
                         alt={op.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-                      <div className="absolute top-2.5 right-2.5">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-slate-100 shadow-md backdrop-blur-sm">
-                          <CheckCircle size={12} className="text-emerald-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent group-hover:opacity-90 transition-opacity duration-300" />
+                      <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-20">
+                        <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-slate-100 shadow-md backdrop-blur-sm group-hover:bg-[#f43f5e] group-hover:text-white transition-colors duration-300">
+                          <CheckCircle size={11} className="text-emerald-500 group-hover:text-white transition-colors duration-300" />
                           Verified
                         </span>
                       </div>
                     </div>
 
                     {/* Operator Details */}
-                    <div className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className={`w-10 h-10 ${op.logoBg} text-white rounded-xl flex items-center justify-center text-xs font-black shadow-md flex-shrink-0`}>
-                          {op.logo === 'mountain' && <Mountain size={18} />}
-                          {op.logo === 'bus' && <Bus size={18} />}
+                    <div className="p-3 sm:p-4">
+                      <div className="flex items-center gap-2.5 sm:gap-3 mb-2.5 sm:mb-3">
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 ${op.logoBg} text-white rounded-xl flex items-center justify-center text-xs font-black shadow-md flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
+                          {op.logo === 'mountain' && <Mountain size={16} />}
+                          {op.logo === 'bus' && <Bus size={16} />}
                           {op.logoText}
                         </div>
-                        <div className="min-w-0">
-                          <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-[#f43f5e] dark:group-hover:text-rose-400 transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-[#f43f5e] dark:group-hover:text-rose-400 transition-colors duration-200">
                             {op.name}
                           </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
                             {op.type}
                           </p>
                         </div>
                       </div>
 
                       {/* Rating */}
-                      <div className="flex items-center gap-1.5 text-xs mb-3">
-                        <Star size={14} className="fill-amber-400 text-amber-400 flex-shrink-0" />
+                      <div className="flex items-center gap-1 text-[11px] sm:text-xs mb-2.5 sm:mb-3">
+                        <Star size={13} className="fill-amber-400 text-amber-400 flex-shrink-0" />
                         <span className="font-bold text-slate-900 dark:text-white">{op.rating}</span>
-                        <span className="text-slate-400">({op.reviews})</span>
+                        <span className="text-slate-400 text-[10px] sm:text-[11px]">({op.reviews})</span>
                       </div>
 
                       {/* Routes */}
-                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800 mb-4">
-                        <p className="text-xs text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1.5 flex-wrap">
+                      <div className="bg-slate-50 dark:bg-slate-900/60 rounded-xl p-2 sm:p-2.5 border border-slate-100 dark:border-slate-800/80 mb-3 sm:mb-4 group-hover:border-rose-100 dark:group-hover:border-rose-950/60 transition-colors duration-300">
+                        <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1 sm:gap-1.5 flex-wrap">
                           <span className="font-semibold text-slate-800 dark:text-slate-100">{op.routeFrom}</span>
-                          <span className="text-slate-400">→</span>
+                          <span className="text-[#f43f5e] font-bold group-hover:translate-x-0.5 transition-transform duration-200">→</span>
                           <span className="font-semibold text-slate-800 dark:text-slate-100">{op.routeTo}</span>
                           {op.extraRoutes && (
-                            <span className="text-[11px] text-[#f43f5e] font-bold bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded-md">
+                            <span className="text-[9px] sm:text-[11px] text-[#f43f5e] font-bold bg-rose-50 dark:bg-rose-950/50 px-1.5 py-0.5 rounded-md">
                               {op.extraRoutes}
                             </span>
                           )}
@@ -279,19 +282,18 @@ export default function HomePage() {
                   </div>
 
                   {/* Action Link */}
-                  <div className="px-4 pb-4">
+                  <div className="px-3 pb-3 sm:px-4 sm:pb-4">
                     <Link
                       to={`/search-trips?operator=${encodeURIComponent(op.name)}`}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 hover:bg-[#f43f5e] hover:text-white dark:hover:bg-[#f43f5e] dark:hover:text-white transition-all duration-200 shadow-sm group/btn"
+                      className="w-full flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-700/80 hover:bg-[#f43f5e] hover:text-white dark:hover:bg-[#f43f5e] dark:hover:text-white group-hover:bg-[#f43f5e] group-hover:text-white transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-rose-500/25 group/btn"
                     >
                       <span>View Trips</span>
-                      <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                      <ArrowRight size={13} className="group-hover/btn:translate-x-1.5 transition-transform duration-200" />
                     </Link>
                   </div>
                 </article>
               ))
-            )}
-          </div>
+            )}          </div>
         </div>
       </section>
 
