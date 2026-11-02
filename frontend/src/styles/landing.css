@@ -262,3 +262,46 @@
 .animate-bounce-slow {
   animation: bounce-slow 2s ease-in-out infinite;
 }
+
+/* ============================================================
+   POPULAR OPERATORS GRID (RESPONSIVE FLUID ROW & COLUMN GAPS)
+   ============================================================ */
+.operators-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(0.85rem, 1.8vw, 1.25rem);
+  row-gap: clamp(1.6rem, 3.5vw, 2.25rem);
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .operators-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: clamp(1.1rem, 1.6vw, 1.6rem);
+    row-gap: clamp(2rem, 3vw, 2.75rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .operators-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: clamp(1.25rem, 1.5vw, 1.85rem);
+    row-gap: clamp(2.5rem, 2.8vw, 3.5rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .operators-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    column-gap: clamp(1.4rem, 1.6vw, 2.25rem);
+    row-gap: clamp(2.75rem, 3.2vw, 4.25rem);
+  }
+}
+
+@media (min-width: 1800px) {
+  .operators-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    column-gap: clamp(1.75rem, 1.8vw, 2.75rem);
+    row-gap: clamp(3.5rem, 3.6vw, 5.5rem);
+  }
+}

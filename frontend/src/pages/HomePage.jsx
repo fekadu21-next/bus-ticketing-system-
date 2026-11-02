@@ -203,9 +203,9 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-5 lg:gap-6 w-full">
+          <div className="operators-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3.5 sm:gap-x-5 lg:gap-x-6 xl:gap-x-[1.6vw] 2xl:gap-x-[2vw] gap-y-6 sm:gap-y-8 md:gap-y-10 lg:gap-y-12 xl:gap-y-[3vw] 2xl:gap-y-[3.5vw] w-full">
             {loadingOperators && operators.length === 0 ? (
-              Array.from({ length: 5 }).map((_, i) => (
+              Array.from({ length: 10 }).map((_, i) => (
                 <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-3 sm:p-4 shadow-sm animate-pulse">
                   <div className="h-[110px] sm:h-[136px] bg-slate-100 dark:bg-slate-700 rounded-xl mb-3 sm:mb-4" />
                   <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-3/4 mb-2" />
